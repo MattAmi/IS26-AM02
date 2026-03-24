@@ -1,0 +1,718 @@
+[
+
+
+
+  {
+    "cardID": "C_001",
+    "era": "I",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "FLINT"
+  },
+
+  {
+    "cardID": "C_002",
+    "era": "I",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "HIDE"
+  },
+
+  {
+    "cardID": "C_003",
+    "era": "I",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "ARROWHEAD"
+  },
+
+  {
+    "cardID": "C_004",
+    "era": "I",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "BREAD"
+  },
+
+  {
+    "cardID": "C_005",
+    "era": "I",
+    "type": "INVENTOR",
+    "minPlayers": 4,
+    "invention": "ROPE"
+  },
+
+  {
+    "cardID": "C_006",
+    "era": "I",
+    "type": "INVENTOR",
+    "minPlayers": 4,
+    "invention": "BOWL"
+  },
+
+  {
+    "cardID": "C_007",
+    "era": "I",
+    "type": "INVENTOR",
+    "minPlayers": 4,
+    "invention": "BONE_FLUTE"
+  },
+
+
+
+  {
+    "cardID": "C_008",
+    "era": "I",
+    "type": "BUILDER",
+    "minPlayers": 2,
+    "buildingDiscount": 1,
+    "prestigePoints": 3
+  },
+
+  {
+    "cardID": "C_009",
+    "era": "I",
+    "type": "BUILDER",
+    "minPlayers": 2,
+    "buildingDiscount": 2,
+    "prestigePoints": 0
+  },
+
+  {
+    "cardID": "C_010",
+    "era": "I",
+    "type": "BUILDER",
+    "minPlayers": 2,
+    "buildingDiscount": 1,
+    "prestigePoints": 2
+  },
+
+  {
+    "cardID": "C_011",
+    "era": "I",
+    "type": "BUILDER",
+    "minPlayers": 5,
+    "buildingDiscount": 2,
+    "prestigePoints": 1
+  },
+
+
+
+  {
+    "cardID": "C_012",
+    "era": "I",
+    "type": "GATHERER",
+    "minPlayers": 2,
+    "foodDiscount": 3
+  },
+
+  {
+    "cardID": "C_013",
+    "era": "I",
+    "type": "GATHERER",
+    "minPlayers": 2,
+    "foodDiscount": 3
+  },
+
+  {
+    "cardID": "C_014",
+    "era": "I",
+    "type": "GATHERER",
+    "minPlayers": 3,
+    "foodDiscount": 3
+  },
+
+  {
+    "cardID": "C_015",
+    "era": "I",
+    "type": "GATHERER",
+    "minPlayers": 5,
+    "foodDiscount": 3
+  },
+
+
+
+  {
+    "cardID": "C_016",
+    "era": "I",
+    "type": "ARTIST",
+    "minPlayers": 2
+  },
+
+  {
+    "cardID": "C_017",
+    "era": "I",
+    "type": "ARTIST",
+    "minPlayers": 2
+  },
+
+  {
+    "cardID": "C_018",
+    "era": "I",
+    "type": "ARTIST",
+    "minPlayers": 2
+  },
+
+  {
+    "cardID": "C_019",
+    "era": "I",
+    "type": "ARTIST",
+    "minPlayers": 3
+  },
+
+  {
+    "cardID": "C_020",
+    "era": "I",
+    "type": "ARTIST",
+    "minPlayers": 4
+  },
+
+
+
+  {
+    "cardID": "C_021",
+    "era": "I",
+    "type": "SHAMAN",
+    "minPlayers": 2,
+    "shamanStars": 1
+  },
+
+  {
+    "cardID": "C_022",
+    "era": "I",
+    "type": "SHAMAN",
+    "minPlayers": 2,
+    "shamanStars": 2
+  },
+
+  {
+    "cardID": "C_023",
+    "era": "I",
+    "type": "SHAMAN",
+    "minPlayers": 4,
+    "shamanStars": 1
+  },
+
+  {
+    "cardID": "C_024",
+    "era": "I",
+    "type": "SHAMAN",
+    "minPlayers": 5,
+    "shamanStars": 2
+  },
+
+
+
+  {
+    "cardID": "C_025",
+    "era": "I",
+    "type": "HUNTER",
+    "minPlayers": 2,
+    "hasGigot": false
+  },
+
+  {
+    "cardID": "C_026",
+    "era": "I",
+    "type": "HUNTER",
+    "minPlayers": 2,
+    "hasGigot": true
+  },
+
+  {
+    "cardID": "C_027",
+    "era": "I",
+    "type": "HUNTER",
+    "minPlayers": 2,
+    "hasGigot": true
+  },
+
+  {
+    "cardID": "C_028",
+    "era": "I",
+    "type": "HUNTER",
+    "minPlayers": 3,
+    "hasGigot": false
+  },
+
+  {
+    "cardID": "C_029",
+    "era": "I",
+    "type": "HUNTER",
+    "minPlayers": 3,
+    "hasGigot": false
+  },
+
+
+
+
+
+
+
+  {
+    "cardID": "C_030",
+    "era": "II",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "HIDE"
+  },
+
+  {
+    "cardID": "C_031",
+    "era": "II",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "STATUE"
+  },
+
+  {
+    "cardID": "C_032",
+    "era": "II",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "ROPE"
+  },
+
+  {
+    "cardID": "C_033",
+    "era": "II",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "BOWL"
+  },
+
+  {
+    "cardID": "C_034",
+    "era": "II",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "BONE_FLUTE"
+  },
+
+  {
+    "cardID": "C_035",
+    "era": "II",
+    "type": "INVENTOR",
+    "minPlayers": 4,
+    "invention": "FISHHOOK"
+  },
+
+
+
+  {
+    "cardID": "C_036",
+    "era": "II",
+    "type": "BUILDER",
+    "minPlayers": 2,
+    "buildingDiscount": 2,
+    "prestigePoints": 1
+  },
+
+  {
+    "cardID": "C_037",
+    "era": "II",
+    "type": "BUILDER",
+    "minPlayers": 2,
+    "buildingDiscount": 2,
+    "prestigePoints": 3
+  },
+
+  {
+    "cardID": "C_038",
+    "era": "II",
+    "type": "BUILDER",
+    "minPlayers": 2,
+    "buildingDiscount": 1,
+    "prestigePoints": 4
+  },
+
+  {
+    "cardID": "C_039",
+    "era": "II",
+    "type": "BUILDER",
+    "minPlayers": 3,
+    "buildingDiscount": 1,
+    "prestigePoints": 2
+  },
+
+
+
+  {
+    "cardID": "C_040",
+    "era": "II",
+    "type": "GATHERER",
+    "minPlayers": 2,
+    "foodDiscount": 3
+  },
+
+  {
+    "cardID": "C_041",
+    "era": "II",
+    "type": "GATHERER",
+    "minPlayers": 3,
+    "foodDiscount": 3
+  },
+
+  {
+    "cardID": "C_042",
+    "era": "II",
+    "type": "GATHERER",
+    "minPlayers": 4,
+    "foodDiscount": 3
+  },
+
+  {
+    "cardID": "C_043",
+    "era": "II",
+    "type": "GATHERER",
+    "minPlayers": 5,
+    "foodDiscount": 3
+  },
+
+
+  {
+    "cardID": "C_044",
+    "era": "II",
+    "type": "ARTIST",
+    "minPlayers": 2
+  },
+
+  {
+    "cardID": "C_045",
+    "era": "II",
+    "type": "ARTIST",
+    "minPlayers": 2
+  },
+
+  {
+    "cardID": "C_046",
+    "era": "II",
+    "type": "ARTIST",
+    "minPlayers": 2
+  },
+
+  {
+    "cardID": "C_047",
+    "era": "II",
+    "type": "ARTIST",
+    "minPlayers": 3
+  },
+
+
+
+  {
+    "cardID": "C_048",
+    "era": "II",
+    "type": "SHAMAN",
+    "minPlayers": 2,
+    "shamanStars": 2
+  },
+
+  {
+    "cardID": "C_049",
+    "era": "II",
+    "type": "SHAMAN",
+    "minPlayers": 2,
+    "shamanStars": 2
+  },
+
+  {
+    "cardID": "C_050",
+    "era": "II",
+    "type": "SHAMAN",
+    "minPlayers": 5,
+    "shamanStars": 1
+  },
+
+  {
+    "cardID": "C_051",
+    "era": "II",
+    "type": "SHAMAN",
+    "minPlayers": 5,
+    "shamanStars": 2
+  },
+
+
+
+  {
+    "cardID": "C_052",
+    "era": "II",
+    "type": "HUNTER",
+    "minPlayers": 2,
+    "hasGigot": false
+  },
+
+  {
+    "cardID": "C_053",
+    "era": "II",
+    "type": "HUNTER",
+    "minPlayers": 2,
+    "hasGigot": false
+  },
+
+  {
+    "cardID": "C_054",
+    "era": "II",
+    "type": "HUNTER",
+    "minPlayers": 2,
+    "hasGigot": true
+  },
+
+  {
+    "cardID": "C_055",
+    "era": "II",
+    "type": "HUNTER",
+    "minPlayers": 3,
+    "hasGigot": true
+  },
+
+  {
+    "cardID": "C_056",
+    "era": "II",
+    "type": "HUNTER",
+    "minPlayers": 4,
+    "hasGigot": true
+  },
+
+  {
+    "cardID": "C_057",
+    "era": "II",
+    "type": "HUNTER",
+    "minPlayers": 5,
+    "hasGigot": false
+  },
+
+
+
+
+
+
+
+
+  {
+    "cardID": "C_058",
+    "era": "III",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "BREAD"
+  },
+
+  {
+    "cardID": "C_059",
+    "era": "III",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "STATUE"
+  },
+
+  {
+    "cardID": "C_060",
+    "era": "III",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "FISHHOOK"
+  },
+
+  {
+    "cardID": "C_061",
+    "era": "III",
+    "type": "INVENTOR",
+    "minPlayers": 2,
+    "invention": "NECKLACE"
+  },
+
+  {
+    "cardID": "C_062",
+    "era": "III",
+    "type": "INVENTOR",
+    "minPlayers": 3,
+    "invention": "ARROWHEAD"
+  },
+
+  {
+    "cardID": "C_063",
+    "era": "III",
+    "type": "INVENTOR",
+    "minPlayers": 3,
+    "invention": "FLINT"
+  },
+
+  {
+    "cardID": "C_064",
+    "era": "III",
+    "type": "INVENTOR",
+    "minPlayers": 4,
+    "invention": "NECKLACE"
+  },
+
+
+  {
+    "cardID": "C_065",
+    "era": "III",
+    "type": "BUILDER",
+    "minPlayers": 2,
+    "buildingDiscount": 2,
+    "prestigePoints": 2
+  },
+
+  {
+    "cardID": "C_066",
+    "era": "III",
+    "type": "BUILDER",
+    "minPlayers": 2,
+    "buildingDiscount": 2,
+    "prestigePoints": 3
+  },
+
+  {
+    "cardID": "C_067",
+    "era": "III",
+    "type": "BUILDER",
+    "minPlayers": 2,
+    "buildingDiscount": 1,
+    "prestigePoints": 5
+  },
+
+  {
+    "cardID": "C_068",
+    "era": "III",
+    "type": "BUILDER",
+    "minPlayers": 5,
+    "buildingDiscount": 1,
+    "prestigePoints": 4
+  },
+
+
+
+  {
+    "cardID": "C_069",
+    "era": "III",
+    "type": "GATHERER",
+    "minPlayers": 2,
+    "foodDiscount": 3
+  },
+
+  {
+    "cardID": "C_070",
+    "era": "III",
+    "type": "GATHERER",
+    "minPlayers": 4,
+    "foodDiscount": 3
+  },
+
+  {
+    "cardID": "C_071",
+    "era": "III",
+    "type": "GATHERER",
+    "minPlayers": 5,
+    "foodDiscount": 3
+  },
+
+
+
+
+  {
+    "cardID": "C_072",
+    "era": "III",
+    "type": "ARTIST",
+    "minPlayers": 2
+  },
+
+  {
+    "cardID": "C_073",
+    "era": "III",
+    "type": "ARTIST",
+    "minPlayers": 2
+  },
+
+  {
+    "cardID": "C_074",
+    "era": "III",
+    "type": "ARTIST",
+    "minPlayers": 2
+  },
+
+  {
+    "cardID": "C_075",
+    "era": "III",
+    "type": "ARTIST",
+    "minPlayers": 5
+  },
+
+
+
+  {
+    "cardID": "C_076",
+    "era": "III",
+    "type": "SHAMAN",
+    "minPlayers": 2,
+    "shamanStars": 2
+  },
+
+  {
+    "cardID": "C_077",
+    "era": "III",
+    "type": "SHAMAN",
+    "minPlayers": 2,
+    "shamanStars": 3
+  },
+
+  {
+    "cardID": "C_078",
+    "era": "III",
+    "type": "SHAMAN",
+    "minPlayers": 2,
+    "shamanStars": 3
+  },
+
+  {
+    "cardID": "C_079",
+    "era": "III",
+    "type": "SHAMAN",
+    "minPlayers": 3,
+    "shamanStars": 2
+  },
+
+  {
+    "cardID": "C_080",
+    "era": "III",
+    "type": "SHAMAN",
+    "minPlayers": 4,
+    "shamanStars": 2
+  },
+
+
+
+  {
+    "cardID": "C_081",
+    "era": "III",
+    "type": "HUNTER",
+    "minPlayers": 2,
+    "hasGigot": false
+  },
+
+  {
+    "cardID": "C_082",
+    "era": "III",
+    "type": "HUNTER",
+    "minPlayers": 2,
+    "hasGigot": false
+  },
+
+  {
+    "cardID": "C_083",
+    "era": "III",
+    "type": "HUNTER",
+    "minPlayers": 2,
+    "hasGigot": true
+  },
+
+  {
+    "cardID": "C_084",
+    "era": "III",
+    "type": "HUNTER",
+    "minPlayers": 5,
+    "hasGigot": true
+  }
+
+]

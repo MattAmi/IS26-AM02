@@ -1,0 +1,25 @@
+[
+  {
+    "numPlayers": 2,
+    "foodBonuses": [1, -1],
+    "prestigePointsMalus": [0, -2]
+  },
+
+  {
+    "numPlayers": 3,
+    "foodBonuses": [2, 0, 1],
+    "prestigePointsMalus": [0, 0, -2]
+  },
+
+  {
+    "numPlayers": 4,
+    "foodBonuses": [2, 1, 0, -1],
+    "prestigePointsMalus": [0, 0, 0, -2]
+  },
+
+  {
+    "numPlayers": 5,
+    "foodBonuses": [3, 1, 0, 0, -1],
+    "prestigePointsMalus": [0, 0, 0, 0, -2]
+  }
+]

@@ -1,0 +1,121 @@
+[
+	{
+	"cardID": "E_001",
+	"era": "I",
+	"type": "HUNT",
+	"isFinal": 0,
+	"priority": 1,
+	"foodPerHunter": 1,
+	"ppPerHunter": 1
+	},
+	
+	{
+	"cardID": "E_002",
+	"era": "I",
+	"type": "SUSTENANCE",
+	"isFinal": 0,
+	"priority": 5,
+	"penaltyPerUnfed": 1
+	},
+	
+	{
+	"cardID": "E_003",
+	"era": "I",
+	"type": "SHAMANIC_RITUAL",
+	"isFinal": 0,
+	"priority": 1,
+	"majorityBonus": 5,
+	"minorityMalus": 3
+	},
+	
+	{
+	"cardID": "E_004",
+	"era": "I",
+	"type": "CAVE_PAINTINGS",
+	"isFinal": 0,
+	"priority": 1,
+	"minArtists": 1,
+	"ppMalusIfFailed": 2,
+	"bonusPerArtist": 1
+	},
+	
+	{
+	"cardID": "E_005",
+	"era": "II",
+	"type": "HUNT",
+	"isFinal": 0,
+	"priority": 2,
+	"foodPerHunter": 1,
+	"ppPerHunter": 2
+	},
+	
+	{
+	"cardID": "E_006",
+	"era": "II",
+	"type": "SUSTENANCE",
+	"isFinal": 0,
+	"priority": 10,
+	"penaltyPerUnfed": 2
+	},
+	
+	{
+	"cardID": "E_007",
+	"era": "II",
+	"type": "SHAMANIC_RITUAL",
+	"isFinal": 0,
+	"priority": 2,
+	"majorityBonus": 10,
+	"minorityMalus": 5
+	},
+	
+	{
+	"cardID": "E_008",
+	"era": "II",
+	"type": "CAVE_PAINTINGS",
+	"isFinal": 0,
+	"priority": 2,
+	"minArtists": 2,
+	"ppMalusIfFailed": 2,
+	"bonusPerArtist": 2
+	},
+	
+	{
+	"cardID": "E_009",
+	"era": "III",
+	"type": "HUNT",
+	"isFinal": 0,
+	"priority": 3,
+	"foodPerHunter": 1,
+	"ppPerHunter": 3
+	},
+	
+	{
+	"cardID": "E_010",
+	"era": "III",
+	"type": "CAVE_PAINTINGS",
+	"isFinal": 0,
+	"priority": 3,
+	"minArtists": 3,
+	"ppMalusIfFailed": 2,
+	"bonusPerArtist": 3
+	},
+	
+	{
+	"cardID": "E_011",
+	"era": "III",
+	"type": "SUSTENANCE",
+	"isFinal": 1,
+	"priority": 100,
+	"penaltyPerUnfed": 3
+	},
+	
+	{
+	"cardID": "E_012",
+	"era": "III",
+	"type": "SHAMANIC_RITUAL",
+	"isFinal": 1,
+	"priority": 90,
+	"majorityBonus": 15,
+	"minorityMalus": 7
+	}
+]

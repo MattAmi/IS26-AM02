@@ -1,0 +1,57 @@
+[
+  {
+    "tileID": "A",
+    "minPlayers": 5,
+    "gainedFood": 3,
+    "numUpperChoosable": 0,
+    "numLowerChoosable": 0
+  },
+
+  {
+    "tileID": "B",
+    "minPlayers": 2,
+    "gainedFood": 0,
+    "numUpperChoosable": 0,
+    "numLowerChoosable": 1
+  },
+
+  {
+    "tileID": "C",
+    "minPlayers": 2,
+    "gainedFood": 0,
+    "numUpperChoosable": 1,
+    "numLowerChoosable": 0
+  },
+
+  {
+    "tileID": "D",
+    "minPlayers": 3,
+    "gainedFood": 0,
+    "numUpperChoosable": 0,
+    "numLowerChoosable": 2
+  },
+
+  {
+    "tileID": "E",
+    "minPlayers": 2,
+    "gainedFood": 0,
+    "numUpperChoosable": 1,
+    "numLowerChoosable": 1
+  },
+
+  {
+    "tileID": "F",
+    "minPlayers": 2,
+    "gainedFood": 0,
+    "numUpperChoosable": 2,
+    "numLowerChoosable": 0
+  },
+
+  {
+    "tileID": "G",
+    "minPlayers": 4,
+    "gainedFood": 0,
+    "numUpperChoosable": 2,
+    "numLowerChoosable": 1
+  }
+]

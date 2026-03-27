@@ -19,4 +19,9 @@ public class RegistrationVisitor implements EffectVisitor {
     public void visitTribuObserver(TribuObserver effect) {
         Tribu.attachTribuObserver(effect);
     }
+
+    @Override
+    public void visitEventObserver(EventObserver effect){
+        EventCard.attachEventObserver(effect);
+    }
 }

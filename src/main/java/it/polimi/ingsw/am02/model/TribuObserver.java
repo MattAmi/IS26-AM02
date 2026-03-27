@@ -1,5 +1,7 @@
 package it.polimi.ingsw.am02.model;
 
-public interface TribuObserver {
+import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
 
+public interface TribuObserver {
+    void onCharacterInsertion(CharacterType newCharacter);
 }

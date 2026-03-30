@@ -1,5 +1,3 @@
-// TODO annulare malus in caso sei il più scarso e doppi pp se sono il più forte
-
 package it.polimi.ingsw.am02.model.BuildingEffects;
 
 import it.polimi.ingsw.am02.model.*;
@@ -26,8 +24,6 @@ public class ShamanicExtraIconsEffect implements BuildingEffect, EventObserver {
             Tribu.addShamanStars(bonusStars);
         }
     }
-
-
     public void EventEnd(EventType evenType) {
         if(evenType == EventType.SHAMANIC_RITUAL){
             Tribu.addShamanStars(-bonusStars);

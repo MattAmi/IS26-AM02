@@ -16,6 +16,7 @@ public class Tribu {
     private List<String> buildings;
     private List<BuildingEffect> activeBuildingEffects;
     private List<TribuObserver> tribuObservers;
+    private boolean immuneToShamanicPenality;
 
 
     public Tribu(int foodPoints, int prestigePoints, int shamanStars) {
@@ -36,6 +37,7 @@ public class Tribu {
         this.buildings = new ArrayList<>();
         this.activeBuildingEffects = new ArrayList<>();
         this.tribuObservers = new ArrayList<>();
+        this.immuneToShamanicPenality = false;
     }
 
 
@@ -43,14 +45,72 @@ public class Tribu {
 
 
     public static void attachTribuObserver(TribuObserver effect) {
-        // TODO: Husnain
+        // TODO
+    }
+
+    public static void addShamanStars(int bonusStars) {
+        // TODO
     }
 
     public int addPrestigePoints(int pp) {
-        return 0;// TODO: Raed
+        return 0;// TODO
     }
 
     public List<String> getCharactersOfType(CharacterType type) {
         return characters.getOrDefault(type, new ArrayList<>());
+    }
+
+    public int getPPBuilders() {
+        return 0;// TODO
+    }
+
+    public void addFoodPoints(int foodBonus) {
+        // TODO
+    }
+
+    public int getCharacterCount(CharacterType type) {
+        // TODO
+    }
+
+    public void addFoodDiscount(int foodDiscount) {
+        // TODO
+    }
+
+    public void setImmuneToShamanicPenality(boolean newState) {
+        immuneToShamanicPenality = newState;
+    }
+
+    public int getInventionTypeCount(InventionType type) {
+        return 0; // TODO
+    }
+
+
+    public void insertBuilding(String buildingID, Game game) {
+
+        this.buildings.add(buildingID);
+
+        BuildingCard cardTemplate = GameRegistry.getInstance().getBuilding(buildingID);
+
+        // Sarebbe Exception
+        if (cardTemplate == null) {
+            System.err.println("Errore: Edificio " + buildingID + " non trovato nel Registry!");
+            return;
+        }
+
+        BuildingEffect myPersonalEffect = BuildingFactory.createActiveEffect(
+                cardTemplate.getEffectType(),
+                cardTemplate.getEffectParams(),
+                this
+        );
+
+        if (myPersonalEffect != null) {
+            this.activeBuildingEffects.add(myPersonalEffect);
+            RegistrationVisitor visitor = new RegistrationVisitor(game, this);
+            myPersonalEffect.accept(visitor);
+        }
+    }
+
+    public int getShamanStars() {
+        return 0;
     }
 }

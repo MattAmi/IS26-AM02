@@ -4,5 +4,5 @@ import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 
 public interface PhaseObserver {
-    public void onPhaseChanged(PhaseType newPhase);
+    public void onPhaseChange(PhaseType newPhase);
 }

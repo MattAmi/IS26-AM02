@@ -14,11 +14,21 @@ public class GameRegistry {
         this.game = game;
     }
 
+    public static GameRegistry getInstance() {
+    }
+
     public void visitPhaseObserver(PhaseObserver effect){
         Game.attachPhaseObserver(effect);
     }
 
     public void visitTribuObserver(TribuObserver effect){
         Tribu.attachTribuObserver(effect);
+    }
+
+    public List <String> getAllBuildingsIDs() {
+    }
+
+    public BuildingCard getBuilding(String id){
+
     }
 }

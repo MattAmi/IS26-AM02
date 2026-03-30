@@ -24,7 +24,7 @@ public class BuildingCard {
         this.effectParams = effectParams;
     }
 
-    public String getID() {
+    public String getCardID() {
         return cardID;
     }
 

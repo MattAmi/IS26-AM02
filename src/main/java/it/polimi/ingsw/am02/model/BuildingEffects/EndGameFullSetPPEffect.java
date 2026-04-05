@@ -7,15 +7,13 @@ import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 import it.polimi.ingsw.am02.model.PhaseObserver;
 import it.polimi.ingsw.am02.model.Tribu;
 
-public class EndGameCharacterPrestigeEffect implements BuildingEffect, PhaseObserver {
+public class EndGameFullSetPPEffect implements BuildingEffect, PhaseObserver{
+    final int bonusPP;
     final Tribu tribu;
-    final CharacterType type;
-    final int BonusPP;
 
-    public EndGameCharacterPrestigeEffect(Tribu tribu, CharacterType type, int bonusPP) {
+    public EndGameFullSetPPEffect(int bonusPP, Tribu tribu) {
+        this.bonusPP = bonusPP;
         this.tribu = tribu;
-        this.type = type;
-        BonusPP = bonusPP;
     }
 
 
@@ -27,7 +25,15 @@ public class EndGameCharacterPrestigeEffect implements BuildingEffect, PhaseObse
     @Override
     public void onPhaseChange(PhaseType newPhase) {
         if(newPhase == PhaseType.END_GAME){
-            tribu.addPrestigePoints (BonusPP * tribu.getCharacterCount(type));
+            int nSet = Integer.MAX_VALUE;
+
+            for (CharacterType type : CharacterType.values()) {
+                int count = tribu.getCharacterCount(type);
+                if (count < nSet) {
+                    nSet = count;
+                }
+            }
+            tribu.addPrestigePoints(nSet*bonusPP);
         }
     }
 }

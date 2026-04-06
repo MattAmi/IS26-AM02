@@ -98,39 +98,60 @@ public class GameBoard {
         }
     }
 
-    public void movePlayerToOffer(Player player, char tileID) {}
+    public void movePlayerToOffer(Player player, char tileID) {
+        offerTrack.occupyTile(player, tileID);
+        turnOrderTile.removePlayer(player);
+    }
 
-    public List<Player> getPlayersInResolutionOrder() { return null; }
+    public List<Player> getPlayersInResolutionOrder() {
+        return offerTrack.getOrderedPlayers();
+    }
 
-    public boolean areAllTotemsPlaced() { return false; }
+    public boolean areAllTotemsPlaced() {
+        return turnOrderTile.isEmpty();
+    }
 
     public void initializePlayerLimits(Player player) {}
 
     public void processActionSelection(Player player, List<String> selectedIDs) {}
 
-    public boolean canPlayerFinish(Player player) { return false; }
+    public boolean canPlayerFinish(Player player) {}
 
-    public void movePlayerToTurnOrder(Player player) {}
+    public void movePlayerToTurnOrder(Player player) {
+        OfferTile currentTile = offerTrack.getTileByPlayer(player);
+        currentTile.removePlayer(player);
+        turnOrderTile.registerPlayer(player);
+    }
 
-    public void applyTurnOrderRewards(Player player) {}
+    public void applyTurnOrderRewards(Player player) {
+        turnOrderTile.applyRewards(player);
+    }
 
-    public int getPlayersOnTurnOrderCount() { return 0; }
+    public int getPlayersOnTurnOrderCount() {
+        return turnOrderTile.getPlayerCount();
+    }
 
-    public boolean hasRoundEvents() { return false; }
+    public boolean hasRoundEvents() {}
 
     public void resolveRoundEvents(Collection<Player> players) {}
 
-    public boolean hasEraChanged() { return false; }
+    public boolean hasEraChanged() {
+        return eraChangedFlag;
+    }
 
-    public boolean isTribuDeckEmpty() { return false; }
+    public boolean isTribuDeckEmpty() {
+        return tribuDeck.isEmpty();
+    }
 
     public void prepareNewRound(int numPlayers) {}
 
-    public List<Player> getPlayersInPlacementOrder() { return null; }
+    public List<Player> getPlayersInPlacementOrder() {
+        return turnOrderTile.getOrderedPlayers();
+    }
 
     public void updateRowsForNewEra() {}
 
-    public boolean hasFinalEvents() { return false; }
+    public boolean hasFinalEvents() {}
 
     public void resolveFinalEvents(Collection<Player> players) {}
 

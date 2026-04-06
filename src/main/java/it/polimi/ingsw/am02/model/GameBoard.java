@@ -1,78 +1,140 @@
 package it.polimi.ingsw.am02.model;
 
+import it.polimi.ingsw.am02.model.Enumerations.Era;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class GameBoard {
 
+    private final List<String> upperRow;
+    private final List<String> upperRowBuildings;
+    private final List<String> lowerRow;
+    private final List<String> lowerRowBuildings;
+    private TurnOrderTile turnOrderTile;
+    private OfferTrack offerTrack;
+    private TribuDeck tribuDeck;
+    private BuildingDeck buildingDeck;
+    private int availableFoodPoints;
+    private int availablePrestigePoints;
+    private Era currentEra;
+    private boolean eraChangedFlag;
+    private int[] initialFoodBonuses = {2, 3, 3, 4, 4};
+
+
     public GameBoard(int numPlayers) {
+        this.upperRow = new ArrayList<>();
+        this.lowerRow = new ArrayList<>();
+        this.upperRowBuildings = new ArrayList<>();
+        this.lowerRowBuildings = new ArrayList<>();
+
+        this.availableFoodPoints = INITIAL_FOOD_POINTS;
+        this.availablePrestigePoints = INITIAL_PRESTIGE_POINTS;
+        this.currentEra = Era.I;
+        this.eraChangedFlag = false;
+
+        this.setUpGameBoard(numPlayers);
+        this.setUpInitialRows(numPlayers);
     }
 
-    public TurnOrderTile getTurnOrderTile() {
-        return null;
+    private void setUpGameBoard(int numPlayers) {
+        GameRegistry registry = GameRegistry.getInstance();
+
+        this.offerTrack = new OfferTrack(numPlayers);
+        this.turnOrderTile = new TurnOrderTile(numPlayers);
+        this.tribuDeck = new TribuDeck(numPlayers);
+        this.buildingDeck = new BuildingDeck(numPlayers);
+    }
+
+    private void setUpInitialRows(int numPlayers) {
+        GameRegistry registry = GameRegistry.getInstance();
+
+        while (lowerRow.size() < (numPlayers + 1) && !tribuDeck.isEmpty()) {
+            String cardID = tribuDeck.draw();
+            checkAndUpdateEra(cardID);
+            if (registry.isEvent(cardID)) {
+                this.upperRow.add(cardID);
+            } else {
+                this.lowerRow.add(cardID);
+            }
+        }
+
+        while (upperRow.size() < (numPlayers + 4) && !tribuDeck.isEmpty()) {
+            String cardID = tribuDeck.draw();
+            checkAndUpdateEra(cardID);
+            this.upperRow.add(cardID);
+        }
+
+        List<String> buildingsI = buildingDeck.getBuildingsForEra(Era.I);
+        if (buildingsI != null) {
+            upperRowBuildings.addAll(buildingsI);
+        }
+    }
+
+    private Era getCardEra(String cardID) {
+        GameRegistry registry = GameRegistry.getInstance();
+
+        if(registry.isCharacter(cardID)) {
+            return registry.getCharacter(cardID).getEra();
+        } else if (registry.isEvent(cardID)) {
+            return registry.getEvent(cardID).getEra();
+        }
+    }
+
+    private void checkAndUpdateEra(String cardID) {
+        Era cardEra = getCardEra(cardID);
+        if (cardEra != currentEra) {
+            currentEra = cardEra;
+            eraChangedFlag = true;
+        }
     }
 
     public void setUpInitialTurnOrder(List<Player> orderedPlayers) {
+        for(int i = 0; i < orderedPlayers.size(); i++) {
+            Player player = orderedPlayers.get(i);
+            turnOrderTile.registerPlayer(player);
+            player.getTribu().addFoodPoints(initialFoodBonuses[i]);
+        }
     }
 
-    public void movePlayerToOffer(Player player, char tileID) {
-    }
+    public void movePlayerToOffer(Player player, char tileID) {}
 
-    public boolean areAllTotemsPlaced() {
-    }
+    public List<Player> getPlayersInResolutionOrder() { return null; }
 
-    public List<Player> getPlayersInResolutionOrder() {
+    public boolean areAllTotemsPlaced() { return false; }
 
-    }
+    public void initializePlayerLimits(Player player) {}
 
-    public void initializePlayerLimits(Player currentPlayer) {
-    }
+    public void processActionSelection(Player player, List<String> selectedIDs) {}
 
-    public void processActionSelection(Player player, List<String> selectedIDs) {
-    }
+    public boolean canPlayerFinish(Player player) { return false; }
 
-    public void movePlayerToTurnOrder(Player player) {
-    }
+    public void movePlayerToTurnOrder(Player player) {}
 
-    public boolean canPlayerFinish(Player player) {
-    }
+    public void applyTurnOrderRewards(Player player) {}
 
-    public void applyTurnOrderRewards(Player player) {
-    }
+    public int getPlayersOnTurnOrderCount() { return 0; }
 
-    public int getPlayersOnTurnOrderCount() {
-    }
+    public boolean hasRoundEvents() { return false; }
 
-    public boolean hasRoundEvents() {
-    }
+    public void resolveRoundEvents(Collection<Player> players) {}
 
-    public void resolveRoundEvents(Collection<Player> values) {
-    }
+    public boolean hasEraChanged() { return false; }
 
-    public void prepareNewRound(int numPlayers) {
-    }
+    public boolean isTribuDeckEmpty() { return false; }
 
-    public boolean hasEraChanged() {
-    }
+    public void prepareNewRound(int numPlayers) {}
 
-    public boolean isTribuDeckEmpty() {
-    }
+    public List<Player> getPlayersInPlacementOrder() { return null; }
 
-    public boolean hasFinalEvents() {
-    }
+    public void updateRowsForNewEra() {}
 
-    public void updateRowsForNewEra() {
-    }
+    public boolean hasFinalEvents() { return false; }
 
-    public void resolveFinalEvents(Collection<Player> values) {
-    }
+    public void resolveFinalEvents(Collection<Player> players) {}
 
-    public List<Player> getPlayersInPlacementOrder() {
-    }
+    public void initializeExtraPlayerLimits(Player player, int upperPicks, int lowerPicks) {}
 
-    public void initializeExtraPlayerLimits(Player playerByNickname, int extraTurnUpperPicks, int extraTurnLowerPicks) {
-    }
-
-    public void processExtraActionSelection(Player player, List<String> selectedIDs) {
-    }
+    public void processExtraActionSelection(Player player, List<String> selectedIDs) {}
 }

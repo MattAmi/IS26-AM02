@@ -97,9 +97,9 @@ public class Game {
         shuffle(turnOrder);
 
         // (b) Sets the first player that has right to play
-        currentPlayerNickname = turnOrder.get(0);
+        currentPlayerNickname = turnOrder.getFirst();
 
-        // (c) Builds a List<Player> using the suffled turnOrder list
+        // (c) Builds a List<Player> using the shuffled turnOrder list
         List<Player> orderedPlayers = new ArrayList<>();
         for(String nickname : turnOrder) {
             orderedPlayers.add(players.get(nickname));
@@ -127,7 +127,7 @@ public class Game {
             turnOrder.add(player.getNickname());
         }
 
-        currentPlayerNickname = turnOrder.get(0);
+        currentPlayerNickname = turnOrder.getFirst();
         Player currentPlayer = getPlayerByNickname(currentPlayerNickname);
 
         gameBoard.initializePlayerLimits(currentPlayer);
@@ -142,7 +142,6 @@ public class Game {
     private boolean checkAllTotemsReturned() {
         return numPlayers == gameBoard.getPlayersOnTurnOrderCount();
     }
-
 
     private boolean areRoundEventsToResolve() {
         return gameBoard.hasRoundEvents();
@@ -172,7 +171,7 @@ public class Game {
             turnOrder.add(player.getNickname());
         }
 
-        currentPlayerNickname = turnOrder.get(0);
+        currentPlayerNickname = turnOrder.getFirst();
     }
 
     private void executeNewEraPreparation() {
@@ -389,7 +388,6 @@ public class Game {
     }
 
 
-
     private class EventResolutionState extends BaseState {
         public EventResolutionState() {
             super(PhaseType.EVENT_RESOLUTION);
@@ -402,7 +400,6 @@ public class Game {
             transitionTo(new NewRoundState());
         }
     }
-
 
 
 
@@ -433,7 +430,6 @@ public class Game {
 
 
 
-
     private class NewEraState extends BaseState {
 
         public NewEraState() {
@@ -450,7 +446,6 @@ public class Game {
 
 
 
-
     private class FinalEventsResolutionState extends BaseState {
         public FinalEventsResolutionState() {
             super(PhaseType.FINAL_EVENT_RESOLUTION);
@@ -463,7 +458,6 @@ public class Game {
             transitionTo(new FinalScoringState());
         }
     }
-
 
 
     private class FinalScoringState extends BaseState {

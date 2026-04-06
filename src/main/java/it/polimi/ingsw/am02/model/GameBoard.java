@@ -69,4 +69,10 @@ public class GameBoard {
 
     public List<Player> getPlayersInPlacementOrder() {
     }
+
+    public void initializeExtraPlayerLimits(Player playerByNickname, int extraTurnUpperPicks, int extraTurnLowerPicks) {
+    }
+
+    public void processExtraActionSelection(Player player, List<String> selectedIDs) {
+    }
 }

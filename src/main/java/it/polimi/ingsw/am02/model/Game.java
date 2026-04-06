@@ -18,14 +18,18 @@ public class Game {
     private List<String> turnOrder;
 
     private List<PhaseObserver> phaseObservers;
+
     private boolean isExtraTurnMode;
+    private String extraTurnPlayerNickname;
+    private int extraTurnUpperPicks;
+    private int extraTurnLowerPicks;
 
     private List<GameObserver> observers;
 
 
 
 
-    public Game(String gameID, List<String> nicknames; Map<String, Totem> chosenTotems) {
+    public Game(String gameID, List<String> nicknames, Map<String, Totem> chosenTotems) {
 
         this.gameID = gameID;
         this.numPlayers = nicknames.size();
@@ -35,6 +39,15 @@ public class Game {
             Totem totem = chosenTotems.get(nickname);
             this.players.put(nickname, new Player(nickname, totem));
         }
+
+        this.phaseObservers = new ArrayList<>();
+
+        this.isExtraTurnMode = false;
+        this.extraTurnPlayerNickname = null;
+        this.extraTurnUpperPicks = 0;
+        this.extraTurnLowerPicks = 0;
+
+        this.observers = new ArrayList<>(); // Per parte di rete
 
         transitionTo(new SetUpState());
     }
@@ -176,6 +189,8 @@ public class Game {
 
     private List<String> determineWinner() {
         // TODO: Matteo
+
+        return
     }
 
     private void calculateFinalScores() {
@@ -183,21 +198,24 @@ public class Game {
     }
 
 
+    public void enqueueExtraTurn(String nickname, int extraUpperPicks, int extraLowerPicks) {
+        this.extraTurnPlayerNickname = nickname;
+        this.extraTurnUpperPicks = extraUpperPicks;
+        this.extraTurnLowerPicks = extraLowerPicks;
+    }
 
 
-    public static void attachPhaseObserver(PhaseObserver effect) {
+
+    public void attachPhaseObserver(PhaseObserver effect) {
         // TODO: Husnain
     }
 
-    public static void notifyPhaseObservers(PhaseType phase) {
-        // TODO : Husnain
-
-        // IDEA (Matteo):
-       /* if (!isExtraTurnMode) {
-            for (PhaseObserver observer : phaseObservers) {
-                observer.onPhaseChange(phase);
+    public void notifyPhaseObservers(PhaseType phase) {
+      if (!isExtraTurnMode) {
+            for (PhaseObserver phaseObserver : phaseObservers) {
+                phaseObserver.onPhaseChange(phase);
             }
-        }*/
+        }
     }
 
     public GameBoard getGameBoard() {
@@ -288,7 +306,18 @@ public class Game {
                 throw new IllegalArgumentException("Invalid tile destination in ActionResolutionState"); //TO DO
             }
 
-            if (gameBoard.canPlayerFinish(player)) {
+            if (isExtraTurnMode) {
+                isExtraTurnMode = false;
+                extraTurnPlayerNickname = null;
+                extraTurnUpperPicks = 0;
+                extraTurnLowerPicks = 0;
+
+                if (areRoundEventsToResolve()) {
+                    transitionTo(new EventResolutionState());
+                } else {
+                    transitionTo(new NewRoundState());
+                }
+            } else if (gameBoard.canPlayerFinish(player)) {
                 gameBoard.movePlayerToTurnOrder(player);
                 transitionTo(new EndPlayerTurnState());
             } else {
@@ -300,9 +329,13 @@ public class Game {
             validatePlayerTurn(nickname);
             Player player = getPlayerByNickname(nickname);
 
-            gameBoard.processActionSelection(player, selectedIDs);
+            if (isExtraTurnMode) {
+                gameBoard.processExtraActionSelection(player, selectedIDs);
+            } else {
+                gameBoard.processActionSelection(player, selectedIDs);
+            }
 
-            // TODO: gestione turno ulteriore (effetto building)
+
         }
     }
 
@@ -338,7 +371,15 @@ public class Game {
 
         @Override
         public void onEntryActions() {
-            if(areRoundEventsToResolve()) {
+
+            if (extraTurnPlayerNickname != null) {
+                isExtraTurnMode = true;
+                currentPlayerNickname = extraTurnPlayerNickname;
+                gameBoard.initializeExtraPlayerLimits(getPlayerByNickname(extraTurnPlayerNickname), extraTurnUpperPicks, extraTurnLowerPicks);
+
+                transitionTo(new ActionResolutionState());
+
+            } else if(areRoundEventsToResolve()) {
                 transitionTo(new EventResolutionState());
             } else {
                 transitionTo(new NewRoundState());
@@ -379,7 +420,7 @@ public class Game {
                 transitionTo(new NewEraState());
             } else if (isGameOverCondition()) {
                 if (areFinalEventsToResolve()) {
-                    transitionTo(new FinalEventsResolutionState);
+                    transitionTo(new FinalEventsResolutionState());
                 } else {
                     transitionTo(new FinalScoringState());
                 }

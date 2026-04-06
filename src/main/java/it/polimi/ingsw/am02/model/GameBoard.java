@@ -120,7 +120,66 @@ public class GameBoard {
         currentTile.setRemainingPicks(effectiveUpperChoosable, effectiveLowerChoosable);
     }
 
-    public void processActionSelection(Player player, List<String> selectedIDs) {}
+    public void processActionSelection(Player player, List<String> selectedIDs) {
+        OfferTile currentTile = offerTrack.getTileByPlayer(player);
+
+        currentTile.resolveFoodOffer(player);
+
+        int countUpper = 0;
+        int countLower = 0;
+
+        for (String cardID : selectedIDs) {
+            if (!upperRow.contains(cardID) && !lowerRow.contains(cardID)
+                    && !upperRowBuildings.contains(cardID) && !lowerRowBuildings.contains(cardID)) {
+                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TO DO
+            } else if (upperRow.contains(cardID)) {
+                countUpper++;
+            } else if (lowerRow.contains(cardID))
+                countLower++;
+        }
+
+        if (countUpper > currentTile.getRemainingUpper() || countLower > currentTile.getRemainingLower()) {
+            throw new IllegalArgumentException("Selection exceeds allowed pick limits."); // TO DO
+        }
+
+        GameRegistry registry = GameRegistry.getInstance();
+
+        for(String cardID : selectedIDs) {
+            if(registry.isEvent(cardID)) {
+                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TO DO
+            } else if(registry.isBuilding(cardID)) {
+                int buildingCost = registry.getBuilding(cardID).getBuildingCost();
+                int buildingDiscount = player.getTribu().getBuildingDiscount();
+                int actualCost = Math.max(0, buildingCost - buildingDiscount);
+
+                if(player.getTribu().getFoodDiscount() < actualCost) {
+                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TO DO
+                }
+            }
+        }
+
+        for(String cardID : selectedIDs) {
+            if(registry.isBuilding(cardID)) {
+                int buildingCost = registry.getBuilding(cardID).getBuildingCost();
+                int buildingDiscount = player.getTribu().getBuildingDiscount();
+                int actualCost = Math.max(0, buildingCost - buildingDiscount);
+
+                player.getTribu().addFoodPoints(-actualCost);
+                if(upperRowBuildings.contains(cardID)) {
+                    upperRowBuildings.remove(cardID);
+                } else
+                    lowerRowBuildings.remove(cardID);
+
+            } else {
+                player.getTribu().insertCharacter(cardID);
+                if(upperRow.contains(cardID)) {
+                    upperRow.remove(cardID);
+                } else
+                    lowerRow.remove(cardID);
+            }
+        }
+
+    }
 
     public boolean canPlayerFinish(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);

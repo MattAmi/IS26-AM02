@@ -37,4 +37,7 @@ public class GameRegistry {
 
     public boolean isEvent(String cardID) {
     }
+
+    public boolean isBuilding(String cardID) {
+    }
 }

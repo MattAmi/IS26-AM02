@@ -19,4 +19,10 @@ public class OfferTile {
 
     public void resolveFoodOffer(Player player) {
     }
+
+    public int getRemainingUpper() {
+    }
+
+    public int getRemainingLower() {
+    }
 }

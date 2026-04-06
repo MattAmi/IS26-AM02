@@ -113,4 +113,14 @@ public class Tribu {
     public int getShamanStars() {
         return 0;
     }
+
+    public int getBuildingDiscount() {
+        return 0;
+    }
+
+    public int getFoodDiscount() {
+    }
+
+    public void insertCharacter(String cardID) {
+    }
 }

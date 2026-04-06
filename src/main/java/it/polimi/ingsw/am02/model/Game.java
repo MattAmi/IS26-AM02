@@ -135,6 +135,53 @@ public class Game {
         return gameBoard.hasRoundEvents();
     }
 
+    private void executeRoundEventsResolution() {
+        gameBoard.resolveRoundEvents(players.values());
+    }
+
+    private void executeNewRoundPreparation() {
+        gameBoard.prepareNewRound(numPlayers);
+    }
+
+    private boolean areEraChangesToResolve() {
+        return gameBoard.hasEraChanged();
+    }
+
+    private boolean isGameOverCondition() {
+        return gameBoard.isTribuDeckEmpty();
+    }
+
+    private void setUpPlacementOrder() {
+        List<Player> orderedPlayers = gameBoard.getPlayersInPlacementOrder();
+        turnOrder.clear();
+
+        for(Player player : orderedPlayers) {
+            turnOrder.add(player.getNickname());
+        }
+
+        currentPlayerNickname = turnOrder.get(0);
+    }
+
+    private void executeNewEraPreparation() {
+        gameBoard.updateRowsForNewEra();
+    }
+
+    private boolean areFinalEventsToResolve() {
+        return gameBoard.hasFinalEvents();
+    }
+
+    private void executeFinalEventsResolution() {
+        gameBoard.resolveFinalEvents(players.values());
+    }
+
+    private List<String> determineWinner() {
+        // TODO: Matteo
+    }
+
+    private void calculateFinalScores() {
+        // TODO: Matteo
+    }
+
 
 
 
@@ -309,9 +356,13 @@ public class Game {
 
         @Override
         public void onEntryActions() {
+            executeRoundEventsResolution();
 
+            transitionTo(new NewRoundState());
         }
     }
+
+
 
 
     private class NewRoundState extends BaseState {
@@ -321,10 +372,73 @@ public class Game {
 
         @Override
         public void onEntryActions() {
+            executeNewRoundPreparation();
 
+            if(areEraChangesToResolve()) {
+                setUpPlacementOrder();
+                transitionTo(new NewEraState());
+            } else if (isGameOverCondition()) {
+                if (areFinalEventsToResolve()) {
+                    transitionTo(new FinalEventsResolutionState);
+                } else {
+                    transitionTo(new FinalScoringState());
+                }
+            }  else {
+                setUpPlacementOrder();
+                transitionTo(new TotemPlacementState());
+            }
         }
     }
 
+
+
+
+    private class NewEraState extends BaseState {
+
+        public NewEraState() {
+            super(PhaseType.NEW_ERA);
+        }
+
+        @Override
+        public void onEntryActions() {
+            executeNewEraPreparation();
+
+            transitionTo(new TotemPlacementState());
+        }
+    }
+
+
+
+
+    private class FinalEventsResolutionState extends BaseState {
+        public FinalEventsResolutionState() {
+            super(PhaseType.FINAL_EVENT_RESOLUTION);
+        }
+
+        @Override
+        public void onEntryActions() {
+            executeFinalEventsResolution();
+
+            transitionTo(new FinalScoringState());
+        }
+    }
+
+
+
+    private class FinalScoringState extends BaseState {
+
+        public FinalScoringState() {
+            super(PhaseType.END_GAME);
+        }
+
+        @Override
+        public void onEntryActions() {
+            calculateFinalScores();
+            List<String> winners = determineWinner();
+
+            // TODO: Matteo
+        }
+    }
 
 
 

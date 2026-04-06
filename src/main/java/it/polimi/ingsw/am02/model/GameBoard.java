@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.model;
 
+import java.util.Collection;
 import java.util.List;
 
 public class GameBoard {
@@ -43,5 +44,29 @@ public class GameBoard {
     }
 
     public boolean hasRoundEvents() {
+    }
+
+    public void resolveRoundEvents(Collection<Player> values) {
+    }
+
+    public void prepareNewRound(int numPlayers) {
+    }
+
+    public boolean hasEraChanged() {
+    }
+
+    public boolean isTribuDeckEmpty() {
+    }
+
+    public boolean hasFinalEvents() {
+    }
+
+    public void updateRowsForNewEra() {
+    }
+
+    public void resolveFinalEvents(Collection<Player> values) {
+    }
+
+    public List<Player> getPlayersInPlacementOrder() {
     }
 }

@@ -18,6 +18,10 @@ public class GameRegistry {
     }
 
     public static TurnOrderTile getTurnOrderTile(int numPlayers) {
+        return null;
+    }
+
+    public static List<OfferTile> getOfferTiles(int numPlayers) {
     }
 
     public void visitPhaseObserver(PhaseObserver effect){

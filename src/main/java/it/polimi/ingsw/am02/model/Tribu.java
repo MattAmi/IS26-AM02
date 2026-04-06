@@ -125,5 +125,6 @@ public class Tribu {
     }
 
     public int getFoodPoints() {
+        return 0;
     }
 }

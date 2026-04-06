@@ -18,5 +18,6 @@ public class EventCard {
     }
 
     public void applyEventEffect(Tribu tribu) {
+
     }
 }

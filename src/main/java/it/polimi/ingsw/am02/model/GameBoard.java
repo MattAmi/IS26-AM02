@@ -204,7 +204,15 @@ public class GameBoard {
         return turnOrderTile.getPlayerCount();
     }
 
-    public boolean hasRoundEvents() {}
+    public boolean hasRoundEvents() {
+        GameRegistry registry = GameRegistry.getInstance();
+        for(String cardID : lowerRow) {
+            if(registry.isEvent(cardID) && !registry.getEvent(cardID).isFinal()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public void resolveRoundEvents(Collection<Player> players) {}
 
@@ -224,7 +232,21 @@ public class GameBoard {
 
     public void updateRowsForNewEra() {}
 
-    public boolean hasFinalEvents() {}
+    public boolean hasFinalEvents() {
+        GameRegistry registry = GameRegistry.getInstance();
+
+        for (String cardID : upperRow) {
+            if (registry.isEvent(cardID) && registry.getEvent(cardID).isFinal()) {
+                return true;
+            }
+        }
+        for (String cardID : lowerRow) {
+            if (registry.isEvent(cardID) && registry.getEvent(cardID).isFinal()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public void resolveFinalEvents(Collection<Player> players) {}
 

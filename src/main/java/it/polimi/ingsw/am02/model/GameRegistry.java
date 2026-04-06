@@ -40,4 +40,10 @@ public class GameRegistry {
 
     public boolean isBuilding(String cardID) {
     }
+
+    public EventCard getEvent(String cardID) {
+    }
+
+    public CharacterCard getCharacter(String cardID) {
+    }
 }

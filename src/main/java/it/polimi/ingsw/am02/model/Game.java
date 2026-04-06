@@ -39,6 +39,41 @@ public class Game {
         transitionTo(new SetUpState());
     }
 
+
+    // Interface methods
+    public void moveTotem(String nickname, char tileID) {
+        currentState.moveTotem(nickname, tileID);
+    }
+
+    public void resolveActions(String nickname, List<String> selectedIDs) {
+        currentState.resolveActions(nickname, selectedIDs);
+    }
+
+
+
+    // Helper methods
+    private Player getPlayerByNickname(String nickname) {
+        Player p = players.get(nickname);
+        if (p == null)
+            throw new NoSuchPlayerException(); // TO DO
+        return p;
+    }
+
+    private void validatePlayerTurn(String nickname) {
+        if(!nickname.equals(currentPlayerNickname)) {
+            throw new NotYourTurnException(); // TO DO
+        }
+    }
+
+    private void nextPlayer() {
+        int currentPlayerIndex = turnOrder.indexOf(currentPlayerNickname);
+        int nextIndex = (currentPlayerIndex + 1) % turnOrder.size();
+        currentPlayerNickname = turnOrder.get(nextIndex);
+        // notifyObservers(); TO DO QUANDO FAREMO OBSERVER
+    }
+
+
+
     private void initializeBoard() { // Initializes GameBoard
         gameBoard = new GameBoard(numPlayers);
     }
@@ -67,16 +102,46 @@ public class Game {
         currentState.onEntry();
     }
 
+    private boolean checkAllTotemsPlaced() {
+        return gameBoard.areAllTotemsPlaced();
+    }
+
+    private void setUpActionResolutionTurnOrder() {
+        turnOrder.clear();
+
+        List<Player> playersInResolutionOrder = gameBoard.getPlayersInResolutionOrder();
+        for(Player player : playersInResolutionOrder) {
+            turnOrder.add(player.getNickname());
+        }
+
+        currentPlayerNickname = turnOrder.get(0);
+        Player currentPlayer = getPlayerByNickname(currentPlayerNickname);
+
+        gameBoard.initializePlayerLimits(currentPlayer);
+
+        transitionTo(new ActionResolutionState());
+    }
+
+
+
 
     public static void attachPhaseObserver(PhaseObserver effect) {
         // TODO: Husnain
     }
 
     public static void notifyPhaseObservers(PhaseType phase) {
-        // TODO
+        // TODO : Husnain
+
+        // IDEA (Matteo):
+       /* if (!isExtraTurnMode) {
+            for (PhaseObserver observer : phaseObservers) {
+                observer.onPhaseChange(phase);
+            }
+        }*/
     }
 
-    public static GameBoard getGameBoard() {
+    public GameBoard getGameBoard() {
+        return this.gameBoard;
     }
 
 
@@ -133,8 +198,56 @@ public class Game {
             super(PhaseType.TOTEM_PLACEMENT);
         }
 
+        public void moveTotem(String nickname, char tileID) {
+            validatePlayerTurn(nickname);
+            Player player = getPlayerByNickname(nickname);
+            gameBoard.movePlayerToOffer(player, tileID);
+            
+            if(checkAllTotemsPlaced()) {
+                setUpActionResolutionTurnOrder();
+            } else {
+                nextPlayer();
+            }
+        }
 
+        public void onEntryActions() {}
     }
+
+    private class ActionResolutionState extends BaseState {
+
+        public ActionResolutionState() {
+            super(PhaseType.ACTION_RESOLUTION);
+        }
+
+        public void moveTotem(String nickname, char tileID) {
+            validatePlayerTurn(nickname);
+            Player player = getPlayerByNickname(nickname);
+
+            if (tileID != TURN_ORDER_TILE_ID) {
+                throw new IllegalArgumentException("Invalid tile destination in ActionResolutionState");
+            }
+
+            if (gameBoard.canPlayerFinish(player)) {
+                gameBoard.movePlayerToTurnOrder(player);
+                transitionTo(new EndPlayerTurnState());
+            } else {
+                throw new IllegalStateException("Player has not fulfilled pick obligations");
+            }
+        }
+
+        public void resolveActions(String nickname, List<String> selectedIDs) {
+            validatePlayerTurn(nickname);
+            Player player = getPlayerByNickname(nickname);
+
+            gameBoard.processActionSelection(player, selectedIDs);
+
+            // TODO: gestione turno ulteriore (effetto building)
+        }
+
+        public void onEntryActions() {}
+    }
+
+
 
 }
 

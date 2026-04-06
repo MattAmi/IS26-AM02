@@ -13,4 +13,10 @@ public class EventCard {
 
     public boolean isFinal() {
     }
+
+    public int getPriority() {
+    }
+
+    public void applyEventEffect(Tribu tribu) {
+    }
 }

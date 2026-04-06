@@ -4,7 +4,9 @@ import it.polimi.ingsw.am02.model.Enumerations.Era;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class GameBoard {
 
@@ -214,7 +216,22 @@ public class GameBoard {
         return false;
     }
 
-    public void resolveRoundEvents(Collection<Player> players) {}
+    public void resolveRoundEvents(Collection<Player> players) {
+        GameRegistry registry = GameRegistry.getInstance();
+
+        List<EventCard> sortedEvents = lowerRow.stream()
+                .filter(registry::isEvent)
+                .map(registry::getEvent)
+                .filter(event -> !event.isFinal())
+                .sorted(Comparator.comparingInt(EventCard::getPriority))
+                .toList();
+
+        for (EventCard event : sortedEvents) {
+            for (Player player : players) {
+                event.applyEventEffect(player.getTribu());
+            }
+        }
+    }
 
     public boolean hasEraChanged() {
         return eraChangedFlag;
@@ -271,6 +288,7 @@ public class GameBoard {
                 return true;
             }
         }
+
         for (String cardID : lowerRow) {
             if (registry.isEvent(cardID) && registry.getEvent(cardID).isFinal()) {
                 return true;
@@ -279,7 +297,23 @@ public class GameBoard {
         return false;
     }
 
-    public void resolveFinalEvents(Collection<Player> players) {}
+    public void resolveFinalEvents(Collection<Player> players) {
+        GameRegistry registry = GameRegistry.getInstance();
+
+        Stream<String> allVisibleIds = Stream.concat(upperRow.stream(), lowerRow.stream());
+        List<EventCard> sortedFinalEvents = allVisibleIds
+                .filter(registry::isEvent)
+                .map(registry::getEvent)
+                .filter(EventCard::isFinal)
+                .sorted(Comparator.comparingInt(EventCard::getPriority))
+                .toList();
+
+        for (EventCard event : sortedFinalEvents) {
+            for (Player player : players) {
+                event.applyEventEffect(player.getTribu());
+            }
+        }
+    }
 
     public void initializeExtraPlayerLimits(Player player, int upperPicks, int lowerPicks) {}
 

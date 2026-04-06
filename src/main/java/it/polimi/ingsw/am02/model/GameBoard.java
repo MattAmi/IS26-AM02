@@ -224,13 +224,44 @@ public class GameBoard {
         return tribuDeck.isEmpty();
     }
 
-    public void prepareNewRound(int numPlayers) {}
+    public void prepareNewRound(int numPlayers) {
+        GameRegistry registry = GameRegistry.getInstance();
+
+        lowerRow.clear();
+        lowerRow.addAll(upperRow);
+        upperRow.clear();
+        eraChangedFlag = false;
+
+        for (int i = 0; i < (numPlayers + 4); i++) {
+            String cardID = tribuDeck.draw();
+            Era cardEra = getCardEra(cardID);
+
+            if (cardEra != currentEra) {
+                currentEra = cardEra;
+                eraChangedFlag = true;
+            }
+            upperRow.add(cardID);
+        }
+    }
 
     public List<Player> getPlayersInPlacementOrder() {
         return turnOrderTile.getOrderedPlayers();
     }
 
-    public void updateRowsForNewEra() {}
+    public void updateRowsForNewEra() {
+        if(currentEra == Era.III)
+            lowerRowBuildings.clear();
+
+        if(currentEra == Era.II || currentEra == Era.III) {
+            lowerRowBuildings.addAll(upperRowBuildings);
+            upperRowBuildings.clear();
+
+            List<String> newBuildings = buildingDeck.getBuildingsForEra(currentEra);
+            upperRowBuildings.addAll(newBuildings);
+        }
+
+        eraChangedFlag = false;
+    }
 
     public boolean hasFinalEvents() {
         GameRegistry registry = GameRegistry.getInstance();

@@ -17,6 +17,9 @@ public class GameRegistry {
     public static GameRegistry getInstance() {
     }
 
+    public static TurnOrderTile getTurnOrderTile(int numPlayers) {
+    }
+
     public void visitPhaseObserver(PhaseObserver effect){
         Game.attachPhaseObserver(effect);
     }

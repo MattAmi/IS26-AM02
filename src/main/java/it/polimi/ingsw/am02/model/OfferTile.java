@@ -4,4 +4,19 @@ public class OfferTile {
 
     public void removePlayer(Player player) {
     }
+
+    public int getNumUpperChoosable() {
+    }
+
+    public int getNumLowerChoosable() {
+    }
+
+    public void setRemainingPicks(int effectiveUpperChoosable, int effectiveLowerChoosable) {
+    }
+
+    public boolean isSatisfied() {
+    }
+
+    public void resolveFoodOffer(Player player) {
+    }
 }

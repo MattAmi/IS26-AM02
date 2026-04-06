@@ -111,11 +111,21 @@ public class GameBoard {
         return turnOrderTile.isEmpty();
     }
 
-    public void initializePlayerLimits(Player player) {}
+    public void initializePlayerLimits(Player player) {
+        OfferTile currentTile = offerTrack.getTileByPlayer(player);
+
+        int effectiveUpperChoosable = Math.min(currentTile.getNumUpperChoosable(), upperRow.size());
+        int effectiveLowerChoosable = Math.min(currentTile.getNumLowerChoosable(), lowerRow.size());
+
+        currentTile.setRemainingPicks(effectiveUpperChoosable, effectiveLowerChoosable);
+    }
 
     public void processActionSelection(Player player, List<String> selectedIDs) {}
 
-    public boolean canPlayerFinish(Player player) {}
+    public boolean canPlayerFinish(Player player) {
+        OfferTile currentTile = offerTrack.getTileByPlayer(player);
+        return currentTile.isSatisfied();
+    }
 
     public void movePlayerToTurnOrder(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);

@@ -25,4 +25,7 @@ public class OfferTile {
 
     public int getRemainingLower() {
     }
+
+    public void decrementPicks(int countUpper, int countLower) {
+    }
 }

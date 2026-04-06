@@ -123,4 +123,7 @@ public class Tribu {
 
     public void insertCharacter(String cardID) {
     }
+
+    public int getFoodPoints() {
+    }
 }

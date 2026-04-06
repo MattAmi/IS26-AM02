@@ -148,11 +148,9 @@ public class GameBoard {
             if(registry.isEvent(cardID)) {
                 throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TO DO
             } else if(registry.isBuilding(cardID)) {
-                int buildingCost = registry.getBuilding(cardID).getBuildingCost();
-                int buildingDiscount = player.getTribu().getBuildingDiscount();
-                int actualCost = Math.max(0, buildingCost - buildingDiscount);
+                int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
-                if(player.getTribu().getFoodDiscount() < actualCost) {
+                if(player.getTribu().getFoodPoints() < actualBuildingCost) {
                     throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TO DO
                 }
             }
@@ -160,11 +158,9 @@ public class GameBoard {
 
         for(String cardID : selectedIDs) {
             if(registry.isBuilding(cardID)) {
-                int buildingCost = registry.getBuilding(cardID).getBuildingCost();
-                int buildingDiscount = player.getTribu().getBuildingDiscount();
-                int actualCost = Math.max(0, buildingCost - buildingDiscount);
+                int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
-                player.getTribu().addFoodPoints(-actualCost);
+                player.getTribu().addFoodPoints(-actualBuildingCost);
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);
                 } else
@@ -179,6 +175,14 @@ public class GameBoard {
             }
         }
 
+        currentTile.decrementPicks(countUpper, countLower);
+
+    }
+
+    private int computeActualBuildingCost(String cardID, Player player) {
+        int buildingCost = GameRegistry.getInstance().getBuilding(cardID).getBuildingCost();
+        int buildingDiscount = player.getTribu().getBuildingDiscount();
+        return Math.max(0, buildingCost - buildingDiscount);
     }
 
     public boolean canPlayerFinish(Player player) {

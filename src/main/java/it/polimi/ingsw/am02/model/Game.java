@@ -122,6 +122,19 @@ public class Game {
         transitionTo(new ActionResolutionState());
     }
 
+    private void executeEndTurnRewards(Player player) {
+        gameBoard.applyTurnOrderRewards(player);
+    }
+
+    private boolean checkAllTotemsReturned() {
+        return numPlayers == gameBoard.getPlayersOnTurnOrderCount();
+    }
+
+
+    private boolean areRoundEventsToResolve() {
+        return gameBoard.hasRoundEvents();
+    }
+
 
 
 
@@ -173,7 +186,7 @@ public class Game {
             onEntryActions();
         }
 
-        public abstract void onEntryActions();
+        public void onEntryActions() {};
     }
 
 
@@ -184,13 +197,15 @@ public class Game {
             super(PhaseType.SETUP);
         }
 
+        @Override
         public void onEntryActions() {
             initializeBoard();
             randomizeInitialTurnOrder();
 
             transitionTo(new TotemPlacementState());
-        }
+        };
     }
+
 
     private class TotemPlacementState extends BaseState {
 
@@ -209,9 +224,8 @@ public class Game {
                 nextPlayer();
             }
         }
-
-        public void onEntryActions() {}
     }
+
 
     private class ActionResolutionState extends BaseState {
 
@@ -224,14 +238,14 @@ public class Game {
             Player player = getPlayerByNickname(nickname);
 
             if (tileID != TURN_ORDER_TILE_ID) {
-                throw new IllegalArgumentException("Invalid tile destination in ActionResolutionState");
+                throw new IllegalArgumentException("Invalid tile destination in ActionResolutionState"); //TO DO
             }
 
             if (gameBoard.canPlayerFinish(player)) {
                 gameBoard.movePlayerToTurnOrder(player);
                 transitionTo(new EndPlayerTurnState());
             } else {
-                throw new IllegalStateException("Player has not fulfilled pick obligations");
+                throw new IllegalStateException("Player has not fulfilled pick obligations"); // TO DO
             }
         }
 
@@ -243,9 +257,74 @@ public class Game {
 
             // TODO: gestione turno ulteriore (effetto building)
         }
-
-        public void onEntryActions() {}
     }
+
+
+    private class EndPlayerTurnState extends BaseState {
+
+        public EndPlayerTurnState() {
+            super(PhaseType.END_PLAYER_TURN);
+        }
+
+        @Override
+        public void onEntryActions() {
+            Player player = getPlayerByNickname(currentPlayerNickname);
+            executeEndTurnRewards(player);
+
+            if(checkAllTotemsReturned()) {
+                transitionTo(new EndRoundState());
+            } else {
+                nextPlayer();
+                gameBoard.initializePlayerLimits(getPlayerByNickname(currentPlayerNickname));
+
+                transitionTo(new ActionResolutionState());
+            }
+        }
+    }
+
+
+    private class EndRoundState extends BaseState {
+
+        public EndRoundState() {
+            super(PhaseType.END_ROUND);
+        }
+
+        @Override
+        public void onEntryActions() {
+            if(areRoundEventsToResolve()) {
+                transitionTo(new EventResolutionState());
+            } else {
+                transitionTo(new NewRoundState());
+            }
+        }
+
+    }
+
+
+
+    private class EventResolutionState extends BaseState {
+        public EventResolutionState() {
+            super(PhaseType.EVENT_RESOLUTION);
+        }
+
+        @Override
+        public void onEntryActions() {
+
+        }
+    }
+
+
+    private class NewRoundState extends BaseState {
+        public NewRoundState() {
+            super(PhaseType.NEW_ROUND);
+        }
+
+        @Override
+        public void onEntryActions() {
+
+        }
+    }
+
 
 
 

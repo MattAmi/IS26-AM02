@@ -35,4 +35,13 @@ public class GameBoard {
 
     public boolean canPlayerFinish(Player player) {
     }
+
+    public void applyTurnOrderRewards(Player player) {
+    }
+
+    public int getPlayersOnTurnOrderCount() {
+    }
+
+    public boolean hasRoundEvents() {
+    }
 }

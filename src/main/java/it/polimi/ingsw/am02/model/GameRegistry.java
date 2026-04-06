@@ -17,6 +17,13 @@ public class GameRegistry {
     public static GameRegistry getInstance() {
     }
 
+    public static TurnOrderTile getTurnOrderTile(int numPlayers) {
+        return null;
+    }
+
+    public static List<OfferTile> getOfferTiles(int numPlayers) {
+    }
+
     public void visitPhaseObserver(PhaseObserver effect){
         Game.attachPhaseObserver(effect);
     }
@@ -30,5 +37,20 @@ public class GameRegistry {
 
     public BuildingCard getBuilding(String id){
 
+    }
+
+    public boolean isCharacter(String cardID) {
+    }
+
+    public boolean isEvent(String cardID) {
+    }
+
+    public boolean isBuilding(String cardID) {
+    }
+
+    public EventCard getEvent(String cardID) {
+    }
+
+    public CharacterCard getCharacter(String cardID) {
     }
 }

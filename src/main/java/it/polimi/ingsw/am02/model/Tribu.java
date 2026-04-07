@@ -139,7 +139,7 @@ public class Tribu {
         }
     }
 
-    public static void attachTribuObserver(TribuObserver effect) {
+    public void attachTribuObserver(TribuObserver effect) {
         // TODO
     }
 

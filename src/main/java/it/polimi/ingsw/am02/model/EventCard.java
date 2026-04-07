@@ -48,8 +48,8 @@ public class EventCard {
         eventEffect.applyEffect(game);
     }
 
-    public static void attachEventObserver(EventObserver effect) {
-    //TODO
+    public void attachEventObserver(EventObserver effect) {
+    //TODO ma non è metodo statico
     }
 
 }

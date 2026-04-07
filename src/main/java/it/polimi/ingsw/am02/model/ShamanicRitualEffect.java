@@ -1,5 +1,7 @@
 package it.polimi.ingsw.am02.model;
 
+import java.util.List;
+
 public class ShamanicRitualEffect implements EventEffect{
 
     //Attributi
@@ -16,10 +18,10 @@ public class ShamanicRitualEffect implements EventEffect{
     int minStars = 0;
     //Metodi
     @Override
-    public void applyEffect(Game game) {
+    public void applyEffect(List<Player> players) {
 
         //determine the maximum and minimum stars
-        for (Player player : game.getPlayers()) {
+        for (Player player : players) {
             Tribu tribu = player.getTribu();
             int stars = tribu.getShamanStars();
 
@@ -39,7 +41,7 @@ public class ShamanicRitualEffect implements EventEffect{
 
         //give points to the one with the most stars, and take away points from
         // the one with the least stars(if he's not protected in some way)
-        for (Player player : game.getPlayers()) {
+        for (Player player : players) {
             Tribu tribu = player.getTribu();
             int stars = tribu.getShamanStars();
 
@@ -53,9 +55,8 @@ public class ShamanicRitualEffect implements EventEffect{
                 tribu.addPrestigePoints(majorityBonus);
             }
             if (effectiveStars == minStars) {
-                if(//la persona ha un building che lo protegge)
-                //non paga niente
-                else{
+                if(!player.getTribu().isImmune())
+                {
                     tribu.addPrestigePoints(minorityBonus);
                 }
             }

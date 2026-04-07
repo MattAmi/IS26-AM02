@@ -12,16 +12,16 @@ public class RegistrationVisitor implements EffectVisitor {
 
     @Override
     public void visitPhaseObserver(PhaseObserver effect) {
-        Game.attachPhaseObserver(effect);
+        game.attachPhaseObserver(effect);
     }
 
     @Override
     public void visitTribuObserver(TribuObserver effect) {
-        Tribu.attachTribuObserver(effect);
+        tribu.attachTribuObserver(effect);
     }
 
     @Override
     public void visitEventObserver(EventObserver effect){
-        EventCard.attachEventObserver(effect);
+        game.getGameBoard().attachEventObserver(effect);
     }
 }

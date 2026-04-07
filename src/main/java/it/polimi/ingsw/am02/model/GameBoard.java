@@ -26,6 +26,7 @@ public class GameBoard {
     private Player extraTurnPlayer;
     private int extraTurnRemainingUpper;
     private int extraTurnRemainingLower;
+    private List<EventObserver> eventObservers;
 
 
     public GameBoard(int numPlayers) {
@@ -45,6 +46,7 @@ public class GameBoard {
 
         this.setUpGameBoard(numPlayers);
         this.setUpInitialRows(numPlayers);
+        this.eventObservers = new ArrayList<>();
     }
 
     private void setUpGameBoard(int numPlayers) {
@@ -173,7 +175,8 @@ public class GameBoard {
                 int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
                 player.getTribu().addFoodPoints(-actualBuildingCost);
-                // TODO (Husnain): costruzione e aggiunta del building alla tribu (sia alla List<String>, sia alla List<BuildingEffect>)
+
+                player.getTribu().insertBuilding(cardID, game);
 
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);
@@ -230,7 +233,8 @@ public class GameBoard {
         return false;
     }
 
-    public void resolveRoundEvents(Collection<Player> players) {
+    public void resolveRoundEvents(List<Player> players) {
+
         GameRegistry registry = GameRegistry.getInstance();
 
         List<EventCard> sortedEvents = lowerRow.stream()
@@ -241,9 +245,11 @@ public class GameBoard {
                 .toList();
 
         for (EventCard event : sortedEvents) {
-            for (Player player : players) {
-                event.applyEventEffect(player.getTribu());
-            }
+            for(EventObserver observer: eventObservers)
+                observer.EventStart(event.getType());
+            event.applyEventEffect(players, eventObservers);
+            for(EventObserver observer: eventObservers)
+                observer.EventEnd(event.getType());
         }
     }
 
@@ -309,7 +315,7 @@ public class GameBoard {
         return false;
     }
 
-    public void resolveFinalEvents(Collection<Player> players) {
+    public void resolveFinalEvents(List<Player> players) {
         GameRegistry registry = GameRegistry.getInstance();
 
         Stream<String> allVisibleIds = Stream.concat(upperRow.stream(), lowerRow.stream());
@@ -321,9 +327,11 @@ public class GameBoard {
                 .toList();
 
         for (EventCard event : sortedFinalEvents) {
-            for (Player player : players) {
-                event.applyEventEffect(player.getTribu());
-            }
+            for(EventObserver observer: eventObservers)
+                observer.EventEnd(event.getType());
+            event.applyEventEffect(players, eventObservers);
+            for(EventObserver observer: eventObservers)
+                observer.EventEnd(event.getType());
         }
     }
 
@@ -373,6 +381,7 @@ public class GameBoard {
                 player.getTribu().addFoodPoints(-actualBuildingCost);
 
                 // TODO (Husnain): costruzione e aggiunta del building alla tribu (sia alla List<String>, sia alla List<BuildingEffect>)
+                // Devo creare il effetto aggiungerlo alla lista dei observer
 
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);
@@ -407,4 +416,10 @@ public class GameBoard {
             player.getTribu().addFoodPoints(1);
         }
     }
+
+    public void attachEventObserver(EventObserver effect) {
+        eventObservers.add(effect);
+    }
+
+
 }

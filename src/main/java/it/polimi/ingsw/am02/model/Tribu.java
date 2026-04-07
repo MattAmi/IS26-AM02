@@ -10,6 +10,7 @@ public class Tribu {
     private int shamanStars;
     private int totalFoodDiscount;
     private int totalBuildingDiscount;
+    private int totalPPBuilders;
 
     private Map<InventionType, Integer> inventionCounts;
     private Map<CharacterType, List<String>> characters;
@@ -26,6 +27,7 @@ public class Tribu {
         this.shamanStars = shamanStars;
         this.totalFoodDiscount = 0;
         this.totalBuildingDiscount = 0;
+        this.totalPPBuilders = 0;
         this.inventionCounts = new EnumMap<>(InventionType.class);
         for (InventionType type : InventionType.values()) {
             this.inventionCounts.put(type, 0);
@@ -139,21 +141,18 @@ public class Tribu {
         }
     }
 
-    public static void attachTribuObserver(TribuObserver effect) {
-        // TODO
+    public void attachTribuObserver(TribuObserver effect) {
+        tribuObservers.add(effect);
     }
 
-    public void notifyEventResolution(Game game, EventCard event) {
-        //TODO
-    }
 
-    //for immunity
+
     public void setImmuneToShamanicPenality(boolean newState) {
         immuneToShamanicPenality = newState;
     }
 
     public int getPPBuilders() {
-        // TODO
+        return totalPPBuilders;
     }
 
 
@@ -172,11 +171,11 @@ public class Tribu {
         int totalDiscount = 0;
         //add gatherers' discount
         int gatherersDiscount = characters.get(CharacterType.GATHERER).size() * 3;
-        //int buildingsDiscount = ;//TODO aspetta husnain e l'implementazione dei building;
 
-                //totalDiscount = gatherersDiscount + buildingsDiscount;
-
-        return Math.max(0, costPreDiscount - totalDiscount);
+        return Math.max(0, costPreDiscount - gatherersDiscount);
     }
 
+    public boolean isImmune() {
+        return immuneToShamanicPenality;
+    }
 }

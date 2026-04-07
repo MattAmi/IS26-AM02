@@ -31,7 +31,7 @@ public class ShamanicWinMultiplierEffect implements BuildingEffect, EventObserve
     }
 
     @Override
-    public void EventResolution(EventType currentEvent, EventEffect event) {
+    public void EventResolution(EventType currentEvent, EventCard event) {
         if (currentEvent == EventType.SHAMANIC_RITUAL) {
 
             int maxStars = game.calculateMaxShamanStars();

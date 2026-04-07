@@ -318,4 +318,12 @@ public class GameBoard {
     public void initializeExtraPlayerLimits(Player player, int upperPicks, int lowerPicks) {}
 
     public void processExtraActionSelection(Player player, List<String> selectedIDs) {}
+
+    public void applyExtraTurnOrderBonus(Player player) {
+        int baseBonus = turnOrderTile.getFoodForPlayer(player);
+
+        if (baseBonus > 0) {
+            player.getTribu().addFoodPoints(1);
+        }
+    }
 }

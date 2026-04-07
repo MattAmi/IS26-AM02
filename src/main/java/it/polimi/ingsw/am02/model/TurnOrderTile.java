@@ -98,4 +98,13 @@ public class TurnOrderTile {
         }
         return orderedPlayers;
     }
+
+    public int getFoodForPlayer(Player player) {
+        for (int i = 0; i < playerPositions.length; i++) {
+            if (playerPositions[i] == player) {
+                return foodBonuses[i];
+            }
+        }
+        return 0;
+    }
 }

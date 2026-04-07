@@ -22,7 +22,10 @@ public class GameBoard {
     private int availablePrestigePoints;
     private Era currentEra;
     private boolean eraChangedFlag;
-    private int[] initialFoodBonuses = {2, 3, 3, 4, 4};
+    private final int[] initialFoodBonuses = {2, 3, 3, 4, 4};
+    private Player extraTurnPlayer;
+    private int extraTurnRemainingUpper;
+    private int extraTurnRemainingLower;
 
 
     public GameBoard(int numPlayers) {
@@ -31,10 +34,14 @@ public class GameBoard {
         this.upperRowBuildings = new ArrayList<>();
         this.lowerRowBuildings = new ArrayList<>();
 
-        this.availableFoodPoints = INITIAL_FOOD_POINTS;
-        this.availablePrestigePoints = INITIAL_PRESTIGE_POINTS;
+        this.availableFoodPoints = INITIAL_FOOD_POINTS; // TODO
+        this.availablePrestigePoints = INITIAL_PRESTIGE_POINTS; // TODO
         this.currentEra = Era.I;
         this.eraChangedFlag = false;
+
+        this.extraTurnPlayer = null;
+        this.extraTurnRemainingUpper = 0;
+        this.extraTurnRemainingLower = 0;
 
         this.setUpGameBoard(numPlayers);
         this.setUpInitialRows(numPlayers);
@@ -136,8 +143,9 @@ public class GameBoard {
                 throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TO DO
             } else if (upperRow.contains(cardID)) {
                 countUpper++;
-            } else if (lowerRow.contains(cardID))
+            } else if (lowerRow.contains(cardID)) {
                 countLower++;
+            }
         }
 
         if (countUpper > currentTile.getRemainingUpper() || countLower > currentTile.getRemainingLower()) {
@@ -163,17 +171,21 @@ public class GameBoard {
                 int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
                 player.getTribu().addFoodPoints(-actualBuildingCost);
+                // TODO (Husnain): costruzione e aggiunta del building alla tribu (sia alla List<String>, sia alla List<BuildingEffect>)
+
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);
-                } else
+                } else {
                     lowerRowBuildings.remove(cardID);
+                }
 
             } else {
                 player.getTribu().insertCharacter(cardID);
                 if(upperRow.contains(cardID)) {
                     upperRow.remove(cardID);
-                } else
+                } else {
                     lowerRow.remove(cardID);
+                }
             }
         }
 
@@ -315,7 +327,76 @@ public class GameBoard {
         }
     }
 
-    public void initializeExtraPlayerLimits(Player player, int upperPicks, int lowerPicks) {}
+    public void initializeExtraPlayerLimits(Player player, int upperPicks, int lowerPicks) {
+        this.extraTurnPlayer =  player;
+        this.extraTurnRemainingUpper = Math.min(upperPicks, upperRow.size());
+        this.extraTurnRemainingLower = Math.min(lowerPicks, lowerRow.size());
+    }
 
-    public void processExtraActionSelection(Player player, List<String> selectedIDs) {}
+    public void processExtraActionSelection(Player player, List<String> selectedIDs) {
+        int countUpper = 0;
+        int countLower = 0;
+
+        for (String cardID : selectedIDs) {
+            if (!upperRow.contains(cardID) && !lowerRow.contains(cardID)
+                    && !upperRowBuildings.contains(cardID) && !lowerRowBuildings.contains(cardID)) {
+                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TO DO
+            } else if (upperRow.contains(cardID) || upperRowBuildings.contains(cardID)) {
+                countUpper++;
+            } else if (lowerRow.contains(cardID) || lowerRowBuildings.contains(cardID)) {
+                countLower++;
+            }
+        }
+
+        if (countUpper > extraTurnRemainingUpper || countLower > extraTurnRemainingLower) {
+            throw new IllegalArgumentException("Extra turn limits exceeded"); // TO DO
+        }
+
+        GameRegistry registry = GameRegistry.getInstance();
+
+        for(String cardID : selectedIDs) {
+            if(registry.isEvent(cardID)) {
+                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TO DO
+            } else if(registry.isBuilding(cardID)) {
+                int actualBuildingCost = computeActualBuildingCost(cardID, player);
+
+                if(player.getTribu().getFoodPoints() < actualBuildingCost) {
+                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TO DO
+                }
+            }
+        }
+
+        for(String cardID : selectedIDs) {
+            if(registry.isBuilding(cardID)) {
+                int actualBuildingCost = computeActualBuildingCost(cardID, player);
+
+                player.getTribu().addFoodPoints(-actualBuildingCost);
+
+                // TODO (Husnain): costruzione e aggiunta del building alla tribu (sia alla List<String>, sia alla List<BuildingEffect>)
+
+                if(upperRowBuildings.contains(cardID)) {
+                    upperRowBuildings.remove(cardID);
+                } else {
+                    lowerRowBuildings.remove(cardID);
+                }
+
+            } else {
+                player.getTribu().insertCharacter(cardID);
+                if(upperRow.contains(cardID)) {
+                    upperRow.remove(cardID);
+                } else {
+                    lowerRow.remove(cardID);
+                }
+            }
+        }
+
+        extraTurnRemainingUpper -= countUpper;
+        extraTurnRemainingLower -= countLower;
+    }
+
+    public void clearExtraTurn() {
+        this.extraTurnPlayer = null;
+        this.extraTurnRemainingUpper = 0;
+        this.extraTurnRemainingLower = 0;
+    }
 }

@@ -310,6 +310,7 @@ public class Game {
                 extraTurnPlayerNickname = null;
                 extraTurnUpperPicks = 0;
                 extraTurnLowerPicks = 0;
+                gameBoard.clearExtraTurn();
 
                 if (areRoundEventsToResolve()) {
                     transitionTo(new EventResolutionState());

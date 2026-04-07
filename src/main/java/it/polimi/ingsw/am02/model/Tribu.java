@@ -41,49 +41,78 @@ public class Tribu {
     }
 
 
+    public int getFoodPoints() { return foodPoints; }
 
-
-
-    public static void attachTribuObserver(TribuObserver effect) {
-        // TODO
+    public int getPrestigePoints() {
+        return prestigePoints;
     }
 
-    public static void addShamanStars(int bonusStars) {
-        // TODO
+    public int getShamanStars() {
+        return shamanStars;
     }
 
-    public int addPrestigePoints(int pp) {
-        return 0;// TODO
+    public int getFoodDiscount() {
+        return totalFoodDiscount;
     }
 
-    public List<String> getCharactersOfType(CharacterType type) {
-        return characters.getOrDefault(type, new ArrayList<>());
+    public int getBuildingDiscount() {
+        return totalBuildingDiscount;
     }
 
-    public int getPPBuilders() {
-        return 0;// TODO
+    public int getCharacterCount(CharacterType characterType) {
+        return characters.get(characterType).size();
     }
 
-    public void addFoodPoints(int foodBonus) {
-        // TODO
+    public int getNumCharacters() {
+        int count = 0;
+        for (CharacterType characterType : characters.keySet()) {
+            count += characters.get(characterType).size();
+        }
+        return count;
     }
 
-    public int getCharacterCount(CharacterType type) {
-        // TODO
+    public int getInventionTypeCount(InventionType inventionType) {
+        return inventionCounts.get(inventionType);
     }
 
-    public void addFoodDiscount(int foodDiscount) {
-        // TODO
+    public void addInventionType(InventionType inventionType){
+        inventionCounts.put(inventionType, getInventionTypeCount(inventionType) + 1);
     }
 
-    public void setImmuneToShamanicPenality(boolean newState) {
-        immuneToShamanicPenality = newState;
+    public int getNumOfDifferentInventionTypes(){
+        return inventionCounts.keySet().size();
     }
 
-    public int getInventionTypeCount(InventionType type) {
-        return 0; // TODO
+    public void setFoodPoints(int foodPoints) {
+        this.foodPoints = foodPoints;
     }
 
+    public void addFoodPoints(int foodPoints){
+        this.foodPoints += foodPoints;
+    }
+
+    public void  addPrestigePoints(int prestigePoints){
+        this.prestigePoints += prestigePoints;
+    }
+
+    public void addShamanStars(int shamanStars){
+        this.shamanStars += shamanStars;
+    }
+
+    public void addFoodDiscount(int foodDiscount){
+        this.totalFoodDiscount += foodDiscount;
+    }
+
+    public void addBuildingDiscount(int buildingDiscount){
+        this.totalBuildingDiscount += buildingDiscount;
+    }
+
+    public void insertCharacter(String characterID){
+        //insert of the new character in the characters map
+        characters.get(GameRegistry.getInstance().getCharacter(characterID).getType()).add(characterID);
+        //apply the effect of the card to this tribu
+        GameRegistry.getInstance().getCharacter(characterID).applyCharacterEffect(this);
+    }
 
     public void insertBuilding(String buildingID, Game game) {
 
@@ -110,21 +139,44 @@ public class Tribu {
         }
     }
 
-    public int getShamanStars() {
-        return 0;
+    public static void attachTribuObserver(TribuObserver effect) {
+        // TODO
     }
 
-    public int getBuildingDiscount() {
-        return 0;
+    public void notifyEventResolution(Game game, EventCard event) {
+        //TODO
     }
 
-    public int getFoodDiscount() {
+    //for immunity
+    public void setImmuneToShamanicPenality(boolean newState) {
+        immuneToShamanicPenality = newState;
     }
 
-    public void insertCharacter(String cardID) {
+    public int getPPBuilders() {
+        // TODO
     }
 
-    public int getFoodPoints() {
-        return 0;
+
+    public List<String> getCharactersOfType(CharacterType type) {
+        return characters.getOrDefault(type, new ArrayList<>());
     }
+
+    public int calculateSustanceCost(){ //to calculate how much food should be paid, after applying all discounts
+
+        //how much food to pay normally (before applying discount)
+        int costPreDiscount = 0;
+        costPreDiscount = characters.values()
+                .stream()
+                .mapToInt(x->x.size()).sum();
+
+        int totalDiscount = 0;
+        //add gatherers' discount
+        int gatherersDiscount = characters.get(CharacterType.GATHERER).size() * 3;
+        //int buildingsDiscount = ;//TODO aspetta husnain e l'implementazione dei building;
+
+                //totalDiscount = gatherersDiscount + buildingsDiscount;
+
+        return Math.max(0, costPreDiscount - totalDiscount);
+    }
+
 }

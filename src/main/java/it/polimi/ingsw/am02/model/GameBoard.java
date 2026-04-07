@@ -398,5 +398,13 @@ public class GameBoard {
         this.extraTurnPlayer = null;
         this.extraTurnRemainingUpper = 0;
         this.extraTurnRemainingLower = 0;
+    public void processExtraActionSelection(Player player, List<String> selectedIDs) {}
+
+    public void applyExtraTurnOrderBonus(Player player) {
+        int baseBonus = turnOrderTile.getFoodForPlayer(player);
+
+        if (baseBonus > 0) {
+            player.getTribu().addFoodPoints(1);
+        }
     }
 }

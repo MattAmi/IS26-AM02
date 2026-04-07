@@ -1,12 +1,7 @@
 package it.polimi.ingsw.am02.model.BuildingEffects;
 
-import it.polimi.ingsw.am02.model.BuildingEffect;
-import it.polimi.ingsw.am02.model.EffectVisitor;
+import it.polimi.ingsw.am02.model.*;
 import it.polimi.ingsw.am02.model.Enumerations.EventType;
-import it.polimi.ingsw.am02.model.EventObserver;
-import it.polimi.ingsw.am02.model.EventCard;
-import it.polimi.ingsw.am02.model.Game;
-import it.polimi.ingsw.am02.model.Tribu;
 
 public class ShamanicWinMultiplierEffect implements BuildingEffect, EventObserver {
 
@@ -31,7 +26,7 @@ public class ShamanicWinMultiplierEffect implements BuildingEffect, EventObserve
     }
 
     @Override
-    public void EventResolution(EventType currentEvent, EventEffect event) {
+    public void EventResolution(EventType currentEvent, EventCard event) {
         if (currentEvent == EventType.SHAMANIC_RITUAL) {
 
             int maxStars = game.calculateMaxShamanStars();

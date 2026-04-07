@@ -20,8 +20,8 @@ public class TurnOrderFoodBonusEffect implements BuildingEffect, PhaseObserver {
 
     @Override
     public void onPhaseChange(PhaseType newPhase) {
-        if(newPhase == PhaseType.END_PLAYER_TURN && Game.validatePlayerTurn(player)){
-            game.getGameBoard().getTurnOrderTile().applyRewards(player);
+        if (newPhase == PhaseType.END_PLAYER_TURN) {
+            game.triggerTurnOrderExtraFood(player.getTribu());
         }
     }
 }

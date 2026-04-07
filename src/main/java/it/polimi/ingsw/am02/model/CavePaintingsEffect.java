@@ -13,8 +13,9 @@ public class CavePaintingsEffect implements EventEffect{
     int bonusPerArtist;
 
     //Costruttore
-    public CavePaintingsEffect(int minArtists, int bonusPerArtist) {
+    public CavePaintingsEffect(int minArtists, int malusIfFailed, int bonusPerArtist) {
         this.minArtists = minArtists;
+        this.ppMalusIfFailed = malusIfFailed;
         this.bonusPerArtist = bonusPerArtist;
     }
 

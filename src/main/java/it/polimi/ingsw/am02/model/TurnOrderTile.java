@@ -11,11 +11,18 @@ public class TurnOrderTile {
     private final int[] prestigePointsMalus;
 
     public TurnOrderTile(int numPlayers) {
-        TurnOrderTile templateTurnOrderTile = GameRegistry.getTurnOrderTile(numPlayers);
+        TurnOrderTile templateTurnOrderTile = GameRegistry.getInstance().getTurnOrderTile(numPlayers);
         this.numPlayers = numPlayers;
         this.playerPositions = new Player[numPlayers];
         this.foodBonuses = templateTurnOrderTile.foodBonuses.clone();
         this.prestigePointsMalus = templateTurnOrderTile.prestigePointsMalus.clone();
+    }
+
+    public TurnOrderTile(int numPlayers, List<Integer> foodBonuses, List<Integer> prestigePointsMalus) {
+        this.numPlayers = numPlayers;
+        this.playerPositions = new Player[numPlayers];
+        this.foodBonuses = foodBonuses.stream().mapToInt(Integer::intValue).toArray();
+        this.prestigePointsMalus = prestigePointsMalus.stream().mapToInt(Integer::intValue).toArray();
     }
 
     public int getNumPlayers() {

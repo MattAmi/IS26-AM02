@@ -1,12 +1,7 @@
 package it.polimi.ingsw.am02.model.BuildingEffects;
 
-import it.polimi.ingsw.am02.model.BuildingEffect;
-import it.polimi.ingsw.am02.model.EffectVisitor;
+import it.polimi.ingsw.am02.model.*;
 import it.polimi.ingsw.am02.model.Enumerations.EventType;
-import it.polimi.ingsw.am02.model.EventObserver;
-import it.polimi.ingsw.am02.model.EventCard;
-import it.polimi.ingsw.am02.model.Game;
-import it.polimi.ingsw.am02.model.Tribu;
 
 public class ShamanicWinMultiplierEffect implements BuildingEffect, EventObserver {
 

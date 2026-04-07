@@ -3,6 +3,8 @@ package it.polimi.ingsw.am02.model;
 
 import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
 
+import java.util.List;
+
 public class CavePaintingsEffect implements EventEffect{
 
     //Attributi
@@ -20,9 +22,9 @@ public class CavePaintingsEffect implements EventEffect{
 
     //Metodi
     @Override
-    public void applyEffect(Game game) {
+    public void applyEffect(List<Player> players) {
 
-        for (Player player : game.getPlayers()) {
+        for (Player player : players) {
             Tribu tribu = player.getTribu();
             int numOfArtists = tribu.getCharacterCount(CharacterType.ARTIST);
             if(numOfArtists >= minArtists){
@@ -34,5 +36,4 @@ public class CavePaintingsEffect implements EventEffect{
             }
         }
     }
-
 }

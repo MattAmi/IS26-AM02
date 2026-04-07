@@ -3,6 +3,8 @@ package it.polimi.ingsw.am02.model;
 import it.polimi.ingsw.am02.model.Enumerations.Era;
 import it.polimi.ingsw.am02.model.Enumerations.EventType;
 
+import java.util.List;
+
 public class EventCard {
 
     //Attributi
@@ -44,12 +46,10 @@ public class EventCard {
         return priority;
     }
 
-    public void applyEventEffect(Game game) {
-        eventEffect.applyEffect(game);
-    }
-
-    public void attachEventObserver(EventObserver effect) {
-    //TODO ma non è metodo statico
+    public void applyEventEffect(List<Player> players, List<EventObserver> eventObservers) {
+        for(EventObserver observer: eventObservers)
+            observer.EventResolution(this.type, eventEffect);
+        eventEffect.applyEffect(players);
     }
 
 }

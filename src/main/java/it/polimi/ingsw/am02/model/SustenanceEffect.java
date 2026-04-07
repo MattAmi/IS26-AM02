@@ -1,5 +1,7 @@
 package it.polimi.ingsw.am02.model;
 
+import java.util.List;
+
 public class SustenanceEffect implements EventEffect {
 
     //Attributi
@@ -11,8 +13,8 @@ public class SustenanceEffect implements EventEffect {
 
     //Metodi
     @Override
-    public void applyEffect(Game game) {
-        for (Player player : game.getPlayers()) {
+    public void applyEffect(List<Player> players) {
+        for (Player player : players) {
             Tribu tribu = player.getTribu();
 
             //verify the amount of food to be paid, applying both the gatherer and building discounts (calculated in tribu)

@@ -24,7 +24,7 @@ public class Game {
     private int extraTurnUpperPicks;
     private int extraTurnLowerPicks;
 
-    private List<GameObserver> observers;
+    private List<PhaseObserver> observers;
 
 
 
@@ -206,7 +206,7 @@ public class Game {
 
 
     public void attachPhaseObserver(PhaseObserver effect) {
-        // TODO: Husnain
+        phaseObservers.add(effect);
     }
 
     public void notifyPhaseObservers(PhaseType phase) {
@@ -473,6 +473,14 @@ public class Game {
             List<String> winners = determineWinner();
 
             // TODO: Matteo
+        }
+    }
+
+    public void triggerTurnOrderExtraFood(Tribu tribu) {
+        Player current = players.get(currentPlayerNickname);
+
+        if (current.getTribu() == tribu) {
+            gameBoard.applyExtraTurnOrderBonus(current); // "Tell, Don't Ask"
         }
     }
 

@@ -74,6 +74,10 @@ public class GameRegistry {
         }
     }
 
+    public void loadBuildings(String buildingsPath) {
+        // TODO fabbrica buildings
+    }
+
     public void loadOfferTiles(String offerTilesPath) {
         try {
             ObjectMapper mapper = new ObjectMapper();

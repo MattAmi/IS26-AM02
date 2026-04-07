@@ -133,7 +133,7 @@ public class GameBoard {
         currentTile.setRemainingPicks(effectiveUpperChoosable, effectiveLowerChoosable);
     }
 
-    public void processActionSelection(Player player, List<String> selectedIDs) {
+    public void processActionSelection(Player player, List<String> selectedIDs, Game game) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
 
         currentTile.resolveFoodOffer(player);

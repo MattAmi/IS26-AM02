@@ -110,10 +110,14 @@ public class Tribu {
     }
 
     public void insertCharacter(String characterID){
-        //insert of the new character in the characters map
+
+        CharacterCard newInsertion = GameRegistry.getInstance().getCharacter(characterID);
+
+        for(TribuObserver observer : tribuObservers)
+            observer.onCharacterInsertion(newInsertion.getType());
+
         characters.get(GameRegistry.getInstance().getCharacter(characterID).getType()).add(characterID);
-        //apply the effect of the card to this tribu
-        GameRegistry.getInstance().getCharacter(characterID).applyCharacterEffect(this);
+        newInsertion.applyCharacterEffect(this);
     }
 
     public void insertBuilding(String buildingID, Game game) {
@@ -131,7 +135,8 @@ public class Tribu {
         BuildingEffect myPersonalEffect = BuildingFactory.createActiveEffect(
                 cardTemplate.getEffectType(),
                 cardTemplate.getEffectParams(),
-                this
+                this,
+                game
         );
 
         if (myPersonalEffect != null) {

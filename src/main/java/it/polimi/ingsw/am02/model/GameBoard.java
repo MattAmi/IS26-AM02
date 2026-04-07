@@ -88,6 +88,8 @@ public class GameBoard {
             return registry.getCharacter(cardID).getEra();
         } else if (registry.isEvent(cardID)) {
             return registry.getEvent(cardID).getEra();
+        } else if (registry.isBuilding(cardID)) {
+            return registry.getBuilding(cardID).getEra();
         }
     }
 
@@ -254,8 +256,6 @@ public class GameBoard {
     }
 
     public void prepareNewRound(int numPlayers) {
-        GameRegistry registry = GameRegistry.getInstance();
-
         lowerRow.clear();
         lowerRow.addAll(upperRow);
         upperRow.clear();

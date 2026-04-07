@@ -2,6 +2,12 @@
 
 package it.polimi.ingsw.am02.model;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -9,16 +15,18 @@ import java.util.stream.Collectors;
 
 public class GameRegistry {
 
-    final Player player;
-    final Game game;
+    final Player player; // TODO NO!
+    final Game game; // TODO NO!
     private static GameRegistry instance; //the only instance of the registry
     private Map<String, CharacterCard> characterMap;
     private Map<String, EventCard> eventMap;
     private Map<String, BuildingCard> buildingMap;
     private List<OfferTile> offerTiles;
     private List<TurnOrderTile> turnOrderTiles;
+    private final ObjectMapper mapper = new ObjectMapper();
 
 
+    // TODO Husnain: C'è problema grosso: il costruttore del registry deve essere PRIVATE (pattern singleton)
     public GameRegistry(Player player, Game game) {
         this.player = player;
         this.game = game;
@@ -38,7 +46,82 @@ public class GameRegistry {
         return instance;
     }
 
-    //TODO: MATTEO should put the remaining loading methods here
+    public void loadCharacters(String charactersPath) {
+        try {
+            List<JsonNode> nodes = parseJsonToList(charactersPath);
+            CharacterFactory characterFactory = new CharacterFactory();
+
+            for(JsonNode node : nodes) {
+                CharacterCard characterCard = characterFactory.createCharacter(node);
+                characterMap.put(characterCard.getID(), characterCard);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadEvents(String eventsPath) {
+        try {
+            List<JsonNode> nodes = parseJsonToList(eventsPath);
+            EventFactory eventFactory = new EventFactory();
+
+            for(JsonNode node : nodes) {
+                EventCard eventCard = eventFactory.createEvent(node);
+                eventMap.put(eventCard.getID(), eventCard);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadOfferTiles(String offerTilesPath) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(new File(offerTilesPath));
+
+            List<JsonNode> nodes = new ArrayList<>();
+            if (rootNode.isArray()) {
+                rootNode.forEach(nodes::add);
+            }
+
+            OfferTilesFactory offerTilesFactory = new OfferTilesFactory();
+            for(JsonNode node : nodes) {
+                OfferTile offerTile = offerTilesFactory.createOfferTile(node);
+                offerTiles.add(offerTile);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadTurnOrderTiles(String turnOrderTilesPath) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(new File(turnOrderTilesPath));
+
+            List<JsonNode> nodes = new ArrayList<>();
+            if (rootNode.isArray()) {
+                rootNode.forEach(nodes::add);
+            }
+
+            TurnOrderTilesFactory turnOrderTilesFactory = new TurnOrderTilesFactory();
+            for(JsonNode node : nodes) {
+                TurnOrderTile turnOrderTile = turnOrderTilesFactory.createTurnOrderTile(node);
+                turnOrderTiles.add(turnOrderTile);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private List<JsonNode> parseJsonToList(String path) throws IOException {
+        JsonNode rootNode = mapper.readTree(new File(path));
+        List<JsonNode> nodes = new ArrayList<>();
+        if (rootNode.isArray()) {
+            rootNode.forEach(nodes::add);
+        }
+        return nodes;
+    }
 
     public boolean isCharacter(String cardID) {
         return characterMap.containsKey(cardID);
@@ -100,14 +183,6 @@ public class GameRegistry {
         return buildingMap.keySet()
                 .stream()
                 .collect(Collectors.toList());
-    }
-
-    public void visitPhaseObserver(PhaseObserver effect){
-        Game.attachPhaseObserver(effect);
-    }
-
-    public void visitTribuObserver(TribuObserver effect){
-        Tribu.attachTribuObserver(effect);
     }
 
 }

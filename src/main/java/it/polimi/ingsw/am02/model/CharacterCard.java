@@ -21,7 +21,7 @@ public class CharacterCard {
     }
 
     //Metodi
-    public String getCardID() {
+    public String getID() {
         return cardID;
     }
 

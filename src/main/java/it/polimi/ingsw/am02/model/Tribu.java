@@ -128,7 +128,7 @@ public class Tribu {
         newInsertion.applyCharacterEffect(this);
     }
 
-    public void insertBuilding(String buildingID, Game game) {
+    public void insertBuilding(String buildingID, Player player, Game game) {
 
         this.buildings.add(buildingID);
 
@@ -144,6 +144,7 @@ public class Tribu {
                 cardTemplate.getEffectType(),
                 cardTemplate.getEffectParams(),
                 this,
+                player,
                 game);
 
         if (myPersonalEffect != null) {

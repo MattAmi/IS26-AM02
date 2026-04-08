@@ -45,7 +45,6 @@ public class GameBoard {
     }
 
     private void setUpGameBoard(int numPlayers) {
-        GameRegistry registry = GameRegistry.getInstance();
 
         this.offerTrack = new OfferTrack(numPlayers);
         this.turnOrderTile = new TurnOrderTile(numPlayers);
@@ -172,7 +171,7 @@ public class GameBoard {
 
                 player.getTribu().addFoodPoints(-actualBuildingCost);
 
-                player.getTribu().insertBuilding(cardID, game);
+                player.getTribu().insertBuilding(cardID, player, game);
 
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);
@@ -376,7 +375,7 @@ public class GameBoard {
 
                 player.getTribu().addFoodPoints(-actualBuildingCost);
 
-                player.getTribu().insertBuilding(cardID, game);
+                player.getTribu().insertBuilding(cardID, player, game);
 
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);

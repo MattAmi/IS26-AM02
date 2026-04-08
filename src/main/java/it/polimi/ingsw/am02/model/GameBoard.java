@@ -177,7 +177,7 @@ public class GameBoard {
                 player.getTribu().addFoodPoints(-actualBuildingCost);
 
                 player.getTribu().insertBuilding(cardID, game);
-
+                //
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);
                 } else {
@@ -341,7 +341,7 @@ public class GameBoard {
         this.extraTurnRemainingLower = Math.min(lowerPicks, lowerRow.size());
     }
 
-    public void processExtraActionSelection(Player player, List<String> selectedIDs) {
+    public void processExtraActionSelection(Player player, List<String> selectedIDs, Game game) {
         int countUpper = 0;
         int countLower = 0;
 
@@ -380,8 +380,7 @@ public class GameBoard {
 
                 player.getTribu().addFoodPoints(-actualBuildingCost);
 
-                // TODO (Husnain): costruzione e aggiunta del building alla tribu (sia alla List<String>, sia alla List<BuildingEffect>)
-                // Devo creare il effetto aggiungerlo alla lista dei observer
+                player.getTribu().insertBuilding(cardID, game);
 
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);

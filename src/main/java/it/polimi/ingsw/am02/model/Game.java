@@ -69,13 +69,13 @@ public class Game {
     private Player getPlayerByNickname(String nickname) {
         Player p = players.get(nickname);
         if (p == null)
-            throw new NoSuchPlayerException(); // TODO
+            throw new IllegalArgumentException(); // TODO
         return p;
     }
 
     private void validatePlayerTurn(String nickname) {
         if(!nickname.equals(currentPlayerNickname)) {
-            throw new NotYourTurnException(); // TODO
+            throw new IllegalArgumentException(); // TODO
         }
     }
 
@@ -331,7 +331,7 @@ public class Game {
             validatePlayerTurn(nickname);
             Player player = getPlayerByNickname(nickname);
 
-            if (tileID != TURN_ORDER_TILE_ID) {
+            if (tileID != 'T') {
                 throw new IllegalArgumentException("Invalid tile destination in ActionResolutionState"); //TO DO
             }
 
@@ -351,7 +351,7 @@ public class Game {
                 gameBoard.movePlayerToTurnOrder(player);
                 transitionTo(new EndPlayerTurnState());
             } else {
-                throw new IllegalStateException("Player has not fulfilled pick obligations"); // TO DO
+                throw new IllegalStateException("Player has not fulfilled pick obligations"); // TODO
             }
         }
 

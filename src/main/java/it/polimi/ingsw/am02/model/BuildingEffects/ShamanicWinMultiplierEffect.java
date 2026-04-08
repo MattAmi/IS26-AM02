@@ -21,11 +21,6 @@ public class ShamanicWinMultiplierEffect implements BuildingEffect, EventObserve
     }
 
     @Override
-    public void EventStart(EventType currentEvent) {
-        // Qui non facciamo nulla, l'effetto scatta alla risoluzione
-    }
-
-    @Override
     public void EventPostResolution(EventType currentEvent) {
         if (currentEvent == EventType.SHAMANIC_RITUAL) {
             int bonusReceived = tribu.getLastEventBonusReceived();

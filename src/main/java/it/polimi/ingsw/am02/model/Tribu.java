@@ -130,7 +130,7 @@ public class Tribu {
 
         BuildingCard cardTemplate = GameRegistry.getInstance().getBuilding(buildingID);
 
-        // Sarebbe Exception // TODO
+        // sarebbe Exception // TODO
         if (cardTemplate == null) {
             System.err.println("Errore: Edificio " + buildingID + " non trovato nel Registry!");
             return;

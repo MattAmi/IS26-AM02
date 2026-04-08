@@ -375,7 +375,10 @@ public class Game {
             if (extraTurnPlayerNickname != null) {
                 isExtraTurnMode = true;
                 currentPlayerNickname = extraTurnPlayerNickname;
-                gameBoard.initializeExtraPlayerLimits(getPlayerByNickname(extraTurnPlayerNickname), extraTurnUpperPicks, extraTurnLowerPicks);
+                gameBoard.initializeExtraPlayerLimits(
+                        getPlayerByNickname(extraTurnPlayerNickname),
+                        extraTurnUpperPicks,
+                        extraTurnLowerPicks);
 
                 transitionTo(new ActionResolutionState());
 

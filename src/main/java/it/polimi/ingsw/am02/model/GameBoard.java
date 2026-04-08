@@ -85,9 +85,10 @@ public class GameBoard {
             return registry.getCharacter(cardID).getEra();
         } else if (registry.isEvent(cardID)) {
             return registry.getEvent(cardID).getEra();
-        } else if (registry.isBuilding(cardID)) {
+        } else {
             return registry.getBuilding(cardID).getEra();
         }
+
     }
 
     private void checkAndUpdateEra(String cardID) {

@@ -126,7 +126,7 @@ public class Tribu {
 
         BuildingCard cardTemplate = GameRegistry.getInstance().getBuilding(buildingID);
 
-        // Sarebbe Exception
+        // Sarebbe Exception // TODO
         if (cardTemplate == null) {
             System.err.println("Errore: Edificio " + buildingID + " non trovato nel Registry!");
             return;
@@ -150,8 +150,6 @@ public class Tribu {
         tribuObservers.add(effect);
     }
 
-
-
     public void setImmuneToShamanicPenality(boolean newState) {
         immuneToShamanicPenality = newState;
     }
@@ -159,7 +157,6 @@ public class Tribu {
     public int getPPBuilders() {
         return totalPPBuilders;
     }
-
 
     public List<String> getCharactersOfType(CharacterType type) {
         return characters.getOrDefault(type, new ArrayList<>());

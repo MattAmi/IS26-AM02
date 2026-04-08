@@ -5,8 +5,8 @@ import java.util.List;
 public class ShamanicRitualEffect implements EventEffect{
 
     //Attributi
-    int majorityBonus;
-    int minorityBonus;
+    final int majorityBonus;
+    final int minorityBonus;
 
     //Costruttore
     public ShamanicRitualEffect(int maxbonus, int minbonus) {

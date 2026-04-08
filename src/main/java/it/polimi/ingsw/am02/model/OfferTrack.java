@@ -6,7 +6,7 @@ import java.util.List;
 
 public class OfferTrack {
 
-    private List<OfferTile> tiles;
+    private final List<OfferTile> tiles;
 
     public OfferTrack(int numPlayers) {
         this.tiles = new ArrayList<>();
@@ -14,7 +14,7 @@ public class OfferTrack {
     }
 
     private void setUpTiles(int numPlayers) {
-        List<OfferTile> allTiles = GameRegistry.getOfferTiles(numPlayers);
+        List<OfferTile> allTiles = GameRegistry.getInstance().getOfferTiles(numPlayers);
         for (OfferTile tile : allTiles) {
             if (tile.getMinPlayers() <= numPlayers) {
                 tiles.add(new OfferTile(tile.getTileID(), tile.getMinPlayers(), tile.getGainedFood(),

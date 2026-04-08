@@ -8,9 +8,9 @@ import java.util.List;
 public class CavePaintingsEffect implements EventEffect{
 
     //Attributi
-    int minArtists; //minimum number to profit from the event
-    int ppMalusIfFailed;
-    int bonusPerArtist;
+    final int minArtists; //minimum number to profit from the event
+    final int ppMalusIfFailed;
+    final int bonusPerArtist;
 
     //Costruttore
     public CavePaintingsEffect(int minArtists, int malusIfFailed, int bonusPerArtist) {

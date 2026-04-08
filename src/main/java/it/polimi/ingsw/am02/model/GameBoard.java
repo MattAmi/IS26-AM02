@@ -17,8 +17,6 @@ public class GameBoard {
     private OfferTrack offerTrack;
     private TribuDeck tribuDeck;
     private BuildingDeck buildingDeck;
-    private int availableFoodPoints;
-    private int availablePrestigePoints;
     private Era currentEra;
     private boolean eraChangedFlag;
     private final int[] initialFoodBonuses = {2, 3, 3, 4, 4};
@@ -34,8 +32,6 @@ public class GameBoard {
         this.upperRowBuildings = new ArrayList<>();
         this.lowerRowBuildings = new ArrayList<>();
 
-        this.availableFoodPoints = INITIAL_FOOD_POINTS; // TODO
-        this.availablePrestigePoints = INITIAL_PRESTIGE_POINTS; // TODO
         this.currentEra = Era.I;
         this.eraChangedFlag = false;
 

@@ -17,4 +17,5 @@ public class BuilderEffect implements CharacterEffect {
         tribu.addBuildingDiscount(buildingDiscount);
         tribu.addPPBuilders(prestigePoints);
     }
+
 }

@@ -49,4 +49,5 @@ public class BuildingDeck {
             default: throw new IllegalArgumentException("Invalid number of players: " + numPlayers);
         }
     }
+
 }

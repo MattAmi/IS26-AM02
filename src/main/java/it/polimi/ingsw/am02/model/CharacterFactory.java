@@ -8,14 +8,15 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class CharacterFactory {
+
     private final Map<CharacterType, Function<JsonNode, CharacterEffect>> effectRegistry;
 
-    public CharacterFactory(){
+    public CharacterFactory() {
         this.effectRegistry = new EnumMap<>(CharacterType.class);
         setUpRegistry();
     }
 
-    private void setUpRegistry(){
+    private void setUpRegistry() {
         effectRegistry.put(CharacterType.INVENTOR, node -> {
             String nameInJson = node.path("invention").asText();
             InventionType invention = InventionType.valueOf(nameInJson);

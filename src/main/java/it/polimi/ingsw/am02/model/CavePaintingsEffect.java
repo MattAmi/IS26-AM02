@@ -19,11 +19,9 @@ public class CavePaintingsEffect implements EventEffect{
         this.bonusPerArtist = bonusPerArtist;
     }
 
-
     //Metodi
     @Override
     public void applyEffect(List<Player> players) {
-
         for (Player player : players) {
             Tribu tribu = player.getTribu();
             int numOfArtists = tribu.getCharacterCount(CharacterType.ARTIST);
@@ -36,4 +34,5 @@ public class CavePaintingsEffect implements EventEffect{
             }
         }
     }
+
 }

@@ -14,4 +14,5 @@ public class ShamanEffect implements CharacterEffect {
     public void applyEffect(Tribu tribu) {
         tribu.addShamanStars(shamanStars);
     }
+
 }

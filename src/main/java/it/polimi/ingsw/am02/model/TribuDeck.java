@@ -68,4 +68,5 @@ public class TribuDeck {
     public int getRemainingSize() {
         return this.cards.size();
     }
+
 }

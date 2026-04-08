@@ -47,4 +47,5 @@ public class InventorPairRewardEffect implements BuildingEffect, TribuObserver {
         }
         return totalPairs;
     }
+
 }

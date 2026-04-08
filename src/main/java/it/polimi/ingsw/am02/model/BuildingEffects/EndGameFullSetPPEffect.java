@@ -16,7 +16,6 @@ public class EndGameFullSetPPEffect implements BuildingEffect, PhaseObserver{
         this.tribu = tribu;
     }
 
-
     @Override
     public void accept(EffectVisitor v) {
         v.visitPhaseObserver(this);

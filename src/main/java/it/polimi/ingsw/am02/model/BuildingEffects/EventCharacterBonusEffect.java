@@ -47,4 +47,5 @@ public class EventCharacterBonusEffect implements BuildingEffect, EventObserver 
             tribu.addFoodDiscount(-foodDiscount);
         }
     }
+
 }

@@ -34,7 +34,6 @@ public class FullSetFoodRewardEffect implements BuildingEffect, TribuObserver {
         }
     }
 
-
     private int calculateCurrentSets() {
         int minPezzi = Integer.MAX_VALUE;
 

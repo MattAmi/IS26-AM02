@@ -8,6 +8,7 @@ public class PrestigePointMultiplierPerTypeEffect implements BuildingEffect, Pha
     final int multiplier;
     final CharacterType type;
     final Tribu tribu;
+
     public PrestigePointMultiplierPerTypeEffect(int multiplier, CharacterType type, Tribu tribu) {
         this.multiplier = multiplier;
         this.type = type;
@@ -22,7 +23,7 @@ public class PrestigePointMultiplierPerTypeEffect implements BuildingEffect, Pha
     @Override
     public void onPhaseChange(PhaseType newPhase) {
         if(newPhase == PhaseType.END_GAME){
-            int bonus = tribu.getPPBuilders()*(multiplier-1);
+            int bonus = tribu.getPPBuilders()*(multiplier-1); // TODO Husnain: non dovrebbe essere un int bonus = tribu.countCharactersOfType(type) * (multiplier) ? Infatti il metodo prende in input il CharacterType, ma non lo utilizza...
             tribu.addPrestigePoints(bonus);
         }
     }

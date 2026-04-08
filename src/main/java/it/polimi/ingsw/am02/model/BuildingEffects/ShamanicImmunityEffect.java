@@ -7,6 +7,7 @@ import it.polimi.ingsw.am02.model.EventObserver;
 import it.polimi.ingsw.am02.model.Tribu;
 
 public class ShamanicImmunityEffect implements BuildingEffect, EventObserver {
+
     final Tribu tribu;
 
     public ShamanicImmunityEffect(Tribu tribu) {

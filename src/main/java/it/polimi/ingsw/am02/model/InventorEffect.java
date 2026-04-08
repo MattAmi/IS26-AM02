@@ -16,5 +16,6 @@ public class InventorEffect implements CharacterEffect {
     public void applyEffect(Tribu tribu) {
         tribu.addInventionType(invention);
     }
+
 }
 

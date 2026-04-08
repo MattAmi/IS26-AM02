@@ -4,4 +4,5 @@ import java.util.List;
 
 public interface EventEffect {
     void applyEffect(List<Player> players);
+
 }

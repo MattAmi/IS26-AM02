@@ -4,6 +4,7 @@ import it.polimi.ingsw.am02.model.*;
 import it.polimi.ingsw.am02.model.Enumerations.EventType;
 
 public class ShamanicExtraIconsEffect implements BuildingEffect, EventObserver {
+
     final Tribu tribu;
     final int bonusStars;
 

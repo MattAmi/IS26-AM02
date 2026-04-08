@@ -220,6 +220,7 @@ public class GameBoard {
 
     public boolean hasRoundEvents() {
         GameRegistry registry = GameRegistry.getInstance();
+
         for(String cardID : lowerRow) {
             if(registry.isEvent(cardID) && !registry.getEvent(cardID).isFinal()) {
                 return true;
@@ -324,7 +325,9 @@ public class GameBoard {
         for (EventCard event : sortedFinalEvents) {
             for(EventObserver observer: eventObservers)
                 observer.EventStart(event.getType());
+
             event.applyEventEffect(players, eventObservers);
+
             for(EventObserver observer: eventObservers)
                 observer.EventEnd(event.getType());
         }
@@ -414,6 +417,5 @@ public class GameBoard {
     public void attachEventObserver(EventObserver effect) {
         eventObservers.add(effect);
     }
-
 
 }

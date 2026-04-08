@@ -11,6 +11,7 @@ public class Tribu {
     private int totalFoodDiscount;
     private int totalBuildingDiscount;
     private int totalPPBuilders;
+    private int totalPPBuildings;
 
     private final Map<InventionType, Integer> inventionCounts;
     private final Map<CharacterType, List<String>> characters;
@@ -30,14 +31,18 @@ public class Tribu {
         this.totalFoodDiscount = 0;
         this.totalBuildingDiscount = 0;
         this.totalPPBuilders = 0;
+        this.totalPPBuildings = 0;
+
         this.inventionCounts = new EnumMap<>(InventionType.class);
         for (InventionType type : InventionType.values()) {
             this.inventionCounts.put(type, 0);
         }
+
         this.characters = new EnumMap<>(CharacterType.class);
         for (CharacterType type : CharacterType.values()) {
             this.characters.put(type, new ArrayList<>());
         }
+
         this.buildings = new ArrayList<>();
         this.activeBuildingEffects = new ArrayList<>();
         this.tribuObservers = new ArrayList<>();
@@ -45,7 +50,6 @@ public class Tribu {
 
         this.lastEventBonusReceived = 0;
     }
-
 
     public int getFoodPoints() { return foodPoints; }
 
@@ -64,6 +68,8 @@ public class Tribu {
     public int getBuildingDiscount() {
         return totalBuildingDiscount;
     }
+
+    public int getTotalPPBuildings() { return totalPPBuildings; }
 
     public int getCharacterCount(CharacterType characterType) {
         return characters.get(characterType).size();
@@ -97,9 +103,7 @@ public class Tribu {
         this.foodPoints += foodPoints;
     }
 
-    public void addPrestigePoints(int prestigePoints){
-        this.prestigePoints += prestigePoints;
-    }
+    public void addPrestigePoints(int prestigePoints) { this.prestigePoints += prestigePoints; }
 
     public void addShamanStars(int shamanStars){
         this.shamanStars += shamanStars;
@@ -130,8 +134,6 @@ public class Tribu {
 
     public void insertBuilding(String buildingID, Player player, Game game) {
 
-        this.buildings.add(buildingID);
-
         BuildingCard cardTemplate = GameRegistry.getInstance().getBuilding(buildingID);
 
         // sarebbe Exception // TODO
@@ -139,7 +141,10 @@ public class Tribu {
             System.err.println("Errore: Edificio " + buildingID + " non trovato nel Registry!");
             return;
         }
-        // TODO in BuildingFactory
+
+        this.buildings.add(buildingID);
+        this.totalPPBuildings += cardTemplate.getBuildingPp();
+
         BuildingEffect myPersonalEffect = BuildingFactory.createActiveEffect(
                 cardTemplate.getEffectType(),
                 cardTemplate.getEffectParams(),
@@ -174,10 +179,7 @@ public class Tribu {
                 .stream()
                 .mapToInt(List::size).sum();
 
-        //add gatherers' discount
-        int gatherersDiscount = characters.get(CharacterType.GATHERER).size() * 3;
-
-        return Math.max(0, costPreDiscount - gatherersDiscount);
+        return Math.max(0, costPreDiscount - totalFoodDiscount);
     }
 
     public void setImmuneToShamanicPenalty(boolean status) {

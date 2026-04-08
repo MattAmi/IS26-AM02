@@ -57,6 +57,7 @@ public class TurnOrderTile {
     }
 
     public void applyRewards(Player player) {
+
         int playerIndex = -1;
         for (int i = 0; i < playerPositions.length; i++) {
             if (playerPositions[i] == player) {

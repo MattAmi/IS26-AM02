@@ -44,4 +44,5 @@ public class BuildingCard {
     public JsonNode getEffectParams() {
         return effectParams;
     }
+
 }

@@ -31,6 +31,7 @@ public class GameRegistry {
         this.buildingMap = new HashMap<>();
         this.offerTiles = new ArrayList<>();
         this.turnOrderTiles = new ArrayList<>();
+
         this.mapper = new ObjectMapper();
     }
 
@@ -166,7 +167,7 @@ public class GameRegistry {
     public List<OfferTile> getOfferTiles(int numPlayers) {
         List<OfferTile> myOfferTiles = new ArrayList<>();
         for (OfferTile offerTile : offerTiles){
-            if(numPlayers >= offerTile.getMinPlayers()){
+            if(offerTile.getMinPlayers() <= numPlayers){
                 //take it
                 myOfferTiles.add(offerTile);
             }

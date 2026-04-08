@@ -25,9 +25,7 @@ public class Game {
     private int extraTurnUpperPicks;
     private int extraTurnLowerPicks;
 
-    private final List<PhaseObserver> observers;
-
-
+    // private final List<GameObserver> gameObservers; // TODO
 
 
     public Game(String gameID, List<String> nicknames, Map<String, Totem> chosenTotems) {
@@ -48,7 +46,7 @@ public class Game {
         this.extraTurnUpperPicks = 0;
         this.extraTurnLowerPicks = 0;
 
-        this.observers = new ArrayList<>(); // Per parte di rete
+        // this.gameObservers = new ArrayList<>(); // Per parte di rete
 
         transitionTo(new SetUpState());
     }
@@ -186,6 +184,7 @@ public class Game {
     }
 
     private List<String> determineWinner() {
+
         int maxPP = players.values().stream()
                 .mapToInt(p -> p.getTribu().getPrestigePoints())
                 .max()
@@ -217,17 +216,17 @@ public class Game {
         for (Player player : players.values()) {
             Tribu tribu = player.getTribu();
 
-            tribu.addPrestigePoints(tribu.getPPBuilders());
-
             int inventors = tribu.getCharacterCount(CharacterType.INVENTOR);
             int inventionTypes = tribu.getNumOfDifferentInventionTypes();
-            tribu.addPrestigePoints(inventors * inventionTypes);
 
             int artists = tribu.getCharacterCount(CharacterType.ARTIST);
-            tribu.addPrestigePoints((artists / 2) * 10);
+
+            int ppToAdd = tribu.getPPBuilders() + tribu.getTotalPPBuildings() + inventors * inventionTypes + (artists / 2) * 10;
+
+            tribu.addPrestigePoints(ppToAdd);
+
         }
     }
-
 
     public void enqueueExtraTurn(String nickname, int extraUpperPicks, int extraLowerPicks) {
         this.extraTurnPlayerNickname = nickname;
@@ -505,6 +504,11 @@ public class Game {
             calculateFinalScores();
             List<String> winners = determineWinner();
 
+            for(String winner : winners) {
+                Player winnerPlayer = getPlayerByNickname(winner);
+                winnerPlayer.setAsWinner(true);
+            }
+
             // TODO: notifica verso la view del/dei vincitori
         }
     }
@@ -513,7 +517,7 @@ public class Game {
         Player current = players.get(currentPlayerNickname);
 
         if (current.getTribu() == tribu) {
-            gameBoard.applyExtraTurnOrderBonus(current); // "Tell, Don't Ask"
+            gameBoard.applyExtraTurnOrderBonus(current);
         }
     }
 

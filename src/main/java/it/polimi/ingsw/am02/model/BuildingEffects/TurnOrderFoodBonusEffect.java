@@ -5,6 +5,7 @@ import it.polimi.ingsw.am02.model.*;
 import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 
 public class TurnOrderFoodBonusEffect implements BuildingEffect, PhaseObserver {
+
     final Player player;
     final Game game;
 
@@ -24,4 +25,5 @@ public class TurnOrderFoodBonusEffect implements BuildingEffect, PhaseObserver {
             game.triggerTurnOrderExtraFood(player.getTribu());
         }
     }
+
 }

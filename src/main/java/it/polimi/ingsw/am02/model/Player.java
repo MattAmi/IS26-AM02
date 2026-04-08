@@ -26,9 +26,7 @@ public class Player {
         return totem;
     }
 
-    public Tribu getTribu(){
-        return tribu;
-    }
+    public Tribu getTribu() { return tribu; }
 
     public Boolean isWinner() {
         return isWinner;

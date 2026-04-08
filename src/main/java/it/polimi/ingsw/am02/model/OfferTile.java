@@ -33,17 +33,13 @@ public class OfferTile {
         return gainedFood;
     }
 
-    public int getNumUpperChoosable() {
-        return numUpperChoosable;
-    }
+    public int getNumUpperChoosable() { return numUpperChoosable; }
 
     public int getNumLowerChoosable() {
         return numLowerChoosable;
     }
 
-    public void acceptPlayer(Player player) {
-        this.occupyingPlayer = player;
-    }
+    public void acceptPlayer(Player player) { this.occupyingPlayer = player; }
 
     public void removePlayer(Player player) {
         this.occupyingPlayer = null;
@@ -54,9 +50,7 @@ public class OfferTile {
         return this.occupyingPlayer != null;
     }
 
-    public Player getOccupyingPlayer() {
-        return occupyingPlayer;
-    }
+    public Player getOccupyingPlayer() { return occupyingPlayer; }
 
     public void setRemainingPicks(int effectiveUpperChoosable, int effectiveLowerChoosable) {
         this.remainingUpper = effectiveUpperChoosable;
@@ -76,9 +70,7 @@ public class OfferTile {
         remainingLower -= lowerTaken;
     }
 
-    public boolean isSatisfied() {
-        return (remainingUpper == 0 && remainingLower == 0);
-    }
+    public boolean isSatisfied() { return (remainingUpper == 0 && remainingLower == 0); }
 
     public void resolveFoodOffer(Player player) {
         if (!isFoodResolved) {

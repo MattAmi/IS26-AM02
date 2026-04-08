@@ -15,12 +15,10 @@ public class OfferTrack {
 
     private void setUpTiles(int numPlayers) {
         List<OfferTile> allTiles = GameRegistry.getInstance().getOfferTiles(numPlayers);
-        for (OfferTile tile : allTiles) {
-            if (tile.getMinPlayers() <= numPlayers) {
-                tiles.add(new OfferTile(tile.getTileID(), tile.getMinPlayers(), tile.getGainedFood(),
-                        tile.getNumUpperChoosable(), tile.getNumLowerChoosable()));
-            }
-        }
+
+        for (OfferTile tile : allTiles)
+            tiles.add(new OfferTile(tile.getTileID(), tile.getMinPlayers(), tile.getGainedFood(),
+                    tile.getNumUpperChoosable(), tile.getNumLowerChoosable()));
 
         tiles.sort(Comparator.comparingInt(OfferTile::getTileID));
     }

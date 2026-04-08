@@ -14,4 +14,5 @@ public class GathererEffect implements CharacterEffect {
     public void applyEffect(Tribu tribu) {
         tribu.addFoodDiscount(foodDiscount);
     }
+
 }

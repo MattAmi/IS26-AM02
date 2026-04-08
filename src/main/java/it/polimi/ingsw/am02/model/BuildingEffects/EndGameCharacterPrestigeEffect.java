@@ -18,7 +18,6 @@ public class EndGameCharacterPrestigeEffect implements BuildingEffect, PhaseObse
         this.bonusPP = bonusPP;
     }
 
-
     @Override
     public void accept(EffectVisitor v) {
         v.visitPhaseObserver(this);

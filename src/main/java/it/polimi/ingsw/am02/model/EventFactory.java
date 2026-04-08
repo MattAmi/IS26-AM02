@@ -56,4 +56,5 @@ public class EventFactory {
         return new EventCard(cardID, era, type, isFinal, priority, eventEffect);
 
     }
+
 }

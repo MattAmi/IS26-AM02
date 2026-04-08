@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.model;
 
+import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
 import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 import it.polimi.ingsw.am02.model.Enumerations.Totem;
 
@@ -68,13 +69,13 @@ public class Game {
     private Player getPlayerByNickname(String nickname) {
         Player p = players.get(nickname);
         if (p == null)
-            throw new NoSuchPlayerException(); // TO DO
+            throw new NoSuchPlayerException(); // TODO
         return p;
     }
 
     private void validatePlayerTurn(String nickname) {
         if(!nickname.equals(currentPlayerNickname)) {
-            throw new NotYourTurnException(); // TO DO
+            throw new NotYourTurnException(); // TODO
         }
     }
 
@@ -189,13 +190,46 @@ public class Game {
     }
 
     private List<String> determineWinner() {
-        // TODO: Matteo
+        int maxPP = players.values().stream()
+                .mapToInt(p -> p.getTribu().getPrestigePoints())
+                .max()
+                .orElse(0);
 
-        return
+        List<Player> candidates = players.values().stream()
+                .filter(p -> p.getTribu().getPrestigePoints() == maxPP)
+                .toList();
+
+        if (candidates.size() == 1) {
+            return List.of(candidates.getFirst().getNickname());
+        }
+
+        int maxFood = candidates.stream()
+                .mapToInt(p -> p.getTribu().getFoodPoints())
+                .max()
+                .orElse(0);
+
+        candidates = candidates.stream()
+                .filter(p -> p.getTribu().getFoodPoints() == maxFood)
+                .toList();
+
+        return candidates.stream()
+                .map(Player::getNickname)
+                .toList();
     }
 
     private void calculateFinalScores() {
-        // TODO: Matteo
+        for (Player player : players.values()) {
+            Tribu tribu = player.getTribu();
+
+            tribu.addPrestigePoints(tribu.getPPBuilders());
+
+            int inventors = tribu.getCharacterCount(CharacterType.INVENTOR);
+            int inventionTypes = tribu.getNumOfDifferentInventionTypes();
+            tribu.addPrestigePoints(inventors * inventionTypes);
+
+            int artists = tribu.getCharacterCount(CharacterType.ARTIST);
+            tribu.addPrestigePoints((artists / 2) * 10);
+        }
     }
 
 
@@ -475,7 +509,7 @@ public class Game {
             calculateFinalScores();
             List<String> winners = determineWinner();
 
-            // TODO: Matteo
+            // TODO: notifica verso la view del/dei vincitori
         }
     }
 

@@ -144,8 +144,7 @@ public class Tribu {
                 cardTemplate.getEffectType(),
                 cardTemplate.getEffectParams(),
                 this,
-                game
-        );
+                game);
 
         if (myPersonalEffect != null) {
             this.activeBuildingEffects.add(myPersonalEffect);
@@ -156,10 +155,6 @@ public class Tribu {
 
     public void attachTribuObserver(TribuObserver effect) {
         tribuObservers.add(effect);
-    }
-
-    public void setImmuneToShamanicPenality(boolean newState) {
-        immuneToShamanicPenality = newState;
     }
 
     public int getPPBuilders() {
@@ -178,7 +173,6 @@ public class Tribu {
                 .stream()
                 .mapToInt(List::size).sum();
 
-        int totalDiscount = 0;
         //add gatherers' discount
         int gatherersDiscount = characters.get(CharacterType.GATHERER).size() * 3;
 

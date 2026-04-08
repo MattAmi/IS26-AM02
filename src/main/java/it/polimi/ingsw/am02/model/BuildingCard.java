@@ -35,9 +35,7 @@ public class BuildingCard {
         return buildingCost;
     }
 
-    public int getBuildingPp() {
-        return buildingPp;
-    }
+    public int getBuildingPp() { return buildingPp; }
 
     public String getEffectType() {
         return effectType;

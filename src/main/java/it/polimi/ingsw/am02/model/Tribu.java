@@ -139,7 +139,7 @@ public class Tribu {
             System.err.println("Errore: Edificio " + buildingID + " non trovato nel Registry!");
             return;
         }
-
+        // TODO in BuildingFactory
         BuildingEffect myPersonalEffect = BuildingFactory.createActiveEffect(
                 cardTemplate.getEffectType(),
                 cardTemplate.getEffectParams(),

@@ -323,7 +323,7 @@ public class GameBoard {
 
         for (EventCard event : sortedFinalEvents) {
             for(EventObserver observer: eventObservers)
-                observer.EventEnd(event.getType());
+                observer.EventStart(event.getType());
             event.applyEventEffect(players, eventObservers);
             for(EventObserver observer: eventObservers)
                 observer.EventEnd(event.getType());

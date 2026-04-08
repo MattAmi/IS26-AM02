@@ -4,7 +4,6 @@ package it.polimi.ingsw.am02.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.polimi.ingsw.am02.model.Enumerations.Era;
 
 import java.io.File;
 import java.io.IOException;

@@ -86,10 +86,6 @@ public class Game {
         // notifyObservers(); TO DO QUANDO FAREMO OBSERVER
     }
 
-    public List<Player> getPlayers() {
-        return new ArrayList<>(players.values());
-    }
-
     private void initializeBoard() { // Initializes GameBoard
         gameBoard = new GameBoard(numPlayers);
     }

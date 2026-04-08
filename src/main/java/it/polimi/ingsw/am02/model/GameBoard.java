@@ -139,7 +139,7 @@ public class GameBoard {
         for (String cardID : selectedIDs) {
             if (!upperRow.contains(cardID) && !lowerRow.contains(cardID)
                     && !upperRowBuildings.contains(cardID) && !lowerRowBuildings.contains(cardID)) {
-                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TO DO
+                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TODO
             } else if (upperRow.contains(cardID)) {
                 countUpper++;
             } else if (lowerRow.contains(cardID)) {
@@ -148,19 +148,19 @@ public class GameBoard {
         }
 
         if (countUpper > currentTile.getRemainingUpper() || countLower > currentTile.getRemainingLower()) {
-            throw new IllegalArgumentException("Selection exceeds allowed pick limits."); // TO DO
+            throw new IllegalArgumentException("Selection exceeds allowed pick limits."); // TODO
         }
 
         GameRegistry registry = GameRegistry.getInstance();
 
         for(String cardID : selectedIDs) {
             if(registry.isEvent(cardID)) {
-                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TO DO
+                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TODO
             } else if(registry.isBuilding(cardID)) {
                 int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
                 if(player.getTribu().getFoodPoints() < actualBuildingCost) {
-                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TO DO
+                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TODO
                 }
             }
         }
@@ -359,7 +359,7 @@ public class GameBoard {
 
         for(String cardID : selectedIDs) {
             if(registry.isEvent(cardID)) {
-                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TO DO
+                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TODO
             } else if(registry.isBuilding(cardID)) {
                 int actualBuildingCost = computeActualBuildingCost(cardID, player);
 

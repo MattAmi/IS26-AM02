@@ -29,14 +29,14 @@ public class OfferTrack {
         for (OfferTile tile : tiles) {
             if (tile.getTileID() == tileID) {
                 if (tile.isOccupied()) {
-                    throw new IllegalStateException("Offer tile '" + tileID + "' is already occupied."); // TO DO
+                    throw new IllegalStateException("Offer tile '" + tileID + "' is already occupied."); // TODO
                 }
 
                 tile.acceptPlayer(player);
                 return;
             }
         }
-        throw new IllegalArgumentException("No offer tile with ID '" + tileID + "' exists."); // TO DO
+        throw new IllegalArgumentException("No offer tile with ID '" + tileID + "' exists."); // TODO
     }
 
     public List<Player> getOrderedPlayers() {
@@ -55,7 +55,7 @@ public class OfferTrack {
                 return tile;
             }
         }
-        throw new IllegalStateException("Player '" + player.getNickname() + "' is not on any offer tile."); // TO DO
+        throw new IllegalStateException("Player '" + player.getNickname() + "' is not on any offer tile."); // TODO
 
     }
 }

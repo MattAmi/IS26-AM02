@@ -49,7 +49,11 @@ public class EventCard {
     public void applyEventEffect(List<Player> players, List<EventObserver> eventObservers) {
         for(EventObserver observer: eventObservers)
             observer.EventResolution(this.type, eventEffect);
+
         eventEffect.applyEffect(players);
+
+        for (EventObserver observer : eventObservers)
+            observer.EventPostResolution(this.type);
     }
 
 }

@@ -12,11 +12,11 @@ public class Tribu {
     private int totalBuildingDiscount;
     private int totalPPBuilders;
 
-    private Map<InventionType, Integer> inventionCounts;
-    private Map<CharacterType, List<String>> characters;
-    private List<String> buildings;
-    private List<BuildingEffect> activeBuildingEffects;
-    private List<TribuObserver> tribuObservers;
+    private final Map<InventionType, Integer> inventionCounts;
+    private final Map<CharacterType, List<String>> characters;
+    private final List<String> buildings;
+    private final List<BuildingEffect> activeBuildingEffects;
+    private final List<TribuObserver> tribuObservers;
     private boolean immuneToShamanicPenality;
 
 
@@ -82,7 +82,7 @@ public class Tribu {
     }
 
     public int getNumOfDifferentInventionTypes(){
-        return inventionCounts.keySet().size();
+        return inventionCounts.size();
     }
 
     public void setFoodPoints(int foodPoints) {
@@ -168,10 +168,10 @@ public class Tribu {
     public int calculateSustanceCost(){ //to calculate how much food should be paid, after applying all discounts
 
         //how much food to pay normally (before applying discount)
-        int costPreDiscount = 0;
+        int costPreDiscount;
         costPreDiscount = characters.values()
                 .stream()
-                .mapToInt(x->x.size()).sum();
+                .mapToInt(List::size).sum();
 
         int totalDiscount = 0;
         //add gatherers' discount

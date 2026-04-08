@@ -14,18 +14,15 @@ public class RegistrationVisitor implements EffectVisitor {
     public void visitPhaseObserver(PhaseObserver effect) {
         game.attachPhaseObserver(effect);
     }
-    //TODO Husnain: non è metodo statico
 
     @Override
     public void visitTribuObserver(TribuObserver effect) {
         tribu.attachTribuObserver(effect);
     }
-    //TODO Husnain: non è metodo statico
 
     @Override
     public void visitEventObserver(EventObserver effect){
         game.getGameBoard().attachEventObserver(effect);
     }
-    //TODO Husnain: non è metodo statico
 
 }

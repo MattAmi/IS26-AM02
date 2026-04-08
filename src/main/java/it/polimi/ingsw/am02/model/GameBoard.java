@@ -3,7 +3,6 @@ package it.polimi.ingsw.am02.model;
 import it.polimi.ingsw.am02.model.Enumerations.Era;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -26,7 +25,7 @@ public class GameBoard {
     private Player extraTurnPlayer;
     private int extraTurnRemainingUpper;
     private int extraTurnRemainingLower;
-    private List<EventObserver> eventObservers;
+    private final List<EventObserver> eventObservers;
 
 
     public GameBoard(int numPlayers) {
@@ -341,7 +340,7 @@ public class GameBoard {
         this.extraTurnRemainingLower = Math.min(lowerPicks, lowerRow.size());
     }
 
-    public void processExtraActionSelection(Player player, List<String> selectedIDs) {
+    public void processExtraActionSelection(Player player, List<String> selectedIDs, Game game) {
         int countUpper = 0;
         int countLower = 0;
 
@@ -357,7 +356,7 @@ public class GameBoard {
         }
 
         if (countUpper > extraTurnRemainingUpper || countLower > extraTurnRemainingLower) {
-            throw new IllegalArgumentException("Extra turn limits exceeded"); // TO DO
+            throw new IllegalArgumentException("Extra turn limits exceeded"); // TODO
         }
 
         GameRegistry registry = GameRegistry.getInstance();
@@ -369,7 +368,7 @@ public class GameBoard {
                 int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
                 if(player.getTribu().getFoodPoints() < actualBuildingCost) {
-                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TO DO
+                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TODO
                 }
             }
         }
@@ -380,8 +379,7 @@ public class GameBoard {
 
                 player.getTribu().addFoodPoints(-actualBuildingCost);
 
-                // TODO (Husnain): costruzione e aggiunta del building alla tribu (sia alla List<String>, sia alla List<BuildingEffect>)
-                // Devo creare il effetto aggiungerlo alla lista dei observer
+                player.getTribu().insertBuilding(cardID, game);
 
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);

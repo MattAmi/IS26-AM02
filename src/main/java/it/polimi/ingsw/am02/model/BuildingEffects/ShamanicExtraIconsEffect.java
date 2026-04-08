@@ -2,7 +2,6 @@ package it.polimi.ingsw.am02.model.BuildingEffects;
 
 import it.polimi.ingsw.am02.model.*;
 import it.polimi.ingsw.am02.model.Enumerations.EventType;
-import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 
 public class ShamanicExtraIconsEffect implements BuildingEffect, EventObserver {
     final Tribu tribu;
@@ -21,12 +20,12 @@ public class ShamanicExtraIconsEffect implements BuildingEffect, EventObserver {
     @Override
     public void EventStart(EventType eventType) {
         if(eventType == EventType.SHAMANIC_RITUAL){
-            Tribu.addShamanStars(bonusStars);
+            tribu.addShamanStars(bonusStars);
         }
     }
     public void EventEnd(EventType evenType) {
         if(evenType == EventType.SHAMANIC_RITUAL){
-            Tribu.addShamanStars(-bonusStars);
+            tribu.addShamanStars(-bonusStars);
         }
     }
 

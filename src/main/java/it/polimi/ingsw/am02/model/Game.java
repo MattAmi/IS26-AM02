@@ -17,14 +17,14 @@ public class Game {
     private String currentPlayerNickname;
     private List<String> turnOrder;
 
-    private List<PhaseObserver> phaseObservers;
+    private final List<PhaseObserver> phaseObservers;
 
     private boolean isExtraTurnMode;
     private String extraTurnPlayerNickname;
     private int extraTurnUpperPicks;
     private int extraTurnLowerPicks;
 
-    private List<PhaseObserver> observers;
+    private final List<PhaseObserver> observers;
 
 
 
@@ -150,7 +150,7 @@ public class Game {
     }
 
     private void executeRoundEventsResolution() {
-        gameBoard.resolveRoundEvents(players.values());
+        gameBoard.resolveRoundEvents(players.values().stream().toList());
     }
 
     private void executeNewRoundPreparation() {
@@ -185,7 +185,7 @@ public class Game {
     }
 
     private void executeFinalEventsResolution() {
-        gameBoard.resolveFinalEvents(players.values());
+        gameBoard.resolveFinalEvents(players.values().stream().toList());
     }
 
     private List<String> determineWinner() {
@@ -204,8 +204,6 @@ public class Game {
         this.extraTurnUpperPicks = extraUpperPicks;
         this.extraTurnLowerPicks = extraLowerPicks;
     }
-
-
 
     public void attachPhaseObserver(PhaseObserver effect) {
         phaseObservers.add(effect);
@@ -226,9 +224,9 @@ public class Game {
 
     // State Pattern with "Inner Classes"
     private interface GameState {
-        public void moveTotem(String nickname, char tileID);
-        public void resolveActions(String nickname, List<String> selectedIDs);
-        public void onEntry();
+        void moveTotem(String nickname, char tileID);
+        void resolveActions(String nickname, List<String> selectedIDs);
+        void onEntry();
     }
 
     private abstract class BaseState implements GameState {
@@ -240,11 +238,11 @@ public class Game {
         }
 
         public void moveTotem(String nickname, char tileID) {
-            throw new InvalidActionException(); // lancio eccezione siccome non è possibile fare questa mossa in questo momento
+            throw new IllegalArgumentException("Non puoi fare tale mossa ora"); //TODO
         }
 
         public void resolveActions(String nickname, List<String> selectedIDs) {
-            throw new InvalidActionException(); // lancio eccezione siccome non è possibile fare questa mossa in questo momento
+            throw new IllegalArgumentException("Non puoi fare tale mossa ora"); //TODO
         }
 
         public final void onEntry() {
@@ -252,7 +250,7 @@ public class Game {
             onEntryActions();
         }
 
-        public void onEntryActions() {};
+        public void onEntryActions() {}
     }
 
 
@@ -269,7 +267,7 @@ public class Game {
             randomizeInitialTurnOrder();
 
             transitionTo(new TotemPlacementState());
-        };
+        }
     }
 
 
@@ -332,9 +330,9 @@ public class Game {
             Player player = getPlayerByNickname(nickname);
 
             if (isExtraTurnMode) {
-                gameBoard.processExtraActionSelection(player, selectedIDs);
+                gameBoard.processExtraActionSelection(player, selectedIDs, Game.this);
             } else {
-                gameBoard.processActionSelection(player, selectedIDs);
+                gameBoard.processActionSelection(player, selectedIDs, Game.this);
             }
 
 

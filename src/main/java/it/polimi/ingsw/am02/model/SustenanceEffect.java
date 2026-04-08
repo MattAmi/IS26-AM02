@@ -5,7 +5,7 @@ import java.util.List;
 public class SustenanceEffect implements EventEffect {
 
     //Attributi
-    private int penaltyPerUnfed;
+    private final int penaltyPerUnfed;
 
     public SustenanceEffect(int penaltyPerUnfed) {
         this.penaltyPerUnfed = penaltyPerUnfed;

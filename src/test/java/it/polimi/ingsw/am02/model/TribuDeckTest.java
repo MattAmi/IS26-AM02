@@ -132,7 +132,7 @@ public class TribuDeckTest {
         for(int i=0; i<2; i++) addMockEvent(registry, eventIds, "E_" + (eId++), Era.III, false);
         for(int i=0; i<2; i++) addMockEvent(registry, eventIds, "E_" + (eId++), Era.III, true);
 
-        when(registry.getAllEventIDs()).thenReturn(eventIds);
+        when(registry.getAllEventsIDs()).thenReturn(eventIds);
     }
 
     private void addMockCharacter(GameRegistry registry, List<String> ids, String id, Era era, int minPlayers) {

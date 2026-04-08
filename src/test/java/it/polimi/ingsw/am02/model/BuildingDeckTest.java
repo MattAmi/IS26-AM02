@@ -24,7 +24,7 @@ public class BuildingDeckTest {
             mockedStatic.when(GameRegistry::getInstance).thenReturn(mockRegistry);
 
             List<String> realIds = setupRealRegistryData(mockRegistry);
-            when(mockRegistry.getAllBuildingIDs()).thenReturn(realIds);
+            when(mockRegistry.getAllBuildingsIDs()).thenReturn(realIds);
 
             BuildingDeck deck = new BuildingDeck(2);
 
@@ -44,7 +44,7 @@ public class BuildingDeckTest {
             mockedStatic.when(GameRegistry::getInstance).thenReturn(mockRegistry);
 
             List<String> realIds = setupRealRegistryData(mockRegistry);
-            when(mockRegistry.getAllBuildingIDs()).thenReturn(realIds);
+            when(mockRegistry.getAllBuildingsIDs()).thenReturn(realIds);
 
             BuildingDeck deck = new BuildingDeck(3);
 
@@ -63,7 +63,7 @@ public class BuildingDeckTest {
             mockedStatic.when(GameRegistry::getInstance).thenReturn(mockRegistry);
 
             List<String> realIds = setupRealRegistryData(mockRegistry);
-            when(mockRegistry.getAllBuildingIDs()).thenReturn(realIds);
+            when(mockRegistry.getAllBuildingsIDs()).thenReturn(realIds);
 
             BuildingDeck deck = new BuildingDeck(4);
 
@@ -82,7 +82,7 @@ public class BuildingDeckTest {
             mockedStatic.when(GameRegistry::getInstance).thenReturn(mockRegistry);
 
             List<String> realIds = setupRealRegistryData(mockRegistry);
-            when(mockRegistry.getAllBuildingIDs()).thenReturn(realIds);
+            when(mockRegistry.getAllBuildingsIDs()).thenReturn(realIds);
 
             BuildingDeck deck = new BuildingDeck(5);
 

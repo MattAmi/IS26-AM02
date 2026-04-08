@@ -93,7 +93,7 @@ public class Tribu {
         this.foodPoints += foodPoints;
     }
 
-    public void  addPrestigePoints(int prestigePoints){
+    public void addPrestigePoints(int prestigePoints){
         this.prestigePoints += prestigePoints;
     }
 
@@ -107,6 +107,10 @@ public class Tribu {
 
     public void addBuildingDiscount(int buildingDiscount){
         this.totalBuildingDiscount += buildingDiscount;
+    }
+
+    public void addPPBuilders(int ppBuilders){
+        this.totalPPBuilders += ppBuilders;
     }
 
     public void insertCharacter(String characterID){
@@ -162,7 +166,7 @@ public class Tribu {
         return characters.getOrDefault(type, new ArrayList<>());
     }
 
-    public int calculateSustanceCost(){ //to calculate how much food should be paid, after applying all discounts
+    public int calculateSustenanceCost(){ //to calculate how much food should be paid, after applying all discounts
 
         //how much food to pay normally (before applying discount)
         int costPreDiscount;
@@ -175,6 +179,10 @@ public class Tribu {
         int gatherersDiscount = characters.get(CharacterType.GATHERER).size() * 3;
 
         return Math.max(0, costPreDiscount - gatherersDiscount);
+    }
+
+    public void setImmuneToShamanicPenalty(boolean status) {
+        immuneToShamanicPenality = status;
     }
 
     public boolean isImmune() {

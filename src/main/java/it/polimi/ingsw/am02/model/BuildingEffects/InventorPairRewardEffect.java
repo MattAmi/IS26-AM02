@@ -1,7 +1,6 @@
 package it.polimi.ingsw.am02.model.BuildingEffects;
 
 import it.polimi.ingsw.am02.model.BuildingEffect;
-import it.polimi.ingsw.am02.model.CharacterCard;
 import it.polimi.ingsw.am02.model.EffectVisitor;
 import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
 import it.polimi.ingsw.am02.model.TribuObserver;

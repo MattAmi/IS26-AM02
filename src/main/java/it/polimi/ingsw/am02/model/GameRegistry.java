@@ -4,6 +4,7 @@ package it.polimi.ingsw.am02.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.polimi.ingsw.am02.model.Enumerations.Era;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,7 +78,17 @@ public class GameRegistry {
     }
 
     public void loadBuildings(String buildingsPath) {
-        // TODO fabbrica buildings
+        try {
+            List<JsonNode> nodes = parseJsonToList(buildingsPath);
+            BuildingCardFactory buildingCardFactory = new BuildingCardFactory();
+
+            for (JsonNode node : nodes) {
+                BuildingCard buildingCard = buildingCardFactory.createBuilding(node);
+                buildingMap.put(buildingCard.getCardID(), buildingCard);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void loadOfferTiles(String offerTilesPath) {

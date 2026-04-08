@@ -26,7 +26,7 @@ public class EndGameCharacterPrestigeEffect implements BuildingEffect, PhaseObse
     @Override
     public void onPhaseChange(PhaseType newPhase) {
         if(newPhase == PhaseType.END_GAME){
-            tribu.addPrestigePoints (bonusPP * tribu.getCharacterCount(type));
+            tribu.addPrestigePoints(bonusPP * tribu.getCharacterCount(type));
         }
     }
 }

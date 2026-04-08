@@ -1,6 +1,5 @@
 package it.polimi.ingsw.am02.model;
 
-// TODO: need of dependency addition on pom file
 import com.fasterxml.jackson.databind.JsonNode;
 import it.polimi.ingsw.am02.model.Enumerations.Era;
 

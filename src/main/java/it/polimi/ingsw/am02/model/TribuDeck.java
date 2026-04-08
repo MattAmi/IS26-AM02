@@ -29,7 +29,7 @@ public class TribuDeck {
 
         for (String id : registry.getAllEventsIDs()) {
             EventCard card = registry.getEvent(id);
-            if (card != null && card.getMinPlayers() <= numPlayers) {
+            if (card != null) {
                 if (card.isFinal()) {
                     eventiFinali.add(id);
                 } else {

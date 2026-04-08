@@ -5,7 +5,7 @@ import java.util.List;
 public class SustenanceEffect implements EventEffect {
 
     //Attributi
-    private int penaltyPerUnfed;
+    private final int penaltyPerUnfed;
 
     public SustenanceEffect(int penaltyPerUnfed) {
         this.penaltyPerUnfed = penaltyPerUnfed;
@@ -18,7 +18,7 @@ public class SustenanceEffect implements EventEffect {
             Tribu tribu = player.getTribu();
 
             //verify the amount of food to be paid, applying both the gatherer and building discounts (calculated in tribu)
-            int netCost = tribu.calculateSustanceCost();
+            int netCost = tribu.calculateSustenanceCost();
             //check how much they can actually pay with food (how much food do they have?)
             int canBePayed = tribu.getFoodPoints();
             //pay the actual amount due in food (it will be the minimum of what I owe and what I have)

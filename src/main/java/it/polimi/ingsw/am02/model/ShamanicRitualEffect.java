@@ -2,67 +2,56 @@ package it.polimi.ingsw.am02.model;
 
 import java.util.List;
 
-public class ShamanicRitualEffect implements EventEffect{
+public class ShamanicRitualEffect implements EventEffect {
 
     //Attributi
-    int majorityBonus;
-    int minorityBonus;
+    final int majorityBonus;
+    final int minorityBonus;
 
     //Costruttore
     public ShamanicRitualEffect(int maxbonus, int minbonus) {
         this.majorityBonus = maxbonus;
-        this.minorityBonus =  minbonus;
+        this.minorityBonus = minbonus;
     }
 
-    int maxStars = 0;
-    int minStars = 0;
     //Metodi
     @Override
     public void applyEffect(List<Player> players) {
 
-        //determine the maximum and minimum stars
         for (Player player : players) {
-            Tribu tribu = player.getTribu();
-            int stars = tribu.getShamanStars();
-
-            int buildingStars = 0;
-
-            //TODO : prendo eventuali stars dei building della tribu
-
-            int effectiveStars = stars + buildingStars;
-            if (effectiveStars > maxStars) {
-                maxStars = effectiveStars;
-            }
-            if (effectiveStars < minStars) {
-                minStars = effectiveStars;
-            }
+            player.getTribu().setLastEventBonusReceived(0);
         }
 
+        int maxStars = 0;
+        int minStars = Integer.MAX_VALUE;
 
-        //give points to the one with the most stars, and take away points from
-        // the one with the least stars(if he's not protected in some way)
+        for (Player player : players) {
+            int effectiveStars = player.getTribu().getShamanStars();
+            if (effectiveStars > maxStars) maxStars = effectiveStars;
+            if (effectiveStars < minStars) minStars = effectiveStars;
+        }
+
+        int finalMaxStars = maxStars;
+        long maxCount = players.stream()
+                .filter(p -> p.getTribu().getShamanStars() == finalMaxStars)
+                .count();
+
         for (Player player : players) {
             Tribu tribu = player.getTribu();
-            int stars = tribu.getShamanStars();
-
-            int buildingStars = 0;
-
-            //TODO : prendo eventuali stars dei building della tribu
-
-            int effectiveStars = stars + buildingStars;
+            int effectiveStars = tribu.getShamanStars();
+            boolean isExclusiveWinner = (effectiveStars == maxStars && maxCount == 1);
 
             if (effectiveStars == maxStars) {
                 tribu.addPrestigePoints(majorityBonus);
+                tribu.setLastEventBonusReceived(isExclusiveWinner ? majorityBonus : 0);
+            } else {
+                tribu.setLastEventBonusReceived(0);
             }
-            if (effectiveStars == minStars) {
-                if(!player.getTribu().isImmune())
-                {
-                    tribu.addPrestigePoints(minorityBonus);
-                }
+
+            if (effectiveStars == minStars && !tribu.isImmune()) {
+                tribu.addPrestigePoints(minorityBonus);
             }
         }
-
-
     }
 
 }

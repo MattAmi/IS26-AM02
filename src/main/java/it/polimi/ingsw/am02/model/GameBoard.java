@@ -3,7 +3,6 @@ package it.polimi.ingsw.am02.model;
 import it.polimi.ingsw.am02.model.Enumerations.Era;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -18,15 +17,13 @@ public class GameBoard {
     private OfferTrack offerTrack;
     private TribuDeck tribuDeck;
     private BuildingDeck buildingDeck;
-    private int availableFoodPoints;
-    private int availablePrestigePoints;
     private Era currentEra;
     private boolean eraChangedFlag;
     private final int[] initialFoodBonuses = {2, 3, 3, 4, 4};
     private Player extraTurnPlayer;
     private int extraTurnRemainingUpper;
     private int extraTurnRemainingLower;
-    private List<EventObserver> eventObservers;
+    private final List<EventObserver> eventObservers;
 
 
     public GameBoard(int numPlayers) {
@@ -35,8 +32,6 @@ public class GameBoard {
         this.upperRowBuildings = new ArrayList<>();
         this.lowerRowBuildings = new ArrayList<>();
 
-        this.availableFoodPoints = INITIAL_FOOD_POINTS; // TODO
-        this.availablePrestigePoints = INITIAL_PRESTIGE_POINTS; // TODO
         this.currentEra = Era.I;
         this.eraChangedFlag = false;
 
@@ -50,7 +45,6 @@ public class GameBoard {
     }
 
     private void setUpGameBoard(int numPlayers) {
-        GameRegistry registry = GameRegistry.getInstance();
 
         this.offerTrack = new OfferTrack(numPlayers);
         this.turnOrderTile = new TurnOrderTile(numPlayers);
@@ -90,9 +84,10 @@ public class GameBoard {
             return registry.getCharacter(cardID).getEra();
         } else if (registry.isEvent(cardID)) {
             return registry.getEvent(cardID).getEra();
-        } else if (registry.isBuilding(cardID)) {
+        } else {
             return registry.getBuilding(cardID).getEra();
         }
+
     }
 
     private void checkAndUpdateEra(String cardID) {
@@ -144,7 +139,7 @@ public class GameBoard {
         for (String cardID : selectedIDs) {
             if (!upperRow.contains(cardID) && !lowerRow.contains(cardID)
                     && !upperRowBuildings.contains(cardID) && !lowerRowBuildings.contains(cardID)) {
-                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TO DO
+                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TODO
             } else if (upperRow.contains(cardID)) {
                 countUpper++;
             } else if (lowerRow.contains(cardID)) {
@@ -153,19 +148,19 @@ public class GameBoard {
         }
 
         if (countUpper > currentTile.getRemainingUpper() || countLower > currentTile.getRemainingLower()) {
-            throw new IllegalArgumentException("Selection exceeds allowed pick limits."); // TO DO
+            throw new IllegalArgumentException("Selection exceeds allowed pick limits."); // TODO
         }
 
         GameRegistry registry = GameRegistry.getInstance();
 
         for(String cardID : selectedIDs) {
             if(registry.isEvent(cardID)) {
-                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TO DO
+                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TODO
             } else if(registry.isBuilding(cardID)) {
                 int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
                 if(player.getTribu().getFoodPoints() < actualBuildingCost) {
-                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TO DO
+                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TODO
                 }
             }
         }
@@ -176,8 +171,8 @@ public class GameBoard {
 
                 player.getTribu().addFoodPoints(-actualBuildingCost);
 
-                player.getTribu().insertBuilding(cardID, game);
-                //
+                player.getTribu().insertBuilding(cardID, player, game);
+
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);
                 } else {
@@ -328,7 +323,7 @@ public class GameBoard {
 
         for (EventCard event : sortedFinalEvents) {
             for(EventObserver observer: eventObservers)
-                observer.EventEnd(event.getType());
+                observer.EventStart(event.getType());
             event.applyEventEffect(players, eventObservers);
             for(EventObserver observer: eventObservers)
                 observer.EventEnd(event.getType());
@@ -357,19 +352,19 @@ public class GameBoard {
         }
 
         if (countUpper > extraTurnRemainingUpper || countLower > extraTurnRemainingLower) {
-            throw new IllegalArgumentException("Extra turn limits exceeded"); // TO DO
+            throw new IllegalArgumentException("Extra turn limits exceeded"); // TODO
         }
 
         GameRegistry registry = GameRegistry.getInstance();
 
         for(String cardID : selectedIDs) {
             if(registry.isEvent(cardID)) {
-                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TO DO
+                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TODO
             } else if(registry.isBuilding(cardID)) {
                 int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
                 if(player.getTribu().getFoodPoints() < actualBuildingCost) {
-                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TO DO
+                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TODO
                 }
             }
         }
@@ -380,7 +375,7 @@ public class GameBoard {
 
                 player.getTribu().addFoodPoints(-actualBuildingCost);
 
-                player.getTribu().insertBuilding(cardID, game);
+                player.getTribu().insertBuilding(cardID, player, game);
 
                 if(upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);

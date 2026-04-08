@@ -21,13 +21,13 @@ public class ShamanicImmunityEffect implements BuildingEffect, EventObserver {
     @Override
     public void EventStart(EventType eventType) {
         if(eventType == EventType.SHAMANIC_RITUAL){
-            tribu.setImmuneToShamanicPenality(true);
+            tribu.setImmuneToShamanicPenalty(true);
         }
     }
 
     public void EventEnd(EventType eventType){
         if(eventType == EventType.SHAMANIC_RITUAL){
-            tribu.setImmuneToShamanicPenality(false);
+            tribu.setImmuneToShamanicPenalty(false);
         }
     }
 }

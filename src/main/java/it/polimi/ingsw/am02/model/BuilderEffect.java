@@ -15,6 +15,6 @@ public class BuilderEffect implements CharacterEffect {
     @Override
     public void applyEffect(Tribu tribu) {
         tribu.addBuildingDiscount(buildingDiscount);
-        tribu.addPrestigePoints(prestigePoints);
+        tribu.addPPBuilders(prestigePoints);
     }
 }

@@ -51,10 +51,7 @@ public class OfferTile {
     }
 
     public boolean isOccupied() {
-        if (this.occupyingPlayer != null) {
-            return true;
-        }
-        return false;
+        return this.occupyingPlayer != null;
     }
 
     public Player getOccupyingPlayer() {

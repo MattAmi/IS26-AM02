@@ -7,8 +7,8 @@ import java.util.List;
 public class HuntEffect implements EventEffect{
 
     //Attributi
-    int foodPerHunter;
-    int ppPerHunter;
+    final int foodPerHunter;
+    final int ppPerHunter;
 
     //Costruttore
     public HuntEffect(int foodPerHunter, int ppPerHunter) {

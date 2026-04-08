@@ -1,6 +1,5 @@
 package it.polimi.ingsw.am02.model;
 
-// TODO: need of dependency addition on pom file
 import com.fasterxml.jackson.databind.JsonNode;
 import it.polimi.ingsw.am02.model.Enumerations.Era;
 
@@ -36,9 +35,7 @@ public class BuildingCard {
         return buildingCost;
     }
 
-    public int getBuildingPp() {
-        return buildingPp;
-    }
+    public int getBuildingPp() { return buildingPp; }
 
     public String getEffectType() {
         return effectType;

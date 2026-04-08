@@ -2,7 +2,6 @@ package it.polimi.ingsw.am02.model.BuildingEffects;
 
 import it.polimi.ingsw.am02.model.*;
 import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
-import it.polimi.ingsw.am02.model.Enumerations.EventType;
 import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 
 public class PrestigePointMultiplierPerTypeEffect implements BuildingEffect, PhaseObserver {

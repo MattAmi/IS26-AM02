@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.model;
 
+import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
 import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 import it.polimi.ingsw.am02.model.Enumerations.Totem;
 
@@ -17,14 +18,14 @@ public class Game {
     private String currentPlayerNickname;
     private List<String> turnOrder;
 
-    private List<PhaseObserver> phaseObservers;
+    private final List<PhaseObserver> phaseObservers;
 
     private boolean isExtraTurnMode;
     private String extraTurnPlayerNickname;
     private int extraTurnUpperPicks;
     private int extraTurnLowerPicks;
 
-    private List<PhaseObserver> observers;
+    private final List<PhaseObserver> observers;
 
 
 
@@ -68,13 +69,13 @@ public class Game {
     private Player getPlayerByNickname(String nickname) {
         Player p = players.get(nickname);
         if (p == null)
-            throw new NoSuchPlayerException(); // TO DO
+            throw new IllegalArgumentException(); // TODO
         return p;
     }
 
     private void validatePlayerTurn(String nickname) {
         if(!nickname.equals(currentPlayerNickname)) {
-            throw new NotYourTurnException(); // TO DO
+            throw new IllegalArgumentException(); // TODO
         }
     }
 
@@ -83,10 +84,6 @@ public class Game {
         int nextIndex = (currentPlayerIndex + 1) % turnOrder.size();
         currentPlayerNickname = turnOrder.get(nextIndex);
         // notifyObservers(); TO DO QUANDO FAREMO OBSERVER
-    }
-
-    public List<Player> getPlayers() {
-        return new ArrayList<>(players.values());
     }
 
     private void initializeBoard() { // Initializes GameBoard
@@ -150,7 +147,7 @@ public class Game {
     }
 
     private void executeRoundEventsResolution() {
-        gameBoard.resolveRoundEvents(players.values());
+        gameBoard.resolveRoundEvents(players.values().stream().toList());
     }
 
     private void executeNewRoundPreparation() {
@@ -185,17 +182,50 @@ public class Game {
     }
 
     private void executeFinalEventsResolution() {
-        gameBoard.resolveFinalEvents(players.values());
+        gameBoard.resolveFinalEvents(players.values().stream().toList());
     }
 
     private List<String> determineWinner() {
-        // TODO: Matteo
+        int maxPP = players.values().stream()
+                .mapToInt(p -> p.getTribu().getPrestigePoints())
+                .max()
+                .orElse(0);
 
-        return
+        List<Player> candidates = players.values().stream()
+                .filter(p -> p.getTribu().getPrestigePoints() == maxPP)
+                .toList();
+
+        if (candidates.size() == 1) {
+            return List.of(candidates.getFirst().getNickname());
+        }
+
+        int maxFood = candidates.stream()
+                .mapToInt(p -> p.getTribu().getFoodPoints())
+                .max()
+                .orElse(0);
+
+        candidates = candidates.stream()
+                .filter(p -> p.getTribu().getFoodPoints() == maxFood)
+                .toList();
+
+        return candidates.stream()
+                .map(Player::getNickname)
+                .toList();
     }
 
     private void calculateFinalScores() {
-        // TODO: Matteo
+        for (Player player : players.values()) {
+            Tribu tribu = player.getTribu();
+
+            tribu.addPrestigePoints(tribu.getPPBuilders());
+
+            int inventors = tribu.getCharacterCount(CharacterType.INVENTOR);
+            int inventionTypes = tribu.getNumOfDifferentInventionTypes();
+            tribu.addPrestigePoints(inventors * inventionTypes);
+
+            int artists = tribu.getCharacterCount(CharacterType.ARTIST);
+            tribu.addPrestigePoints((artists / 2) * 10);
+        }
     }
 
 
@@ -204,8 +234,6 @@ public class Game {
         this.extraTurnUpperPicks = extraUpperPicks;
         this.extraTurnLowerPicks = extraLowerPicks;
     }
-
-
 
     public void attachPhaseObserver(PhaseObserver effect) {
         phaseObservers.add(effect);
@@ -226,9 +254,9 @@ public class Game {
 
     // State Pattern with "Inner Classes"
     private interface GameState {
-        public void moveTotem(String nickname, char tileID);
-        public void resolveActions(String nickname, List<String> selectedIDs);
-        public void onEntry();
+        void moveTotem(String nickname, char tileID);
+        void resolveActions(String nickname, List<String> selectedIDs);
+        void onEntry();
     }
 
     private abstract class BaseState implements GameState {
@@ -240,11 +268,11 @@ public class Game {
         }
 
         public void moveTotem(String nickname, char tileID) {
-            throw new InvalidActionException(); // lancio eccezione siccome non è possibile fare questa mossa in questo momento
+            throw new IllegalArgumentException("Non puoi fare tale mossa ora"); //TODO
         }
 
         public void resolveActions(String nickname, List<String> selectedIDs) {
-            throw new InvalidActionException(); // lancio eccezione siccome non è possibile fare questa mossa in questo momento
+            throw new IllegalArgumentException("Non puoi fare tale mossa ora"); //TODO
         }
 
         public final void onEntry() {
@@ -252,7 +280,7 @@ public class Game {
             onEntryActions();
         }
 
-        public void onEntryActions() {};
+        public void onEntryActions() {}
     }
 
 
@@ -269,7 +297,7 @@ public class Game {
             randomizeInitialTurnOrder();
 
             transitionTo(new TotemPlacementState());
-        };
+        }
     }
 
 
@@ -303,7 +331,7 @@ public class Game {
             validatePlayerTurn(nickname);
             Player player = getPlayerByNickname(nickname);
 
-            if (tileID != TURN_ORDER_TILE_ID) {
+            if (tileID != 'T') {
                 throw new IllegalArgumentException("Invalid tile destination in ActionResolutionState"); //TO DO
             }
 
@@ -323,7 +351,7 @@ public class Game {
                 gameBoard.movePlayerToTurnOrder(player);
                 transitionTo(new EndPlayerTurnState());
             } else {
-                throw new IllegalStateException("Player has not fulfilled pick obligations"); // TO DO
+                throw new IllegalStateException("Player has not fulfilled pick obligations"); // TODO
             }
         }
 
@@ -332,9 +360,9 @@ public class Game {
             Player player = getPlayerByNickname(nickname);
 
             if (isExtraTurnMode) {
-                gameBoard.processExtraActionSelection(player, selectedIDs);
+                gameBoard.processExtraActionSelection(player, selectedIDs, Game.this);
             } else {
-                gameBoard.processActionSelection(player, selectedIDs);
+                gameBoard.processActionSelection(player, selectedIDs, Game.this);
             }
 
 
@@ -377,7 +405,10 @@ public class Game {
             if (extraTurnPlayerNickname != null) {
                 isExtraTurnMode = true;
                 currentPlayerNickname = extraTurnPlayerNickname;
-                gameBoard.initializeExtraPlayerLimits(getPlayerByNickname(extraTurnPlayerNickname), extraTurnUpperPicks, extraTurnLowerPicks);
+                gameBoard.initializeExtraPlayerLimits(
+                        getPlayerByNickname(extraTurnPlayerNickname),
+                        extraTurnUpperPicks,
+                        extraTurnLowerPicks);
 
                 transitionTo(new ActionResolutionState());
 
@@ -474,7 +505,7 @@ public class Game {
             calculateFinalScores();
             List<String> winners = determineWinner();
 
-            // TODO: Matteo
+            // TODO: notifica verso la view del/dei vincitori
         }
     }
 

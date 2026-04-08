@@ -21,22 +21,11 @@ public class ShamanicWinMultiplierEffect implements BuildingEffect, EventObserve
     }
 
     @Override
-    public void EventStart(EventType currentEvent) {
-        // Qui non facciamo nulla, l'effetto scatta alla risoluzione
-    }
-
-    @Override
-    public void EventResolution(EventType currentEvent, EventCard event) {
+    public void EventPostResolution(EventType currentEvent) {
         if (currentEvent == EventType.SHAMANIC_RITUAL) {
-
-            int maxStars = game.calculateMaxShamanStars();
-            int myShamanStars = tribu.getShamanStars();
-
-            if (myShamanStars >= maxStars && maxStars > 0) {
-
-                int baseBonusPP = event.getMajorityBonus();
-                int extraBonus = baseBonusPP * (multiplier - 1);
-
+            int bonusReceived = tribu.getLastEventBonusReceived();
+            if (bonusReceived > 0) {
+                int extraBonus = bonusReceived * (multiplier - 1);
                 tribu.addPrestigePoints(extraBonus);
             }
         }

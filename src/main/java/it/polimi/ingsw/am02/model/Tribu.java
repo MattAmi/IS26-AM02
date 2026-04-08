@@ -12,12 +12,14 @@ public class Tribu {
     private int totalBuildingDiscount;
     private int totalPPBuilders;
 
-    private Map<InventionType, Integer> inventionCounts;
-    private Map<CharacterType, List<String>> characters;
-    private List<String> buildings;
-    private List<BuildingEffect> activeBuildingEffects;
-    private List<TribuObserver> tribuObservers;
+    private final Map<InventionType, Integer> inventionCounts;
+    private final Map<CharacterType, List<String>> characters;
+    private final List<String> buildings;
+    private final List<BuildingEffect> activeBuildingEffects;
+    private final List<TribuObserver> tribuObservers;
     private boolean immuneToShamanicPenality;
+
+    private int lastEventBonusReceived;
 
 
     public Tribu(int foodPoints, int prestigePoints, int shamanStars) {
@@ -40,6 +42,8 @@ public class Tribu {
         this.activeBuildingEffects = new ArrayList<>();
         this.tribuObservers = new ArrayList<>();
         this.immuneToShamanicPenality = false;
+
+        this.lastEventBonusReceived = 0;
     }
 
 
@@ -82,7 +86,7 @@ public class Tribu {
     }
 
     public int getNumOfDifferentInventionTypes(){
-        return inventionCounts.keySet().size();
+        return inventionCounts.size();
     }
 
     public void setFoodPoints(int foodPoints) {
@@ -93,7 +97,7 @@ public class Tribu {
         this.foodPoints += foodPoints;
     }
 
-    public void  addPrestigePoints(int prestigePoints){
+    public void addPrestigePoints(int prestigePoints){
         this.prestigePoints += prestigePoints;
     }
 
@@ -109,6 +113,10 @@ public class Tribu {
         this.totalBuildingDiscount += buildingDiscount;
     }
 
+    public void addPPBuilders(int ppBuilders){
+        this.totalPPBuilders += ppBuilders;
+    }
+
     public void insertCharacter(String characterID){
 
         CharacterCard newInsertion = GameRegistry.getInstance().getCharacter(characterID);
@@ -120,13 +128,13 @@ public class Tribu {
         newInsertion.applyCharacterEffect(this);
     }
 
-    public void insertBuilding(String buildingID, Game game) {
+    public void insertBuilding(String buildingID, Player player, Game game) {
 
         this.buildings.add(buildingID);
 
         BuildingCard cardTemplate = GameRegistry.getInstance().getBuilding(buildingID);
 
-        // Sarebbe Exception
+        // sarebbe Exception // TODO
         if (cardTemplate == null) {
             System.err.println("Errore: Edificio " + buildingID + " non trovato nel Registry!");
             return;
@@ -136,8 +144,8 @@ public class Tribu {
                 cardTemplate.getEffectType(),
                 cardTemplate.getEffectParams(),
                 this,
-                game
-        );
+                player,
+                game);
 
         if (myPersonalEffect != null) {
             this.activeBuildingEffects.add(myPersonalEffect);
@@ -150,37 +158,37 @@ public class Tribu {
         tribuObservers.add(effect);
     }
 
-
-
-    public void setImmuneToShamanicPenality(boolean newState) {
-        immuneToShamanicPenality = newState;
-    }
-
     public int getPPBuilders() {
         return totalPPBuilders;
     }
-
 
     public List<String> getCharactersOfType(CharacterType type) {
         return characters.getOrDefault(type, new ArrayList<>());
     }
 
-    public int calculateSustanceCost(){ //to calculate how much food should be paid, after applying all discounts
+    public int calculateSustenanceCost(){ //to calculate how much food should be paid, after applying all discounts
 
         //how much food to pay normally (before applying discount)
-        int costPreDiscount = 0;
+        int costPreDiscount;
         costPreDiscount = characters.values()
                 .stream()
-                .mapToInt(x->x.size()).sum();
+                .mapToInt(List::size).sum();
 
-        int totalDiscount = 0;
         //add gatherers' discount
         int gatherersDiscount = characters.get(CharacterType.GATHERER).size() * 3;
 
         return Math.max(0, costPreDiscount - gatherersDiscount);
     }
 
+    public void setImmuneToShamanicPenalty(boolean status) {
+        immuneToShamanicPenality = status;
+    }
+
     public boolean isImmune() {
         return immuneToShamanicPenality;
     }
+
+    public void setLastEventBonusReceived(int bonus) { this.lastEventBonusReceived = bonus; }
+
+    public int getLastEventBonusReceived() { return lastEventBonusReceived; }
 }

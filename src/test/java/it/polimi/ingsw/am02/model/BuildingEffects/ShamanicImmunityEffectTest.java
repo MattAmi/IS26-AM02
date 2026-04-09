@@ -39,8 +39,8 @@ class ShamanicImmunityEffectTest {
         // Act
         effect.EventStart(TRIGGERING_EVENT);
 
-        // Assert: Explicitly verify the immunity is turned ON (true)
-        verify(mockTribu, times(1)).setImmuneToShamanicPenality(true);
+        // Assert: Explicitly verify the immunity is turned ON (true) using corrected method name
+        verify(mockTribu, times(1)).setImmuneToShamanicPenalty(true);
     }
 
     @Test
@@ -48,8 +48,8 @@ class ShamanicImmunityEffectTest {
         // Act
         effect.EventStart(NON_TRIGGERING_EVENT);
 
-        // Assert: The effect must remain completely silent, not touching the immunity state
-        verify(mockTribu, never()).setImmuneToShamanicPenality(anyBoolean());
+        // Assert: The effect must remain completely silent
+        verify(mockTribu, never()).setImmuneToShamanicPenalty(anyBoolean());
     }
 
     // --- EVENT END TESTS ---
@@ -59,8 +59,8 @@ class ShamanicImmunityEffectTest {
         // Act
         effect.EventEnd(TRIGGERING_EVENT);
 
-        // Assert: Explicitly verify the immunity is turned OFF (false)
-        verify(mockTribu, times(1)).setImmuneToShamanicPenality(false);
+        // Assert: Explicitly verify the immunity is turned OFF (false) using corrected method name
+        verify(mockTribu, times(1)).setImmuneToShamanicPenalty(false);
     }
 
     @Test
@@ -69,7 +69,7 @@ class ShamanicImmunityEffectTest {
         effect.EventEnd(NON_TRIGGERING_EVENT);
 
         // Assert: Ensure it doesn't accidentally revoke immunity during the wrong event cleanup
-        verify(mockTribu, never()).setImmuneToShamanicPenality(anyBoolean());
+        verify(mockTribu, never()).setImmuneToShamanicPenalty(anyBoolean());
     }
 
     // --- HELPER METHOD ---

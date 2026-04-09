@@ -45,10 +45,12 @@ class InventorPairRewardEffectTest {
     void testOnCharacterInsertion_WithWrongCharacter_ShouldDoNothing() {
         InventorPairRewardEffect effect = new InventorPairRewardEffect(mockTribu, FOOD_REWARD_PER_PAIR);
 
+        Mockito.clearInvocations(mockTribu);
+
         // Act: Insert a character that is NOT an inventor
         effect.onCharacterInsertion(NON_TRIGGERING_CHARACTER);
 
-        // Assert: The effect must immediately exit. It shouldn't even ask the Tribu for invention counts.
+        // Assert: The effect must immediately exit without checking the Tribu
         verify(mockTribu, never()).getInventionTypeCount(any());
         verify(mockTribu, never()).addFoodPoints(anyInt());
     }

@@ -22,12 +22,11 @@ public class Tribu {
 
     private int lastEventBonusReceived;
 
+    public Tribu() {
 
-    public Tribu(int foodPoints, int prestigePoints, int shamanStars) {
-
-        this.foodPoints = foodPoints;
-        this.prestigePoints = prestigePoints;
-        this.shamanStars = shamanStars;
+        this.foodPoints = 0;
+        this.prestigePoints = 0;
+        this.shamanStars = 0;
         this.totalFoodDiscount = 0;
         this.totalBuildingDiscount = 0;
         this.totalPPBuilders = 0;
@@ -96,7 +95,11 @@ public class Tribu {
     }
 
     public int getNumOfDifferentInventionTypes(){
-        return inventionCounts.size();
+        int count = 0;
+        for (int val : inventionCounts.values()) {
+            if (val > 0) count++;
+        }
+        return count;
     }
 
     public void setFoodPoints(int foodPoints) {

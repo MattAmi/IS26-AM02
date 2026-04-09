@@ -238,7 +238,7 @@ public class Game {
         phaseObservers.add(effect);
     }
 
-    public void notifyPhaseObservers(PhaseType phase) {
+    private void notifyPhaseObservers(PhaseType phase) {
       if (!isExtraTurnMode) {
             for (PhaseObserver phaseObserver : phaseObservers) {
                 phaseObserver.onPhaseChange(phase);
@@ -248,6 +248,15 @@ public class Game {
 
     public GameBoard getGameBoard() {
         return this.gameBoard;
+    }
+
+    public void triggerTurnOrderExtraFood(Tribu tribu) {
+
+        Player current = players.get(currentPlayerNickname);
+
+        if (current.getTribu() == tribu) {
+            gameBoard.applyExtraTurnOrderBonus(current);
+        }
     }
 
 
@@ -422,6 +431,7 @@ public class Game {
 
 
     private class EventResolutionState extends BaseState {
+
         public EventResolutionState() {
             super(PhaseType.EVENT_RESOLUTION);
         }
@@ -437,6 +447,7 @@ public class Game {
 
 
     private class NewRoundState extends BaseState {
+
         public NewRoundState() {
             super(PhaseType.NEW_ROUND);
         }
@@ -480,6 +491,7 @@ public class Game {
 
 
     private class FinalEventsResolutionState extends BaseState {
+
         public FinalEventsResolutionState() {
             super(PhaseType.FINAL_EVENT_RESOLUTION);
         }
@@ -512,15 +524,6 @@ public class Game {
             // TODO: notifica verso la view del/dei vincitori
         }
     }
-
-    public void triggerTurnOrderExtraFood(Tribu tribu) {
-        Player current = players.get(currentPlayerNickname);
-
-        if (current.getTribu() == tribu) {
-            gameBoard.applyExtraTurnOrderBonus(current);
-        }
-    }
-
 
 
 }

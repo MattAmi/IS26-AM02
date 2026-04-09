@@ -13,6 +13,7 @@ public class OfferTile {
     private boolean isFoodResolved;
 
     public OfferTile(char tileID, int minPlayers, int gainedFood, int numUpperChoosable, int numLowerChoosable) {
+
         this.tileID = tileID;
         this.minPlayers = minPlayers;
         this.gainedFood = gainedFood;
@@ -73,11 +74,11 @@ public class OfferTile {
     public boolean isSatisfied() { return (remainingUpper == 0 && remainingLower == 0); }
 
     public void resolveFoodOffer(Player player) {
+
         if (!isFoodResolved) {
             player.getTribu().addFoodPoints(gainedFood);
             isFoodResolved = true;
         }
     }
-
 
 }

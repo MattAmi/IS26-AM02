@@ -18,7 +18,7 @@ public class Tribu {
     private final List<String> buildings;
     private final List<BuildingEffect> activeBuildingEffects;
     private final List<TribuObserver> tribuObservers;
-    private boolean immuneToShamanicPenality;
+    private boolean immuneToShamanicPenalty;
 
     private int lastEventBonusReceived;
 
@@ -46,7 +46,7 @@ public class Tribu {
         this.buildings = new ArrayList<>();
         this.activeBuildingEffects = new ArrayList<>();
         this.tribuObservers = new ArrayList<>();
-        this.immuneToShamanicPenality = false;
+        this.immuneToShamanicPenalty = false;
 
         this.lastEventBonusReceived = 0;
     }
@@ -67,6 +67,10 @@ public class Tribu {
 
     public int getBuildingDiscount() {
         return totalBuildingDiscount;
+    }
+
+    public int getPPBuilders() {
+        return totalPPBuilders;
     }
 
     public int getTotalPPBuildings() { return totalPPBuildings; }
@@ -163,10 +167,6 @@ public class Tribu {
         tribuObservers.add(effect);
     }
 
-    public int getPPBuilders() {
-        return totalPPBuilders;
-    }
-
     public List<String> getCharactersOfType(CharacterType type) {
         return characters.getOrDefault(type, new ArrayList<>());
     }
@@ -183,11 +183,11 @@ public class Tribu {
     }
 
     public void setImmuneToShamanicPenalty(boolean status) {
-        immuneToShamanicPenality = status;
+        immuneToShamanicPenalty = status;
     }
 
     public boolean isImmune() {
-        return immuneToShamanicPenality;
+        return immuneToShamanicPenalty;
     }
 
     public void setLastEventBonusReceived(int bonus) { this.lastEventBonusReceived = bonus; }

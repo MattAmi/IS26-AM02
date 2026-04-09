@@ -53,6 +53,7 @@ public class GameBoard {
     }
 
     private void setUpInitialRows(int numPlayers) {
+
         GameRegistry registry = GameRegistry.getInstance();
 
         while (lowerRow.size() < (numPlayers + 1) && !tribuDeck.isEmpty()) {
@@ -78,6 +79,7 @@ public class GameBoard {
     }
 
     private Era getCardEra(String cardID) {
+
         GameRegistry registry = GameRegistry.getInstance();
 
         if(registry.isCharacter(cardID)) {
@@ -91,6 +93,7 @@ public class GameBoard {
     }
 
     private void checkAndUpdateEra(String cardID) {
+
         Era cardEra = getCardEra(cardID);
         if (cardEra != currentEra) {
             currentEra = cardEra;
@@ -99,6 +102,7 @@ public class GameBoard {
     }
 
     public void setUpInitialTurnOrder(List<Player> orderedPlayers) {
+
         for(int i = 0; i < orderedPlayers.size(); i++) {
             Player player = orderedPlayers.get(i);
             turnOrderTile.registerPlayer(player);
@@ -107,6 +111,7 @@ public class GameBoard {
     }
 
     public void movePlayerToOffer(Player player, char tileID) {
+
         offerTrack.occupyTile(player, tileID);
         turnOrderTile.removePlayer(player);
     }
@@ -334,12 +339,14 @@ public class GameBoard {
     }
 
     public void initializeExtraPlayerLimits(Player player, int upperPicks, int lowerPicks) {
-        this.extraTurnPlayer =  player;
+
+        this.extraTurnPlayer = player;
         this.extraTurnRemainingUpper = Math.min(upperPicks, upperRow.size());
         this.extraTurnRemainingLower = Math.min(lowerPicks, lowerRow.size());
     }
 
     public void processExtraActionSelection(Player player, List<String> selectedIDs, Game game) {
+
         int countUpper = 0;
         int countLower = 0;
 

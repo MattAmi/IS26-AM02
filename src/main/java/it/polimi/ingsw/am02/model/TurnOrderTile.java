@@ -11,6 +11,7 @@ public class TurnOrderTile {
     private final int[] prestigePointsMalus;
 
     public TurnOrderTile(int numPlayers) {
+
         TurnOrderTile templateTurnOrderTile = GameRegistry.getInstance().getTurnOrderTile(numPlayers);
         this.numPlayers = numPlayers;
         this.playerPositions = new Player[numPlayers];
@@ -19,6 +20,7 @@ public class TurnOrderTile {
     }
 
     public TurnOrderTile(int numPlayers, List<Integer> foodBonuses, List<Integer> prestigePointsMalus) {
+
         this.numPlayers = numPlayers;
         this.playerPositions = new Player[numPlayers];
         this.foodBonuses = foodBonuses.stream().mapToInt(Integer::intValue).toArray();
@@ -30,6 +32,7 @@ public class TurnOrderTile {
     }
 
     public void registerPlayer(Player player) {
+
         for(int i = 0; i < playerPositions.length; i++) {
             if (playerPositions[i] == null) {
                 playerPositions[i] = player;
@@ -39,6 +42,7 @@ public class TurnOrderTile {
     }
 
     public void removePlayer(Player player) {
+
         for(int i = 0; i < playerPositions.length; i++) {
             if (playerPositions[i] == player) {
                 playerPositions[i] = null;
@@ -48,6 +52,7 @@ public class TurnOrderTile {
     }
 
     public boolean isEmpty() {
+
         for(int i = 0; i < playerPositions.length; i++) {
             if (playerPositions[i] != null) {
                 return false;
@@ -86,6 +91,7 @@ public class TurnOrderTile {
     }
 
     public int getPlayerCount() {
+
         int playerCount = 0;
         for(int i = 0; i < playerPositions.length; i++) {
             if (playerPositions[i] != null) {
@@ -97,6 +103,7 @@ public class TurnOrderTile {
     }
 
     public List<Player> getOrderedPlayers() {
+
         List<Player> orderedPlayers = new ArrayList<>();
 
         for(int i = 0; i < playerPositions.length; i++) {
@@ -108,6 +115,7 @@ public class TurnOrderTile {
     }
 
     public int getFoodForPlayer(Player player) {
+
         for (int i = 0; i < playerPositions.length; i++) {
             if (playerPositions[i] == player) {
                 return foodBonuses[i];

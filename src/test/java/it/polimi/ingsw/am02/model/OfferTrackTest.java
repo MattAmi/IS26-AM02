@@ -44,10 +44,6 @@ class OfferTrackTest {
 
     @Test
     void constructorWithTwoPlayersCreatesCorrectNumberOfTiles() {
-        // Verify that OfferTrack creates the right number of tiles for a 2-player game
-        List<OfferTile> templateTiles = GameRegistry.getInstance().getOfferTiles(2);
-        int expectedSize = templateTiles.size();
-
         // getOrderedPlayers on a fresh track returns an empty list (no one is placed yet)
         List<Player> ordered = offerTrack.getOrderedPlayers();
         assertTrue(ordered.isEmpty(),
@@ -56,7 +52,6 @@ class OfferTrackTest {
 
     @Test
     void constructorWithFivePlayersCreatesMoreTiles() {
-        OfferTrack fivePlayerTrack = new OfferTrack(5);
 
         List<OfferTile> twoPlayerTiles = GameRegistry.getInstance().getOfferTiles(2);
         List<OfferTile> fivePlayerTiles = GameRegistry.getInstance().getOfferTiles(5);

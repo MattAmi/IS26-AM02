@@ -424,4 +424,6 @@ public class GameBoard {
         eventObservers.add(effect);
     }
 
+    TurnOrderTile getTurnOrderTile() { return turnOrderTile; } // For testing
+
 }

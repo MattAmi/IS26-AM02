@@ -1,5 +1,9 @@
 package it.polimi.ingsw.am02.model;
 
+import it.polimi.ingsw.am02.model.exceptions.PlayerNotOnTileException;
+import it.polimi.ingsw.am02.model.exceptions.TileNotFoundException;
+import it.polimi.ingsw.am02.model.exceptions.TileOccupiedException;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -27,14 +31,14 @@ public class OfferTrack {
         for (OfferTile tile : tiles) {
             if (tile.getTileID() == tileID) {
                 if (tile.isOccupied()) {
-                    throw new IllegalStateException("Offer tile '" + tileID + "' is already occupied."); // TODO
+                    throw new TileOccupiedException(tileID);
                 }
 
                 tile.acceptPlayer(player);
                 return;
             }
         }
-        throw new IllegalArgumentException("No offer tile with ID '" + tileID + "' exists."); // TODO
+        throw new TileNotFoundException(tileID);
     }
 
     public List<Player> getOrderedPlayers() {
@@ -53,7 +57,6 @@ public class OfferTrack {
                 return tile;
             }
         }
-        throw new IllegalStateException("Player '" + player.getNickname() + "' is not on any offer tile."); // TODO
-
+        throw new PlayerNotOnTileException(player.getNickname());
     }
 }

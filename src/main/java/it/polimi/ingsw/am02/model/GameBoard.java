@@ -1,6 +1,10 @@
 package it.polimi.ingsw.am02.model;
 
 import it.polimi.ingsw.am02.model.Enumerations.Era;
+import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
+import it.polimi.ingsw.am02.model.exceptions.EventCardNotTakeableException;
+import it.polimi.ingsw.am02.model.exceptions.InsufficientFoodException;
+import it.polimi.ingsw.am02.model.exceptions.PickLimitExceededException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -144,28 +148,33 @@ public class GameBoard {
         for (String cardID : selectedIDs) {
             if (!upperRow.contains(cardID) && !lowerRow.contains(cardID)
                     && !upperRowBuildings.contains(cardID) && !lowerRowBuildings.contains(cardID)) {
-                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TODO
-            } else if (upperRow.contains(cardID)) {
+                throw new CardNotFoundException(cardID);
+
+            } else if (upperRow.contains(cardID) || upperRowBuildings.contains(cardID)) {
                 countUpper++;
-            } else if (lowerRow.contains(cardID)) {
+            } else if (lowerRow.contains(cardID) || lowerRowBuildings.contains(cardID)) {
                 countLower++;
             }
         }
 
         if (countUpper > currentTile.getRemainingUpper() || countLower > currentTile.getRemainingLower()) {
-            throw new IllegalArgumentException("Selection exceeds allowed pick limits."); // TODO
+            throw new PickLimitExceededException(
+                    "Upper limit exceeded: " + countUpper + "/" + currentTile.getRemainingUpper() +
+                            ", Lower limit exceeded: " + countLower + "/" + currentTile.getRemainingLower()
+            );
         }
 
         GameRegistry registry = GameRegistry.getInstance();
 
         for(String cardID : selectedIDs) {
             if(registry.isEvent(cardID)) {
-                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TODO
+                throw new EventCardNotTakeableException(cardID);
+
             } else if(registry.isBuilding(cardID)) {
                 int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
                 if(player.getTribu().getFoodPoints() < actualBuildingCost) {
-                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TODO
+                    throw new InsufficientFoodException(cardID, actualBuildingCost, player.getTribu().getFoodPoints());
                 }
             }
         }
@@ -353,7 +362,8 @@ public class GameBoard {
         for (String cardID : selectedIDs) {
             if (!upperRow.contains(cardID) && !lowerRow.contains(cardID)
                     && !upperRowBuildings.contains(cardID) && !lowerRowBuildings.contains(cardID)) {
-                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TO DO
+                throw new CardNotFoundException(cardID);
+
             } else if (upperRow.contains(cardID) || upperRowBuildings.contains(cardID)) {
                 countUpper++;
             } else if (lowerRow.contains(cardID) || lowerRowBuildings.contains(cardID)) {
@@ -362,19 +372,23 @@ public class GameBoard {
         }
 
         if (countUpper > extraTurnRemainingUpper || countLower > extraTurnRemainingLower) {
-            throw new IllegalArgumentException("Extra turn limits exceeded"); // TODO
+            throw new IllegalArgumentException(
+                    "extra turn: upper=" + countUpper + "/" + extraTurnRemainingUpper +
+                            ", lower=" + countLower + "/" + extraTurnRemainingLower
+            );
         }
 
         GameRegistry registry = GameRegistry.getInstance();
 
         for(String cardID : selectedIDs) {
             if(registry.isEvent(cardID)) {
-                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TODO
+                throw new EventCardNotTakeableException(cardID);
+
             } else if(registry.isBuilding(cardID)) {
                 int actualBuildingCost = computeActualBuildingCost(cardID, player);
 
                 if(player.getTribu().getFoodPoints() < actualBuildingCost) {
-                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TODO
+                    throw new InsufficientFoodException(cardID, actualBuildingCost, player.getTribu().getFoodPoints());
                 }
             }
         }

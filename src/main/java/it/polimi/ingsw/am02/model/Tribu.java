@@ -1,6 +1,8 @@
 package it.polimi.ingsw.am02.model;
 
 import it.polimi.ingsw.am02.model.Enumerations.*;
+import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
+
 import java.util.*;
 
 public class Tribu {
@@ -143,11 +145,7 @@ public class Tribu {
 
         BuildingCard cardTemplate = GameRegistry.getInstance().getBuilding(buildingID);
 
-        // sarebbe Exception // TODO
-        if (cardTemplate == null) {
-            System.err.println("Errore: Edificio " + buildingID + " non trovato nel Registry!");
-            return;
-        }
+        if (cardTemplate == null) throw new CardNotFoundException(buildingID);
 
         this.buildings.add(buildingID);
         this.totalPPBuildings += cardTemplate.getBuildingPp();

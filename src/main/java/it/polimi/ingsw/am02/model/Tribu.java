@@ -194,4 +194,8 @@ public class Tribu {
     public void setLastEventBonusReceived(int bonus) { this.lastEventBonusReceived = bonus; }
 
     public int getLastEventBonusReceived() { return lastEventBonusReceived; }
+
+
+
+    List<BuildingEffect> getActiveBuildingEffects() {return activeBuildingEffects; } // For testing
 }

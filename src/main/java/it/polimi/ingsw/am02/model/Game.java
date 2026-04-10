@@ -68,7 +68,7 @@ public class Game {
 
 
     // Helper methods
-    private Player getPlayerByNickname(String nickname) {
+      Player getPlayerByNickname(String nickname) {
         Player p = players.get(nickname);
         if (p == null)
             throw new PlayerNotFoundException(nickname);

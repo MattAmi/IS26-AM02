@@ -3,9 +3,7 @@ package it.polimi.ingsw.am02.model;
 import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
 import it.polimi.ingsw.am02.model.Enumerations.Era;
 import it.polimi.ingsw.am02.model.Enumerations.EventType;
-import it.polimi.ingsw.am02.model.Enumerations.InventionType;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Disabled;
 
 import java.util.*;
 
@@ -16,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * Validates that all JSON files are parsed correctly and that the registry
  * exposes consistent, complete data for characters, events, buildings,
  * offer tiles, and turn order tiles.
- *
  * No mocking is used: the real GameRegistry singleton is loaded once
  * with all JSON files and shared across all tests.
  */
@@ -80,12 +77,12 @@ class GameRegistryIntegrationTest {
         @DisplayName("Era I 2-player characters: type distribution is correct")
         void eraOneTypeCounts() {
             // From the JSON, Era I with minPlayers <= 2:
-            // INVENTOR: C_001..C_004 = 4
-            // BUILDER:  C_008..C_010 = 3
+            // INVENTOR: C_001...C_004 = 4
+            // BUILDER:  C_008...C_010 = 3
             // GATHERER: C_012, C_013 = 2
-            // ARTIST:   C_016..C_018 = 3
+            // ARTIST:   C_016...C_018 = 3
             // SHAMAN:   C_021, C_022 = 2
-            // HUNTER:   C_025..C_027 = 3
+            // HUNTER:   C_025...C_027 = 3
             Map<CharacterType, Integer> counts = new EnumMap<>(CharacterType.class);
             for (int i = 1; i <= 29; i++) {
                 String cardID = String.format("C_%03d", i);

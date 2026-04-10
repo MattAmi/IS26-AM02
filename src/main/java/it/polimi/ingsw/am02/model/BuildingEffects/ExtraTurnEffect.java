@@ -32,5 +32,4 @@ public class ExtraTurnEffect implements BuildingEffect, PhaseObserver {
 
         }
     }
-
 }

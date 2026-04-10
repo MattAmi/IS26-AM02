@@ -27,5 +27,4 @@ public class FlatPrestigeBonusEffect implements BuildingEffect, PhaseObserver {
             tribu.addPrestigePoints(bonusPP);
         }
     }
-
 }

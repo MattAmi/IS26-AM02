@@ -25,5 +25,4 @@ public class TurnOrderFoodBonusEffect implements BuildingEffect, PhaseObserver {
             game.triggerTurnOrderExtraFood(player.getTribu());
         }
     }
-
 }

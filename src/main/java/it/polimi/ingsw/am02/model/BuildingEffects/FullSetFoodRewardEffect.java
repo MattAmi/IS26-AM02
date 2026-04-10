@@ -45,4 +45,5 @@ public class FullSetFoodRewardEffect implements BuildingEffect, TribuObserver {
         }
         return minPezzi;
     }
+
 }

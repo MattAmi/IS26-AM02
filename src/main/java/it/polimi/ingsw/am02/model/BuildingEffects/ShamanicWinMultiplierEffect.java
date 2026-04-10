@@ -30,5 +30,4 @@ public class ShamanicWinMultiplierEffect implements BuildingEffect, EventObserve
             }
         }
     }
-
 }

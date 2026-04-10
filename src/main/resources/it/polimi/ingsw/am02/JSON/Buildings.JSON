@@ -4,7 +4,7 @@
     "era": "I",
     "buildingCost": 3,
     "buildingPp": 3,
-    "buildingEffect": "BONUS_FOOD_TURN_ORDER"
+    "effectType": "TURN_ORDER_FOOD_BONUS"
   },
 
   {
@@ -12,7 +12,10 @@
     "era": "I",
     "buildingCost": 3,
     "buildingPp": 4,
-    "buildingEffect": "ON_INVENTOR_PAIR_FOOD"
+    "effectType": "INVENTOR_PAIR_FOOD_REWARD",
+    "effectParams": {
+      "foodReward": 3
+    }
   },
 
   {
@@ -20,7 +23,10 @@
     "era": "I",
     "buildingCost": 4,
     "buildingPp": 3,
-    "buildingEffect": "ON_SET_OF_SIX_FOOD"
+    "effectType": "FULL_SET_FOOD_REWARD",
+    "effectParams": {
+      "foodReward": 3
+    }
   },
 
   {
@@ -28,145 +34,199 @@
     "era": "I",
     "buildingCost": 4,
     "buildingPp": 4,
-    "buildingEffect": "SUSTENANCE_DISCOUNT_FOR_TYPES",
-    "targetCharacter": "GATHERER",
-    "discountValue": 1
+    "effectType": "EVENT_CHARACTER_BONUS",
+    "effectParams": {
+      "eventType": "SUSTENANCE",
+      "characterType": "GATHERER",
+      "foodReward": 0,
+      "prestigeReward": 0,
+      "foodDiscount": 1
+    }
   },
 
   {
     "cardID": "B_005",
     "era": "I",
     "buildingCost": 5,
-    "buildingPp": 2,
-    "buildingEffect": "IMMUNITY_SHAMAN_MINORITY"
+    "buildingPp": 3,
+    "effectType": "EVENT_CHARACTER_BONUS",
+    "effectParams": {
+      "eventType": "SUSTENANCE",
+      "characterType": "ARTIST",
+      "foodReward": 0,
+      "prestigeReward": 0,
+      "foodDiscount": 1
+    }
   },
 
   {
     "cardID": "B_006",
-    "era": "I",
+    "era": "II",
     "buildingCost": 5,
-    "buildingPp": 3,
-    "buildingEffect": "SUSTENANCE_DISCOUNT_FOR_TYPES",
-    "targetCharacter": "ARTIST",
-    "discountValue": 1
+    "buildingPp": 6,
+    "effectType": "EVENT_CHARACTER_BONUS",
+    "effectParams": {
+      "eventType": "CAVE_PAINTINGS",
+      "characterType": "ARTIST",
+      "foodReward": 1,
+      "prestigeReward": 0,
+      "foodDiscount": 0
+    }
   },
 
   {
     "cardID": "B_007",
     "era": "II",
-    "buildingCost": 5,
-    "buildingPp": 6,
-    "buildingEffect": "CAVE_PAINTING_FOOD_PER_ARTIST"
+    "buildingCost": 7,
+    "buildingPp": 4,
+    "effectType": "EVENT_CHARACTER_BONUS",
+    "effectParams": {
+      "eventType": "SUSTENANCE",
+      "characterType": "INVENTOR",
+      "foodReward": 0,
+      "prestigeReward": 0,
+      "foodDiscount": 1
+    }
   },
 
   {
     "cardID": "B_008",
     "era": "II",
-    "buildingCost": 5,
-    "buildingPp": 6,
-    "buildingEffect": "ENDGAME_PP_SET_OF_SIX"
+    "buildingCost": 7,
+    "buildingPp": 2,
+    "effectType": "EVENT_CHARACTER_BONUS",
+    "effectParams": {
+      "eventType": "HUNT",
+      "characterType": "HUNTER",
+      "foodReward": 1,
+      "prestigeReward": 1,
+      "foodDiscount": 0
+    }
   },
 
   {
     "cardID": "B_009",
-    "era": "II",
+    "era": "III",
     "buildingCost": 6,
-    "buildingPp": 4,
-    "buildingEffect": "EXTRA_SHAMAN_STARS"
+    "buildingPp": 6,
+    "effectType": "ENDGAME_CHARACTER_PP",
+    "effectParams": {
+      "characterType": "INVENTOR",
+      "bonusPP": 2
+    }
   },
 
   {
     "cardID": "B_010",
-    "era": "II",
+    "era": "III",
     "buildingCost": 6,
-    "buildingPp": 4,
-    "buildingEffect": "DOUBLE_PP_BUILDERS"
+    "buildingPp": 3,
+    "effectType": "ENDGAME_CHARACTER_PP",
+    "effectParams": {
+      "characterType": "BUILDER",
+      "bonusPP": 4
+    }
   },
 
   {
     "cardID": "B_011",
-    "era": "II",
-    "buildingCost": 7,
-    "buildingPp": 0,
-    "buildingEffect": "DOUBLE_PP_SHAMAN_MAJORITY"
+    "era": "III",
+    "buildingCost": 8,
+    "buildingPp": 8,
+    "effectType": "ENDGAME_CHARACTER_PP",
+    "effectParams": {
+      "characterType": "HUNTER",
+      "bonusPP": 3
+    }
   },
 
   {
     "cardID": "B_012",
-    "era": "II",
+    "era": "III",
     "buildingCost": 7,
     "buildingPp": 4,
-    "buildingEffect": "SUSTENANCE_DISCOUNT_FOR_TYPES",
-    "targetCharacter": "INVENTOR",
-    "discountValue": 1
+    "effectType": "ENDGAME_CHARACTER_PP",
+    "effectParams": {
+      "characterType": "ARTIST",
+      "bonusPP": 4
+    }
   },
 
   {
     "cardID": "B_013",
-    "era": "II",
+    "era": "III",
     "buildingCost": 7,
-    "buildingPp": 2,
-    "buildingEffect": "HUNT_EVENT_EXTRA_BONUS"
+    "buildingPp": 4,
+    "effectType": "ENDGAME_CHARACTER_PP",
+    "effectParams": {
+      "characterType": "SHAMAN",
+      "bonusPP": 4
+    }
   },
 
   {
     "cardID": "B_014",
     "era": "III",
-    "buildingCost": 6,
-    "buildingPp": 3,
-    "buildingEffect": "ENDGAME_PP_PER_TYPE",
-    "targetCharacter": "BUILDER",
-    "ppPerCharacter": 4
+    "buildingCost": 7,
+    "buildingPp": 6,
+    "effectType": "ENDGAME_CHARACTER_PP",
+    "effectParams": {
+      "characterType": "GATHERER",
+      "bonusPP": 4
+    }
   },
 
   {
     "cardID": "B_015",
-    "era": "III",
-    "buildingCost": 6,
+    "era": "II",
+    "buildingCost": 5,
     "buildingPp": 6,
-    "buildingEffect": "ENDGAME_PP_PER_TYPE",
-    "targetCharacter": "INVENTOR",
-    "ppPerCharacter": 2
+    "effectType": "ENDGAME_FULL_SET_PP",
+    "effectParams": {
+      "bonusPP": 6
+    }
   },
 
   {
     "cardID": "B_016",
-    "era": "III",
-    "buildingCost": 7,
+    "era": "II",
+    "buildingCost": 6,
     "buildingPp": 4,
-    "buildingEffect": "ENDGAME_PP_PER_TYPE",
-    "targetCharacter": "SHAMAN",
-    "ppPerCharacter": 4
+    "effectType": "PP_MULTIPLIER_PER_TYPE",
+    "effectParams": {
+      "characterType": "BUILDER",
+      "multiplier": 2
+    }
   },
 
   {
     "cardID": "B_017",
-    "era": "III",
-    "buildingCost": 7,
+    "era": "II",
+    "buildingCost": 6,
     "buildingPp": 4,
-    "buildingEffect": "ENDGAME_PP_PER_TYPE",
-    "targetCharacter": "ARTIST",
-    "ppPerCharacter": 4
+    "effectType": "EXTRA_SHAMAN_STARS",
+    "effectParams": {
+      "bonusStars": 3
+    }
   },
 
   {
     "cardID": "B_018",
-    "era": "III",
+    "era": "II",
     "buildingCost": 7,
-    "buildingPp": 6,
-    "buildingEffect": "ENDGAME_PP_PER_TYPE",
-    "targetCharacter": "GATHERER",
-    "ppPerCharacter": 4
+    "buildingPp": 0,
+    "effectType": "SHAMANIC_WIN_MULTIPLIER",
+    "effectParams": {
+      "multiplier": 2
+    }
   },
 
   {
     "cardID": "B_019",
-    "era": "III",
-    "buildingCost": 8,
-    "buildingPp": 8,
-    "buildingEffect": "ENDGAME_PP_PER_TYPE",
-    "targetCharacter": "HUNTER",
-    "ppPerCharacter": 3
+    "era": "I",
+    "buildingCost": 5,
+    "buildingPp": 2,
+    "effectType": "SHAMANIC_IMMUNITY"
   },
 
   {
@@ -174,7 +234,11 @@
     "era": "III",
     "buildingCost": 9,
     "buildingPp": 3,
-    "buildingEffect": "BONUS_ACTION_TOP_ROW"
+    "effectType": "EXTRA_TURN",
+    "effectParams": {
+      "extraUpperPicks": 1,
+      "extraLowerPicks": 0
+    }
   },
 
   {
@@ -182,6 +246,10 @@
     "era": "III",
     "buildingCost": 10,
     "buildingPp": 0,
-    "buildingEffect": "FLAT_ENDGAME_PP"
+    "effectType": "ENDGAME_FLAT_PP",
+    "effectParams": {
+      "bonusPP": 25
+    }
   }
+
 ]

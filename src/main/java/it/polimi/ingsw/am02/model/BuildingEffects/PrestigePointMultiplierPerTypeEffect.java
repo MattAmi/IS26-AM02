@@ -27,4 +27,5 @@ public class PrestigePointMultiplierPerTypeEffect implements BuildingEffect, Pha
             tribu.addPrestigePoints(bonus);
         }
     }
+
 }

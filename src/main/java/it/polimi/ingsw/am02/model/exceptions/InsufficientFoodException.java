@@ -6,8 +6,8 @@ package it.polimi.ingsw.am02.model.exceptions;
  */
 public class InsufficientFoodException extends RuntimeException {
 
-    public InsufficientFoodException(String cardID, int cost, int available) {
-        super("Insufficient food to purchase building '" + cardID
-                + "': costs " + cost + ", available " + available + ".");
+    public InsufficientFoodException(int totalCost, int available) {
+        super("Insufficient food: cost=" + totalCost + ", available=" + available +
+                " (missing " + (totalCost - available) + ")");
     }
 }

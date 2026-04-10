@@ -138,11 +138,7 @@ public class GameBoard {
         currentTile.setRemainingPicks(effectiveUpper, effectiveLower);
     }
 
-    public void processActionSelection(Player player, List<String> selectedIDs, Game game) {
-        OfferTile currentTile = offerTrack.getTileByPlayer(player);
-
-        currentTile.resolveFoodOffer(player);
-
+    private int[] countSelectedByRow(List<String> selectedIDs) {
         int countUpper = 0;
         int countLower = 0;
 
@@ -158,26 +154,22 @@ public class GameBoard {
             }
         }
 
-        if (countUpper > currentTile.getRemainingUpper() || countLower > currentTile.getRemainingLower()) {
-            throw new PickLimitExceededException(
-                    "Upper limit exceeded: " + countUpper + "/" + currentTile.getRemainingUpper() +
-                            ", Lower limit exceeded: " + countLower + "/" + currentTile.getRemainingLower()
-            );
-        }
+        return new int[]{countUpper, countLower};
+    }
 
+    private Map<String, Integer> validateAndComputeCosts(List<String> selectedIDs, Player player) {
         GameRegistry registry = GameRegistry.getInstance();
         Map<String, Integer> buildingCosts = new HashMap<>();
         int totalBuildingCost = 0;
 
-        for(String cardID : selectedIDs) {
-            if(registry.isEvent(cardID)) {
+        for (String cardID : selectedIDs) {
+            if (registry.isEvent(cardID)) {
                 throw new EventCardNotTakeableException(cardID);
 
-            } else if(registry.isBuilding(cardID)) {
+            } else if (registry.isBuilding(cardID)) {
                 int actualCost = computeActualBuildingCost(cardID, player);
                 buildingCosts.put(cardID, actualCost);
                 totalBuildingCost += actualCost;
-
             }
         }
 
@@ -185,14 +177,22 @@ public class GameBoard {
             throw new InsufficientFoodException(totalBuildingCost, player.getTribu().getFoodPoints());
         }
 
-        for(String cardID : selectedIDs) {
-            if(registry.isBuilding(cardID)) {
-                int actualBuildingCost = buildingCosts.get(cardID);
+        return buildingCosts;
+    }
 
-                player.getTribu().addFoodPoints(-actualBuildingCost);
+    private void executeCardAcquisition(List<String> selectedIDs, Player player, Game game,
+                                        Map<String, Integer> buildingCosts) {
+
+        GameRegistry registry = GameRegistry.getInstance();
+
+        for (String cardID : selectedIDs) {
+            if (registry.isBuilding(cardID)) {
+                int actualCost = buildingCosts.get(cardID);
+
+                player.getTribu().addFoodPoints(-actualCost);
                 player.getTribu().insertBuilding(cardID, player, game);
 
-                if(upperRowBuildings.contains(cardID)) {
+                if (upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);
                 } else {
                     lowerRowBuildings.remove(cardID);
@@ -201,22 +201,40 @@ public class GameBoard {
             } else {
                 player.getTribu().insertCharacter(cardID);
 
-                if(upperRow.contains(cardID)) {
+                if (upperRow.contains(cardID)) {
                     upperRow.remove(cardID);
                 } else {
                     lowerRow.remove(cardID);
                 }
             }
         }
-
-        currentTile.decrementPicks(countUpper, countLower);
-
     }
 
     private int computeActualBuildingCost(String cardID, Player player) {
         int buildingCost = GameRegistry.getInstance().getBuilding(cardID).getBuildingCost();
         int buildingDiscount = player.getTribu().getBuildingDiscount();
+
         return Math.max(0, buildingCost - buildingDiscount);
+    }
+
+    public void processActionSelection(Player player, List<String> selectedIDs, Game game) {
+
+        OfferTile currentTile = offerTrack.getTileByPlayer(player);
+        currentTile.resolveFoodOffer(player);
+
+        int[] counts = countSelectedByRow(selectedIDs);
+
+        if (counts[0] > currentTile.getRemainingUpper() || counts[1] > currentTile.getRemainingLower()) {
+            throw new PickLimitExceededException(
+                    "Upper limit exceeded: " + counts[0] + "/" + currentTile.getRemainingUpper() +
+                            ", Lower limit exceeded: " + counts[1] + "/" + currentTile.getRemainingLower()
+            );
+        }
+
+        Map<String, Integer> buildingCosts = validateAndComputeCosts(selectedIDs, player);
+        executeCardAcquisition(selectedIDs, player, game, buildingCosts);
+
+        currentTile.decrementPicks(counts[0], counts[1]);
     }
 
     public boolean canPlayerFinish(Player player) {
@@ -372,73 +390,20 @@ public class GameBoard {
     }
 
     public void processExtraActionSelection(Player player, List<String> selectedIDs, Game game) {
+        int[] counts = countSelectedByRow(selectedIDs);
 
-        int countUpper = 0;
-        int countLower = 0;
-
-        for (String cardID : selectedIDs) {
-            if (!upperRow.contains(cardID) && !lowerRow.contains(cardID)
-                    && !upperRowBuildings.contains(cardID) && !lowerRowBuildings.contains(cardID)) {
-                throw new CardNotFoundException(cardID);
-
-            } else if (upperRow.contains(cardID) || upperRowBuildings.contains(cardID)) {
-                countUpper++;
-            } else if (lowerRow.contains(cardID) || lowerRowBuildings.contains(cardID)) {
-                countLower++;
-            }
-        }
-
-        if (countUpper > extraTurnRemainingUpper || countLower > extraTurnRemainingLower) {
+        if (counts[0] > extraTurnRemainingUpper || counts[1] > extraTurnRemainingLower) {
             throw new IllegalArgumentException(
-                    "extra turn: upper=" + countUpper + "/" + extraTurnRemainingUpper +
-                            ", lower=" + countLower + "/" + extraTurnRemainingLower
+                    "extra turn: upper=" + counts[0] + "/" + extraTurnRemainingUpper +
+                            ", lower=" + counts[1] + "/" + extraTurnRemainingLower
             );
         }
 
-        GameRegistry registry = GameRegistry.getInstance();
-        Map<String, Integer> buildingCosts = new HashMap<>();
-        int totalBuildingCost = 0;
+        Map<String, Integer> buildingCosts = validateAndComputeCosts(selectedIDs, player);
+        executeCardAcquisition(selectedIDs, player, game, buildingCosts);
 
-        for(String cardID : selectedIDs) {
-            if(registry.isEvent(cardID)) {
-                throw new EventCardNotTakeableException(cardID);
-
-            } else if(registry.isBuilding(cardID)) {
-                int actualCost = computeActualBuildingCost(cardID, player);
-                buildingCosts.put(cardID, actualCost);
-                totalBuildingCost += actualCost;
-            }
-        }
-
-        if (totalBuildingCost > player.getTribu().getFoodPoints()) {
-            throw new InsufficientFoodException(totalBuildingCost, player.getTribu().getFoodPoints());
-        }
-
-        for(String cardID : selectedIDs) {
-            if(registry.isBuilding(cardID)) {
-                int actualBuildingCost = buildingCosts.get(cardID);
-
-                player.getTribu().addFoodPoints(-actualBuildingCost);
-                player.getTribu().insertBuilding(cardID, player, game);
-
-                if(upperRowBuildings.contains(cardID)) {
-                    upperRowBuildings.remove(cardID);
-                } else {
-                    lowerRowBuildings.remove(cardID);
-                }
-
-            } else {
-                player.getTribu().insertCharacter(cardID);
-                if(upperRow.contains(cardID)) {
-                    upperRow.remove(cardID);
-                } else {
-                    lowerRow.remove(cardID);
-                }
-            }
-        }
-
-        extraTurnRemainingUpper -= countUpper;
-        extraTurnRemainingLower -= countLower;
+        extraTurnRemainingUpper -= counts[0];
+        extraTurnRemainingLower -= counts[1];
     }
 
     public void clearExtraTurn() {

@@ -424,6 +424,14 @@ public class GameBoard {
         eventObservers.add(effect);
     }
 
+
+
+    // FOR TESTING
     TurnOrderTile getTurnOrderTile() { return turnOrderTile; } // For testing
 
+    List<String> getUpperRow() { return upperRow; } // For testing
+    List<String> getLowerRow() { return lowerRow; } // For testing
+    List<String> getUpperRowBuildings() { return upperRowBuildings; } // For testing
+    List<String> getLowerRowBuildings() { return lowerRowBuildings; } // For testing
+    OfferTrack getOfferTrack() { return  offerTrack; } // For testing
 }

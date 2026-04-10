@@ -530,5 +530,8 @@ public class Game {
     }
 
 
+    // FOR TESTING
+    String getCurrentPlayerNickname() { return currentPlayerNickname; } // FOR TESTING
+    List<String> getTurnOrder() { return turnOrder; } // FOR TESTING
 }
 

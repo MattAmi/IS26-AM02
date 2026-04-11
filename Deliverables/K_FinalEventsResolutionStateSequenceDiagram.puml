@@ -1,0 +1,63 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== FinalEventResolutionState Entry ==
+
+S ->> B: onPhaseChanged(phase: PhaseType.FINAL_EVENT_RESOLUTION)
+
+note over S: Server notifies PhaseObservers\nBuildingEffects with FINAL_EVENT_RESOLUTION effects activate
+
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: onPlayerResourceChanged(nickname: String, resource: String, newValue: int, delta: int)
+end
+
+note over S: FinalEventResolutionState.onEntryActions() triggered
+
+== Final Event Resolution Loop ==
+
+loop for each Final Event in priority order
+    group EventStart
+        note over S: Server calls EventStart(type) on all EventObservers
+        opt If BuildingEffect triggers
+            S ->> B: onPlayerResourceChanged(nickname: String, resource: String, newValue: int, delta: int)
+        end
+    end
+
+    S ->> B: onEventResolved(eventID: String, eventName: String)
+
+    group applyEventEffect
+        alt Event is HUNT, CAVE_PAINTINGS, SHAMANIC_RITUAL
+            loop for each Player affected
+                S ->> B: onPlayerResourceChanged(nickname: String, resource: String, newValue: int, delta: int)
+            end
+        else Event is SUSTENANCE
+            loop for each Player
+                S ->> B: onSustenanceResolved(nickname: String, totalCharacters: int, foodPaid: int, foodShortage: int, ppLost: int)
+            end
+        end
+
+        note over S: Server calls EventPostResolution(type) on all EventObservers
+        opt If BuildingEffect triggers
+            S ->> B: onPlayerResourceChanged(nickname: String, resource: String, newValue: int, delta: int)
+        end
+    end
+
+    group EventEnd
+        note over S: Server calls EventEnd(type) on all EventObservers
+        opt If BuildingEffect triggers
+            S ->> B: onPlayerResourceChanged(nickname: String, resource: String, newValue: int, delta: int)
+        end
+    end
+end
+
+== Transition ==
+
+note over S: Transition to FinalScoringState
+note right S: See FinalScoringState diagram
+
+@enduml

@@ -133,11 +133,13 @@ public class Tribu {
     public void insertCharacter(String characterID){
 
         CharacterCard newInsertion = GameRegistry.getInstance().getCharacter(characterID);
+        CharacterType type = newInsertion.getType();
+
+        characters.get(type).add(characterID);
 
         for(TribuObserver observer : tribuObservers)
             observer.onCharacterInsertion(newInsertion.getType());
 
-        characters.get(GameRegistry.getInstance().getCharacter(characterID).getType()).add(characterID);
         newInsertion.applyCharacterEffect(this);
     }
 

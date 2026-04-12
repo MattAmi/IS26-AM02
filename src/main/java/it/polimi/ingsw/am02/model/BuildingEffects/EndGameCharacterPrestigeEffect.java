@@ -29,5 +29,4 @@ public class EndGameCharacterPrestigeEffect implements BuildingEffect, PhaseObse
             tribu.addPrestigePoints(bonusPP * tribu.getCharacterCount(type));
         }
     }
-
 }

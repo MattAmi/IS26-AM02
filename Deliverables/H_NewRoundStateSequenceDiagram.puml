@@ -1,0 +1,52 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== NewRoundState Entry ==
+
+S ->> B: onPhaseChanged(phase: PhaseType.NEW_ROUND)
+
+note over S: Server notifies PhaseObservers\nBuildingEffects with NEW_ROUND effects activate
+
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: onPlayerResourceChanged(nickname: String, resource: String, newValue: int, delta: int)
+end
+
+note over S: NewRoundState.onEntryActions() triggered
+
+== New Round Preparation ==
+
+note over S: executeNewRoundPreparation()
+
+S ->> B: onBoardUpdated(newUpperRow: List<String>, newLowerRow: List<String>, discardedCards: List<String>, movedToLowerRow: List<String>, deckRemainingCount: int)
+
+== Branching Logic ==
+
+alt Era Changed (eraChangedFlag == true)
+    note over S: setUpPlacementOrder()
+    S ->> B: onPhaseChanged(phase: PhaseType.NEW_ERA, newEra: int)
+    note right S: Transition to NewEraState
+
+else Game Over Condition (TribuDeck empty)
+    alt Final Events present to resolve (areFinalEventsToResolve() == true)
+        S ->> B: onPhaseChanged(phase: PhaseType.FINAL_EVENT_RESOLUTION)
+        note right S: Transition to FinalEventResolutionState
+    else No Final Events
+        S ->> B: onPhaseChanged(phase: PhaseType.END_GAME)
+        note right S: Transition to EndGameState
+    end
+
+else Normal Round (Default)
+    note over S: setUpPlacementOrder()
+
+    S ->> B: onTurnOrderEstablished(turnOrder: List<String>)
+
+    S ->> B: onPhaseChanged(phase: PhaseType.TOTEM_PLACEMENT, currentPlayer: String)
+    note right S: Transition to TotemPlacementState
+end
+
+@enduml

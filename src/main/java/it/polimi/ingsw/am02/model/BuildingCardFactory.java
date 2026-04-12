@@ -7,12 +7,12 @@ public class BuildingCardFactory {
 
     public BuildingCard createBuilding(JsonNode node) {
 
-        String cardID = node.get("cardID").asText();
-        Era era = Era.valueOf(node.get("era").asText());
-        int buildingCost = node.get("buildingCost").asInt();
-        int buildingPp = node.get("buildingPp").asInt();
-        String effectType = node.get("effectType").asText();
-        JsonNode effectParams = node.get("effectParams");
+        String cardID = node.path("cardID").asText();
+        Era era = Era.valueOf(node.path("era").asText());
+        int buildingCost = node.path("buildingCost").asInt();
+        int buildingPp = node.path("buildingPp").asInt();
+        String effectType = node.path("effectType").asText();
+        JsonNode effectParams = node.path("effectParams");
 
         return new BuildingCard(cardID, era, buildingCost, buildingPp, effectType, effectParams);
     }

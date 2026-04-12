@@ -31,4 +31,5 @@ public class ShamanicImmunityEffect implements BuildingEffect, EventObserver {
             tribu.setImmuneToShamanicPenalty(false);
         }
     }
+
 }

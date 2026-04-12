@@ -1,10 +1,12 @@
 package it.polimi.ingsw.am02.model;
 
 import it.polimi.ingsw.am02.model.Enumerations.Era;
+import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
+import it.polimi.ingsw.am02.model.exceptions.EventCardNotTakeableException;
+import it.polimi.ingsw.am02.model.exceptions.InsufficientFoodException;
+import it.polimi.ingsw.am02.model.exceptions.PickLimitExceededException;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class GameBoard {
@@ -127,58 +129,70 @@ public class GameBoard {
     public void initializePlayerLimits(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
 
-        int effectiveUpperChoosable = Math.min(currentTile.getNumUpperChoosable(), upperRow.size());
-        int effectiveLowerChoosable = Math.min(currentTile.getNumLowerChoosable(), lowerRow.size());
+        int availableUpper = upperRow.size() + upperRowBuildings.size();
+        int availableLower = lowerRow.size() + lowerRowBuildings.size();
 
-        currentTile.setRemainingPicks(effectiveUpperChoosable, effectiveLowerChoosable);
+        int effectiveUpper = Math.min(currentTile.getNumUpperChoosable(), availableUpper);
+        int effectiveLower = Math.min(currentTile.getNumLowerChoosable(), availableLower);
+
+        currentTile.setRemainingPicks(effectiveUpper, effectiveLower);
     }
 
-    public void processActionSelection(Player player, List<String> selectedIDs, Game game) {
-        OfferTile currentTile = offerTrack.getTileByPlayer(player);
-
-        currentTile.resolveFoodOffer(player);
-
+    private int[] countSelectedByRow(List<String> selectedIDs) {
         int countUpper = 0;
         int countLower = 0;
 
         for (String cardID : selectedIDs) {
             if (!upperRow.contains(cardID) && !lowerRow.contains(cardID)
                     && !upperRowBuildings.contains(cardID) && !lowerRowBuildings.contains(cardID)) {
-                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TODO
-            } else if (upperRow.contains(cardID)) {
+                throw new CardNotFoundException(cardID);
+
+            } else if (upperRow.contains(cardID) || upperRowBuildings.contains(cardID)) {
                 countUpper++;
-            } else if (lowerRow.contains(cardID)) {
+            } else if (lowerRow.contains(cardID) || lowerRowBuildings.contains(cardID)) {
                 countLower++;
             }
         }
 
-        if (countUpper > currentTile.getRemainingUpper() || countLower > currentTile.getRemainingLower()) {
-            throw new IllegalArgumentException("Selection exceeds allowed pick limits."); // TODO
-        }
+        return new int[]{countUpper, countLower};
+    }
 
+    private Map<String, Integer> validateAndComputeCosts(List<String> selectedIDs, Player player) {
         GameRegistry registry = GameRegistry.getInstance();
+        Map<String, Integer> buildingCosts = new HashMap<>();
+        int totalBuildingCost = 0;
 
-        for(String cardID : selectedIDs) {
-            if(registry.isEvent(cardID)) {
-                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TODO
-            } else if(registry.isBuilding(cardID)) {
-                int actualBuildingCost = computeActualBuildingCost(cardID, player);
+        for (String cardID : selectedIDs) {
+            if (registry.isEvent(cardID)) {
+                throw new EventCardNotTakeableException(cardID);
 
-                if(player.getTribu().getFoodPoints() < actualBuildingCost) {
-                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TODO
-                }
+            } else if (registry.isBuilding(cardID)) {
+                int actualCost = computeActualBuildingCost(cardID, player);
+                buildingCosts.put(cardID, actualCost);
+                totalBuildingCost += actualCost;
             }
         }
 
-        for(String cardID : selectedIDs) {
-            if(registry.isBuilding(cardID)) {
-                int actualBuildingCost = computeActualBuildingCost(cardID, player);
+        if (totalBuildingCost > player.getTribu().getFoodPoints()) {
+            throw new InsufficientFoodException(totalBuildingCost, player.getTribu().getFoodPoints());
+        }
 
-                player.getTribu().addFoodPoints(-actualBuildingCost);
+        return buildingCosts;
+    }
 
+    private void executeCardAcquisition(List<String> selectedIDs, Player player, Game game,
+                                        Map<String, Integer> buildingCosts) {
+
+        GameRegistry registry = GameRegistry.getInstance();
+
+        for (String cardID : selectedIDs) {
+            if (registry.isBuilding(cardID)) {
+                int actualCost = buildingCosts.get(cardID);
+
+                player.getTribu().addFoodPoints(-actualCost);
                 player.getTribu().insertBuilding(cardID, player, game);
 
-                if(upperRowBuildings.contains(cardID)) {
+                if (upperRowBuildings.contains(cardID)) {
                     upperRowBuildings.remove(cardID);
                 } else {
                     lowerRowBuildings.remove(cardID);
@@ -186,27 +200,54 @@ public class GameBoard {
 
             } else {
                 player.getTribu().insertCharacter(cardID);
-                if(upperRow.contains(cardID)) {
+
+                if (upperRow.contains(cardID)) {
                     upperRow.remove(cardID);
                 } else {
                     lowerRow.remove(cardID);
                 }
             }
         }
-
-        currentTile.decrementPicks(countUpper, countLower);
-
     }
 
     private int computeActualBuildingCost(String cardID, Player player) {
         int buildingCost = GameRegistry.getInstance().getBuilding(cardID).getBuildingCost();
         int buildingDiscount = player.getTribu().getBuildingDiscount();
+
         return Math.max(0, buildingCost - buildingDiscount);
+    }
+
+    public void processActionSelection(Player player, List<String> selectedIDs, Game game) {
+
+        OfferTile currentTile = offerTrack.getTileByPlayer(player);
+        currentTile.resolveFoodOffer(player);
+
+        int[] counts = countSelectedByRow(selectedIDs);
+
+        if (counts[0] > currentTile.getRemainingUpper() || counts[1] > currentTile.getRemainingLower()) {
+            throw new PickLimitExceededException(
+                    "Upper limit exceeded: " + counts[0] + "/" + currentTile.getRemainingUpper() +
+                            ", Lower limit exceeded: " + counts[1] + "/" + currentTile.getRemainingLower()
+            );
+        }
+
+        Map<String, Integer> buildingCosts = validateAndComputeCosts(selectedIDs, player);
+        executeCardAcquisition(selectedIDs, player, game, buildingCosts);
+
+        currentTile.decrementPicks(counts[0], counts[1]);
     }
 
     public boolean canPlayerFinish(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
-        return currentTile.isSatisfied();
+
+        if (currentTile.isSatisfied()) {
+            return true;
+        }
+
+        boolean hasAvailableUpperCharacters = currentTile.getRemainingUpper() > 0 && !upperRow.isEmpty();
+        boolean hasAvailableLowerCharacters = currentTile.getRemainingLower() > 0 && !lowerRow.isEmpty();
+
+        return !hasAvailableUpperCharacters && !hasAvailableLowerCharacters;
     }
 
     public void movePlayerToTurnOrder(Player player) {
@@ -339,72 +380,30 @@ public class GameBoard {
     }
 
     public void initializeExtraPlayerLimits(Player player, int upperPicks, int lowerPicks) {
-
         this.extraTurnPlayer = player;
-        this.extraTurnRemainingUpper = Math.min(upperPicks, upperRow.size());
-        this.extraTurnRemainingLower = Math.min(lowerPicks, lowerRow.size());
+
+        int availableUpper = upperRow.size() + upperRowBuildings.size();
+        int availableLower = lowerRow.size() + lowerRowBuildings.size();
+
+        this.extraTurnRemainingUpper = Math.min(upperPicks, availableUpper);
+        this.extraTurnRemainingLower = Math.min(lowerPicks, availableLower);
     }
 
     public void processExtraActionSelection(Player player, List<String> selectedIDs, Game game) {
+        int[] counts = countSelectedByRow(selectedIDs);
 
-        int countUpper = 0;
-        int countLower = 0;
-
-        for (String cardID : selectedIDs) {
-            if (!upperRow.contains(cardID) && !lowerRow.contains(cardID)
-                    && !upperRowBuildings.contains(cardID) && !lowerRowBuildings.contains(cardID)) {
-                throw new IllegalArgumentException("Card ID not found in any row: " + cardID); // TO DO
-            } else if (upperRow.contains(cardID) || upperRowBuildings.contains(cardID)) {
-                countUpper++;
-            } else if (lowerRow.contains(cardID) || lowerRowBuildings.contains(cardID)) {
-                countLower++;
-            }
+        if (counts[0] > extraTurnRemainingUpper || counts[1] > extraTurnRemainingLower) {
+            throw new IllegalArgumentException(
+                    "extra turn: upper=" + counts[0] + "/" + extraTurnRemainingUpper +
+                            ", lower=" + counts[1] + "/" + extraTurnRemainingLower
+            );
         }
 
-        if (countUpper > extraTurnRemainingUpper || countLower > extraTurnRemainingLower) {
-            throw new IllegalArgumentException("Extra turn limits exceeded"); // TODO
-        }
+        Map<String, Integer> buildingCosts = validateAndComputeCosts(selectedIDs, player);
+        executeCardAcquisition(selectedIDs, player, game, buildingCosts);
 
-        GameRegistry registry = GameRegistry.getInstance();
-
-        for(String cardID : selectedIDs) {
-            if(registry.isEvent(cardID)) {
-                throw new IllegalArgumentException("Event cards cannot be taken: " + cardID); // TODO
-            } else if(registry.isBuilding(cardID)) {
-                int actualBuildingCost = computeActualBuildingCost(cardID, player);
-
-                if(player.getTribu().getFoodPoints() < actualBuildingCost) {
-                    throw new IllegalArgumentException("Insufficient food to purchase building: " + cardID); // TODO
-                }
-            }
-        }
-
-        for(String cardID : selectedIDs) {
-            if(registry.isBuilding(cardID)) {
-                int actualBuildingCost = computeActualBuildingCost(cardID, player);
-
-                player.getTribu().addFoodPoints(-actualBuildingCost);
-
-                player.getTribu().insertBuilding(cardID, player, game);
-
-                if(upperRowBuildings.contains(cardID)) {
-                    upperRowBuildings.remove(cardID);
-                } else {
-                    lowerRowBuildings.remove(cardID);
-                }
-
-            } else {
-                player.getTribu().insertCharacter(cardID);
-                if(upperRow.contains(cardID)) {
-                    upperRow.remove(cardID);
-                } else {
-                    lowerRow.remove(cardID);
-                }
-            }
-        }
-
-        extraTurnRemainingUpper -= countUpper;
-        extraTurnRemainingLower -= countLower;
+        extraTurnRemainingUpper -= counts[0];
+        extraTurnRemainingLower -= counts[1];
     }
 
     public void clearExtraTurn() {
@@ -425,4 +424,14 @@ public class GameBoard {
         eventObservers.add(effect);
     }
 
+
+
+    // FOR TESTING
+    TurnOrderTile getTurnOrderTile() { return turnOrderTile; } // For testing
+
+    List<String> getUpperRow() { return upperRow; } // For testing
+    List<String> getLowerRow() { return lowerRow; } // For testing
+    List<String> getUpperRowBuildings() { return upperRowBuildings; } // For testing
+    List<String> getLowerRowBuildings() { return lowerRowBuildings; } // For testing
+    OfferTrack getOfferTrack() { return  offerTrack; } // For testing
 }

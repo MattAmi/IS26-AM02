@@ -3,6 +3,10 @@ package it.polimi.ingsw.am02.model;
 import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
 import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 import it.polimi.ingsw.am02.model.Enumerations.Totem;
+import it.polimi.ingsw.am02.model.exceptions.InvalidMoveException;
+import it.polimi.ingsw.am02.model.exceptions.NotYourTurnException;
+import it.polimi.ingsw.am02.model.exceptions.PickObligationNotFulfilledException;
+import it.polimi.ingsw.am02.model.exceptions.PlayerNotFoundException;
 
 import java.util.*;
 
@@ -64,16 +68,16 @@ public class Game {
 
 
     // Helper methods
-    private Player getPlayerByNickname(String nickname) {
+      Player getPlayerByNickname(String nickname) {
         Player p = players.get(nickname);
         if (p == null)
-            throw new IllegalArgumentException(); // TODO
+            throw new PlayerNotFoundException(nickname);
         return p;
     }
 
     private void validatePlayerTurn(String nickname) {
         if(!nickname.equals(currentPlayerNickname)) {
-            throw new IllegalArgumentException(); // TODO
+            throw new NotYourTurnException(nickname);
         }
     }
 
@@ -276,11 +280,11 @@ public class Game {
         }
 
         public void moveTotem(String nickname, char tileID) {
-            throw new IllegalArgumentException("Non puoi fare tale mossa ora"); //TODO
+            throw new InvalidMoveException("moving Totem is not allowed in the current game state.");
         }
 
         public void resolveActions(String nickname, List<String> selectedIDs) {
-            throw new IllegalArgumentException("Non puoi fare tale mossa ora"); //TODO
+            throw new InvalidMoveException("resolving actions is not allowed in the current game state.");
         }
 
         public final void onEntry() {
@@ -340,7 +344,7 @@ public class Game {
             Player player = getPlayerByNickname(nickname);
 
             if (tileID != 'T') {
-                throw new IllegalArgumentException("Invalid tile destination in ActionResolutionState"); //TO DO
+                throw new InvalidMoveException("Totem must return to the TurnOrderTile (destination 'T').");
             }
 
             if (isExtraTurnMode) {
@@ -359,7 +363,7 @@ public class Game {
                 gameBoard.movePlayerToTurnOrder(player);
                 transitionTo(new EndPlayerTurnState());
             } else {
-                throw new IllegalStateException("Player has not fulfilled pick obligations"); // TODO
+                throw new PickObligationNotFulfilledException();
             }
         }
 
@@ -526,5 +530,8 @@ public class Game {
     }
 
 
+    // FOR TESTING
+    String getCurrentPlayerNickname() { return currentPlayerNickname; } // FOR TESTING
+    List<String> getTurnOrder() { return turnOrder; } // FOR TESTING
 }
 

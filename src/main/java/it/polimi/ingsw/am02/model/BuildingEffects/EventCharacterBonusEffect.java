@@ -24,7 +24,6 @@ public class EventCharacterBonusEffect implements BuildingEffect, EventObserver 
         this.tribu = tribu;
     }
 
-
     @Override
     public void accept(EffectVisitor visitor) {
         visitor.visitEventObserver(this);

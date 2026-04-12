@@ -1,6 +1,8 @@
 package it.polimi.ingsw.am02.model;
 
 import it.polimi.ingsw.am02.model.Enumerations.*;
+import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
+
 import java.util.*;
 
 public class Tribu {
@@ -22,12 +24,11 @@ public class Tribu {
 
     private int lastEventBonusReceived;
 
+    public Tribu() {
 
-    public Tribu(int foodPoints, int prestigePoints, int shamanStars) {
-
-        this.foodPoints = foodPoints;
-        this.prestigePoints = prestigePoints;
-        this.shamanStars = shamanStars;
+        this.foodPoints = 0;
+        this.prestigePoints = 0;
+        this.shamanStars = 0;
         this.totalFoodDiscount = 0;
         this.totalBuildingDiscount = 0;
         this.totalPPBuilders = 0;
@@ -96,7 +97,11 @@ public class Tribu {
     }
 
     public int getNumOfDifferentInventionTypes(){
-        return inventionCounts.size();
+        int count = 0;
+        for (int val : inventionCounts.values()) {
+            if (val > 0) count++;
+        }
+        return count;
     }
 
     public void setFoodPoints(int foodPoints) {
@@ -128,11 +133,13 @@ public class Tribu {
     public void insertCharacter(String characterID){
 
         CharacterCard newInsertion = GameRegistry.getInstance().getCharacter(characterID);
+        CharacterType type = newInsertion.getType();
+
+        characters.get(type).add(characterID);
 
         for(TribuObserver observer : tribuObservers)
             observer.onCharacterInsertion(newInsertion.getType());
 
-        characters.get(GameRegistry.getInstance().getCharacter(characterID).getType()).add(characterID);
         newInsertion.applyCharacterEffect(this);
     }
 
@@ -140,11 +147,7 @@ public class Tribu {
 
         BuildingCard cardTemplate = GameRegistry.getInstance().getBuilding(buildingID);
 
-        // sarebbe Exception // TODO
-        if (cardTemplate == null) {
-            System.err.println("Errore: Edificio " + buildingID + " non trovato nel Registry!");
-            return;
-        }
+        if (cardTemplate == null) throw new CardNotFoundException(buildingID);
 
         this.buildings.add(buildingID);
         this.totalPPBuildings += cardTemplate.getBuildingPp();
@@ -193,4 +196,8 @@ public class Tribu {
     public void setLastEventBonusReceived(int bonus) { this.lastEventBonusReceived = bonus; }
 
     public int getLastEventBonusReceived() { return lastEventBonusReceived; }
+
+
+
+    List<BuildingEffect> getActiveBuildingEffects() {return activeBuildingEffects; } // For testing
 }

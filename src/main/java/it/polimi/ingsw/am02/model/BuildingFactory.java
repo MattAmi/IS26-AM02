@@ -7,8 +7,8 @@ import it.polimi.ingsw.am02.model.Enumerations.EventType;
 
 public class BuildingFactory {
 
-    public static BuildingEffect createActiveEffect(String effectType, JsonNode effectParams, Tribu tribu, Player player, Game game) {
-
+    public static BuildingEffect createActiveEffect(String effectType, JsonNode effectParams,
+                                                    Tribu tribu, Player player, Game game) {
         if (effectType == null) {
             return null;
         }
@@ -17,36 +17,35 @@ public class BuildingFactory {
 
             // TribuObserver effects
 
-            case "ON_SET_OF_SIX_FOOD" -> new FullSetFoodRewardEffect(
+            case "FULL_SET_FOOD_REWARD" -> new FullSetFoodRewardEffect(
                     tribu,
                     effectParams.get("foodReward").asInt()
             );
 
-            case "ON_INVENTOR_PAIR_FOOD" -> new InventorPairRewardEffect(
+            case "INVENTOR_PAIR_FOOD_REWARD" -> new InventorPairRewardEffect(
                     tribu,
                     effectParams.get("foodReward").asInt()
             );
 
             // EventObserver effects
 
-            case "CAVE_PAINTING_FOOD_PER_ARTIST", "HUNT_EVENT_EXTRA_BONUS" ->
-                    new EventCharacterBonusEffect(
-                            EventType.valueOf(effectParams.get("eventType").asText()),
-                            CharacterType.valueOf(effectParams.get("targetCharacter").asText()),
-                            effectParams.get("foodReward").asInt(),
-                            effectParams.get("prestigeReward").asInt(),
-                            effectParams.get("foodDiscount").asInt(),
-                            tribu
-                    );
-
-            case "IMMUNITY_SHAMAN_MINORITY" -> new ShamanicImmunityEffect(tribu);
+            case "EVENT_CHARACTER_BONUS" -> new EventCharacterBonusEffect(
+                    EventType.valueOf(effectParams.get("eventType").asText()),
+                    CharacterType.valueOf(effectParams.get("characterType").asText()),
+                    effectParams.get("foodReward").asInt(),
+                    effectParams.get("prestigeReward").asInt(),
+                    effectParams.get("foodDiscount").asInt(),
+                    tribu
+            );
 
             case "EXTRA_SHAMAN_STARS" -> new ShamanicExtraIconsEffect(
                     tribu,
                     effectParams.get("bonusStars").asInt()
             );
 
-            case "DOUBLE_PP_SHAMAN_MAJORITY" -> new ShamanicWinMultiplierEffect(
+            case "SHAMANIC_IMMUNITY" -> new ShamanicImmunityEffect(tribu);
+
+            case "SHAMANIC_WIN_MULTIPLIER" -> new ShamanicWinMultiplierEffect(
                     tribu,
                     game,
                     effectParams.get("multiplier").asInt()
@@ -54,23 +53,29 @@ public class BuildingFactory {
 
             // PhaseObserver effects
 
-            case "BONUS_FOOD_TURN_ORDER" -> new TurnOrderFoodBonusEffect(
+            case "TURN_ORDER_FOOD_BONUS" -> new TurnOrderFoodBonusEffect(
                     player,
                     game
             );
 
-            case "ENDGAME_PP_PER_TYPE" -> new PrestigePointMultiplierPerTypeEffect(
-                    effectParams.get("ppPerCharachter").asInt(),
+            case "ENDGAME_CHARACTER_PP" -> new EndGameCharacterPrestigeEffect(
+                    tribu,
                     CharacterType.valueOf(effectParams.get("characterType").asText()),
-                    tribu
-            );
+                    effectParams.get("bonusPP").asInt()
+                        );
 
-            case "ENDGAME_PP_SET_OF_SIX" -> new EndGameFullSetPPEffect(
+            case "ENDGAME_FULL_SET_PP" -> new EndGameFullSetPPEffect(
                     effectParams.get("bonusPP").asInt(),
                     tribu
             );
 
-            case "FLAT_ENDGAME_PP" -> new FlatPrestigeBonusEffect(
+            case "PP_MULTIPLIER_PER_TYPE" -> new PrestigePointMultiplierPerTypeEffect(
+                    effectParams.get("multiplier").asInt(),
+                    CharacterType.valueOf(effectParams.get("characterType").asText()),
+                    tribu
+            );
+
+            case "ENDGAME_FLAT_PP" -> new FlatPrestigeBonusEffect(
                     tribu,
                     effectParams.get("bonusPP").asInt()
             );
@@ -88,5 +93,4 @@ public class BuildingFactory {
             }
         };
     }
-
 }

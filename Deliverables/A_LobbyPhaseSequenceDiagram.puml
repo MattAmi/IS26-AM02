@@ -1,0 +1,76 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Client (User)" as C
+participant "Server" as S
+participant "Lobby Members Clients" as LM
+participant "Lobby Selection Clients (Others)" as LS
+
+== Connection and Authentication ==
+
+loop until isValid == true
+    C -> S: requestSetUsername(username: String)
+    S --> C: onSetUsernameResult(username: String, isValid: boolean, reason: String)
+end
+
+note over S, LS: Broadcast updated list
+par
+    S ->> C: onUpdatedLobbies(lobbies: List<LobbyInfo>)
+    S ->> LS: onUpdatedLobbies(lobbies: List<LobbyInfo>)
+end
+
+== Lobby Creation ==
+
+C -> S: requestCreateLobby(numPlayers: int)
+S --> C: onUpdatedLobby(lobby: LobbyInfo)
+S ->> LS: onUpdatedLobbies(lobbies: List<LobbyInfo>)
+
+== Joining a Lobby ==
+
+C -> S: requestJoinLobby(lobbyID: String)
+
+alt Success
+    S --> C: onUpdatedLobby(lobby: LobbyInfo)
+    S ->> LM: onUpdatedLobby(lobby: LobbyInfo)
+    S ->> LS: onUpdatedLobbies(lobbies: List<LobbyInfo>)
+else Failure (Lobby doesn't exist/full/started)
+    S --> C: onError(errorMessage: String)
+end
+
+== Totem Selection & Automatic Start ==
+
+C -> S: requestSelectTotem(totem: Totem)
+
+alt Success (Totem confirmed)
+    S --> C: onUpdatedLobby(lobby: LobbyInfo)
+    S ->> LM: onUpdatedLobby(lobby: LobbyInfo)
+
+    note over S: Check if numPlayers reached \nand all totems selected
+
+    opt Condition met: Game starts automatically
+        par
+            S ->> C: onGameStarted(gameID: String)
+            S ->> LM: onGameStarted(gameID: String)
+        end
+        note over S: Transition to SetUpState
+    end
+
+else Failure (Totem taken)
+    S --> C: onError(errorMessage: String)
+end
+
+== Leaving the Lobby ==
+
+C -> S: requestLeaveLobby()
+
+alt Client is Host
+    S ->> LM: onLobbyDissolved()
+    S ->> LS: onUpdatedLobbies(lobbies: List<LobbyInfo>)
+else Client is not Host
+    S ->> LM: onUpdatedLobby(lobby: LobbyInfo)
+    S ->> LS: onUpdatedLobbies(lobbies: List<LobbyInfo>)
+end
+
+@enduml

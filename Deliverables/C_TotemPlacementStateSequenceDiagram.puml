@@ -1,0 +1,45 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Current Client" as C
+participant "Server" as S
+participant "Other Clients" as O
+participant "Broadcast (All Clients)" as B
+
+== TotemPlacementState Entry ==
+
+S ->> B: onPhaseChanged(phase: PhaseType.TOTEM_PLACEMENT, currentPlayer: String)
+
+note over S: Server notifies PhaseObservers\nBuildingEffects with TOTEM_PLACEMENT effects activate
+
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: onPlayerResourceChanged(nickname: String, resource: String, newValue: int, delta: int)
+end
+
+note over C #LightGreen: UI Enabled:\nSelect Offer Tile
+note over O #LightPink: UI Disabled:\nWaiting for current player...
+
+== TotemPlacement Interaction ==
+
+C -> S: moveTotem(nickname: String, tileID: char)
+
+alt Validation Success
+    S ->> B: onTotemPlaced(nickname: String, tileID: char)
+
+    alt Not everyone has placed yet (checkAllTotemsPlaced == false)
+        note over S: game.nextPlayer()
+        S ->> B: onCurrentPlayerChanged(nextPlayer: String)
+        note over C #LightPink: UI Disabled
+        note over O #LightGreen: UI Enabled (if next player)
+
+    else Everyone has placed (checkAllTotemsPlaced == true)
+        note over S: Transition to ActionResolutionState
+        note right S: See ActionResolutionState diagram
+    end
+
+else Validation Failure (Tile occupied, non-existent, or wrong turn)
+    S --> C: onError(errorMessage: String)
+end
+@enduml

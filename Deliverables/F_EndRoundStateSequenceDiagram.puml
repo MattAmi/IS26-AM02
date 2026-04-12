@@ -1,0 +1,38 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== EndRoundState Entry ==
+
+S ->> B: onPhaseChanged(phase: PhaseType.END_ROUND)
+
+note over S: Server notifies PhaseObservers\nBuildingEffects with END_ROUND effects activate
+
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: onPlayerResourceChanged(nickname: String, resource: String, newValue: int, delta: int)
+end
+
+note over S: EndRoundState.onEntryActions() triggered
+
+== Branching Logic ==
+
+alt Branch 1: Extra Turn Booked (extraTurnPlayerNickname != null)
+    note over S: Set isExtraTurnMode = true\nUpdate currentPlayerNickname\nInitialize extra limits
+
+    note right S: Transition to ActionResolutionState\n(Note: Building notifications are suppressed during Extra Turn)
+
+else Branch 2: Round Events to Resolve (areRoundEventsToResolve == true)
+    note over S: Transition to EventResolutionState
+    note right S: See EventResolutionState diagram
+
+else Branch 3: Default Case
+    note over S: Transition to NewRoundState
+    note right S: See NewRoundState diagram
+
+end
+
+@enduml

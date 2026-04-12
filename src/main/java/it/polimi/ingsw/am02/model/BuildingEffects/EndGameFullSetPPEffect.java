@@ -35,4 +35,5 @@ public class EndGameFullSetPPEffect implements BuildingEffect, PhaseObserver{
             tribu.addPrestigePoints(nSet*bonusPP);
         }
     }
+
 }

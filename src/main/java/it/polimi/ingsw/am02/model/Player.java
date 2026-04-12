@@ -14,7 +14,7 @@ public class Player {
     public Player(String nickname, Totem totem) {
         this.nickname = nickname;
         this.totem = totem;
-        this.tribu = new Tribu(0,0,0); //initialize the tribu for the player
+        this.tribu = new Tribu();
     }
 
     //Metodi

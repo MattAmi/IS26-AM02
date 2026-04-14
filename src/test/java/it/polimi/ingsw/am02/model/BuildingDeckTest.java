@@ -13,9 +13,6 @@ import static org.mockito.Mockito.when;
 
 public class BuildingDeckTest {
 
-    // Console color codes for output
-    private static final String ANSI_GREEN = "\u001B[32m";
-    private static final String ANSI_RESET = "\u001B[0m";
 
     @Test
     public void testBuildingDeck_SetupFor2Players() {
@@ -32,8 +29,6 @@ public class BuildingDeckTest {
             assertEquals(2, deck.getBuildingsForEra(Era.II).size(), "Error Era II (2 Players Match). Expected: 2");
             assertEquals(3, deck.getBuildingsForEra(Era.III).size(), "Error Era III (2 Players Match). Expected: 3");
 
-            // Print success and deck
-            printGeneratedDeck("testBuildingDeck_SetupFor2Players", deck);
         }
     }
 
@@ -52,7 +47,6 @@ public class BuildingDeckTest {
             assertEquals(2, deck.getBuildingsForEra(Era.II).size(), "Error Era II (3 Players Match). Expected: 2");
             assertEquals(4, deck.getBuildingsForEra(Era.III).size(), "Error Era III (3 Players Match). Expected: 4");
 
-            printGeneratedDeck("testBuildingDeck_SetupFor3Players", deck);
         }
     }
 
@@ -71,7 +65,6 @@ public class BuildingDeckTest {
             assertEquals(3, deck.getBuildingsForEra(Era.II).size(), "Error Era II (4 Players Match). Expected: 3");
             assertEquals(4, deck.getBuildingsForEra(Era.III).size(), "Error Era III (4 Players Match). Expected: 4");
 
-            printGeneratedDeck("testBuildingDeck_SetupFor4Players", deck);
         }
     }
 
@@ -90,23 +83,11 @@ public class BuildingDeckTest {
             assertEquals(3, deck.getBuildingsForEra(Era.II).size(), "Error Era II (5 Players Match). Expected: 2");
             assertEquals(5, deck.getBuildingsForEra(Era.III).size(), "Error Era III (5 Players Match). Expected: 5");
 
-            printGeneratedDeck("testBuildingDeck_SetupFor5Players", deck);
         }
     }
 
     // --- HELPER METHODS ---
 
-    /**
-     * Helper method to print success in green and show the drawn cards.
-     */
-    private void printGeneratedDeck(String testName, BuildingDeck deck) {
-        System.out.println(ANSI_GREEN + testName + " (BuildingDeck) PASSED!" + ANSI_RESET);
-        System.out.println("   Generated deck (shuffled and cut):");
-        System.out.println("   - Era I:   " + deck.getBuildingsForEra(Era.I));
-        System.out.println("   - Era II:  " + deck.getBuildingsForEra(Era.II));
-        System.out.println("   - Era III: " + deck.getBuildingsForEra(Era.III));
-        System.out.println("---------------------------------------------------");
-    }
 
     private List<String> setupRealRegistryData(GameRegistry mockRegistry) {
         List<String> allIds = new ArrayList<>();

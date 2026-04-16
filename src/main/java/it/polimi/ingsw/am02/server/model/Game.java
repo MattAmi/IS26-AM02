@@ -8,6 +8,8 @@ import it.polimi.ingsw.am02.server.model.exceptions.InvalidMoveException;
 import it.polimi.ingsw.am02.server.model.exceptions.NotYourTurnException;
 import it.polimi.ingsw.am02.server.model.exceptions.PickObligationNotFulfilledException;
 import it.polimi.ingsw.am02.server.model.exceptions.PlayerNotFoundException;
+import it.polimi.ingsw.am02.server.model.listeners.GameNotifier;
+import it.polimi.ingsw.am02.server.model.listeners.GameObserver;
 import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
 
 import java.util.*;
@@ -31,8 +33,7 @@ public class Game implements ModelInterface {
     private int extraTurnUpperPicks;
     private int extraTurnLowerPicks;
 
-    // private final List<GameObserver> gameObservers; // TODO
-
+    private final GameNotifier notifier;
 
     public Game(String gameID, List<String> nicknames, Map<String, Totem> chosenTotems) {
 
@@ -52,7 +53,7 @@ public class Game implements ModelInterface {
         this.extraTurnUpperPicks = 0;
         this.extraTurnLowerPicks = 0;
 
-        // this.gameObservers = new ArrayList<>(); // Per parte di rete
+        this.notifier = new GameNotifier();
 
         transitionTo(new SetUpState());
     }
@@ -67,7 +68,13 @@ public class Game implements ModelInterface {
         currentState.resolveActions(nickname, selectedIDs);
     }
 
+    public void addGameObserver(GameObserver observer) {
+        notifier.addObserver(observer);
+    }
 
+    public void removeGameObserver(GameObserver observer) {
+        notifier.removeObserver(observer);
+    }
 
     // Helper methods
       Player getPlayerByNickname(String nickname) {

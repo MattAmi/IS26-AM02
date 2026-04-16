@@ -1,4 +1,7 @@
 package it.polimi.ingsw.am02.server.network;
 
-public interface ClientHandler {
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
+
+public interface ClientHandler extends VirtualView {
+
 }

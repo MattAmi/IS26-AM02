@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.server.controller.ModelInterface;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
@@ -13,7 +14,7 @@ import java.util.*;
 
 import static java.util.Collections.shuffle;
 
-public class Game {
+public class Game implements ModelInterface {
 
     private final String gameID;
     private final int numPlayers;

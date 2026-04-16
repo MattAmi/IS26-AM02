@@ -1,7 +1,7 @@
 package it.polimi.ingsw.am02.model;
 
-import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
-import it.polimi.ingsw.am02.model.Enumerations.InventionType;
+import it.polimi.ingsw.am02.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.model.enumerations.InventionType;
 import org.junit.jupiter.api.*;
 
 import java.util.List;

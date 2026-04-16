@@ -2,10 +2,10 @@ package it.polimi.ingsw.am02.model.buildingeffects;
 
 import it.polimi.ingsw.am02.model.BuildingEffect;
 import it.polimi.ingsw.am02.model.EffectVisitor;
-import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
+import it.polimi.ingsw.am02.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.model.TribuObserver;
 import it.polimi.ingsw.am02.model.Tribu;
-import it.polimi.ingsw.am02.model.Enumerations.InventionType;
+import it.polimi.ingsw.am02.model.enumerations.InventionType;
 
 public class InventorPairRewardEffect implements BuildingEffect, TribuObserver {
 

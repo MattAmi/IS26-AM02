@@ -1,7 +1,7 @@
 package it.polimi.ingsw.am02.model;
 
-import it.polimi.ingsw.am02.model.Enumerations.Era;
-import it.polimi.ingsw.am02.model.Enumerations.EventType;
+import it.polimi.ingsw.am02.model.enumerations.Era;
+import it.polimi.ingsw.am02.model.enumerations.EventType;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package it.polimi.ingsw.am02.model;
 
-import it.polimi.ingsw.am02.model.Enumerations.InventionType;
+import it.polimi.ingsw.am02.model.enumerations.InventionType;
 
 public class InventorEffect implements CharacterEffect {
 

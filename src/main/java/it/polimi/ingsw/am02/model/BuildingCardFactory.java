@@ -1,7 +1,7 @@
 package it.polimi.ingsw.am02.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import it.polimi.ingsw.am02.model.Enumerations.Era;
+import it.polimi.ingsw.am02.model.enumerations.Era;
 
 public class BuildingCardFactory {
 

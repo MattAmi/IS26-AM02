@@ -1,7 +1,7 @@
 package it.polimi.ingsw.am02.model;
 
-import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
-import it.polimi.ingsw.am02.model.Enumerations.Totem;
+import it.polimi.ingsw.am02.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.model.enumerations.Totem;
 import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
 import it.polimi.ingsw.am02.model.exceptions.EventCardNotTakeableException;
 import it.polimi.ingsw.am02.model.exceptions.InsufficientFoodException;

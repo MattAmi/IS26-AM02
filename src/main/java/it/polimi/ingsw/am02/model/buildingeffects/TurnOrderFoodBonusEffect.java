@@ -2,7 +2,7 @@
 package it.polimi.ingsw.am02.model.buildingeffects;
 
 import it.polimi.ingsw.am02.model.*;
-import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
+import it.polimi.ingsw.am02.model.enumerations.PhaseType;
 
 public class TurnOrderFoodBonusEffect implements BuildingEffect, PhaseObserver {
 

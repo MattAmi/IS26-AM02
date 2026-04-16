@@ -1,6 +1,6 @@
 package it.polimi.ingsw.am02.model;
 
-import it.polimi.ingsw.am02.model.Enumerations.*;
+import it.polimi.ingsw.am02.model.enumerations.*;
 import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
 
 import java.util.*;

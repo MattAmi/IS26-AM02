@@ -1,6 +1,6 @@
 package it.polimi.ingsw.am02.model;
 
-import it.polimi.ingsw.am02.model.Enumerations.Totem;
+import it.polimi.ingsw.am02.model.enumerations.Totem;
 
 public class Player {
     //Attributi

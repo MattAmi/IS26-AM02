@@ -1,6 +1,6 @@
 package it.polimi.ingsw.am02.model;
 
-import it.polimi.ingsw.am02.model.Enumerations.EventType;
+import it.polimi.ingsw.am02.model.enumerations.EventType;
 
 public interface EventObserver {
     default void EventStart(EventType eventType){}

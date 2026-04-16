@@ -1,8 +1,8 @@
 package it.polimi.ingsw.am02.model.buildingeffects;
 
 import it.polimi.ingsw.am02.model.EffectVisitor;
-import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
-import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
+import it.polimi.ingsw.am02.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.model.enumerations.PhaseType;
 import it.polimi.ingsw.am02.model.Tribu;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

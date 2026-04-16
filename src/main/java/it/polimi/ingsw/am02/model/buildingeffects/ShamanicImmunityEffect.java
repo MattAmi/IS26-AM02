@@ -2,7 +2,7 @@ package it.polimi.ingsw.am02.model.buildingeffects;
 
 import it.polimi.ingsw.am02.model.BuildingEffect;
 import it.polimi.ingsw.am02.model.EffectVisitor;
-import it.polimi.ingsw.am02.model.Enumerations.EventType;
+import it.polimi.ingsw.am02.model.enumerations.EventType;
 import it.polimi.ingsw.am02.model.EventObserver;
 import it.polimi.ingsw.am02.model.Tribu;
 

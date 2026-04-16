@@ -1,8 +1,8 @@
 package it.polimi.ingsw.am02.model;
 import com.fasterxml.jackson.databind.JsonNode;
-import it.polimi.ingsw.am02.model.Enumerations.CharacterType;
-import it.polimi.ingsw.am02.model.Enumerations.Era;
-import it.polimi.ingsw.am02.model.Enumerations.InventionType;
+import it.polimi.ingsw.am02.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.model.enumerations.Era;
+import it.polimi.ingsw.am02.model.enumerations.InventionType;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Function;

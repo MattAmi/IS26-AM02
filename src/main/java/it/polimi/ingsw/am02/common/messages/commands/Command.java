@@ -1,4 +1,6 @@
 package it.polimi.ingsw.am02.common.messages.commands;
 
-public sealed interface Command {
+import it.polimi.ingsw.am02.common.messages.Message;
+
+public sealed interface Command extends Message {
 }

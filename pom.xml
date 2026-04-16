@@ -101,7 +101,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>it.polimi.ingsw.am02/it.polimi.ingsw.am02.HelloApplication</mainClass>
+                            <mainClass>it.polimi.ingsw.am02/it.polimi.ingsw.am02.Main</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

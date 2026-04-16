@@ -2,6 +2,7 @@ package it.polimi.ingsw.am02.model.buildingeffects;
 
 import it.polimi.ingsw.am02.model.*;
 import it.polimi.ingsw.am02.model.enumerations.EventType;
+import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
 
 public class ShamanicExtraIconsEffect implements BuildingEffect, EventObserver {
 

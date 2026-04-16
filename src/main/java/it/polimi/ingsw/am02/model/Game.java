@@ -7,6 +7,7 @@ import it.polimi.ingsw.am02.model.exceptions.InvalidMoveException;
 import it.polimi.ingsw.am02.model.exceptions.NotYourTurnException;
 import it.polimi.ingsw.am02.model.exceptions.PickObligationNotFulfilledException;
 import it.polimi.ingsw.am02.model.exceptions.PlayerNotFoundException;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
 
 import java.util.*;
 

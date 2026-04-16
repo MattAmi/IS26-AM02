@@ -4,7 +4,7 @@ import it.polimi.ingsw.am02.model.BuildingEffect;
 import it.polimi.ingsw.am02.model.EffectVisitor;
 import it.polimi.ingsw.am02.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
-import it.polimi.ingsw.am02.model.PhaseObserver;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
 import it.polimi.ingsw.am02.model.Tribu;
 
 public class EndGameFullSetPPEffect implements BuildingEffect, PhaseObserver{

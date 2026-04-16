@@ -4,7 +4,7 @@ import it.polimi.ingsw.am02.model.BuildingEffect;
 import it.polimi.ingsw.am02.model.EffectVisitor;
 import it.polimi.ingsw.am02.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.model.Tribu;
-import it.polimi.ingsw.am02.model.TribuObserver;
+import it.polimi.ingsw.am02.server.model.listeners.TribuObserver;
 
 public class FullSetFoodRewardEffect implements BuildingEffect, TribuObserver {
 

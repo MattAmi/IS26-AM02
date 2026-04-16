@@ -5,6 +5,7 @@ import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
 import it.polimi.ingsw.am02.model.exceptions.EventCardNotTakeableException;
 import it.polimi.ingsw.am02.model.exceptions.InsufficientFoodException;
 import it.polimi.ingsw.am02.model.exceptions.PickLimitExceededException;
+import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
 
 import java.util.*;
 import java.util.stream.Stream;

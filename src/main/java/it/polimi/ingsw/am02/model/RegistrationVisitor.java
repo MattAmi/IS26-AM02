@@ -1,5 +1,9 @@
 package it.polimi.ingsw.am02.model;
 
+import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
+import it.polimi.ingsw.am02.server.model.listeners.TribuObserver;
+
 public class RegistrationVisitor implements EffectVisitor {
 
     final Game game;

@@ -3,6 +3,7 @@ package it.polimi.ingsw.am02.model;
 import it.polimi.ingsw.am02.model.buildingeffects.FlatPrestigeBonusEffect;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

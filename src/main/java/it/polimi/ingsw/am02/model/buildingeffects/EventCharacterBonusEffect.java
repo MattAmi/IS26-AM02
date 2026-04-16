@@ -4,7 +4,7 @@ import it.polimi.ingsw.am02.model.BuildingEffect;
 import it.polimi.ingsw.am02.model.EffectVisitor;
 import it.polimi.ingsw.am02.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.model.enumerations.EventType;
-import it.polimi.ingsw.am02.model.EventObserver;
+import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
 import it.polimi.ingsw.am02.model.Tribu;
 
 public class EventCharacterBonusEffect implements BuildingEffect, EventObserver {

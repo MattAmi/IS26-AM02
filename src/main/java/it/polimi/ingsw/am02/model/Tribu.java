@@ -2,6 +2,7 @@ package it.polimi.ingsw.am02.model;
 
 import it.polimi.ingsw.am02.model.enumerations.*;
 import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
+import it.polimi.ingsw.am02.server.model.listeners.TribuObserver;
 
 import java.util.*;
 

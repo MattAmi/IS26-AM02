@@ -1,4 +1,7 @@
 package it.polimi.ingsw.am02.client.network.socket;
 
-public class SocketServerProxy {
+import it.polimi.ingsw.am02.common.interfaces.VirtualServer;
+
+public class SocketServerProxy implements VirtualServer {
+
 }

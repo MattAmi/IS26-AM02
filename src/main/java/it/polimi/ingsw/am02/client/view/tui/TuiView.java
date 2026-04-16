@@ -1,4 +1,7 @@
 package it.polimi.ingsw.am02.client.view.tui;
 
-public class TuiView {
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
+
+public class TuiView implements VirtualView {
+
 }

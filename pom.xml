@@ -38,6 +38,18 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.12.1</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.mockito</groupId>
@@ -47,26 +59,10 @@
         </dependency>
 
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.21.2</version>
-            <scope>compile</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-launcher</artifactId>
-            <version>1.12.1</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -78,12 +74,24 @@
                 <configuration>
                     <source>25</source>
                     <target>25</target>
+                    <compilerArgs>
+                        <arg>--add-reads</arg>
+                        <arg>it.polimi.ingsw.am02=ALL-UNNAMED</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+                <configuration>
+                    <argLine>
+                        --add-reads it.polimi.ingsw.am02=ALL-UNNAMED
+                        --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.model=ALL-UNNAMED
+                        --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.model.enumerations=ALL-UNNAMED
+                        --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.model.buildingeffects=ALL-UNNAMED
+                    </argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.openjfx</groupId>
@@ -91,7 +99,6 @@
                 <version>0.0.8</version>
                 <executions>
                     <execution>
-                        <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
                             <mainClass>it.polimi.ingsw.am02/it.polimi.ingsw.am02.HelloApplication</mainClass>
@@ -106,6 +113,5 @@
                 </executions>
             </plugin>
         </plugins>
-
     </build>
 </project>

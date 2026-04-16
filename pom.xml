@@ -87,9 +87,9 @@
                 <configuration>
                     <argLine>
                         --add-reads it.polimi.ingsw.am02=ALL-UNNAMED
-                        --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.model=ALL-UNNAMED
-                        --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.model.enumerations=ALL-UNNAMED
-                        --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.model.buildingeffects=ALL-UNNAMED
+                        --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.server.model=ALL-UNNAMED
+                        --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.server.model.enumerations=ALL-UNNAMED
+                        --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.server.model.buildingeffects=ALL-UNNAMED
                     </argLine>
                 </configuration>
             </plugin>

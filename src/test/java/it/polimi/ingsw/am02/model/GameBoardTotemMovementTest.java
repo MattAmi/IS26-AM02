@@ -1,6 +1,9 @@
-package it.polimi.ingsw.am02.model;
+package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.server.model.GameBoard;
+import it.polimi.ingsw.am02.server.model.GameRegistry;
+import it.polimi.ingsw.am02.server.model.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -1,9 +1,13 @@
-package it.polimi.ingsw.am02.model;
+package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.enumerations.Totem;
-import it.polimi.ingsw.am02.model.exceptions.PlayerNotOnTileException;
-import it.polimi.ingsw.am02.model.exceptions.TileNotFoundException;
-import it.polimi.ingsw.am02.model.exceptions.TileOccupiedException;
+import it.polimi.ingsw.am02.server.model.GameRegistry;
+import it.polimi.ingsw.am02.server.model.OfferTile;
+import it.polimi.ingsw.am02.server.model.OfferTrack;
+import it.polimi.ingsw.am02.server.model.Player;
+import it.polimi.ingsw.am02.server.model.exceptions.PlayerNotOnTileException;
+import it.polimi.ingsw.am02.server.model.exceptions.TileNotFoundException;
+import it.polimi.ingsw.am02.server.model.exceptions.TileOccupiedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

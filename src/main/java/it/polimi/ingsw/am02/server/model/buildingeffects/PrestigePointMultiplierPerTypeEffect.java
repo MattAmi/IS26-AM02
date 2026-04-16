@@ -1,0 +1,35 @@
+package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.server.model.*;
+import it.polimi.ingsw.am02.server.model.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
+
+public class PrestigePointMultiplierPerTypeEffect implements BuildingEffect, PhaseObserver {
+    final int multiplier;
+    final CharacterType type;
+    final Tribu tribu;
+
+    public PrestigePointMultiplierPerTypeEffect(int multiplier, CharacterType type, Tribu tribu) {
+        this.multiplier = multiplier;
+        this.type = type;
+        this.tribu = tribu;
+    }
+
+    @Override
+    public void accept(EffectVisitor visitor) {
+        visitor.visitPhaseObserver(this);
+    }
+
+    @Override
+    public void onPhaseChange(PhaseType newPhase) {
+        if(newPhase == PhaseType.END_GAME){
+            int bonus = tribu.getPPBuilders()*(multiplier-1);
+            tribu.addPrestigePoints(bonus);
+        }
+    }
+
+}

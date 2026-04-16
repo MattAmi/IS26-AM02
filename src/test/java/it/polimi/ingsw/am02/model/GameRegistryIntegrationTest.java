@@ -1,8 +1,9 @@
-package it.polimi.ingsw.am02.model;
+package it.polimi.ingsw.am02.server.model;
 
-import it.polimi.ingsw.am02.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.*;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.Era;
-import it.polimi.ingsw.am02.model.enumerations.EventType;
+import it.polimi.ingsw.am02.server.model.enumerations.EventType;
 import org.junit.jupiter.api.*;
 
 import java.util.*;

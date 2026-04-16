@@ -1,10 +1,11 @@
-package it.polimi.ingsw.am02.model;
+package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.enumerations.Totem;
-import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
-import it.polimi.ingsw.am02.model.exceptions.EventCardNotTakeableException;
-import it.polimi.ingsw.am02.model.exceptions.InsufficientFoodException;
-import it.polimi.ingsw.am02.model.exceptions.PickLimitExceededException;
+import it.polimi.ingsw.am02.server.model.*;
+import it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException;
+import it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableException;
+import it.polimi.ingsw.am02.server.model.exceptions.InsufficientFoodException;
+import it.polimi.ingsw.am02.server.model.exceptions.PickLimitExceededException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

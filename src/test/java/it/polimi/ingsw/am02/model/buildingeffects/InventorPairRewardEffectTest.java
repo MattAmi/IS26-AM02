@@ -1,9 +1,10 @@
-package it.polimi.ingsw.am02.model.buildingeffects;
+package it.polimi.ingsw.am02.server.model.buildingeffects;
 
-import it.polimi.ingsw.am02.model.EffectVisitor;
-import it.polimi.ingsw.am02.model.enumerations.CharacterType;
-import it.polimi.ingsw.am02.model.enumerations.InventionType;
-import it.polimi.ingsw.am02.model.Tribu;
+import it.polimi.ingsw.am02.server.model.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.buildingeffects.InventorPairRewardEffect;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.enumerations.InventionType;
+import it.polimi.ingsw.am02.server.model.Tribu;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

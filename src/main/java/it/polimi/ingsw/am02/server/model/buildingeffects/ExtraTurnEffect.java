@@ -1,0 +1,40 @@
+package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.server.model.*;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.server.model.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.Game;
+import it.polimi.ingsw.am02.server.model.Player;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
+
+public class ExtraTurnEffect implements BuildingEffect, PhaseObserver {
+
+    private final Player player;
+    private final Game game;
+
+    private final int extraUpperPicks;
+    private final int extraLowerPicks;
+
+    public ExtraTurnEffect(Player player, Game game, int extraUpperPicks, int extraLowerPicks) {
+        this.player = player;
+        this.game = game;
+        this.extraUpperPicks = extraUpperPicks;
+        this.extraLowerPicks = extraLowerPicks;
+    }
+
+    @Override
+    public void accept(EffectVisitor visitor) {
+        visitor.visitPhaseObserver(this);
+    }
+
+    @Override
+    public void onPhaseChange(PhaseType newPhase) {
+        if (newPhase == PhaseType.END_ROUND) {
+
+            String nickname = player.getNickname();
+            game.enqueueExtraTurn(nickname, extraUpperPicks, extraLowerPicks);
+
+        }
+    }
+}

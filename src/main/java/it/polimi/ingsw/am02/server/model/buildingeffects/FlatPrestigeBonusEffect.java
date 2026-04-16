@@ -1,0 +1,30 @@
+package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.server.model.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.EffectVisitor;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
+import it.polimi.ingsw.am02.server.model.Tribu;
+
+public class FlatPrestigeBonusEffect implements BuildingEffect, PhaseObserver {
+
+    final Tribu tribu;
+    final int bonusPP;
+
+    public FlatPrestigeBonusEffect(Tribu tribu, int bonusPP) {
+        this.tribu = tribu;
+        this.bonusPP = bonusPP;
+    }
+
+    @Override
+    public void accept(EffectVisitor visitor) {
+        visitor.visitPhaseObserver(this);
+    }
+
+    @Override
+    public void onPhaseChange(PhaseType newPhase) {
+        if(newPhase == PhaseType.END_GAME){
+            tribu.addPrestigePoints(bonusPP);
+        }
+    }
+}

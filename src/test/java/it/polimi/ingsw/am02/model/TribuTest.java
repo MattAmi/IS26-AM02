@@ -1,7 +1,9 @@
-package it.polimi.ingsw.am02.model;
+package it.polimi.ingsw.am02.server.model;
 
-import it.polimi.ingsw.am02.model.enumerations.CharacterType;
-import it.polimi.ingsw.am02.model.enumerations.InventionType;
+import it.polimi.ingsw.am02.server.model.GameRegistry;
+import it.polimi.ingsw.am02.server.model.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.enumerations.InventionType;
 import org.junit.jupiter.api.*;
 
 import java.util.List;

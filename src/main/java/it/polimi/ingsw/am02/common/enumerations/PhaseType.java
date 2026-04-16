@@ -1,4 +1,4 @@
-package it.polimi.ingsw.am02.model.enumerations;
+package it.polimi.ingsw.am02.common.enumerations;
 
 public enum PhaseType {
     SETUP, TOTEM_PLACEMENT, ACTION_RESOLUTION, END_PLAYER_TURN, END_ROUND, EVENT_RESOLUTION , NEW_ROUND, NEW_ERA, FINAL_EVENT_RESOLUTION, END_GAME

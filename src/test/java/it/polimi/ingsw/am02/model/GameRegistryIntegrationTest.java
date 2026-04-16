@@ -1,7 +1,7 @@
 package it.polimi.ingsw.am02.model;
 
 import it.polimi.ingsw.am02.model.enumerations.CharacterType;
-import it.polimi.ingsw.am02.model.enumerations.Era;
+import it.polimi.ingsw.am02.common.enumerations.Era;
 import it.polimi.ingsw.am02.model.enumerations.EventType;
 import org.junit.jupiter.api.*;
 

@@ -1,8 +1,8 @@
 package it.polimi.ingsw.am02.model;
 
 import it.polimi.ingsw.am02.model.enumerations.CharacterType;
-import it.polimi.ingsw.am02.model.enumerations.PhaseType;
-import it.polimi.ingsw.am02.model.enumerations.Totem;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.model.exceptions.InvalidMoveException;
 import it.polimi.ingsw.am02.model.exceptions.NotYourTurnException;
 import it.polimi.ingsw.am02.model.exceptions.PickObligationNotFulfilledException;

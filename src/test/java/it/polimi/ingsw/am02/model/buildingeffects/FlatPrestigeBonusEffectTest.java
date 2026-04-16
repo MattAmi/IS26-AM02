@@ -1,7 +1,7 @@
 package it.polimi.ingsw.am02.model.buildingeffects;
 
 import it.polimi.ingsw.am02.model.EffectVisitor;
-import it.polimi.ingsw.am02.model.enumerations.PhaseType;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.model.Tribu;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

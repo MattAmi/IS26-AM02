@@ -1,6 +1,6 @@
 package it.polimi.ingsw.am02.model;
 
-import it.polimi.ingsw.am02.model.enumerations.Era;
+import it.polimi.ingsw.am02.common.enumerations.Era;
 import it.polimi.ingsw.am02.model.exceptions.CardNotFoundException;
 import it.polimi.ingsw.am02.model.exceptions.EventCardNotTakeableException;
 import it.polimi.ingsw.am02.model.exceptions.InsufficientFoodException;

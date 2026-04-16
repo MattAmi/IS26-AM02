@@ -1,7 +1,7 @@
 package it.polimi.ingsw.am02.server.network.socket;
 
-import it.polimi.ingsw.am02.common.interfaces.VirtualView;
+import it.polimi.ingsw.am02.server.network.ClientHandler;
 
-public class SocketClientHandler implements VirtualView {
+public class SocketClientHandler implements ClientHandler {
 
 }

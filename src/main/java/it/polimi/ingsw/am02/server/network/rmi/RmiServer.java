@@ -1,4 +1,6 @@
 package it.polimi.ingsw.am02.server.network.rmi;
 
-public class RmiServer {
+import it.polimi.ingsw.am02.server.network.NetworkServer;
+
+public class RmiServer implements NetworkServer {
 }

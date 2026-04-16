@@ -1,8 +1,6 @@
 package it.polimi.ingsw.am02.server.controller;
 
-import it.polimi.ingsw.am02.common.interfaces.VirtualServer;
-
-public class GameController implements VirtualServer {
+public class GameController {
 
     private ModelInterface model;
 

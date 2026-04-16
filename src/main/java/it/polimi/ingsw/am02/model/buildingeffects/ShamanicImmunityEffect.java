@@ -1,4 +1,4 @@
-package it.polimi.ingsw.am02.model.BuildingEffects;
+package it.polimi.ingsw.am02.model.buildingeffects;
 
 import it.polimi.ingsw.am02.model.BuildingEffect;
 import it.polimi.ingsw.am02.model.EffectVisitor;

@@ -1,5 +1,5 @@
 
-package it.polimi.ingsw.am02.model.BuildingEffects;
+package it.polimi.ingsw.am02.model.buildingeffects;
 
 import it.polimi.ingsw.am02.model.*;
 import it.polimi.ingsw.am02.model.Enumerations.PhaseType;

@@ -1,6 +1,6 @@
 package it.polimi.ingsw.am02.model;
 
-import it.polimi.ingsw.am02.model.BuildingEffects.FlatPrestigeBonusEffect;
+import it.polimi.ingsw.am02.model.buildingeffects.FlatPrestigeBonusEffect;
 import it.polimi.ingsw.am02.model.Enumerations.PhaseType;
 import it.polimi.ingsw.am02.model.Enumerations.Totem;
 import org.junit.jupiter.api.BeforeEach;

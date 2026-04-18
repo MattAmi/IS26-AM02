@@ -278,6 +278,12 @@ public class GameBoard {
         executeCardAcquisition(selectedIDs, player, game, buildingCosts);
 
         currentTile.decrementPicks(counts[0], counts[1]);
+
+        // Notify observers that the tile's remaining limits have been updated
+        notifier.notifyPlayerLimitsUpdated(
+                player.getNickname(),
+                currentTile.getRemainingUpper(),
+                currentTile.getRemainingLower());
     }
 
     public boolean canPlayerFinish(Player player) {

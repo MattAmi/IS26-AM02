@@ -1,8 +1,10 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.Era;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.common.enumerations.RowPosition;
 import it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException;
 import it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableException;
 import it.polimi.ingsw.am02.server.model.exceptions.InsufficientFoodException;
@@ -202,22 +204,42 @@ public class GameBoard {
                 int actualCost = buildingCosts.get(cardID);
 
                 player.getTribu().addFoodPoints(-actualCost);
+
+                if (actualCost > 0) {
+                    // Notify observers of food consumption due to building purchase
+                    notifier.notifyPlayerResourceChanged(
+                            player.getNickname(),
+                            ResourceType.FOOD,
+                            player.getTribu().getFoodPoints(),
+                            -actualCost);
+                }
+
                 player.getTribu().insertBuilding(cardID, player, game);
 
-                if (upperRowBuildings.contains(cardID)) {
-                    upperRowBuildings.remove(cardID);
+                RowPosition sourceRow;
+                if (upperRowBuildings.remove(cardID)) {
+                    sourceRow = RowPosition.UPPER;
                 } else {
                     lowerRowBuildings.remove(cardID);
+                    sourceRow = RowPosition.LOWER;
                 }
+
+                // Notify observers that a player has taken a building card from the board
+                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.BUILDING, sourceRow);
 
             } else {
                 player.getTribu().insertCharacter(cardID);
 
-                if (upperRow.contains(cardID)) {
-                    upperRow.remove(cardID);
+                RowPosition sourceRow;
+                if (upperRow.remove(cardID)) {
+                    sourceRow = RowPosition.UPPER;
                 } else {
                     lowerRow.remove(cardID);
+                    sourceRow = RowPosition.LOWER;
                 }
+
+                // Notify observers that a player has taken a character card from the board
+                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.CHARACTER, sourceRow);
             }
         }
     }

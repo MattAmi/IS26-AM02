@@ -6,6 +6,7 @@ import it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableExceptio
 import it.polimi.ingsw.am02.server.model.exceptions.InsufficientFoodException;
 import it.polimi.ingsw.am02.server.model.exceptions.PickLimitExceededException;
 import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
+import it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -27,9 +28,10 @@ public class GameBoard {
     private int extraTurnRemainingUpper;
     private int extraTurnRemainingLower;
     private final List<EventObserver> eventObservers;
+    private final GameEventEmitter notifier;
 
 
-    public GameBoard(int numPlayers) {
+    public GameBoard(int numPlayers, GameEventEmitter notifier) {
         this.upperRow = new ArrayList<>();
         this.lowerRow = new ArrayList<>();
         this.upperRowBuildings = new ArrayList<>();
@@ -45,6 +47,8 @@ public class GameBoard {
         this.setUpGameBoard(numPlayers);
         this.setUpInitialRows(numPlayers);
         this.eventObservers = new ArrayList<>();
+
+        this.notifier = Objects.requireNonNull(notifier, "GameEventEmitter must not be null");
     }
 
     private void setUpGameBoard(int numPlayers) {

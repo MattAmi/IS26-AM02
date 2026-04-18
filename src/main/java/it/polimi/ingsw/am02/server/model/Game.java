@@ -54,8 +54,6 @@ public class Game implements ModelInterface {
         this.extraTurnLowerPicks = 0;
 
         this.notifier = new GameNotifier();
-
-        transitionTo(new SetUpState());
     }
 
 
@@ -64,20 +62,17 @@ public class Game implements ModelInterface {
         currentState.moveTotem(nickname, tileID);
     }
 
-    public void resolveActions(String nickname, List<String> selectedIDs) {
-        currentState.resolveActions(nickname, selectedIDs);
-    }
+    public void resolveActions(String nickname, List<String> selectedIDs) { currentState.resolveActions(nickname, selectedIDs); }
 
-
-    @Override
     public void addGameObserver(GameObserver observer) {
         notifier.addObserver(observer);
     }
 
-    @Override
     public void removeGameObserver(GameObserver observer) {
         notifier.removeObserver(observer);
     }
+
+    public void startFSM() { transitionTo(new SetUpState()); }
 
 
     // Helper methods
@@ -102,7 +97,7 @@ public class Game implements ModelInterface {
     }
 
     private void initializeBoard() { // Initializes GameBoard
-        gameBoard = new GameBoard(numPlayers);
+        gameBoard = new GameBoard(numPlayers, notifier);
     }
 
     private void randomizeInitialTurnOrder() {

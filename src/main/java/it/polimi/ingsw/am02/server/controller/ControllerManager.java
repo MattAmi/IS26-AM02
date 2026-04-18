@@ -153,6 +153,8 @@ public class ControllerManager {
         nicknames.forEach(n -> playerToGame.put(n, gameId));
 
         broadcastToLobbySelectionClients(new UpdatedLobbiesEvent(getLobbyInfoList()));
+
+        model.startFSM();
     }
 
     // Called by Lobby when it's removed

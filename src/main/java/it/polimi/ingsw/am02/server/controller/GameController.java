@@ -60,6 +60,11 @@ public class GameController implements GameObserver {
         }
     }
 
+    public void handlePlayerDisconnected(String nickname) {
+        broadcastOthers(nickname, new PlayerDisconnectedEvent(nickname));
+        broadcast(new GameAbortedEvent("Player " + nickname + " disconnected."));
+    }
+
 
     //GameObserver implementation (event translation and dispatching)
     @Override

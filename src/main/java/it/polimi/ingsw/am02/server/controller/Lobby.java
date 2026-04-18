@@ -4,6 +4,8 @@ import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.lobby.*;
+import it.polimi.ingsw.am02.common.messages.events.error.*;
 
 import java.util.*;
 
@@ -55,7 +57,7 @@ public class Lobby {
 
         nicknames.add(nickname);
         views.put(nickname, view);
-        broadcast(new LobbyUpdatedEvent(toLobbyInfo()));
+        broadcast(new UpdatedLobbyEvent(toLobbyInfo()));
     }
 
     public synchronized void selectTotem(String nickname, Totem totem) {
@@ -74,7 +76,7 @@ public class Lobby {
         }
 
         chosenTotems.put(nickname, totem); // overwrites previous choice if any
-        broadcast(new LobbyUpdatedEvent(toLobbyInfo()));
+        broadcast(new UpdatedLobbyEvent(toLobbyInfo()));
 
         if (isReadyToStart()) {
             started = true;
@@ -99,7 +101,7 @@ public class Lobby {
             if (nicknames.isEmpty()) {
                 controllerManager.removeLobby(lobbyId);
             } else {
-                broadcast(new LobbyUpdatedEvent(toLobbyInfo()));
+                broadcast(new UpdatedLobbyEvent(toLobbyInfo()));
             }
         }
     }

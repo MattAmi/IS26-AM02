@@ -302,7 +302,10 @@ public class GameBoard {
     public void movePlayerToTurnOrder(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
         currentTile.removePlayer(player);
-        turnOrderTile.registerPlayer(player);
+        int position = turnOrderTile.registerPlayer(player);
+
+        // Notify observers that a totem has been returned to the TurnOrderTile
+        notifier.notifyTotemReturned(player.getNickname(), position);
     }
 
     public void applyTurnOrderRewards(Player player) {

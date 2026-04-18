@@ -31,14 +31,15 @@ public class TurnOrderTile {
         return numPlayers;
     }
 
-    public void registerPlayer(Player player) {
+    public int registerPlayer(Player player) {
 
         for(int i = 0; i < playerPositions.length; i++) {
             if (playerPositions[i] == null) {
                 playerPositions[i] = player;
-                return;
+                return i;
             }
         }
+        return 0;
     }
 
     public void removePlayer(Player player) {

@@ -13,4 +13,5 @@ module it.polimi.ingsw.am02 {
     exports it.polimi.ingsw.am02.server.model.enumerations;
     exports it.polimi.ingsw.am02.server.controller;
     exports it.polimi.ingsw.am02.common.dto;
+    exports  it.polimi.ingsw.am02.server.network;
 }

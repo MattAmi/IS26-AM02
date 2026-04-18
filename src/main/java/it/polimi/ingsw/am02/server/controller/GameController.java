@@ -3,6 +3,7 @@ package it.polimi.ingsw.am02.server.controller;
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.server.model.listeners.GameObserver;
 import it.polimi.ingsw.am02.server.network.ClientHandler;
 
@@ -11,8 +12,33 @@ import java.util.Map;
 
 public class GameController implements GameObserver {
 
-    private ModelInterface model;
+    private final ModelInterface model;
     private final Map<String, ClientHandler> handlers;
+
+
+    public GameController(ModelInterface model, Map<String, ClientHandler> handlers) {
+        this.model = model;
+        this.handlers = handlers;
+        this.model.addGameObserver(this);
+    }
+
+
+    private void unicast(String nickname, Event event) {
+        ClientHandler h = handlers.get(nickname);
+        if (h != null)
+            h.notify(event);
+    }
+
+    private void broadcast(Event event) {
+        handlers.values().forEach(h -> h.notify(event));
+    }
+
+    private void broadcastOthers(String excludeNickname, Event event) {
+        handlers.entrySet().stream()
+                .filter(e -> !e.getKey().equals(excludeNickname))
+                .forEach(e -> e.getValue().notify(event));
+    }
+
 
 
     @Override

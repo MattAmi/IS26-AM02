@@ -428,6 +428,9 @@ public class Game implements ModelInterface {
                 transitionTo(new EndRoundState());
             } else {
                 nextPlayer();
+
+                // Notify observers that the current player has changed
+                notifier.notifyCurrentPlayerChanged(currentPlayerNickname);
                 gameBoard.initializePlayerLimits(getPlayerByNickname(currentPlayerNickname));
 
                 transitionTo(new ActionResolutionState());

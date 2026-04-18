@@ -5,7 +5,7 @@ package it.polimi.ingsw.am02.server.model.exceptions;
  * {@code TurnOrderTile} without having fulfilled their mandatory
  * pick obligations (remaining upper/lower picks are not zero).
  */
-public class PickObligationNotFulfilledException extends RuntimeException {
+public class PickObligationNotFulfilledException extends GameRuleException {
 
     public PickObligationNotFulfilledException() {
         super("Player has not fulfilled their pick obligations.");

@@ -2,6 +2,7 @@ package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.enumerations.Era;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException;
 import it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableException;
 import it.polimi.ingsw.am02.server.model.exceptions.InsufficientFoodException;
@@ -231,7 +232,16 @@ public class GameBoard {
     public void processActionSelection(Player player, List<String> selectedIDs, Game game) {
 
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
-        currentTile.resolveFoodOffer(player);
+
+        int foodFromTile = currentTile.resolveFoodOffer(player);
+        if (foodFromTile > 0) {
+            // Notify observers that the player's food resources have changed
+            notifier.notifyPlayerResourceChanged(
+                    player.getNickname(),
+                    ResourceType.FOOD,
+                    player.getTribu().getFoodPoints(),
+                    foodFromTile);
+        }
 
         int[] counts = countSelectedByRow(selectedIDs);
 

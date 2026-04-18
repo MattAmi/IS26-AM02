@@ -379,11 +379,16 @@ public class Game implements ModelInterface {
             }
 
             if (isExtraTurnMode) {
+                String endedNickname = extraTurnPlayerNickname;
+
                 isExtraTurnMode = false;
                 extraTurnPlayerNickname = null;
                 extraTurnUpperPicks = 0;
                 extraTurnLowerPicks = 0;
                 gameBoard.clearExtraTurn();
+
+                // Notify observers that the extra turn has ended
+                notifier.notifyExtraTurnEnded(endedNickname);
 
                 if (areRoundEventsToResolve()) {
                     transitionTo(new EventResolutionState());
@@ -448,6 +453,9 @@ public class Game implements ModelInterface {
         @Override
         public void onEntryActions() {
 
+            // Notify observers the end-of-round phase transition
+            notifier.notifyPhaseChanged(PhaseType.END_ROUND);
+
             if (extraTurnPlayerNickname != null) {
                 isExtraTurnMode = true;
                 currentPlayerNickname = extraTurnPlayerNickname;
@@ -455,6 +463,9 @@ public class Game implements ModelInterface {
                         getPlayerByNickname(extraTurnPlayerNickname),
                         extraTurnUpperPicks,
                         extraTurnLowerPicks);
+
+                // Notify observers that an extra turn has started for a player
+                notifier.notifyExtraTurnStarted(extraTurnPlayerNickname, extraTurnUpperPicks, extraTurnLowerPicks);
 
                 transitionTo(new ActionResolutionState());
 

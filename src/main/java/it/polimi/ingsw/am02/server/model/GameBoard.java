@@ -1,6 +1,7 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.Era;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
@@ -501,5 +502,18 @@ public class GameBoard {
     OfferTrack getOfferTrack() { return  offerTrack; } // For testing
 
     public BoardSnapshot buildSnapshot() {
+        List<OfferTileInfo> offerTiles = offerTrack.getTilesInfo();
+
+        List<String> turnOrderPositions = turnOrderTile.getOrderedPlayers().stream()
+                .map(Player::getNickname)
+                .toList();
+
+        return new BoardSnapshot(List.copyOf(upperRow),
+                List.copyOf(lowerRow),
+                List.copyOf(upperRowBuildings),
+                List.copyOf(lowerRowBuildings),
+                offerTiles,
+                turnOrderPositions
+        );
     }
 }

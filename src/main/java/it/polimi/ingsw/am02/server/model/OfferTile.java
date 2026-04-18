@@ -1,5 +1,7 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
+
 public class OfferTile {
 
     private final char tileID;
@@ -82,6 +84,11 @@ public class OfferTile {
         isFoodResolved = true;
 
         return gainedFood;
+    }
+
+    public OfferTileInfo toInfo() {
+        String occupantNickname = (occupyingPlayer == null) ? null : occupyingPlayer.getNickname();
+        return new OfferTileInfo(tileID, gainedFood, numUpperChoosable, numLowerChoosable, occupantNickname);
     }
 
 }

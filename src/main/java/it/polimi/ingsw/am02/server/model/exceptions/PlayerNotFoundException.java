@@ -5,7 +5,7 @@ package it.polimi.ingsw.am02.server.model.exceptions;
  * This indicates either a programming error (stale nickname) or an invalid
  * request from the network layer.
  */
-public class PlayerNotFoundException extends RuntimeException {
+public class PlayerNotFoundException extends GameRuleException {
 
     public PlayerNotFoundException(String nickname) {
         super("No player found with nickname: " + nickname);

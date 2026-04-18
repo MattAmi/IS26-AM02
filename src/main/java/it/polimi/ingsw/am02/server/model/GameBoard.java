@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.enumerations.Era;
 import it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException;
 import it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableException;
@@ -118,9 +119,11 @@ public class GameBoard {
     }
 
     public void movePlayerToOffer(Player player, char tileID) {
-
         offerTrack.occupyTile(player, tileID);
         turnOrderTile.removePlayer(player);
+
+        // Notify observers that a totem has been placed
+        notifier.notifyTotemPlaced(player.getNickname(), tileID);
     }
 
     public List<Player> getPlayersInResolutionOrder() {
@@ -141,6 +144,9 @@ public class GameBoard {
         int effectiveLower = Math.min(currentTile.getNumLowerChoosable(), availableLower);
 
         currentTile.setRemainingPicks(effectiveUpper, effectiveLower);
+
+        // Notify observers that the player's resource limits have been initialized
+        notifier.notifyPlayerLimitsInitialized(player.getNickname(), effectiveUpper, effectiveLower);
     }
 
     private int[] countSelectedByRow(List<String> selectedIDs) {
@@ -439,4 +445,7 @@ public class GameBoard {
     List<String> getUpperRowBuildings() { return upperRowBuildings; } // For testing
     List<String> getLowerRowBuildings() { return lowerRowBuildings; } // For testing
     OfferTrack getOfferTrack() { return  offerTrack; } // For testing
+
+    public BoardSnapshot buildSnapshot() {
+    }
 }

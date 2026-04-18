@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.server.controller.ModelInterface;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
@@ -93,7 +94,6 @@ public class Game implements ModelInterface {
         int currentPlayerIndex = turnOrder.indexOf(currentPlayerNickname);
         int nextIndex = (currentPlayerIndex + 1) % turnOrder.size();
         currentPlayerNickname = turnOrder.get(nextIndex);
-        // notifyObservers(); TO DO QUANDO FAREMO OBSERVER
     }
 
     private void initializeBoard() { // Initializes GameBoard
@@ -138,6 +138,10 @@ public class Game implements ModelInterface {
 
         currentPlayerNickname = turnOrder.getFirst();
         Player currentPlayer = getPlayerByNickname(currentPlayerNickname);
+
+
+        // Notify observers about the transition to action resolution with current turn order
+        notifier.notifyPhaseChanged(PhaseType.ACTION_RESOLUTION, currentPlayerNickname, List.copyOf(turnOrder));
 
         gameBoard.initializePlayerLimits(currentPlayer);
 
@@ -316,6 +320,16 @@ public class Game implements ModelInterface {
             initializeBoard();
             randomizeInitialTurnOrder();
 
+
+            // Notify game observers that the setup is complete
+            BoardSnapshot snapshot = gameBoard.buildSnapshot();
+            Map<String, Integer> initialFood = new LinkedHashMap<>();
+            for (String nick : turnOrder) {
+                initialFood.put(nick, getPlayerByNickname(nick).getTribu().getFoodPoints());
+            }
+            notifier.notifyGameSetupCompleted(List.copyOf(turnOrder), initialFood, snapshot);
+
+
             transitionTo(new TotemPlacementState());
         }
     }
@@ -327,6 +341,12 @@ public class Game implements ModelInterface {
             super(PhaseType.TOTEM_PLACEMENT);
         }
 
+        // Notify observers of phase change to totem placement
+        @Override
+        public void onEntryActions() {
+            notifier.notifyPhaseChanged(PhaseType.TOTEM_PLACEMENT, currentPlayerNickname);
+        }
+
         public void moveTotem(String nickname, char tileID) {
             validatePlayerTurn(nickname);
             Player player = getPlayerByNickname(nickname);
@@ -336,6 +356,9 @@ public class Game implements ModelInterface {
                 setUpActionResolutionTurnOrder();
             } else {
                 nextPlayer();
+
+                // Notify observers that the current player has changed
+                notifier.notifyCurrentPlayerChanged(currentPlayerNickname);
             }
         }
     }

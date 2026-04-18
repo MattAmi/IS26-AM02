@@ -6,7 +6,7 @@ package it.polimi.ingsw.am02.server.model.exceptions;
  * during a phase that does not support it, or specifying an illegal
  * destination tile.
  */
-public class InvalidMoveException extends RuntimeException {
+public class InvalidMoveException extends GameRuleException {
 
     public InvalidMoveException(String reason) {
         super(reason);

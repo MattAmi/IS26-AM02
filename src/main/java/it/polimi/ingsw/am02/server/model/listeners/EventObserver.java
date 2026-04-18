@@ -6,5 +6,4 @@ public interface EventObserver {
     default void EventStart(EventType eventType){}
     default void EventPostResolution(EventType eventType){}
     default void EventEnd(EventType eventType){}
-
 }

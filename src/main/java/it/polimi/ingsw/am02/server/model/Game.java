@@ -68,13 +68,17 @@ public class Game implements ModelInterface {
         currentState.resolveActions(nickname, selectedIDs);
     }
 
+
+    @Override
     public void addGameObserver(GameObserver observer) {
         notifier.addObserver(observer);
     }
 
+    @Override
     public void removeGameObserver(GameObserver observer) {
         notifier.removeObserver(observer);
     }
+
 
     // Helper methods
       Player getPlayerByNickname(String nickname) {

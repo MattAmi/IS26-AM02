@@ -309,7 +309,20 @@ public class GameBoard {
     }
 
     public void applyTurnOrderRewards(Player player) {
-        turnOrderTile.applyRewards(player);
+        TurnOrderTile.TurnOrderRewardResult result = turnOrderTile.applyRewards(player);
+        String nickname = player.getNickname();
+        Tribu tribu = player.getTribu();
+
+        // Notify observers of resource updates (gains and penalties)
+        if (result.foodGained() > 0) {
+            notifier.notifyPlayerResourceChanged(nickname, ResourceType.FOOD, tribu.getFoodPoints(), result.foodGained());
+        }
+        if (result.foodPenalty() > 0) {
+            notifier.notifyPlayerResourceChanged(nickname, ResourceType.FOOD, tribu.getFoodPoints(), -result.foodPenalty());
+        }
+        if (result.ppPenalty() > 0) {
+            notifier.notifyPlayerResourceChanged(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), -result.ppPenalty());
+        }
     }
 
     public int getPlayersOnTurnOrderCount() {

@@ -14,5 +14,7 @@ module it.polimi.ingsw.am02 {
     exports it.polimi.ingsw.am02.server.controller;
     exports it.polimi.ingsw.am02.common.dto;
     exports it.polimi.ingsw.am02.server.network;
-    exports it.polimi.ingsw.am02.common.messages;
+    exports it.polimi.ingsw.am02.common.messages.commands;
+    exports it.polimi.ingsw.am02.common.interfaces;
+
 }

@@ -3,11 +3,11 @@ package it.polimi.ingsw.am02.server.controller;
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.commands.Command;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.server.model.exceptions.GameRuleException;
 import it.polimi.ingsw.am02.server.model.listeners.GameObserver;
-import it.polimi.ingsw.am02.server.network.ClientHandler;
 
 import java.util.List;
 import java.util.Map;
@@ -15,37 +15,19 @@ import java.util.Map;
 public class GameController implements GameObserver {
 
     private final ModelInterface model;
-    private final Map<String, ClientHandler> handlers;
+    private final Map<String, VirtualView> handlers;
 
 
-    public GameController(ModelInterface model, Map<String, ClientHandler> handlers) {
+    public GameController(ModelInterface model, Map<String, VirtualView> handlers) {
         this.model = model;
         this.handlers = handlers;
         this.model.addGameObserver(this);
     }
 
-    //Command handler
-    public void handle(Command cmd, String senderNickname) {
-        try {
-            switch (cmd) {
-                case MoveTotemCommand c -> model.moveTotem(senderNickname, c.tileID());
-                case ResolveActionsCommand c -> model.resolveActions(senderNickname, c.cardIDs());
-                default -> throw new IllegalArgumentException("Unsupported command: " + cmd);
-            }
-        } catch (GameRuleException e) {
-            unicast(new ErrorEvent(e.getMessage()), senderNickname);
-
-        } catch (RuntimeException e) {
-            System.err.println("Server error: ");
-            e.printStackTrace();
-            unicast(new ErrorEvent("Internal server error. Please contact an admin"), senderNickname);
-        }
-    }
-
 
     //Routing methods
     private void unicast(String nickname, Event event) {
-        ClientHandler h = handlers.get(nickname);
+        VirtualView h = handlers.get(nickname);
         if (h != null)
             h.notify(event);
     }
@@ -59,6 +41,25 @@ public class GameController implements GameObserver {
                 .filter(e -> !e.getKey().equals(excludeNickname))
                 .forEach(e -> e.getValue().notify(event));
     }
+
+
+    //Command handler
+    public void handle(Command cmd, String senderNickname) {
+        try {
+            switch (cmd) {
+                case MoveTotemCommand c -> model.moveTotem(senderNickname, c.tileID());
+                case ResolveActionsCommand c -> model.resolveActions(senderNickname, c.cardIDs());
+            }
+        } catch (GameRuleException e) {
+            unicast(new ErrorEvent(e.getMessage()), senderNickname);
+
+        } catch (RuntimeException e) {
+            System.err.println("Server error: ");
+            e.printStackTrace();
+            unicast(senderNickname, new ErrorEvent("Internal server error. Please contact an admin"));
+        }
+    }
+
 
     //GameObserver implementation (event translation and dispatching)
     @Override

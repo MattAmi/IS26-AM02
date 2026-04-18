@@ -21,6 +21,6 @@ public sealed interface Event extends Message
         BoardUpdatedEvent, TurnOrderEstablishedEvent,
         EraChangedEvent, EventResolvedEvent, SustainmentResolvedEvent,
         ExtraTurnStartedEvent, ExtraTurnEndedEvent,
-        FinalScoreCalculatedEvent, GameEndedEvent,
+        FinalScoreCalculatedEvent, GameEndedEvent, GameDisconnectedEvent,
         ErrorEvent {
 }

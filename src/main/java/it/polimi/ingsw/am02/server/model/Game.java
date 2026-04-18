@@ -507,7 +507,12 @@ public class Game implements ModelInterface {
 
             if(areEraChangesToResolve()) {
                 setUpPlacementOrder();
+
+                // Notify observers that the turn order has been established
+                notifier.notifyTurnOrderEstablished(List.copyOf(turnOrder));
+
                 transitionTo(new NewEraState());
+
             } else if (isGameOverCondition()) {
                 if (areFinalEventsToResolve()) {
                     transitionTo(new FinalEventsResolutionState());
@@ -516,6 +521,10 @@ public class Game implements ModelInterface {
                 }
             }  else {
                 setUpPlacementOrder();
+
+                // Notify observers that the turn order has been established
+                notifier.notifyTurnOrderEstablished(List.copyOf(turnOrder));
+
                 transitionTo(new TotemPlacementState());
             }
         }
@@ -531,6 +540,10 @@ public class Game implements ModelInterface {
 
         @Override
         public void onEntryActions() {
+
+            // Notify observers that a new era has begun
+            notifier.notifyPhaseChanged(PhaseType.NEW_ERA);
+
             executeNewEraPreparation();
 
             transitionTo(new TotemPlacementState());

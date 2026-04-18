@@ -370,12 +370,28 @@ public class GameBoard {
     }
 
     public void prepareNewRound(int numPlayers) {
+        GameRegistry registry = GameRegistry.getInstance();
+
+        List<String> discardedCards = new ArrayList<>();
+        List<String> movedToLowerRow = new ArrayList<>();
+
+
+        for (String cardID : lowerRow) {
+            discardedCards.add(cardID);
+        }
         lowerRow.clear();
-        lowerRow.addAll(upperRow);
+
+        for (String cardID : upperRow) {
+            lowerRow.add(cardID);
+            movedToLowerRow.add(cardID);
+        }
         upperRow.clear();
         eraChangedFlag = false;
 
+        List<String> newUpperCards = new ArrayList<>();
         for (int i = 0; i < (numPlayers + 4); i++) {
+            if (tribuDeck.isEmpty())
+                break;
             String cardID = tribuDeck.draw();
             Era cardEra = getCardEra(cardID);
 
@@ -384,7 +400,17 @@ public class GameBoard {
                 eraChangedFlag = true;
             }
             upperRow.add(cardID);
+            newUpperCards.add(cardID);
         }
+
+        // Notify observers of the board state update, including card movements and deck size
+        notifier.notifyBoardUpdated(
+                List.copyOf(upperRow),
+                List.copyOf(lowerRow),
+                discardedCards,
+                movedToLowerRow,
+                tribuDeck.getRemainingSize()
+        );
     }
 
     public List<Player> getPlayersInPlacementOrder() {
@@ -392,10 +418,14 @@ public class GameBoard {
     }
 
     public void updateRowsForNewEra() {
-        if(currentEra == Era.III)
-            lowerRowBuildings.clear();
+        List<String> discardedBuildings = new ArrayList<>();
 
-        if(currentEra == Era.II || currentEra == Era.III) {
+        if (currentEra == Era.III) {
+            discardedBuildings.addAll(lowerRowBuildings);
+            lowerRowBuildings.clear();
+        }
+
+        if (currentEra == Era.II || currentEra == Era.III) {
             lowerRowBuildings.addAll(upperRowBuildings);
             upperRowBuildings.clear();
 
@@ -404,6 +434,14 @@ public class GameBoard {
         }
 
         eraChangedFlag = false;
+
+        // Notify observers of the era change and the updated building market
+        notifier.notifyEraChanged(
+                currentEra,
+                List.copyOf(upperRowBuildings),
+                List.copyOf(lowerRowBuildings),
+                discardedBuildings
+        );
     }
 
     public boolean hasFinalEvents() {
@@ -494,7 +532,6 @@ public class GameBoard {
 
     // FOR TESTING
     TurnOrderTile getTurnOrderTile() { return turnOrderTile; } // For testing
-
     List<String> getUpperRow() { return upperRow; } // For testing
     List<String> getLowerRow() { return lowerRow; } // For testing
     List<String> getUpperRowBuildings() { return upperRowBuildings; } // For testing

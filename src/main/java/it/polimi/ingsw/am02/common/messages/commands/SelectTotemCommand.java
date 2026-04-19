@@ -1,4 +1,5 @@
 package it.polimi.ingsw.am02.common.messages.commands;
 
-public class SelectTotemCommand {
-}
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+
+public record SelectTotemCommand(Totem color) implements Command {}

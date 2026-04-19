@@ -85,7 +85,7 @@ public class TurnOrderTile {
         if (foodBonus == 0) {
             return TurnOrderRewardResult.empty();
         }
-y
+
         int foodToPay = -foodBonus;
         int currentFood = player.getTribu().getFoodPoints();
 

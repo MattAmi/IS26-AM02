@@ -1,9 +1,12 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
 import it.polimi.ingsw.am02.common.enumerations.Era;
 import it.polimi.ingsw.am02.server.model.enumerations.EventType;
 import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class EventCard {
@@ -47,10 +50,21 @@ public class EventCard {
         return priority;
     }
 
-    public void applyEventEffect(List<Player> players, List<EventObserver> eventObservers) {
-        eventEffect.applyEffect(players);
-        for (EventObserver observer : eventObservers)
-            observer.EventPostResolution(this.type);
+    public EffectOutcome applyEventEffect(List<Player> players, List<EventObserver> eventObservers) {
+
+        EffectOutcome mainOutcome = eventEffect.applyEffect(players);
+
+        List<ResourceDelta> allDeltas = new ArrayList<>(mainOutcome.resourceDeltas());
+
+        for (EventObserver observer : eventObservers) {
+            EffectOutcome observerOutcome = observer.eventPostResolution(this.type);
+
+            if (observerOutcome != null && !observerOutcome.isEmpty()) {
+                allDeltas.addAll(observerOutcome.resourceDeltas());
+            }
+        }
+
+        return new EffectOutcome(allDeltas);
     }
 
 }

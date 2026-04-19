@@ -22,9 +22,11 @@ public class ShamanEffect implements CharacterEffect {
         Tribu tribu = player.getTribu();
         tribu.addShamanStars(shamanStars);
 
+        String nickname = player.getNickname();
+
         return new EffectOutcome(List.of(
                 new ResourceDelta(
-                        player.getNickname(),
+                        nickname,
                         ResourceType.SHAMAN_STARS,
                         tribu.getShamanStars(),
                         shamanStars)

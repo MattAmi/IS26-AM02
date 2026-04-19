@@ -22,9 +22,11 @@ public class GathererEffect implements CharacterEffect {
         Tribu tribu = player.getTribu();
         tribu.addFoodDiscount(foodDiscount);
 
+        String nickname = player.getNickname();
+
         return new EffectOutcome(List.of(
                 new ResourceDelta(
-                        player.getNickname(),
+                        nickname,
                         ResourceType.FOOD_DISCOUNT,
                         tribu.getFoodDiscount(),
                         foodDiscount)

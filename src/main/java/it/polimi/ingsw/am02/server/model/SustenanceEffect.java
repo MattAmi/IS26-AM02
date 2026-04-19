@@ -1,5 +1,10 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class SustenanceEffect implements EventEffect {
@@ -13,25 +18,32 @@ public class SustenanceEffect implements EventEffect {
 
     //Metodi
     @Override
-    public void applyEffect(List<Player> players) {
+    public EffectOutcome applyEffect(List<Player> players) {
+        List<ResourceDelta> deltas = new ArrayList<>();
+
         for (Player player : players) {
             Tribu tribu = player.getTribu();
+            String nickname = player.getNickname();
 
-            //verify the amount of food to be paid, applying both the gatherer and building discounts (calculated in tribu)
             int netCost = tribu.calculateSustenanceCost();
-            //check how much they can actually pay with food (how much food do they have?)
             int canBePayed = tribu.getFoodPoints();
-            //pay the actual amount due in food (it will be the minimum of what I owe and what I have)
             int effectivelyPayed = Math.min(netCost, canBePayed);
-            tribu.addFoodPoints(-effectivelyPayed);
-            //if the net cost is higher than the actual food paid, I have to pay the remainder in aura points
-            int stillToBePayed = netCost - effectivelyPayed;
 
+            if (effectivelyPayed > 0) {
+                tribu.addFoodPoints(-effectivelyPayed);
+                deltas.add(new ResourceDelta(nickname, ResourceType.FOOD, tribu.getFoodPoints(), -effectivelyPayed));
+            }
+
+
+            int stillToBePayed = netCost - effectivelyPayed;
             if (stillToBePayed > 0) {
                 int toPayWithPP = stillToBePayed * this.penaltyPerUnfed;
-                tribu.addPrestigePoints(-toPayWithPP); //pay with pp
+                tribu.addPrestigePoints(-toPayWithPP);
+                deltas.add(new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), -toPayWithPP));
             }
         }
+
+        return new EffectOutcome(deltas);
     }
 
 }

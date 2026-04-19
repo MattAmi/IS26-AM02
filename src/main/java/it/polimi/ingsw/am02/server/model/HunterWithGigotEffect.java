@@ -24,8 +24,10 @@ public class HunterWithGigotEffect implements CharacterEffect {
 
         tribu.addFoodPoints(numOfHunters);
 
+        String nickname = player.getNickname();
+
         ResourceDelta foodDelta = new ResourceDelta(
-                player.getNickname(),
+                nickname,
                 ResourceType.FOOD,
                 tribu.getFoodPoints(),
                 numOfHunters);

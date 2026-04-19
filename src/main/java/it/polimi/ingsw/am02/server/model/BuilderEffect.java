@@ -25,9 +25,11 @@ public class BuilderEffect implements CharacterEffect {
         tribu.addBuildingDiscount(buildingDiscount);
         tribu.addPPBuilders(prestigePoints);
 
+        String nickname = player.getNickname();
+
         return new EffectOutcome(List.of(
-                new ResourceDelta(player.getNickname(), ResourceType.BUILDING_DISCOUNT, tribu.getBuildingDiscount(), buildingDiscount),
-                new ResourceDelta(player.getNickname(), ResourceType.PP_BUILDERS, tribu.getPPBuilders(), prestigePoints)
+                new ResourceDelta(nickname, ResourceType.BUILDING_DISCOUNT, tribu.getBuildingDiscount(), buildingDiscount),
+                new ResourceDelta(nickname, ResourceType.PP_BUILDERS, tribu.getPPBuilders(), prestigePoints)
         ));
     }
 

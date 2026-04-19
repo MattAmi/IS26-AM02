@@ -1,5 +1,8 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.server.controller.ModelInterface;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
@@ -54,8 +57,6 @@ public class Game implements ModelInterface {
         this.extraTurnLowerPicks = 0;
 
         this.notifier = new GameNotifier();
-
-        transitionTo(new SetUpState());
     }
 
 
@@ -64,20 +65,17 @@ public class Game implements ModelInterface {
         currentState.moveTotem(nickname, tileID);
     }
 
-    public void resolveActions(String nickname, List<String> selectedIDs) {
-        currentState.resolveActions(nickname, selectedIDs);
-    }
+    public void resolveActions(String nickname, List<String> selectedIDs) { currentState.resolveActions(nickname, selectedIDs); }
 
-
-    @Override
     public void addGameObserver(GameObserver observer) {
         notifier.addObserver(observer);
     }
 
-    @Override
     public void removeGameObserver(GameObserver observer) {
         notifier.removeObserver(observer);
     }
+
+    public void startFSM() { transitionTo(new SetUpState()); }
 
 
     // Helper methods
@@ -98,11 +96,10 @@ public class Game implements ModelInterface {
         int currentPlayerIndex = turnOrder.indexOf(currentPlayerNickname);
         int nextIndex = (currentPlayerIndex + 1) % turnOrder.size();
         currentPlayerNickname = turnOrder.get(nextIndex);
-        // notifyObservers(); TO DO QUANDO FAREMO OBSERVER
     }
 
     private void initializeBoard() { // Initializes GameBoard
-        gameBoard = new GameBoard(numPlayers);
+        gameBoard = new GameBoard(numPlayers, notifier);
     }
 
     private void randomizeInitialTurnOrder() {
@@ -143,6 +140,10 @@ public class Game implements ModelInterface {
 
         currentPlayerNickname = turnOrder.getFirst();
         Player currentPlayer = getPlayerByNickname(currentPlayerNickname);
+
+
+        // Notify observers about the transition to action resolution with current turn order
+        notifier.notifyPhaseChanged(PhaseType.ACTION_RESOLUTION, currentPlayerNickname, List.copyOf(turnOrder));
 
         gameBoard.initializePlayerLimits(currentPlayer);
 
@@ -229,20 +230,39 @@ public class Game implements ModelInterface {
                 .toList();
     }
 
-    private void calculateFinalScores() {
+    private List<PlayerFinalScore> calculateFinalScores() {
+        List<PlayerFinalScore> finalScoresList = new ArrayList<>();
+
         for (Player player : players.values()) {
             Tribu tribu = player.getTribu();
+            String nickname = player.getNickname();
+
+            int ppBuilders = tribu.getPPBuilders();
+            int ppBuildings = tribu.getTotalPPBuildings();
 
             int inventors = tribu.getCharacterCount(CharacterType.INVENTOR);
             int inventionTypes = tribu.getNumOfDifferentInventionTypes();
+            int ppInventors = inventors * inventionTypes;
 
             int artists = tribu.getCharacterCount(CharacterType.ARTIST);
+            int ppArtists = (artists / 2) * 10;
 
-            int ppToAdd = tribu.getPPBuilders() + tribu.getTotalPPBuildings() + inventors * inventionTypes + (artists / 2) * 10;
-
+            int ppToAdd = ppBuilders + ppBuildings + ppInventors + ppArtists;
             tribu.addPrestigePoints(ppToAdd);
 
+            PlayerFinalScore scoreDto = new PlayerFinalScore(
+                    nickname,
+                    tribu.getPrestigePoints(),
+                    ppBuilders,
+                    ppBuildings,
+                    ppInventors,
+                    ppArtists
+            );
+
+            finalScoresList.add(scoreDto);
         }
+
+        return finalScoresList;
     }
 
     public void enqueueExtraTurn(String nickname, int extraUpperPicks, int extraLowerPicks) {
@@ -256,9 +276,10 @@ public class Game implements ModelInterface {
     }
 
     private void notifyPhaseObservers(PhaseType phase) {
-      if (!isExtraTurnMode) {
+        if (!isExtraTurnMode) {
             for (PhaseObserver phaseObserver : phaseObservers) {
-                phaseObserver.onPhaseChange(phase);
+                EffectOutcome outcome = phaseObserver.onPhaseChange(phase);
+                notifier.emitOutcome(outcome);
             }
         }
     }
@@ -321,6 +342,16 @@ public class Game implements ModelInterface {
             initializeBoard();
             randomizeInitialTurnOrder();
 
+
+            // Notify game observers that the setup is complete
+            BoardSnapshot snapshot = gameBoard.buildSnapshot();
+            Map<String, Integer> initialFood = new LinkedHashMap<>();
+            for (String nick : turnOrder) {
+                initialFood.put(nick, getPlayerByNickname(nick).getTribu().getFoodPoints());
+            }
+            notifier.notifyGameSetupCompleted(List.copyOf(turnOrder), initialFood, snapshot);
+
+
             transitionTo(new TotemPlacementState());
         }
     }
@@ -332,6 +363,12 @@ public class Game implements ModelInterface {
             super(PhaseType.TOTEM_PLACEMENT);
         }
 
+        // Notify observers of phase change to totem placement
+        @Override
+        public void onEntryActions() {
+            notifier.notifyPhaseChanged(PhaseType.TOTEM_PLACEMENT, currentPlayerNickname);
+        }
+
         public void moveTotem(String nickname, char tileID) {
             validatePlayerTurn(nickname);
             Player player = getPlayerByNickname(nickname);
@@ -341,6 +378,9 @@ public class Game implements ModelInterface {
                 setUpActionResolutionTurnOrder();
             } else {
                 nextPlayer();
+
+                // Notify observers that the current player has changed
+                notifier.notifyCurrentPlayerChanged(currentPlayerNickname);
             }
         }
     }
@@ -361,11 +401,16 @@ public class Game implements ModelInterface {
             }
 
             if (isExtraTurnMode) {
+                String endedNickname = extraTurnPlayerNickname;
+
                 isExtraTurnMode = false;
                 extraTurnPlayerNickname = null;
                 extraTurnUpperPicks = 0;
                 extraTurnLowerPicks = 0;
                 gameBoard.clearExtraTurn();
+
+                // Notify observers that the extra turn has ended
+                notifier.notifyExtraTurnEnded(endedNickname);
 
                 if (areRoundEventsToResolve()) {
                     transitionTo(new EventResolutionState());
@@ -410,6 +455,9 @@ public class Game implements ModelInterface {
                 transitionTo(new EndRoundState());
             } else {
                 nextPlayer();
+
+                // Notify observers that the current player has changed
+                notifier.notifyCurrentPlayerChanged(currentPlayerNickname);
                 gameBoard.initializePlayerLimits(getPlayerByNickname(currentPlayerNickname));
 
                 transitionTo(new ActionResolutionState());
@@ -427,6 +475,9 @@ public class Game implements ModelInterface {
         @Override
         public void onEntryActions() {
 
+            // Notify observers the end-of-round phase transition
+            notifier.notifyPhaseChanged(PhaseType.END_ROUND);
+
             if (extraTurnPlayerNickname != null) {
                 isExtraTurnMode = true;
                 currentPlayerNickname = extraTurnPlayerNickname;
@@ -434,6 +485,9 @@ public class Game implements ModelInterface {
                         getPlayerByNickname(extraTurnPlayerNickname),
                         extraTurnUpperPicks,
                         extraTurnLowerPicks);
+
+                // Notify observers that an extra turn has started for a player
+                notifier.notifyExtraTurnStarted(extraTurnPlayerNickname, extraTurnUpperPicks, extraTurnLowerPicks);
 
                 transitionTo(new ActionResolutionState());
 
@@ -475,7 +529,12 @@ public class Game implements ModelInterface {
 
             if(areEraChangesToResolve()) {
                 setUpPlacementOrder();
+
+                // Notify observers that the turn order has been established
+                notifier.notifyTurnOrderEstablished(List.copyOf(turnOrder));
+
                 transitionTo(new NewEraState());
+
             } else if (isGameOverCondition()) {
                 if (areFinalEventsToResolve()) {
                     transitionTo(new FinalEventsResolutionState());
@@ -484,6 +543,10 @@ public class Game implements ModelInterface {
                 }
             }  else {
                 setUpPlacementOrder();
+
+                // Notify observers that the turn order has been established
+                notifier.notifyTurnOrderEstablished(List.copyOf(turnOrder));
+
                 transitionTo(new TotemPlacementState());
             }
         }
@@ -499,6 +562,10 @@ public class Game implements ModelInterface {
 
         @Override
         public void onEntryActions() {
+
+            // Notify observers that a new era has begun
+            notifier.notifyPhaseChanged(PhaseType.NEW_ERA);
+
             executeNewEraPreparation();
 
             transitionTo(new TotemPlacementState());
@@ -530,7 +597,8 @@ public class Game implements ModelInterface {
 
         @Override
         public void onEntryActions() {
-            calculateFinalScores();
+            List<PlayerFinalScore> finalScores = calculateFinalScores();
+
             List<String> winners = determineWinner();
 
             for(String winner : winners) {
@@ -538,7 +606,7 @@ public class Game implements ModelInterface {
                 winnerPlayer.setAsWinner(true);
             }
 
-            // TODO: notifica verso la view del/dei vincitori
+            notifier.notifyGameEnded(winners, finalScores);
         }
     }
 

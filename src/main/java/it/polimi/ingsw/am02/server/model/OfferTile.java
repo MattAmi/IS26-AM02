@@ -1,5 +1,7 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
+
 public class OfferTile {
 
     private final char tileID;
@@ -73,12 +75,20 @@ public class OfferTile {
 
     public boolean isSatisfied() { return (remainingUpper == 0 && remainingLower == 0); }
 
-    public void resolveFoodOffer(Player player) {
-
-        if (!isFoodResolved) {
-            player.getTribu().addFoodPoints(gainedFood);
-            isFoodResolved = true;
+    public int resolveFoodOffer(Player player) {
+        if (isFoodResolved) {
+            return 0;
         }
+
+        player.getTribu().addFoodPoints(gainedFood);
+        isFoodResolved = true;
+
+        return gainedFood;
+    }
+
+    public OfferTileInfo toInfo() {
+        String occupantNickname = (occupyingPlayer == null) ? null : occupyingPlayer.getNickname();
+        return new OfferTileInfo(tileID, gainedFood, numUpperChoosable, numLowerChoosable, occupantNickname);
     }
 
 }

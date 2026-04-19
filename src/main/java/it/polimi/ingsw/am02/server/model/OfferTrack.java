@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.server.model.exceptions.PlayerNotOnTileException;
 import it.polimi.ingsw.am02.server.model.exceptions.TileNotFoundException;
 import it.polimi.ingsw.am02.server.model.exceptions.TileOccupiedException;
@@ -58,5 +59,11 @@ public class OfferTrack {
             }
         }
         throw new PlayerNotOnTileException(player.getNickname());
+    }
+
+    public List<OfferTileInfo> getTilesInfo() {
+        return tiles.stream()
+                .map(OfferTile::toInfo)
+                .toList();
     }
 }

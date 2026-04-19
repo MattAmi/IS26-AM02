@@ -1,11 +1,18 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
+import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.Era;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.common.enumerations.RowPosition;
 import it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException;
 import it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableException;
 import it.polimi.ingsw.am02.server.model.exceptions.InsufficientFoodException;
 import it.polimi.ingsw.am02.server.model.exceptions.PickLimitExceededException;
 import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
+import it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -27,9 +34,10 @@ public class GameBoard {
     private int extraTurnRemainingUpper;
     private int extraTurnRemainingLower;
     private final List<EventObserver> eventObservers;
+    private final GameEventEmitter notifier;
 
 
-    public GameBoard(int numPlayers) {
+    public GameBoard(int numPlayers, GameEventEmitter notifier) {
         this.upperRow = new ArrayList<>();
         this.lowerRow = new ArrayList<>();
         this.upperRowBuildings = new ArrayList<>();
@@ -45,6 +53,8 @@ public class GameBoard {
         this.setUpGameBoard(numPlayers);
         this.setUpInitialRows(numPlayers);
         this.eventObservers = new ArrayList<>();
+
+        this.notifier = Objects.requireNonNull(notifier, "GameEventEmitter must not be null");
     }
 
     private void setUpGameBoard(int numPlayers) {
@@ -114,9 +124,11 @@ public class GameBoard {
     }
 
     public void movePlayerToOffer(Player player, char tileID) {
-
         offerTrack.occupyTile(player, tileID);
         turnOrderTile.removePlayer(player);
+
+        // Notify observers that a totem has been placed
+        notifier.notifyTotemPlaced(player.getNickname(), tileID);
     }
 
     public List<Player> getPlayersInResolutionOrder() {
@@ -137,6 +149,9 @@ public class GameBoard {
         int effectiveLower = Math.min(currentTile.getNumLowerChoosable(), availableLower);
 
         currentTile.setRemainingPicks(effectiveUpper, effectiveLower);
+
+        // Notify observers that the player's resource limits have been initialized
+        notifier.notifyPlayerLimitsInitialized(player.getNickname(), effectiveUpper, effectiveLower);
     }
 
     private int[] countSelectedByRow(List<String> selectedIDs) {
@@ -190,23 +205,45 @@ public class GameBoard {
             if (registry.isBuilding(cardID)) {
                 int actualCost = buildingCosts.get(cardID);
 
-                player.getTribu().addFoodPoints(-actualCost);
-                player.getTribu().insertBuilding(cardID, player, game);
+                if (actualCost > 0) {
+                    player.getTribu().addFoodPoints(-actualCost);
 
-                if (upperRowBuildings.contains(cardID)) {
-                    upperRowBuildings.remove(cardID);
+                    // Notify observers of food consumption due to building purchase
+                    notifier.notifyPlayerResourceChanged(
+                            player.getNickname(),
+                            ResourceType.FOOD,
+                            player.getTribu().getFoodPoints(),
+                            -actualCost);
+                }
+
+                EffectOutcome buildingOutcome = player.getTribu().insertBuilding(cardID, player, game);
+                notifier.emitOutcome(buildingOutcome);
+
+                RowPosition sourceRow;
+                if (upperRowBuildings.remove(cardID)) {
+                    sourceRow = RowPosition.UPPER;
                 } else {
                     lowerRowBuildings.remove(cardID);
+                    sourceRow = RowPosition.LOWER;
                 }
+
+                // Notify observers that a player has taken a building card from the board
+                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.BUILDING, sourceRow);
 
             } else {
-                player.getTribu().insertCharacter(cardID);
+                EffectOutcome characterOutcome = player.getTribu().insertCharacter(cardID, player);
+                notifier.emitOutcome(characterOutcome);
 
-                if (upperRow.contains(cardID)) {
-                    upperRow.remove(cardID);
+                RowPosition sourceRow;
+                if (upperRow.remove(cardID)) {
+                    sourceRow = RowPosition.UPPER;
                 } else {
                     lowerRow.remove(cardID);
+                    sourceRow = RowPosition.LOWER;
                 }
+
+                // Notify observers that a player has taken a character card from the board
+                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.CHARACTER, sourceRow);
             }
         }
     }
@@ -221,7 +258,16 @@ public class GameBoard {
     public void processActionSelection(Player player, List<String> selectedIDs, Game game) {
 
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
-        currentTile.resolveFoodOffer(player);
+
+        int foodFromTile = currentTile.resolveFoodOffer(player);
+        if (foodFromTile > 0) {
+            // Notify observers that the player's food resources have changed
+            notifier.notifyPlayerResourceChanged(
+                    player.getNickname(),
+                    ResourceType.FOOD,
+                    player.getTribu().getFoodPoints(),
+                    foodFromTile);
+        }
 
         int[] counts = countSelectedByRow(selectedIDs);
 
@@ -236,6 +282,12 @@ public class GameBoard {
         executeCardAcquisition(selectedIDs, player, game, buildingCosts);
 
         currentTile.decrementPicks(counts[0], counts[1]);
+
+        // Notify observers that the tile's remaining limits have been updated
+        notifier.notifyPlayerLimitsUpdated(
+                player.getNickname(),
+                currentTile.getRemainingUpper(),
+                currentTile.getRemainingLower());
     }
 
     public boolean canPlayerFinish(Player player) {
@@ -254,11 +306,27 @@ public class GameBoard {
     public void movePlayerToTurnOrder(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
         currentTile.removePlayer(player);
-        turnOrderTile.registerPlayer(player);
+        int position = turnOrderTile.registerPlayer(player);
+
+        // Notify observers that a totem has been returned to the TurnOrderTile
+        notifier.notifyTotemReturned(player.getNickname(), position);
     }
 
     public void applyTurnOrderRewards(Player player) {
-        turnOrderTile.applyRewards(player);
+        TurnOrderTile.TurnOrderRewardResult result = turnOrderTile.applyRewards(player);
+        String nickname = player.getNickname();
+        Tribu tribu = player.getTribu();
+
+        // Notify observers of resource updates (gains and penalties)
+        if (result.foodGained() > 0) {
+            notifier.notifyPlayerResourceChanged(nickname, ResourceType.FOOD, tribu.getFoodPoints(), result.foodGained());
+        }
+        if (result.foodPenalty() > 0) {
+            notifier.notifyPlayerResourceChanged(nickname, ResourceType.FOOD, tribu.getFoodPoints(), -result.foodPenalty());
+        }
+        if (result.ppPenalty() > 0) {
+            notifier.notifyPlayerResourceChanged(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), -result.ppPenalty());
+        }
     }
 
     public int getPlayersOnTurnOrderCount() {
@@ -288,11 +356,7 @@ public class GameBoard {
                 .toList();
 
         for (EventCard event : sortedEvents) {
-            for(EventObserver observer: eventObservers)
-                observer.EventStart(event.getType());
-            event.applyEventEffect(players, eventObservers);
-            for(EventObserver observer: eventObservers)
-                observer.EventEnd(event.getType());
+            processAndNotifyEvent(event, players);
         }
     }
 
@@ -305,12 +369,25 @@ public class GameBoard {
     }
 
     public void prepareNewRound(int numPlayers) {
+        GameRegistry registry = GameRegistry.getInstance();
+
+        List<String> discardedCards = new ArrayList<>();
+        List<String> movedToLowerRow = new ArrayList<>();
+
+
+        discardedCards.addAll(lowerRow);
         lowerRow.clear();
-        lowerRow.addAll(upperRow);
+
+        for (String cardID : upperRow) {
+            lowerRow.add(cardID);
+            movedToLowerRow.add(cardID);
+        }
         upperRow.clear();
         eraChangedFlag = false;
 
         for (int i = 0; i < (numPlayers + 4); i++) {
+            if (tribuDeck.isEmpty())
+                break;
             String cardID = tribuDeck.draw();
             Era cardEra = getCardEra(cardID);
 
@@ -320,6 +397,15 @@ public class GameBoard {
             }
             upperRow.add(cardID);
         }
+
+        // Notify observers of the board state update, including card movements and deck size
+        notifier.notifyBoardUpdated(
+                List.copyOf(upperRow),
+                List.copyOf(lowerRow),
+                discardedCards,
+                movedToLowerRow,
+                tribuDeck.getRemainingSize()
+        );
     }
 
     public List<Player> getPlayersInPlacementOrder() {
@@ -327,10 +413,14 @@ public class GameBoard {
     }
 
     public void updateRowsForNewEra() {
-        if(currentEra == Era.III)
-            lowerRowBuildings.clear();
+        List<String> discardedBuildings = new ArrayList<>();
 
-        if(currentEra == Era.II || currentEra == Era.III) {
+        if (currentEra == Era.III) {
+            discardedBuildings.addAll(lowerRowBuildings);
+            lowerRowBuildings.clear();
+        }
+
+        if (currentEra == Era.II || currentEra == Era.III) {
             lowerRowBuildings.addAll(upperRowBuildings);
             upperRowBuildings.clear();
 
@@ -339,6 +429,14 @@ public class GameBoard {
         }
 
         eraChangedFlag = false;
+
+        // Notify observers of the era change and the updated building market
+        notifier.notifyEraChanged(
+                currentEra,
+                List.copyOf(upperRowBuildings),
+                List.copyOf(lowerRowBuildings),
+                discardedBuildings
+        );
     }
 
     public boolean hasFinalEvents() {
@@ -370,13 +468,19 @@ public class GameBoard {
                 .toList();
 
         for (EventCard event : sortedFinalEvents) {
-            for(EventObserver observer: eventObservers)
-                observer.EventStart(event.getType());
+            processAndNotifyEvent(event, players);
+        }
+    }
 
-            event.applyEventEffect(players, eventObservers);
+    private void processAndNotifyEvent(EventCard event, List<Player> players) {
+        for(EventObserver observer: eventObservers) {
+            notifier.emitOutcome(observer.eventStart(event.getType()));
+        }
 
-            for(EventObserver observer: eventObservers)
-                observer.EventEnd(event.getType());
+        notifier.emitOutcome(event.applyEventEffect(players, eventObservers));
+
+        for(EventObserver observer: eventObservers) {
+            notifier.emitOutcome(observer.eventEnd(event.getType()));
         }
     }
 
@@ -429,10 +533,25 @@ public class GameBoard {
 
     // FOR TESTING
     TurnOrderTile getTurnOrderTile() { return turnOrderTile; } // For testing
-
     List<String> getUpperRow() { return upperRow; } // For testing
     List<String> getLowerRow() { return lowerRow; } // For testing
     List<String> getUpperRowBuildings() { return upperRowBuildings; } // For testing
     List<String> getLowerRowBuildings() { return lowerRowBuildings; } // For testing
     OfferTrack getOfferTrack() { return  offerTrack; } // For testing
+
+    public BoardSnapshot buildSnapshot() {
+        List<OfferTileInfo> offerTiles = offerTrack.getTilesInfo();
+
+        List<String> turnOrderPositions = turnOrderTile.getOrderedPlayers().stream()
+                .map(Player::getNickname)
+                .toList();
+
+        return new BoardSnapshot(List.copyOf(upperRow),
+                List.copyOf(lowerRow),
+                List.copyOf(upperRowBuildings),
+                List.copyOf(lowerRowBuildings),
+                offerTiles,
+                turnOrderPositions
+        );
+    }
 }

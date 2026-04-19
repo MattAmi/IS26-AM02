@@ -3,8 +3,12 @@ package it.polimi.ingsw.am02.server.controller;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
-import it.polimi.ingsw.am02.common.messages.commands.Command;
+import it.polimi.ingsw.am02.common.messages.*;
+import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.game.*;
+import it.polimi.ingsw.am02.common.messages.events.lobby.*;
+import it.polimi.ingsw.am02.common.messages.events.error.*;
 import it.polimi.ingsw.am02.server.model.Game;
 
 import java.util.*;
@@ -41,23 +45,23 @@ public class ControllerManager {
     // Authentication
 
     public synchronized void requestSetUsername(String nickname, VirtualView view) {
-        //A nickname is valid if it is not blank and it is not already taken by another
+        //A nickname is valid if it is not blank, and it is not already taken by another
         // authenticated client (in lobby selection, in a lobby, or in a game).
 
         if (nickname == null || nickname.isBlank()) {
-            view.notify(new SetUsernameResultEvent(nickname, false, "Nickname cannot be empty"));
+            view.notify(new UsernameResultEvent(nickname, false, "Nickname cannot be empty"));
             return;
         }
         boolean alreadyTaken = connectedClients.containsKey(nickname)
                 || playerToLobby.containsKey(nickname)
                 || playerToGame.containsKey(nickname);
         if (alreadyTaken) {
-            view.notify(new SetUsernameResultEvent(nickname, false, "Nickname already taken"));
+            view.notify(new UsernameResultEvent(nickname, false, "Nickname already taken"));
             return;
         }
 
         connectedClients.put(nickname, view);
-        view.notify(new SetUsernameResultEvent(nickname, true, null));
+        view.notify(new UsernameResultEvent(nickname, true, null));
 
         List<LobbyInfo> lobbyList = getLobbyInfoList();
         broadcastToLobbySelectionClients(new UpdatedLobbiesEvent(lobbyList));
@@ -149,6 +153,8 @@ public class ControllerManager {
         nicknames.forEach(n -> playerToGame.put(n, gameId));
 
         broadcastToLobbySelectionClients(new UpdatedLobbiesEvent(getLobbyInfoList()));
+
+        model.startFSM();
     }
 
     // Called by Lobby when it's removed

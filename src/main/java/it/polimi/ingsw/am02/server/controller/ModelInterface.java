@@ -9,4 +9,5 @@ public interface ModelInterface {
     void removeGameObserver(GameObserver observer);
     void moveTotem(String nickname, char tileID);
     void resolveActions(String nickname, List<String> cardIDs);
+    void startFSM();
 }

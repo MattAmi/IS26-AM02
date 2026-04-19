@@ -1,5 +1,10 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class ShamanicRitualEffect implements EventEffect {
@@ -16,38 +21,45 @@ public class ShamanicRitualEffect implements EventEffect {
 
     //Metodi
     @Override
-    public void applyEffect(List<Player> players) {
-
+    public EffectOutcome applyEffect(List<Player> players) {
+        List<ResourceDelta> deltas = new ArrayList<>();
         int maxStars = 0;
         int minStars = Integer.MAX_VALUE;
 
         for (Player player : players) {
-            int effectiveStars = player.getTribu().getShamanStars();
-            if (effectiveStars > maxStars) maxStars = effectiveStars;
-            if (effectiveStars < minStars) minStars = effectiveStars;
+            int stars = player.getTribu().getShamanStars();
+            if (stars > maxStars) maxStars = stars;
+            if (stars < minStars) minStars = stars;
         }
 
         int finalMaxStars = maxStars;
-        long maxCount = players.stream()
+        int maxCount = Math.toIntExact(players.stream()
                 .filter(p -> p.getTribu().getShamanStars() == finalMaxStars)
-                .count();
+                .count());
 
         for (Player player : players) {
             Tribu tribu = player.getTribu();
-            int effectiveStars = tribu.getShamanStars();
-            boolean isExclusiveWinner = (effectiveStars == maxStars && maxCount == 1);
+            String nickname = player.getNickname();
+            int stars = tribu.getShamanStars();
+            boolean isExclusiveWinner = (stars == maxStars && maxCount == 1);
 
-            if (effectiveStars == maxStars) {
+            if (stars == maxStars) {
                 tribu.addPrestigePoints(majorityBonus);
+
                 tribu.setLastEventBonusReceived(isExclusiveWinner ? majorityBonus : 0);
+
+                deltas.add(new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), majorityBonus));
             } else {
                 tribu.setLastEventBonusReceived(0);
             }
 
-            if (effectiveStars == minStars && !tribu.isImmune()) {
+            // Caso Minoranza (solo se non immune)
+            if (stars == minStars && !tribu.isImmune()) {
                 tribu.addPrestigePoints(-minorityBonus);
+                deltas.add(new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), -minorityBonus));
             }
         }
+        return new EffectOutcome(deltas);
     }
 
 }

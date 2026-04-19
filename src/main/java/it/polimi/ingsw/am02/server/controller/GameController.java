@@ -8,6 +8,11 @@ import it.polimi.ingsw.am02.common.messages.commands.Command;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.server.model.exceptions.GameRuleException;
 import it.polimi.ingsw.am02.server.model.listeners.GameObserver;
+import it.polimi.ingsw.am02.common.messages.*;
+import it.polimi.ingsw.am02.common.messages.commands.*;
+import it.polimi.ingsw.am02.common.messages.events.game.*;
+import it.polimi.ingsw.am02.common.messages.events.lobby.*;
+import it.polimi.ingsw.am02.common.messages.events.error.*;
 
 import java.util.List;
 import java.util.Map;
@@ -62,7 +67,6 @@ public class GameController implements GameObserver {
 
     public void handlePlayerDisconnected(String nickname) {
         broadcastOthers(nickname, new PlayerDisconnectedEvent(nickname));
-        broadcast(new GameAbortedEvent("Player " + nickname + " disconnected."));
     }
 
 
@@ -74,7 +78,6 @@ public class GameController implements GameObserver {
 
     @Override
     public void onPhaseChanged(PhaseType phase) {
-        // Uso null per i parametri opzionali non presenti in questo overload
         broadcast(new PhaseChangedEvent(phase, null, null));
     }
 
@@ -144,11 +147,6 @@ public class GameController implements GameObserver {
     }
 
     @Override
-    public void onSustainmentResolved(String nickname, int totalCharacters, int foodPaid, int foodShortage, int ppLost) {
-        broadcast(new SustainmentResolvedEvent(nickname, totalCharacters, foodPaid, foodShortage, ppLost));
-    }
-
-    @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
         broadcast(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
     }
@@ -156,11 +154,6 @@ public class GameController implements GameObserver {
     @Override
     public void onExtraTurnEnded(String nickname) {
         broadcast(new ExtraTurnEndedEvent(nickname));
-    }
-
-    @Override
-    public void onFinalScoreCalculated(String nickname, int ppFromBuilders, int ppFromBuildings, int ppFromInventors, int ppFromArtists, int ppFromBuildingEffects, int totalPrestigePoints, int remainingFood) {
-        broadcast(new FinalScoreCalculatedEvent(nickname, ppFromBuilders, ppFromBuildings, ppFromInventors, ppFromArtists, ppFromBuildingEffects, totalPrestigePoints, remainingFood));
     }
 
     @Override

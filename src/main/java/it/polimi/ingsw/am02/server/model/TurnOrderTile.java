@@ -31,14 +31,15 @@ public class TurnOrderTile {
         return numPlayers;
     }
 
-    public void registerPlayer(Player player) {
+    public int registerPlayer(Player player) {
 
         for(int i = 0; i < playerPositions.length; i++) {
             if (playerPositions[i] == null) {
                 playerPositions[i] = player;
-                return;
+                return i;
             }
         }
+        return 0;
     }
 
     public void removePlayer(Player player) {
@@ -61,7 +62,7 @@ public class TurnOrderTile {
         return true;
     }
 
-    public void applyRewards(Player player) {
+    public TurnOrderRewardResult applyRewards(Player player) {
 
         int playerIndex = -1;
         for (int i = 0; i < playerPositions.length; i++) {
@@ -70,23 +71,31 @@ public class TurnOrderTile {
                 break;
             }
         }
-        if (playerIndex == -1) return;
+        if (playerIndex == -1) {
+            return TurnOrderRewardResult.empty();
+        }
 
         int foodBonus = foodBonuses[playerIndex];
 
         if (foodBonus > 0) {
             player.getTribu().addFoodPoints(foodBonus);
-        } else if (foodBonus < 0) {
-            int currentTribuFood = player.getTribu().getFoodPoints();
-            int foodToPay = -foodBonus;
+            return new TurnOrderRewardResult(foodBonus, 0, 0);
+        }
 
-            if (currentTribuFood >= foodToPay) {
-                player.getTribu().addFoodPoints(foodBonus);
-            } else {
-                player.getTribu().addFoodPoints(-currentTribuFood);
-                int malusPrestigePoints = prestigePointsMalus[playerIndex];
-                player.getTribu().addPrestigePoints(malusPrestigePoints);
-            }
+        if (foodBonus == 0) {
+            return TurnOrderRewardResult.empty();
+        }
+
+        int foodToPay = -foodBonus;
+        int currentFood = player.getTribu().getFoodPoints();
+
+        if (currentFood >= foodToPay) {
+            player.getTribu().addFoodPoints(foodBonus);
+            return new TurnOrderRewardResult(0, foodToPay, 0);
+        } else {
+            int ppPenalty = -prestigePointsMalus[playerIndex];  // store as positive
+            player.getTribu().addPrestigePoints(prestigePointsMalus[playerIndex]);
+            return new TurnOrderRewardResult(0, 0, ppPenalty);
         }
     }
 
@@ -122,5 +131,13 @@ public class TurnOrderTile {
             }
         }
         return 0;
+    }
+
+
+    public record TurnOrderRewardResult(int foodGained, int foodPenalty, int ppPenalty) {
+
+        public static TurnOrderRewardResult empty() {
+            return new TurnOrderRewardResult(0, 0, 0);
+        }
     }
 }

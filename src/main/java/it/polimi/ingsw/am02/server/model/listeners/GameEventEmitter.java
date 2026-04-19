@@ -1,6 +1,7 @@
 package it.polimi.ingsw.am02.server.model.listeners;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
 
@@ -8,6 +9,10 @@ import java.util.List;
 import java.util.Map;
 
 public interface GameEventEmitter {
+
+    //Outcome
+    void emitOutcome(EffectOutcome outcome);
+
     // SetUp
     void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot);
 
@@ -36,7 +41,6 @@ public interface GameEventEmitter {
 
     // EventResolution
     void notifyEventResolved(String eventID, String eventName);
-    void notifySustainmentResolved(String nickname, int totalCharacters, int foodPaid, int foodShortage, int ppLost);
 
     // ExtraTurn
     void notifyExtraTurnStarted(String nickname, int remainingUpper, int remainingLower);

@@ -1,7 +1,9 @@
 package it.polimi.ingsw.am02.server.model.listeners;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
 import it.polimi.ingsw.am02.common.enumerations.*;
 
 import java.util.List;
@@ -22,6 +24,22 @@ public final class GameNotifier implements GameObserverRegistry, GameEventEmitte
 
 
     //GameEventEmitter methods
+
+    //Outcome
+    @Override
+    public void emitOutcome(EffectOutcome outcome) {
+        if (outcome == null || outcome.isEmpty())
+            return;
+
+        for (ResourceDelta d : outcome.resourceDeltas()) {
+            this.notifyPlayerResourceChanged(
+                    d.playerNickname(),
+                    d.resource(),
+                    d.newValue(),
+                    d.delta()
+            );
+        }
+    }
 
     // SetUp
     @Override
@@ -118,12 +136,6 @@ public final class GameNotifier implements GameObserverRegistry, GameEventEmitte
     public void notifyEventResolved(String eventID, String eventName) {
         for (GameObserver o : observers)
             o.onEventResolved(eventID, eventName);
-    }
-
-    @Override
-    public void notifySustainmentResolved(String nickname, int totalCharacters, int foodPaid, int foodShortage, int ppLost) {
-        for (GameObserver o : observers)
-            o.onSustainmentResolved(nickname, totalCharacters, foodPaid, foodShortage, ppLost);
     }
 
     // ExtraTurn

@@ -1,4 +1,6 @@
 package it.polimi.ingsw.am02.common.messages.events.game;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.messages.events.Event;
+import java.util.List;
 
-public class GameEndedEvent {
-}
+public record GameEndedEvent(List<String> winners, List<PlayerFinalScore> finalRankings) implements Event {}

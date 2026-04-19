@@ -1,19 +1,25 @@
 package it.polimi.ingsw.am02.server.model.buildingeffects;
 
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import it.polimi.ingsw.am02.server.model.BuildingEffect;
 import it.polimi.ingsw.am02.server.model.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.Player;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
 import it.polimi.ingsw.am02.server.model.Tribu;
 
-public class EndGameFullSetPPEffect implements BuildingEffect, PhaseObserver{
-    final int bonusPP;
-    final Tribu tribu;
+import java.util.List;
 
-    public EndGameFullSetPPEffect(int bonusPP, Tribu tribu) {
+public class EndGameFullSetPPEffect implements BuildingEffect, PhaseObserver {
+    final Player owner;
+    final int bonusPP;
+
+    public EndGameFullSetPPEffect(Player owner, int bonusPP) {
+        this.owner = owner;
         this.bonusPP = bonusPP;
-        this.tribu = tribu;
     }
 
     @Override
@@ -22,8 +28,11 @@ public class EndGameFullSetPPEffect implements BuildingEffect, PhaseObserver{
     }
 
     @Override
-    public void onPhaseChange(PhaseType newPhase) {
-        if(newPhase == PhaseType.END_GAME){
+    public EffectOutcome onPhaseChange(PhaseType newPhase) {
+        if(newPhase == PhaseType.END_GAME) {
+            Tribu tribu = owner.getTribu();
+            String nickname = owner.getNickname();
+
             int nSet = Integer.MAX_VALUE;
 
             for (CharacterType type : CharacterType.values()) {
@@ -32,8 +41,15 @@ public class EndGameFullSetPPEffect implements BuildingEffect, PhaseObserver{
                     nSet = count;
                 }
             }
-            tribu.addPrestigePoints(nSet*bonusPP);
+
+            tribu.addPrestigePoints(nSet * bonusPP);
+
+            return new EffectOutcome(List.of(
+                    new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), bonusPP)
+            ));
         }
+
+        return EffectOutcome.empty();
     }
 
 }

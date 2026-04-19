@@ -1,17 +1,18 @@
 package it.polimi.ingsw.am02.server.model.buildingeffects;
 
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.server.model.BuildingEffect;
 import it.polimi.ingsw.am02.server.model.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.Player;
 import it.polimi.ingsw.am02.server.model.enumerations.EventType;
 import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
 import it.polimi.ingsw.am02.server.model.Tribu;
 
 public class ShamanicImmunityEffect implements BuildingEffect, EventObserver {
+    final Player owner;
 
-    final Tribu tribu;
-
-    public ShamanicImmunityEffect(Tribu tribu) {
-        this.tribu = tribu;
+    public ShamanicImmunityEffect(Player owner) {
+        this.owner = owner;
     }
 
     @Override
@@ -20,16 +21,21 @@ public class ShamanicImmunityEffect implements BuildingEffect, EventObserver {
     }
 
     @Override
-    public void EventStart(EventType eventType) {
-        if(eventType == EventType.SHAMANIC_RITUAL){
-            tribu.setImmuneToShamanicPenalty(true);
+    public EffectOutcome eventStart(EventType eventType) {
+        if(eventType == EventType.SHAMANIC_RITUAL) {
+            owner.getTribu().setImmuneToShamanicPenalty(true);
         }
+
+        return EffectOutcome.empty();
     }
 
-    public void EventEnd(EventType eventType){
-        if(eventType == EventType.SHAMANIC_RITUAL){
-            tribu.setImmuneToShamanicPenalty(false);
+    @Override
+    public EffectOutcome eventEnd(EventType eventType) {
+        if(eventType == EventType.SHAMANIC_RITUAL) {
+            owner.getTribu().setImmuneToShamanicPenalty(false);
         }
+
+        return EffectOutcome.empty();
     }
 
 }

@@ -356,13 +356,7 @@ public class GameBoard {
                 .toList();
 
         for (EventCard event : sortedEvents) {
-            for(EventObserver observer: eventObservers)
-                observer.eventStart(event.getType());
-
-            event.applyEventEffect(players, eventObservers);
-
-            for(EventObserver observer: eventObservers)
-                observer.eventEnd(event.getType());
+            processAndNotifyEvent(event, players);
         }
     }
 
@@ -391,7 +385,6 @@ public class GameBoard {
         upperRow.clear();
         eraChangedFlag = false;
 
-        List<String> newUpperCards = new ArrayList<>();
         for (int i = 0; i < (numPlayers + 4); i++) {
             if (tribuDeck.isEmpty())
                 break;
@@ -403,7 +396,6 @@ public class GameBoard {
                 eraChangedFlag = true;
             }
             upperRow.add(cardID);
-            newUpperCards.add(cardID);
         }
 
         // Notify observers of the board state update, including card movements and deck size
@@ -476,13 +468,19 @@ public class GameBoard {
                 .toList();
 
         for (EventCard event : sortedFinalEvents) {
-            for(EventObserver observer: eventObservers)
-                observer.eventStart(event.getType());
+            processAndNotifyEvent(event, players);
+        }
+    }
 
-            event.applyEventEffect(players, eventObservers);
+    private void processAndNotifyEvent(EventCard event, List<Player> players) {
+        for(EventObserver observer: eventObservers) {
+            notifier.emitOutcome(observer.eventStart(event.getType()));
+        }
 
-            for(EventObserver observer: eventObservers)
-                observer.eventEnd(event.getType());
+        notifier.emitOutcome(event.applyEventEffect(players, eventObservers));
+
+        for(EventObserver observer: eventObservers) {
+            notifier.emitOutcome(observer.eventEnd(event.getType()));
         }
     }
 

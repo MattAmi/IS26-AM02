@@ -1,6 +1,7 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.Era;
@@ -204,9 +205,9 @@ public class GameBoard {
             if (registry.isBuilding(cardID)) {
                 int actualCost = buildingCosts.get(cardID);
 
-                player.getTribu().addFoodPoints(-actualCost);
-
                 if (actualCost > 0) {
+                    player.getTribu().addFoodPoints(-actualCost);
+
                     // Notify observers of food consumption due to building purchase
                     notifier.notifyPlayerResourceChanged(
                             player.getNickname(),
@@ -215,7 +216,8 @@ public class GameBoard {
                             -actualCost);
                 }
 
-                player.getTribu().insertBuilding(cardID, player, game);
+                EffectOutcome buildingOutcome = player.getTribu().insertBuilding(cardID, player, game);
+                notifier.emitOutcome(buildingOutcome);
 
                 RowPosition sourceRow;
                 if (upperRowBuildings.remove(cardID)) {
@@ -229,7 +231,8 @@ public class GameBoard {
                 notifier.notifyCardTaken(player.getNickname(), cardID, CardType.BUILDING, sourceRow);
 
             } else {
-                player.getTribu().insertCharacter(cardID);
+                EffectOutcome characterOutcome = player.getTribu().insertCharacter(cardID, player);
+                notifier.emitOutcome(characterOutcome);
 
                 RowPosition sourceRow;
                 if (upperRow.remove(cardID)) {
@@ -354,10 +357,12 @@ public class GameBoard {
 
         for (EventCard event : sortedEvents) {
             for(EventObserver observer: eventObservers)
-                observer.EventStart(event.getType());
+                observer.eventStart(event.getType());
+
             event.applyEventEffect(players, eventObservers);
+
             for(EventObserver observer: eventObservers)
-                observer.EventEnd(event.getType());
+                observer.eventEnd(event.getType());
         }
     }
 
@@ -376,9 +381,7 @@ public class GameBoard {
         List<String> movedToLowerRow = new ArrayList<>();
 
 
-        for (String cardID : lowerRow) {
-            discardedCards.add(cardID);
-        }
+        discardedCards.addAll(lowerRow);
         lowerRow.clear();
 
         for (String cardID : upperRow) {
@@ -474,12 +477,12 @@ public class GameBoard {
 
         for (EventCard event : sortedFinalEvents) {
             for(EventObserver observer: eventObservers)
-                observer.EventStart(event.getType());
+                observer.eventStart(event.getType());
 
             event.applyEventEffect(players, eventObservers);
 
             for(EventObserver observer: eventObservers)
-                observer.EventEnd(event.getType());
+                observer.eventEnd(event.getType());
         }
     }
 

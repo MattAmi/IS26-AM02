@@ -1,5 +1,8 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.server.model.enumerations.InventionType;
@@ -132,33 +135,55 @@ public class Tribu {
         this.totalPPBuilders += ppBuilders;
     }
 
-    public void insertCharacter(String characterID){
+    public EffectOutcome insertCharacter(String characterID, Player owner){
 
         CharacterCard newInsertion = GameRegistry.getInstance().getCharacter(characterID);
         CharacterType type = newInsertion.getType();
 
         characters.get(type).add(characterID);
 
-        for(TribuObserver observer : tribuObservers)
-            observer.onCharacterInsertion(newInsertion.getType());
+        List<ResourceDelta> allDeltas = new ArrayList<>();
 
-        newInsertion.applyCharacterEffect(this);
+        EffectOutcome cardOutcome = newInsertion.applyCharacterEffect(owner);
+        if (cardOutcome != null && !cardOutcome.isEmpty()) {
+            allDeltas.addAll(cardOutcome.resourceDeltas());
+        }
+
+        for(TribuObserver observer : tribuObservers) {
+            EffectOutcome obsOutcome = observer.onCharacterInsertion(type);
+            if (obsOutcome != null && !obsOutcome.isEmpty()) {
+                allDeltas.addAll(obsOutcome.resourceDeltas());
+            }
+        }
+
+        return new EffectOutcome(allDeltas);
     }
 
-    public void insertBuilding(String buildingID, Player player, Game game) {
+    public EffectOutcome insertBuilding(String buildingID, Player owner, Game game) {
 
         BuildingCard cardTemplate = GameRegistry.getInstance().getBuilding(buildingID);
-
         if (cardTemplate == null) throw new CardNotFoundException(buildingID);
 
         this.buildings.add(buildingID);
-        this.totalPPBuildings += cardTemplate.getBuildingPp();
+
+        List<ResourceDelta> deltas = new ArrayList<>();
+        int pp = cardTemplate.getBuildingPp();
+
+        if (pp > 0) {
+            this.totalPPBuildings += pp;
+
+            deltas.add(new ResourceDelta(
+                    owner.getNickname(),
+                    ResourceType.PP_BUILDINGS,
+                    this.totalPPBuildings,
+                    pp
+            ));
+        }
 
         BuildingEffect myPersonalEffect = BuildingFactory.createActiveEffect(
                 cardTemplate.getEffectType(),
                 cardTemplate.getEffectParams(),
-                this,
-                player,
+                owner,
                 game);
 
         if (myPersonalEffect != null) {
@@ -166,6 +191,8 @@ public class Tribu {
             RegistrationVisitor visitor = new RegistrationVisitor(game, this);
             myPersonalEffect.accept(visitor);
         }
+
+        return new EffectOutcome(deltas);
     }
 
     public void attachTribuObserver(TribuObserver effect) {

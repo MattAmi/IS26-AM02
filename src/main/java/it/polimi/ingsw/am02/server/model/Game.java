@@ -1,6 +1,7 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.server.controller.ModelInterface;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
@@ -255,9 +256,10 @@ public class Game implements ModelInterface {
     }
 
     private void notifyPhaseObservers(PhaseType phase) {
-      if (!isExtraTurnMode) {
+        if (!isExtraTurnMode) {
             for (PhaseObserver phaseObserver : phaseObservers) {
-                phaseObserver.onPhaseChange(phase);
+                EffectOutcome outcome = phaseObserver.onPhaseChange(phase);
+                notifier.emitOutcome(outcome);
             }
         }
     }

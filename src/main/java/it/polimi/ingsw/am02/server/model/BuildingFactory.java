@@ -8,8 +8,8 @@ import it.polimi.ingsw.am02.server.model.enumerations.EventType;
 
 public class BuildingFactory {
 
-    public static BuildingEffect createActiveEffect(String effectType, JsonNode effectParams,
-                                                    Tribu tribu, Player player, Game game) {
+    public static BuildingEffect createActiveEffect(String effectType, JsonNode effectParams, Player owner, Game game) {
+
         if (effectType == null) {
             return null;
         }
@@ -19,70 +19,69 @@ public class BuildingFactory {
             // TribuObserver effects
 
             case "FULL_SET_FOOD_REWARD" -> new FullSetFoodRewardEffect(
-                    tribu,
+                    owner,
                     effectParams.get("foodReward").asInt()
             );
 
             case "INVENTOR_PAIR_FOOD_REWARD" -> new InventorPairRewardEffect(
-                    tribu,
+                    owner,
                     effectParams.get("foodReward").asInt()
             );
 
             // EventObserver effects
 
             case "EVENT_CHARACTER_BONUS" -> new EventCharacterBonusEffect(
+                    owner,
                     EventType.valueOf(effectParams.get("eventType").asText()),
                     CharacterType.valueOf(effectParams.get("characterType").asText()),
                     effectParams.get("foodReward").asInt(),
                     effectParams.get("prestigeReward").asInt(),
-                    effectParams.get("foodDiscount").asInt(),
-                    tribu
+                    effectParams.get("foodDiscount").asInt()
             );
 
             case "EXTRA_SHAMAN_STARS" -> new ShamanicExtraIconsEffect(
-                    tribu,
+                    owner,
                     effectParams.get("bonusStars").asInt()
             );
 
-            case "SHAMANIC_IMMUNITY" -> new ShamanicImmunityEffect(tribu);
+            case "SHAMANIC_IMMUNITY" -> new ShamanicImmunityEffect(owner);
 
             case "SHAMANIC_WIN_MULTIPLIER" -> new ShamanicWinMultiplierEffect(
-                    tribu,
-                    game,
+                    owner,
                     effectParams.get("multiplier").asInt()
             );
 
             // PhaseObserver effects
 
             case "TURN_ORDER_FOOD_BONUS" -> new TurnOrderFoodBonusEffect(
-                    player,
+                    owner,
                     game
             );
 
             case "ENDGAME_CHARACTER_PP" -> new EndGameCharacterPrestigeEffect(
-                    tribu,
+                    owner,
                     CharacterType.valueOf(effectParams.get("characterType").asText()),
                     effectParams.get("bonusPP").asInt()
-                        );
+            );
 
             case "ENDGAME_FULL_SET_PP" -> new EndGameFullSetPPEffect(
-                    effectParams.get("bonusPP").asInt(),
-                    tribu
+                    owner,
+                    effectParams.get("bonusPP").asInt()
             );
 
             case "PP_MULTIPLIER_PER_TYPE" -> new PrestigePointMultiplierPerTypeEffect(
-                    effectParams.get("multiplier").asInt(),
+                    owner,
                     CharacterType.valueOf(effectParams.get("characterType").asText()),
-                    tribu
+                    effectParams.get("multiplier").asInt()
             );
 
             case "ENDGAME_FLAT_PP" -> new FlatPrestigeBonusEffect(
-                    tribu,
+                    owner,
                     effectParams.get("bonusPP").asInt()
             );
 
             case "EXTRA_TURN" -> new ExtraTurnEffect(
-                    player,
+                    owner,
                     game,
                     effectParams.get("extraUpperPicks").asInt(),
                     effectParams.get("extraLowerPicks").asInt()

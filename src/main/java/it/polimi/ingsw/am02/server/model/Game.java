@@ -2,6 +2,7 @@ package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.server.controller.ModelInterface;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
@@ -229,20 +230,39 @@ public class Game implements ModelInterface {
                 .toList();
     }
 
-    private void calculateFinalScores() {
+    private List<PlayerFinalScore> calculateFinalScores() {
+        List<PlayerFinalScore> finalScoresList = new ArrayList<>();
+
         for (Player player : players.values()) {
             Tribu tribu = player.getTribu();
+            String nickname = player.getNickname();
+
+            int ppBuilders = tribu.getPPBuilders();
+            int ppBuildings = tribu.getTotalPPBuildings();
 
             int inventors = tribu.getCharacterCount(CharacterType.INVENTOR);
             int inventionTypes = tribu.getNumOfDifferentInventionTypes();
+            int ppInventors = inventors * inventionTypes;
 
             int artists = tribu.getCharacterCount(CharacterType.ARTIST);
+            int ppArtists = (artists / 2) * 10;
 
-            int ppToAdd = tribu.getPPBuilders() + tribu.getTotalPPBuildings() + inventors * inventionTypes + (artists / 2) * 10;
-
+            int ppToAdd = ppBuilders + ppBuildings + ppInventors + ppArtists;
             tribu.addPrestigePoints(ppToAdd);
 
+            PlayerFinalScore scoreDto = new PlayerFinalScore(
+                    nickname,
+                    tribu.getPrestigePoints(),
+                    ppBuilders,
+                    ppBuildings,
+                    ppInventors,
+                    ppArtists
+            );
+
+            finalScoresList.add(scoreDto);
         }
+
+        return finalScoresList;
     }
 
     public void enqueueExtraTurn(String nickname, int extraUpperPicks, int extraLowerPicks) {
@@ -577,7 +597,8 @@ public class Game implements ModelInterface {
 
         @Override
         public void onEntryActions() {
-            calculateFinalScores();
+            List<PlayerFinalScore> finalScores = calculateFinalScores();
+
             List<String> winners = determineWinner();
 
             for(String winner : winners) {
@@ -585,7 +606,7 @@ public class Game implements ModelInterface {
                 winnerPlayer.setAsWinner(true);
             }
 
-            // TODO: notifica verso la view del/dei vincitori
+            notifier.notifyGameEnded(winners, finalScores);
         }
     }
 

@@ -147,11 +147,6 @@ public class GameController implements GameObserver {
     }
 
     @Override
-    public void onSustainmentResolved(String nickname, int totalCharacters, int foodPaid, int foodShortage, int ppLost) {
-        broadcast(new SustainmentResolvedEvent(nickname, totalCharacters, foodPaid, foodShortage, ppLost));
-    }
-
-    @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
         broadcast(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
     }
@@ -159,11 +154,6 @@ public class GameController implements GameObserver {
     @Override
     public void onExtraTurnEnded(String nickname) {
         broadcast(new ExtraTurnEndedEvent(nickname));
-    }
-
-    @Override
-    public void onFinalScoreCalculated(String nickname, int ppFromBuilders, int ppFromBuildings, int ppFromInventors, int ppFromArtists, int ppFromBuildingEffects, int totalPrestigePoints, int remainingFood) {
-        broadcast(new FinalScoreCalculatedEvent(nickname, ppFromBuilders, ppFromBuildings, ppFromInventors, ppFromArtists, ppFromBuildingEffects, totalPrestigePoints, remainingFood));
     }
 
     @Override

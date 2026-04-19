@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.Era;
 
@@ -37,8 +38,8 @@ public class CharacterCard {
         return minPlayers;
     }
 
-    public void applyCharacterEffect(Tribu tribu) {
-        characterEffect.applyEffect(tribu);
+    public EffectOutcome applyCharacterEffect(Player player) {
+        return characterEffect.applyEffect(player);
     }
 
 }

@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.server.model.enumerations.InventionType;
 
 public class InventorEffect implements CharacterEffect {
@@ -13,8 +14,10 @@ public class InventorEffect implements CharacterEffect {
 
     //Inventor Effect: adds a new inventor/inventionType to the tribu
     @Override
-    public void applyEffect(Tribu tribu) {
-        tribu.addInventionType(invention);
+    public EffectOutcome applyEffect(Player player) {
+
+        player.getTribu().addInventionType(invention);
+        return EffectOutcome.empty();
     }
 
 }

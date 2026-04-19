@@ -1,5 +1,11 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+
+import java.util.List;
+
 public class BuilderEffect implements CharacterEffect {
 
     private final int buildingDiscount;
@@ -13,9 +19,16 @@ public class BuilderEffect implements CharacterEffect {
 
     //Builder's Effect: adds a food discount when the player wants to buy a building
     @Override
-    public void applyEffect(Tribu tribu) {
+    public EffectOutcome applyEffect(Player player) {
+
+        Tribu tribu = player.getTribu();
         tribu.addBuildingDiscount(buildingDiscount);
         tribu.addPPBuilders(prestigePoints);
+
+        return new EffectOutcome(List.of(
+                new ResourceDelta(player.getNickname(), ResourceType.BUILDING_DISCOUNT, tribu.getBuildingDiscount(), buildingDiscount),
+                new ResourceDelta(player.getNickname(), ResourceType.PP_BUILDERS, tribu.getPPBuilders(), prestigePoints)
+        ));
     }
 
 }

@@ -1,0 +1,139 @@
+[1mdiff --git a/src/main/java/it/polimi/ingsw/am02/ServerApp.java b/src/main/java/it/polimi/ingsw/am02/ServerApp.java[m
+[1mindex ae4f810..12ce8d2 100644[m
+[1m--- a/src/main/java/it/polimi/ingsw/am02/ServerApp.java[m
+[1m+++ b/src/main/java/it/polimi/ingsw/am02/ServerApp.java[m
+[36m@@ -5,16 +5,17 @@[m [mimport it.polimi.ingsw.am02.server.model.GameRegistry;[m
+ import it.polimi.ingsw.am02.server.network.rmi.RmiServer;[m
+ [m
+ public class ServerApp {[m
+[31m-    public static void main(String[] args) {[m
+[32m+[m[32m    public static void main(String[] args) throws InterruptedException {[m
+         System.out.println("=== SERVER RMI IN ASCOLTO ===");[m
+ [m
+[32m+[m[32m        System.setProperty("java.rmi.server.hostname", "127.0.0.1");[m
+ [m
+[31m-        GameRegistry gameRegistry = GameRegistry.getInstance();[m
+[31m-        ControllerManager controllerManager = ControllerManager.getInstance();[m
+[32m+[m[32m        GameRegistry.getInstance();[m
+[32m+[m[32m        ControllerManager.getInstance();[m
+ [m
+         RmiServer server = new RmiServer();[m
+         server.start(1099);[m
+ [m
+[31m-        // Il server resta attivo finché non lo stoppi manualmente[m
+[32m+[m[32m        Thread.currentThread().join();[m
+     }[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/src/main/java/it/polimi/ingsw/am02/client/model/ClientModel.java b/src/main/java/it/polimi/ingsw/am02/client/model/ClientModel.java[m
+[1mindex ddaefa4..2f76e6d 100644[m
+[1m--- a/src/main/java/it/polimi/ingsw/am02/client/model/ClientModel.java[m
+[1m+++ b/src/main/java/it/polimi/ingsw/am02/client/model/ClientModel.java[m
+[36m@@ -1,16 +1,51 @@[m
+ package it.polimi.ingsw.am02.client.model;[m
+ [m
+[32m+[m[32mimport it.polimi.ingsw.am02.common.dto.BoardSnapshot;[m
+ import it.polimi.ingsw.am02.common.dto.LobbyInfo;[m
+[32m+[m[32mimport it.polimi.ingsw.am02.common.dto.OfferTileInfo;[m
+[32m+[m[32mimport it.polimi.ingsw.am02.common.dto.PlayerFinalScore;[m
+[32m+[m[32mimport it.polimi.ingsw.am02.common.enumerations.PhaseType;[m
+[32m+[m[32mimport it.polimi.ingsw.am02.common.enumerations.ResourceType;[m
+ import it.polimi.ingsw.am02.common.interfaces.VirtualView;[m
+ import it.polimi.ingsw.am02.common.messages.events.Event;[m
+[32m+[m[32mimport it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;[m
+[32m+[m[32mimport it.polimi.ingsw.am02.common.messages.events.game.*;[m
+ import it.polimi.ingsw.am02.common.messages.events.lobby.*;[m
+[31m-import java.util.ArrayList;[m
+[31m-import java.util.List;[m
+[32m+[m
+[32m+[m[32mimport java.util.*;[m
+[32m+[m[32mimport java.util.stream.Collectors;[m
+ [m
+ public class ClientModel implements VirtualView {[m
+[32m+[m
+[32m+[m[32m    // --- Lobby state ---[m
+     private String myNickname;[m
+     private List<LobbyInfo> availableLobbies = new ArrayList<>();[m
+     private LobbyInfo currentLobby;[m
+[32m+[m
+[32m+[m[32m    // --- Game state ---[m
+[32m+[m[32m    private String gameId;[m
+[32m+[m[32m    private PhaseType currentPhase;[m
+[32m+[m[32m    private String currentPlayer;[m
+[32m+[m[32m    private List<String> turnOrder = new ArrayList<>();[m
+[32m+[m[32m    private List<String> upperRow = new ArrayList<>();[m
+[32m+[m[32m    private List<String> lowerRow = new ArrayList<>();[m
+[32m+[m[32m    private List<String> upperRowBuildings = new ArrayList<>();[m
+[32m+[m[32m    private List<String> lowerRowBuildings = new ArrayList<>();[m
+[32m+[m[32m    private List<OfferTileInfo> offerTiles = new ArrayList<>();[m
+[32m+[m[32m    private int deckRemainingCount;[m
+[32m+[m[32m    private final Map<String, Integer> foodByPlayer = new LinkedHashMap<>();[m
+[32m+[m[32m    private final Map<String, Integer> ppByPlayer = new LinkedHashMap<>();[m
+[32m+[m[32m    private final Map<String, Character> totemPositions = new LinkedHashMap<>(); // nickname -> tileID placed[m
+[32m+[m[32m    private final Map<String, Integer> turnOrderPositions = new LinkedHashMap<>(); // nickname -> position after returning[m
+[32m+[m[32m    private final Map<String, Integer> remainingUpper = new LinkedHashMap<>();[m
+[32m+[m[32m    private final Map<String, Integer> remainingLower = new LinkedHashMap<>();[m
+[32m+[m[32m    private List<String> winners = new ArrayList<>();[m
+[32m+[m[32m    private List<PlayerFinalScore> finalRankings = new ArrayList<>();[m
+[32m+[m[32m    private boolean gameEnded = false;[m
+[32m+[m[32m    private String lastErrorMessage;[m
+[32m+[m[32m    private String lastEventResolved;[m
+[32m+[m
+[32m+[m[32m    // --- Observers ---[m
+     private final List<ClientModelObserver> observers = new ArrayList<>();[m
+ [m
+     public void addObserver(ClientModelObserver observer) {[m
+[36m@@ -21,20 +56,136 @@[m [mpublic class ClientModel implements VirtualView {[m
+         observers.forEach(ClientModelObserver::update);[m
+     }[m
+ [m
+[32m+[m[32m    // --- VirtualView ---[m
+[32m+[m
+     @Override[m
+     public void notify(Event event) {[m
+[31m-        if (event instanceof UsernameResultEvent e && e.isValid()) {[m
+[31m-            this.myNickname = e.username();[m
+[31m-        } else if (event instanceof UpdatedLobbiesEvent e) {[m
+[31m-            this.availableLobbies = e.lobbies();[m
+[31m-        } else if (event instanceof UpdatedLobbyEvent e) {[m
+[31m-            this.currentLobby = e.lobby();[m
+[32m+[m[32m        switch (event) {[m
+[32m+[m[32m            // Lobby events[m
+[32m+[m[32m            case UsernameResultEvent e -> {[m
+[32m+[m[32m                if (e.isValid()) this.myNickname = e.username();[m
+[32m+[m[32m            }[m
+[32m+[m[32m            case UpdatedLobbiesEvent e -> this.availableLobbies = e.lobbies();[m
+[32m+[m[32m            case UpdatedLobbyEvent e -> this.currentLobby = e.lobby();[m
+[32m+[m[32m            case LobbyDissolvedEvent ignored -> this.currentLobby = null;[m
+[32m+[m
+[32m+[m[32m            // Game events[m
+[32m+[m[32m            case GameStartedEvent e -> {[m
+[32m+[m[32m                this.gameId = e.gameID();[m
+[32m+[m[32m                this.currentLobby = null;[m
+[32m+[m[32m                this.gameEnded = false;[m
+[32m+[m[32m            }[m
+[32m+[m[32m            case GameSetupCompletedEvent e -> {[m
+[32m+[m[32m                this.turnOrder = new ArrayList<>(e.turnOrder());[m
+[32m+[m[32m                this.foodByPlayer.putAll(e.initialFood());[m
+[32m+[m[32m                e.initialFood().keySet().forEach(n -> ppByPlayer.put(n, 0));[m
+[32m+[m[32m                BoardSnapshot snap = e.boardSnapshot();[m
+[32m+[m[32m                if (snap != null) {[m
+[32m+[m[32m                    this.upperRow = new ArrayList<>(snap.upperRowCards());[m
+[32m+[m[32m                    this.lowerRow = new ArrayList<>(snap.lowerRowCards());[m
+[32m+[m[32m                    this.upperRowBuildings = new ArrayList<>(snap.upperRowBuildings());[m
+[32m+[m[32m                    this.lowerRowBuildings = new ArrayList<>(snap.lowerRowBuildings());[m
+[32m+[m[32m                    this.offerTiles = new ArrayList<>(snap.offerTiles());[m
+[32m+[m[32m                    this.turnOrder = new ArrayList<>(snap.turnOrderPositions());[m
+[32m+[m[32m                }[m
+[32m+[m[32m            }[m
+[32m+[m[32m            case PhaseChangedEvent e -> {[m
+[32m+[m[32m                this.currentPhase = e.phase();[m
+[32m+[m[32m                if (e.currentPlayer() != null) this.currentPlayer = e.currentPlayer();[m
+[32m+[m[32m                if (e.resolutionOrder() != null) this.turnOrder = new ArrayList<>(e.resolutionOrder());[m
+[32m+[m[32m            }[m
+[32m+[m[32m            case CurrentPlayerChangedEvent e -> this.currentPlayer = e.nextPlayer();[m
+[32m+[m[32m            case TurnOrderEstablishedEvent e -> this.turnOrder = new ArrayList<>(e.turnOrder());[m
+[32m+[m
+[32m+[m[32m            case TotemPlacedEvent e -> {[m
+[32m+[m[32m                totemPositions.put(e.nickname(), e.tileID());[m
+[32m+[m[32m              

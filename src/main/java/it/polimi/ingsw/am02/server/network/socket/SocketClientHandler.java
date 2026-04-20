@@ -9,4 +9,9 @@ public class SocketClientHandler implements ClientHandler {
     public void notify(Event event) {
 
     }
+
+    @Override
+    public void disconnect() {
+
+    }
 }

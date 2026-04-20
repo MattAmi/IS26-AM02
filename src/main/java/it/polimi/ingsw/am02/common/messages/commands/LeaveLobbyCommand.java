@@ -1,4 +1,3 @@
 package it.polimi.ingsw.am02.common.messages.commands;
 
-public class LeaveLobbyCommand {
-}
+public record LeaveLobbyCommand(String username) implements Command {}

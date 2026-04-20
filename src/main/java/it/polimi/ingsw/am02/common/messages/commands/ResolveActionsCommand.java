@@ -1,4 +1,5 @@
 package it.polimi.ingsw.am02.common.messages.commands;
 
-public class ResolveActionsCommand {
-}
+import java.util.List;
+
+public record ResolveActionsCommand(String nickname, List<String> selectedIDs) implements Command {}

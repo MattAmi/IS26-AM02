@@ -546,7 +546,8 @@ public class GameBoard {
                 .map(Player::getNickname)
                 .toList();
 
-        return new BoardSnapshot(List.copyOf(upperRow),
+        return new BoardSnapshot(
+                List.copyOf(upperRow),
                 List.copyOf(lowerRow),
                 List.copyOf(upperRowBuildings),
                 List.copyOf(lowerRowBuildings),

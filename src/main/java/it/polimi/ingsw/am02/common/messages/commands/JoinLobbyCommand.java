@@ -1,4 +1,3 @@
 package it.polimi.ingsw.am02.common.messages.commands;
 
-public class JoinLobbyCommand {
-}
+public record JoinLobbyCommand(String lobbyID) implements Command {}

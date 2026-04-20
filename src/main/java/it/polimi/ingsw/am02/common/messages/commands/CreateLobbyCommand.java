@@ -1,4 +1,5 @@
 package it.polimi.ingsw.am02.common.messages.commands;
 
-public class CreateLobbyCommand {
+public record CreateLobbyCommand(int numPlayers) implements Command {
+
 }

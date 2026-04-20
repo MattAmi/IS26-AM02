@@ -4,8 +4,10 @@ import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.common.enumerations.RowPosition;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;
@@ -39,6 +41,8 @@ public class ClientModel implements VirtualView {
     private final Map<String, Integer> turnOrderPositions = new LinkedHashMap<>(); // nickname -> position after returning
     private final Map<String, Integer> remainingUpper = new LinkedHashMap<>();
     private final Map<String, Integer> remainingLower = new LinkedHashMap<>();
+    private final Map<String, List<String>> charactersByPlayer = new LinkedHashMap<>();
+    private final Map<String, List<String>> buildingsByPlayer  = new LinkedHashMap<>();
     private List<String> winners = new ArrayList<>();
     private List<PlayerFinalScore> finalRankings = new ArrayList<>();
     private boolean gameEnded = false;
@@ -60,104 +64,119 @@ public class ClientModel implements VirtualView {
 
     @Override
     public void notify(Event event) {
-        switch (event) {
-            // Lobby events
-            case UsernameResultEvent e -> {
-                if (e.isValid()) this.myNickname = e.username();
-            }
-            case UpdatedLobbiesEvent e -> this.availableLobbies = e.lobbies();
-            case UpdatedLobbyEvent e -> this.currentLobby = e.lobby();
-            case LobbyDissolvedEvent ignored -> this.currentLobby = null;
-
-            // Game events
-            case GameStartedEvent e -> {
-                this.gameId = e.gameID();
-                this.currentLobby = null;
-                this.gameEnded = false;
-            }
-            case GameSetupCompletedEvent e -> {
-                this.turnOrder = new ArrayList<>(e.turnOrder());
-                this.foodByPlayer.putAll(e.initialFood());
-                e.initialFood().keySet().forEach(n -> ppByPlayer.put(n, 0));
-                BoardSnapshot snap = e.boardSnapshot();
-                if (snap != null) {
-                    this.upperRow = new ArrayList<>(snap.upperRowCards());
-                    this.lowerRow = new ArrayList<>(snap.lowerRowCards());
-                    this.upperRowBuildings = new ArrayList<>(snap.upperRowBuildings());
-                    this.lowerRowBuildings = new ArrayList<>(snap.lowerRowBuildings());
-                    this.offerTiles = new ArrayList<>(snap.offerTiles());
-                    this.turnOrder = new ArrayList<>(snap.turnOrderPositions());
+        try {
+            switch (event) {
+                // Lobby events
+                case UsernameResultEvent e -> {
+                    if (e.isValid()) this.myNickname = e.username();
                 }
-            }
-            case PhaseChangedEvent e -> {
-                this.currentPhase = e.phase();
-                if (e.currentPlayer() != null) this.currentPlayer = e.currentPlayer();
-                if (e.resolutionOrder() != null) this.turnOrder = new ArrayList<>(e.resolutionOrder());
-            }
-            case CurrentPlayerChangedEvent e -> this.currentPlayer = e.nextPlayer();
-            case TurnOrderEstablishedEvent e -> this.turnOrder = new ArrayList<>(e.turnOrder());
+                case UpdatedLobbiesEvent e -> this.availableLobbies = e.lobbies();
+                case UpdatedLobbyEvent e -> this.currentLobby = e.lobby();
+                case LobbyDissolvedEvent ignored -> this.currentLobby = null;
 
-            case TotemPlacedEvent e -> {
-                totemPositions.put(e.nickname(), e.tileID());
-                // aggiorna l'occupante nella lista offerTiles
-                this.offerTiles = offerTiles.stream()
-                        .map(t -> t.tileID() == e.tileID()
-                                ? new OfferTileInfo(t.tileID(), t.foodBonus(), t.upperChoosable(), t.lowerChoosable(), e.nickname())
-                                : t)
-                        .collect(Collectors.toCollection(ArrayList::new));
-            }
+                // Game events
+                case GameStartedEvent e -> {
+                    this.gameId = e.gameID();
+                    this.currentLobby = null;
+                    this.gameEnded = false;
+                }
+                case GameSetupCompletedEvent e -> {
+                    this.turnOrder = new ArrayList<>(e.turnOrder());
+                    this.foodByPlayer.putAll(e.initialFood());
+                    e.initialFood().keySet().forEach(n -> ppByPlayer.put(n, 0));
+                    BoardSnapshot snap = e.boardSnapshot();
+                    if (snap != null) {
+                        this.upperRow = new ArrayList<>(snap.upperRowCards());
+                        this.lowerRow = new ArrayList<>(snap.lowerRowCards());
+                        this.upperRowBuildings = new ArrayList<>(snap.upperRowBuildings());
+                        this.lowerRowBuildings = new ArrayList<>(snap.lowerRowBuildings());
+                        this.offerTiles = new ArrayList<>(snap.offerTiles());
+                    }
+                }
+                case PhaseChangedEvent e -> {
+                    this.currentPhase = e.phase();
+                    if (e.currentPlayer() != null) this.currentPlayer = e.currentPlayer();
+                    if (e.resolutionOrder() != null) this.turnOrder = new ArrayList<>(e.resolutionOrder());
+                }
+                case CurrentPlayerChangedEvent e -> this.currentPlayer = e.nextPlayer();
+                case TurnOrderEstablishedEvent e -> this.turnOrder = new ArrayList<>(e.turnOrder());
 
-            case TotemReturnedEvent e -> {
-                totemPositions.remove(e.nickname());
-                turnOrderPositions.put(e.nickname(), e.turnOrderPosition());
-                // libera la tile occupata da questo giocatore
-                this.offerTiles = offerTiles.stream()
-                        .map(t -> e.nickname().equals(t.occupantNickname())
-                                ? new OfferTileInfo(t.tileID(), t.foodBonus(), t.upperChoosable(), t.lowerChoosable(), null)
-                                : t)
-                        .collect(Collectors.toCollection(ArrayList::new));
-            }
-            case BoardUpdatedEvent e -> {
-                this.upperRow = new ArrayList<>(e.newUpperRow());
-                this.lowerRow = new ArrayList<>(e.newLowerRow());
-                this.deckRemainingCount = e.deckRemainingCount();
-            }
-            case PlayerLimitsInitializedEvent e -> {
-                remainingUpper.put(e.nickname(), e.remainingUpper());
-                remainingLower.put(e.nickname(), e.remainingLower());
-            }
-            case PlayerLimitsUpdatedEvent e -> {
-                remainingUpper.put(e.nickname(), e.remainingUpper());
-                remainingLower.put(e.nickname(), e.remainingLower());
-            }
-            case PlayerResourceChangedEvent e -> {
-                if (e.resource() == ResourceType.FOOD) foodByPlayer.put(e.nickname(), e.newValue());
-                else if (e.resource() == ResourceType.PRESTIGE_POINTS) ppByPlayer.put(e.nickname(), e.newValue());
-            }
-            case CardTakenEvent e -> {} // il board si aggiorna via BoardUpdatedEvent
-            case EventResolvedEvent e -> this.lastEventResolved = e.eventName();
-            case EraChangedEvent e -> {
-                this.upperRowBuildings = new ArrayList<>(e.newUpperRowBuildings());
-                this.lowerRowBuildings = new ArrayList<>(e.newLowerRowBuildings());
-            }
-            case ExtraTurnStartedEvent e -> {
-                remainingUpper.put(e.nickname(), e.remainingUpper());
-                remainingLower.put(e.nickname(), e.remainingLower());
-            }
-            case ExtraTurnEndedEvent ignored -> {}
-            case GameEndedEvent e -> {
-                this.winners = new ArrayList<>(e.winners());
-                this.finalRankings = new ArrayList<>(e.finalRankings());
-                this.gameEnded = true;
-            }
-            case PlayerDisconnectedEvent e -> this.lastErrorMessage = "Player disconnected: " + e.nickname();
+                case TotemPlacedEvent e -> {
+                    totemPositions.put(e.nickname(), e.tileID());
+                    this.offerTiles = offerTiles.stream()
+                            .map(t -> t.tileID() == e.tileID()
+                                    ? new OfferTileInfo(t.tileID(), t.foodBonus(), t.upperChoosable(), t.lowerChoosable(), e.nickname())
+                                    : t)
+                            .collect(Collectors.toCollection(ArrayList::new));
+                }
 
-            case ErrorEvent e -> this.lastErrorMessage = e.errorMessage();
+                case TotemReturnedEvent e -> {
+                    totemPositions.remove(e.nickname());
+                    turnOrderPositions.put(e.nickname(), e.turnOrderPosition());
+                    this.offerTiles = offerTiles.stream()
+                            .map(t -> e.nickname().equals(t.occupantNickname())
+                                    ? new OfferTileInfo(t.tileID(), t.foodBonus(), t.upperChoosable(), t.lowerChoosable(), null)
+                                    : t)
+                            .collect(Collectors.toCollection(ArrayList::new));
+                }
+                case BoardUpdatedEvent e -> {
+                    this.upperRow = new ArrayList<>(e.newUpperRow());
+                    this.lowerRow = new ArrayList<>(e.newLowerRow());
+                    this.deckRemainingCount = e.deckRemainingCount();
+                }
+                case PlayerLimitsInitializedEvent e -> {
+                    remainingUpper.put(e.nickname(), e.remainingUpper());
+                    remainingLower.put(e.nickname(), e.remainingLower());
+                }
+                case PlayerLimitsUpdatedEvent e -> {
+                    remainingUpper.put(e.nickname(), e.remainingUpper());
+                    remainingLower.put(e.nickname(), e.remainingLower());
+                }
+                case PlayerResourceChangedEvent e -> {
+                    if (e.resource() == ResourceType.FOOD) foodByPlayer.put(e.nickname(), e.newValue());
+                    else if (e.resource() == ResourceType.PRESTIGE_POINTS) ppByPlayer.put(e.nickname(), e.newValue());
+                }
+                case CardTakenEvent e -> {
+                    // 1) rimuovi dalla riga del board
+                    List<String> row = (e.cardType() == CardType.BUILDING)
+                            ? (e.sourceRow() == RowPosition.UPPER ? upperRowBuildings : lowerRowBuildings)
+                            : (e.sourceRow() == RowPosition.UPPER ? upperRow : lowerRow);
+                    row.remove(e.cardID());
 
-            default -> {}
+                    // 2) aggiungi alla tribù del player
+                    Map<String, List<String>> target =
+                            (e.cardType() == CardType.BUILDING) ? buildingsByPlayer : charactersByPlayer;
+                    target.computeIfAbsent(e.nickname(), k -> new ArrayList<>()).add(e.cardID());
+                }
+                case EventResolvedEvent e -> this.lastEventResolved = e.eventName();
+                case EraChangedEvent e -> {
+                    this.upperRowBuildings = new ArrayList<>(e.newUpperRowBuildings());
+                    this.lowerRowBuildings = new ArrayList<>(e.newLowerRowBuildings());
+                }
+                case ExtraTurnStartedEvent e -> {
+                    remainingUpper.put(e.nickname(), e.remainingUpper());
+                    remainingLower.put(e.nickname(), e.remainingLower());
+                }
+                case ExtraTurnEndedEvent ignored -> {}
+                case GameEndedEvent e -> {
+                    this.winners = new ArrayList<>(e.winners());
+                    this.finalRankings = new ArrayList<>(e.finalRankings());
+                    this.gameEnded = true;
+                }
+                case PlayerDisconnectedEvent e -> this.lastErrorMessage = "Player disconnected: " + e.nickname();
+
+                case ErrorEvent e -> this.lastErrorMessage = e.errorMessage();
+
+                default -> {}
+            }
+        } catch (Exception ex) {
+            this.lastErrorMessage = "Internal client error on "
+                    + event.getClass().getSimpleName() + ": " + ex.getMessage();
+            // Utile durante lo sviluppo: stampa lo stack trace sulla console del client.
+            ex.printStackTrace();
+        } finally {
+            notifyObservers();
         }
-
-        notifyObservers();
     }
 
     // --- Getters lobby ---
@@ -182,6 +201,8 @@ public class ClientModel implements VirtualView {
     public Map<String, Integer> getTurnOrderPositions() { return turnOrderPositions; }
     public Map<String, Integer> getRemainingUpper() { return remainingUpper; }
     public Map<String, Integer> getRemainingLower() { return remainingLower; }
+    public Map<String, List<String>> getCharactersByPlayer() { return charactersByPlayer; }
+    public Map<String, List<String>> getBuildingsByPlayer()  { return buildingsByPlayer; }
     public boolean isGameEnded() { return gameEnded; }
     public List<String> getWinners() { return winners; }
     public List<PlayerFinalScore> getFinalRankings() { return finalRankings; }

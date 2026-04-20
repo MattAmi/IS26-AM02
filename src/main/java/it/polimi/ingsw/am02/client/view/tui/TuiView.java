@@ -127,12 +127,17 @@ public class TuiView implements View, ClientModelObserver {
         System.out.println("--- PLAYERS ---");
         for (String n : model.getTurnOrder()) {
             int food = model.getFoodByPlayer().getOrDefault(n, 0);
-            int pp   = model.getPpByPlayer().getOrDefault(n, 0);
+            int pp = model.getPpByPlayer().getOrDefault(n, 0);
             int remU = model.getRemainingUpper().getOrDefault(n, 0);
             int remL = model.getRemainingLower().getOrDefault(n, 0);
             String marker = n.equals(model.getMyNickname()) ? " (YOU)" : "";
             System.out.printf("  %-15s  Food: %2d  PP: %3d  Picks: upper=%d lower=%d%s%n",
                     n, food, pp, remU, remL, marker);
+
+            List<String> chars = model.getCharactersByPlayer().getOrDefault(n, List.of());
+            List<String> builds = model.getBuildingsByPlayer().getOrDefault(n, List.of());
+            if (!chars.isEmpty())  System.out.println("      characters: " + String.join(", ", chars));
+            if (!builds.isEmpty()) System.out.println("      buildings:  " + String.join(", ", builds));
         }
     }
 
@@ -148,8 +153,12 @@ public class TuiView implements View, ClientModelObserver {
             }
             case ACTION_RESOLUTION -> {
                 System.out.println("Commands:");
-                if (isMyTurn) System.out.println("  resolve <id1> [id2 ...]  — pick card IDs from the board");
-                else          System.out.println("  Waiting for " + model.getCurrentPlayer() + " to resolve actions...");
+                if (isMyTurn) {
+                    System.out.println("  resolve <id1> [id2 ...]  — pick card IDs from the board");
+                    System.out.println("  move T                   — return your totem to the TurnOrderTile (end your turn)");
+                } else {
+                    System.out.println("  Waiting for " + model.getCurrentPlayer() + " to resolve actions...");
+                }
             }
             default -> System.out.println("  (waiting for server...)");
         }

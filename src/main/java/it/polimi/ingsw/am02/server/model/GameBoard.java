@@ -259,16 +259,6 @@ public class GameBoard {
 
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
 
-        int foodFromTile = currentTile.resolveFoodOffer(player);
-        if (foodFromTile > 0) {
-            // Notify observers that the player's food resources have changed
-            notifier.notifyPlayerResourceChanged(
-                    player.getNickname(),
-                    ResourceType.FOOD,
-                    player.getTribu().getFoodPoints(),
-                    foodFromTile);
-        }
-
         int[] counts = countSelectedByRow(selectedIDs);
 
         if (counts[0] > currentTile.getRemainingUpper() || counts[1] > currentTile.getRemainingLower()) {
@@ -279,11 +269,20 @@ public class GameBoard {
         }
 
         Map<String, Integer> buildingCosts = validateAndComputeCosts(selectedIDs, player);
+
+        int foodFromTile = currentTile.resolveFoodOffer(player);
+        if (foodFromTile > 0) {
+            notifier.notifyPlayerResourceChanged(
+                    player.getNickname(),
+                    ResourceType.FOOD,
+                    player.getTribu().getFoodPoints(),
+                    foodFromTile);
+        }
+
         executeCardAcquisition(selectedIDs, player, game, buildingCosts);
 
         currentTile.decrementPicks(counts[0], counts[1]);
 
-        // Notify observers that the tile's remaining limits have been updated
         notifier.notifyPlayerLimitsUpdated(
                 player.getNickname(),
                 currentTile.getRemainingUpper(),

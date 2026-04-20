@@ -1,4 +1,4 @@
-package it.polimi.ingsw.am02.server.model.buildingeffects;
+package it.polimi.ingsw.am02.model.buildingeffects;
 
 import it.polimi.ingsw.am02.server.model.EffectVisitor;
 import it.polimi.ingsw.am02.server.model.buildingeffects.InventorPairRewardEffect;

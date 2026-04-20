@@ -4,9 +4,12 @@ import it.polimi.ingsw.am02.client.model.ClientModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 public class TuiController {
+
     private final ServerProxy proxy;
     private final ClientModel model;
     private final TuiView view;
@@ -28,6 +31,7 @@ public class TuiController {
 
             try {
                 switch (cmd) {
+                    // --- lobby commands ---
                     case "login" -> {
                         if (args.length < 2) view.displayError("Usage: login <nickname>");
                         else proxy.requestSetUsername(args[1]);
@@ -48,18 +52,32 @@ public class TuiController {
                         if (args.length < 2) view.displayError("Usage: totem <color>");
                         else proxy.requestSelectTotem(Totem.valueOf(args[1].toUpperCase()));
                     }
-                    case "start" -> proxy.requestStartGame();
                     case "leave" -> proxy.requestLeaveLobby();
+
+                    // --- game commands ---
+                    case "move" -> {
+                        if (args.length < 2) view.displayError("Usage: move <tileID>  (e.g. move B)");
+                        else proxy.moveTotem(model.getMyNickname(), args[1].charAt(0));
+                    }
+                    case "resolve" -> {
+                        if (args.length < 2) view.displayError("Usage: resolve <id1> [id2 ...]");
+                        else {
+                            List<String> ids = Arrays.asList(args).subList(1, args.length);
+                            proxy.resolveActions(model.getMyNickname(), ids);
+                        }
+                    }
+
+                    // --- system ---
                     case "quit" -> {
                         proxy.disconnect();
                         System.exit(0);
                     }
-                    default -> view.displayError("Unknown command.");
+                    default -> view.displayError("Unknown command: " + cmd);
                 }
             } catch (IndexOutOfBoundsException e) {
-                view.displayError("Invalid index selected.");
+                view.displayError("Invalid index.");
             } catch (IllegalArgumentException e) {
-                view.displayError("Invalid argument format.");
+                view.displayError("Invalid argument: " + e.getMessage());
             } catch (Exception e) {
                 view.displayError("System error: " + e.getMessage());
             }

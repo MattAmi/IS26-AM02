@@ -82,6 +82,7 @@ public class RmiClientHandler implements RmiServerRemote, VirtualView {
 
     @Override
     public void resolveActions(String nickname, List<String> selectedIDs) throws RemoteException {
+        System.out.println("[RMI] resolveActions: myNickname=" + myNickname + " selectedIDs=" + selectedIDs);
         if (myNickname == null) return;
         manager.routeGameCommand(myNickname, new ResolveActionsCommand(myNickname, selectedIDs));
     }

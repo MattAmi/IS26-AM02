@@ -50,9 +50,16 @@ public class GameController implements GameObserver {
 
     //Command handler
     public void handle(GameCommand cmd, String senderNickname) {
-        switch (cmd) {
-            case MoveTotemCommand c -> model.moveTotem(senderNickname, c.tileID());
-            case ResolveActionsCommand c -> model.resolveActions(senderNickname, c.selectedIDs());
+        System.out.println("[GameController] handle: " + cmd.getClass().getSimpleName() + " from " + senderNickname);
+        try {
+            switch (cmd) {
+                case MoveTotemCommand c -> model.moveTotem(senderNickname, c.tileID());
+                case ResolveActionsCommand c -> model.resolveActions(senderNickname, c.selectedIDs());
+            }
+        } catch (RuntimeException e) {
+            System.err.println("[GameController] Exception: " + e.getMessage());
+            e.printStackTrace();
+            unicast(senderNickname, new ErrorEvent(e.getMessage()));
         }
     }
 

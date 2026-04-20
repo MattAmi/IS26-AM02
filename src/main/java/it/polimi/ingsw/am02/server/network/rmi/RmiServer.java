@@ -13,11 +13,12 @@ import java.rmi.server.UnicastRemoteObject;
 public class RmiServer implements NetworkServer {
 
     private Registry registry;
+    private RmiServerFactory factory;
 
     @Override
     public void start(int port) {
         try {
-            RmiServerFactory factory = new RmiServerFactory() {
+            factory = new RmiServerFactory() {
                 @Override
                 public RmiServerRemote registerClient(RmiClientRemote clientCallback) throws RemoteException {
                     System.out.println("[RMI] New client connected! Assigning Handler...");

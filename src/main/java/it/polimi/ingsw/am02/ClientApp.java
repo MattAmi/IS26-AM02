@@ -24,6 +24,7 @@ public class ClientApp {
 
         } catch (Exception e) {
             System.err.println("Fatal error during startup: " + e.getMessage());
+            e.printStackTrace();
             System.exit(1);
         }
     }

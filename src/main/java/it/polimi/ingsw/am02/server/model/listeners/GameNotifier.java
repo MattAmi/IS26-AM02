@@ -153,12 +153,6 @@ public final class GameNotifier implements GameObserverRegistry, GameEventEmitte
 
     // FinaScoring
     @Override
-    public void notifyFinalScoreCalculated(String nickname, int ppFromBuilders, int ppFromBuildings, int ppFromInventors, int ppFromArtists, int ppFromBuildingEffects, int totalPP, int remainingFood) {
-        for (GameObserver o : observers)
-            o.onFinalScoreCalculated(nickname, ppFromBuilders, ppFromBuildings, ppFromInventors, ppFromArtists, ppFromBuildingEffects, totalPP, remainingFood);
-    }
-
-    @Override
     public void notifyGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
         for (GameObserver o : observers)
             o.onGameEnded(winners, finalRankings);

@@ -47,6 +47,5 @@ public interface GameEventEmitter {
     void notifyExtraTurnEnded(String nickname);
 
     // FinaScoring
-    void notifyFinalScoreCalculated(String nickname, int ppFromBuilders, int ppFromBuildings, int ppFromInventors, int ppFromArtists, int ppFromBuildingEffects, int totalPP, int remainingFood);
     void notifyGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings);
 }

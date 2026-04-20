@@ -200,8 +200,14 @@ public class ControllerManager {
 
         GameController gameController = controllers.get(gameId);
 
-        if (gameController != null)
-            gameController.handle(cmd, nickname);
+        if (gameController == null)
+            return;
+
+        if (!(cmd instanceof GameCommand gameCmd)) {
+            return;
+        }
+
+        gameController.handle(gameCmd, nickname);
     }
 
 

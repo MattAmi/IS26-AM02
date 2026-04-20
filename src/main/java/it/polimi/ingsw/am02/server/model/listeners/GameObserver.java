@@ -29,11 +29,9 @@ public interface GameObserver {
     void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta);
 
     void onEventResolved(String eventID, String eventName);
-    void onSustainmentResolved(String nickname, int totalCharacters, int foodPaid, int foodShortage, int ppLost);
 
     void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower);
     void onExtraTurnEnded(String nickname);
 
-    void onFinalScoreCalculated(String nickname, int ppFromBuilders, int ppFromBuildings, int ppFromInventors, int ppFromArtists, int ppFromBuildingEffects, int totalPrestigePoints, int remainingFood);
     void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings);
 }

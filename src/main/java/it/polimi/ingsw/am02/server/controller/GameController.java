@@ -49,33 +49,10 @@ public class GameController implements GameObserver {
 
 
     //Command handler
-    // TODO: Matteo ho cercato di togliere in modo meno invasivo possibile il errore a compile time switch does not cover
-    // TODO: all possible input values comunque sarebbe da rivedere visto che ne sai più di me su questa parte é dovuto a presenza sealed classes
-    public void handle(Command cmd, String senderNickname) {
+    public void handle(GameCommand cmd, String senderNickname) {
         switch (cmd) {
-            // --- GESTITI ---
             case MoveTotemCommand c -> model.moveTotem(senderNickname, c.tileID());
             case ResolveActionsCommand c -> model.resolveActions(senderNickname, c.selectedIDs());
-
-            // --- TODO PER IL COMPAGNO (Da implementare) ---
-            case SetUsernameCommand c -> {
-                System.out.println("TODO: Gestire SetUsernameCommand");
-            }
-            case CreateLobbyCommand c -> {
-                System.out.println("TODO: Gestire CreateLobbyCommand");
-            }
-            case JoinLobbyCommand c -> {
-                System.out.println("TODO: Gestire JoinLobbyCommand");
-            }
-            case SelectTotemCommand c -> {
-                System.out.println("TODO: Gestire SelectTotemCommand");
-            }
-            case StartGameCommand c -> {
-                System.out.println("TODO: Gestire StartGameCommand");
-            }
-            case LeaveLobbyCommand c -> {
-                System.out.println("TODO: Gestire LeaveLobbyCommand");
-            }
         }
     }
 
@@ -161,11 +138,6 @@ public class GameController implements GameObserver {
     }
 
     @Override
-    public void onSustainmentResolved(String nickname, int totalCharacters, int foodPaid, int foodShortage, int ppLost) {
-        //TODO: Matteo chiedo conferma che deve essere tolta dalla interfaccia
-    }
-
-    @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
         broadcast(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
     }
@@ -173,11 +145,6 @@ public class GameController implements GameObserver {
     @Override
     public void onExtraTurnEnded(String nickname) {
         broadcast(new ExtraTurnEndedEvent(nickname));
-    }
-
-    @Override
-    public void onFinalScoreCalculated(String nickname, int ppFromBuilders, int ppFromBuildings, int ppFromInventors, int ppFromArtists, int ppFromBuildingEffects, int totalPrestigePoints, int remainingFood) {
-        //TODO: Matteo mi ricordo che non servava ma ha già 1 usage quindi aspetto conferma
     }
 
     @Override

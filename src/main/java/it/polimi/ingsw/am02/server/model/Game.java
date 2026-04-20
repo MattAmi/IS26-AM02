@@ -535,7 +535,7 @@ public class Game implements ModelInterface {
 
                 transitionTo(new NewEraState());
 
-            } else if (isGameOverCondition()) {
+            } else if (isGameOverCondition()) { //TODO: condizione di fine gioco non va bene! (devo poter continuare a giocare anche con deck vuoto)!
                 if (areFinalEventsToResolve()) {
                     transitionTo(new FinalEventsResolutionState());
                 } else {

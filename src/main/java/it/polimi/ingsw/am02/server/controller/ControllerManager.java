@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ControllerManager {
 
-    private static volatile ControllerManager instance;
+    private static final ControllerManager INSTANCE = new ControllerManager();
     private final Map<String, VirtualView> connectedClients; // Authenticated clients not yet in a game (in lobby selection or in a lobby).
     private final Map<String, Lobby> lobbies; // Active lobbies awaiting enough players to start.
     private final Map<String, GameController> controllers; // Active game controllers, keyed by gameId.
@@ -32,14 +32,7 @@ public class ControllerManager {
     }
 
     public static ControllerManager getInstance() {
-        if (instance == null) {
-            synchronized (ControllerManager.class) {
-                if (instance == null) {
-                    instance = new ControllerManager();
-                }
-            }
-        }
-        return instance;
+        return INSTANCE;
     }
 
     // Authentication

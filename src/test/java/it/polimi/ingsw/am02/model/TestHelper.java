@@ -19,7 +19,7 @@ public final class TestHelper {
 
         String basePath = resolveResourceDir("it/polimi/ingsw/am02/JSON/");
 
-        registry.loadCharacters(basePath + "Characters.json");
+        registry.loadCharacters(basePath + "Characters.JSON");
         registry.loadEvents(basePath + "Events.JSON");
         registry.loadBuildings(basePath + "Buildings.JSON");
         registry.loadOfferTiles(basePath + "OfferTiles.JSON");

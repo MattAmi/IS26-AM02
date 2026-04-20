@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.Map;
 
 public class GameRegistry {
 
-    private static GameRegistry instance; //the only instance of the registry
+    private static final GameRegistry INSTANCE = new GameRegistry(); //the only instance of the registry
 
     private final Map<String, CharacterCard> characterMap;
     private final Map<String, EventCard> eventMap;
@@ -24,29 +25,30 @@ public class GameRegistry {
 
     private final ObjectMapper mapper;
 
+    private static final String CHARACTERS_PATH = "/it/polimi/ingsw/am02/JSON/Characters.JSON";
+    private static final String EVENTS_PATH = "/it/polimi/ingsw/am02/JSON/Events.JSON";
+    private static final String BUILDINGS_PATH = "/it/polimi/ingsw/am02/JSON/Buildings.JSON";
+    private static final String OFFER_TILES_PATH = "/it/polimi/ingsw/am02/JSON/OfferTiles.JSON";
+    private static final String TURN_ORDER_TILES_PATH = "/it/polimi/ingsw/am02/JSON/TurnOrderTiles.JSON";
+
 
     private GameRegistry() {
+        this.mapper = new ObjectMapper();
         this.characterMap = new HashMap<>();
         this.eventMap = new HashMap<>();
         this.buildingMap = new HashMap<>();
         this.offerTiles = new ArrayList<>();
         this.turnOrderTiles = new ArrayList<>();
 
-        this.mapper = new ObjectMapper();
+        loadCharacters(CHARACTERS_PATH);
+        loadEvents(EVENTS_PATH);
+        loadBuildings(BUILDINGS_PATH);
+        loadOfferTiles(OFFER_TILES_PATH);
+        loadTurnOrderTiles(TURN_ORDER_TILES_PATH);
     }
 
     public static GameRegistry getInstance() {
-        // Primo controllo (senza blocco) per migliorare le performance
-        if (instance == null) {
-            //sincronizza il blocco solo la prima volta che si crea l'istanza
-            synchronized (GameRegistry.class) {
-                //Secondo controllo nel caso un altro thread l'abbia creata nel frattempo
-                if (instance == null) {
-                    instance = new GameRegistry();
-                }
-            }
-        }
-        return instance;
+        return INSTANCE;
     }
 
     public void loadCharacters(String charactersPath) {
@@ -93,16 +95,9 @@ public class GameRegistry {
 
     public void loadOfferTiles(String offerTilesPath) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(new File(offerTilesPath));
-
-            List<JsonNode> nodes = new ArrayList<>();
-            if (rootNode.isArray()) {
-                rootNode.forEach(nodes::add);
-            }
-
+            List<JsonNode> nodes = parseJsonToList(offerTilesPath);
             OfferTilesFactory offerTilesFactory = new OfferTilesFactory();
-            for(JsonNode node : nodes) {
+            for (JsonNode node : nodes) {
                 OfferTile offerTile = offerTilesFactory.createOfferTile(node);
                 offerTiles.add(offerTile);
             }
@@ -113,16 +108,9 @@ public class GameRegistry {
 
     public void loadTurnOrderTiles(String turnOrderTilesPath) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(new File(turnOrderTilesPath));
-
-            List<JsonNode> nodes = new ArrayList<>();
-            if (rootNode.isArray()) {
-                rootNode.forEach(nodes::add);
-            }
-
+            List<JsonNode> nodes = parseJsonToList(turnOrderTilesPath);
             TurnOrderTilesFactory turnOrderTilesFactory = new TurnOrderTilesFactory();
-            for(JsonNode node : nodes) {
+            for (JsonNode node : nodes) {
                 TurnOrderTile turnOrderTile = turnOrderTilesFactory.createTurnOrderTile(node);
                 turnOrderTiles.add(turnOrderTile);
             }
@@ -131,13 +119,16 @@ public class GameRegistry {
         }
     }
 
-    private List<JsonNode> parseJsonToList(String path) throws IOException {
-        JsonNode rootNode = mapper.readTree(new File(path));
-        List<JsonNode> nodes = new ArrayList<>();
-        if (rootNode.isArray()) {
-            rootNode.forEach(nodes::add);
+    private List<JsonNode> parseJsonToList(String resourcePath) throws IOException {
+        try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
+            if (is == null)
+                throw new IOException("Resource not found: " + resourcePath);
+
+            JsonNode rootNode = mapper.readTree(is);
+            List<JsonNode> nodes = new ArrayList<>();
+            if (rootNode.isArray()) rootNode.forEach(nodes::add);
+            return nodes;
         }
-        return nodes;
     }
 
     public boolean isCharacter(String cardID) {

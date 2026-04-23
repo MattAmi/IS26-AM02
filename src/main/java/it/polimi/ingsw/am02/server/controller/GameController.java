@@ -5,25 +5,34 @@ import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.server.controller.persistence.ConnectionStatus;
 import it.polimi.ingsw.am02.server.controller.persistence.GameLogger;
 import it.polimi.ingsw.am02.server.model.listeners.GameObserver;
 import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
 import it.polimi.ingsw.am02.common.messages.events.error.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GameController implements GameObserver {
 
     private final ModelInterface model;
     private final Map<String, VirtualView> handlers;
+
     private final GameLogger gameLogger;
+    private final Map<String, ConnectionStatus> connectionStatus = new HashMap<>();
+    private final Map<String, Queue<Event>> eventBuffers = new HashMap<>();
 
 
     public GameController(ModelInterface model, Map<String, VirtualView> handlers, GameLogger gameLogger) {
         this.model = model;
         this.handlers = handlers;
+
+        for (String nickname : handlers.keySet()) {
+            connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
+            eventBuffers.put(nickname, new ArrayDeque<>());
+        }
+
         this.gameLogger = gameLogger;
         this.model.addGameObserver(this);
     }
@@ -31,21 +40,27 @@ public class GameController implements GameObserver {
 
     //Routing methods
     private void unicast(String nickname, Event event) {
-        VirtualView h = handlers.get(nickname);
-        if (h != null)
-            h.notify(event);
+        route(nickname, event);
     }
 
     private void broadcast(Event event) {
-        handlers.values().forEach(h -> h.notify(event));
+        handlers.keySet()
+                .forEach(nickname -> route(nickname, event));
     }
 
     private void broadcastOthers(String excludeNickname, Event event) {
-        handlers.entrySet().stream()
-                .filter(e -> !e.getKey().equals(excludeNickname))
-                .forEach(e -> e.getValue().notify(event));
+        handlers.keySet().stream()
+                .filter(nickname -> !nickname.equals(excludeNickname))
+                .forEach(nickname -> route(nickname, event));
     }
 
+    private void route(String nickname, Event event) {
+        if (connectionStatus.get(nickname) == ConnectionStatus.CONNECTED) {
+            handlers.get(nickname).notify(event);
+        } else {
+            eventBuffers.get(nickname).offer(event);
+        }
+    }
 
     //Command handler
     public void handle(GameCommand cmd, String senderNickname) {
@@ -66,9 +81,23 @@ public class GameController implements GameObserver {
     }
 
     public void handlePlayerDisconnected(String nickname) {
+        if (!connectionStatus.containsKey(nickname)) {
+            throw new IllegalArgumentException("Unknown player: " + nickname);
+        }
+        connectionStatus.put(nickname, ConnectionStatus.DISCONNECTED);
         broadcastOthers(nickname, new PlayerDisconnectedEvent(nickname));
+
+        // TODO: per-player timer
     }
 
+    public void handlePlayerReconnected(String nickname, VirtualView newView) {
+        if (!connectionStatus.containsKey(nickname)) {
+            throw new IllegalArgumentException("Unknown player: " + nickname);
+        }
+        handlers.put(nickname, newView);
+        connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
+        // TODO: drain eventBuffers.get(nickname) toward newView with delay
+    }
 
     //GameObserver implementation (event translation and dispatching)
     @Override

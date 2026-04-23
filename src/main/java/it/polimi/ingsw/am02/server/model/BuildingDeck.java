@@ -8,7 +8,7 @@ public class BuildingDeck {
 
     private final Map<Era, List<String>> eraDecks;
 
-    public BuildingDeck(int numPlayers) {
+    public BuildingDeck(int numPlayers, Random gameRandom) {
         this.eraDecks = new EnumMap<>(Era.class);
 
         GameRegistry registry = GameRegistry.getInstance();
@@ -24,7 +24,7 @@ public class BuildingDeck {
                     .map(BuildingCard::getCardID)
                     .collect(Collectors.toList());
 
-            Collections.shuffle(eraCards);
+            Collections.shuffle(eraCards, gameRandom);
 
             int cardsToKeep = getCardCountForEra(era, numPlayers);
 

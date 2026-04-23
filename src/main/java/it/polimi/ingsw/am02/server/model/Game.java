@@ -38,8 +38,9 @@ public class Game implements ModelInterface {
     private int extraTurnLowerPicks;
 
     private final GameNotifier notifier;
+    private final Random gameRandom;
 
-    public Game(String gameID, List<String> nicknames, Map<String, Totem> chosenTotems) {
+    public Game(String gameID, List<String> nicknames, Map<String, Totem> chosenTotems, long seed) {
 
         this.gameID = gameID;
         this.numPlayers = nicknames.size();
@@ -59,6 +60,7 @@ public class Game implements ModelInterface {
         this.extraTurnLowerPicks = 0;
 
         this.notifier = new GameNotifier();
+        this.gameRandom = new Random(seed);
     }
 
 
@@ -101,7 +103,7 @@ public class Game implements ModelInterface {
     }
 
     private void initializeBoard() { // Initializes GameBoard
-        gameBoard = new GameBoard(numPlayers, notifier);
+        gameBoard = new GameBoard(numPlayers, notifier, gameRandom);
     }
 
     private void randomizeInitialTurnOrder() {

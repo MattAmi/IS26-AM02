@@ -140,7 +140,8 @@ public class ControllerManager {
         lobbies.remove(gameId);
         nicknames.forEach(playerToLobby::remove);
 
-        Game model = new Game(gameId, nicknames, chosenTotems);
+        long seed = new Random().nextLong();
+        Game model = new Game(gameId, nicknames, chosenTotems, seed);
         GameController gameController = new GameController(model, views);
         controllers.put(gameId, gameController);
         nicknames.forEach(n -> playerToGame.put(n, gameId));

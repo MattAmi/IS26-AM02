@@ -1,7 +1,6 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.enumerations.Totem;
-import it.polimi.ingsw.am02.server.model.*;
 import it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException;
 import it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableException;
 import it.polimi.ingsw.am02.server.model.exceptions.InsufficientFoodException;
@@ -139,7 +138,7 @@ class GameBoardActionResolutionTest {
         List<String> nicknames = List.of("Matteo", "Raed");
         Map<String, Totem> totemMap = Map.of("Matteo", Totem.WHITE, "Raed", Totem.BLUE);
 
-        game = new Game(gameId, nicknames, totemMap);
+        game = new Game(gameId, nicknames, totemMap, seed);
         gameBoard = game.getGameBoard();
 
         for (int i = 0; i < nicknames.size(); i++) {

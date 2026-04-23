@@ -37,7 +37,7 @@ public class GameBoard {
     private final GameEventEmitter notifier;
 
 
-    public GameBoard(int numPlayers, GameEventEmitter notifier) {
+    public GameBoard(int numPlayers, GameEventEmitter notifier, Random gameRandom) {
         this.upperRow = new ArrayList<>();
         this.lowerRow = new ArrayList<>();
         this.upperRowBuildings = new ArrayList<>();
@@ -50,19 +50,18 @@ public class GameBoard {
         this.extraTurnRemainingUpper = 0;
         this.extraTurnRemainingLower = 0;
 
-        this.setUpGameBoard(numPlayers);
+        this.setUpGameBoard(numPlayers, gameRandom);
         this.setUpInitialRows(numPlayers);
         this.eventObservers = new ArrayList<>();
 
         this.notifier = Objects.requireNonNull(notifier, "GameEventEmitter must not be null");
     }
 
-    private void setUpGameBoard(int numPlayers) {
-
+    private void setUpGameBoard(int numPlayers, Random gameRandom) {
         this.offerTrack = new OfferTrack(numPlayers);
         this.turnOrderTile = new TurnOrderTile(numPlayers);
-        this.tribuDeck = new TribuDeck(numPlayers);
-        this.buildingDeck = new BuildingDeck(numPlayers);
+        this.tribuDeck = new TribuDeck(numPlayers, gameRandom);
+        this.buildingDeck = new BuildingDeck(numPlayers, gameRandom);
     }
 
     private void setUpInitialRows(int numPlayers) {

@@ -68,7 +68,7 @@ class FullRoundIntegrationTest {
         totems.put(P1, Totem.WHITE);
         totems.put(P2, Totem.RED);
 
-        game = new Game("test-game-01", List.of(P1, P2), totems);
+        game = new Game("test-game-01", List.of(P1, P2), totems, seed);
 
         collector = new EventCollector();
         Map<String, VirtualView> views = Map.of(P1, collector, P2, collector);

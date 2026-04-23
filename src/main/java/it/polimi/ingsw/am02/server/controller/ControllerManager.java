@@ -9,8 +9,12 @@ import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
 import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 import it.polimi.ingsw.am02.common.messages.events.error.*;
+import it.polimi.ingsw.am02.server.controller.persistence.CommandLogger;
+import it.polimi.ingsw.am02.server.controller.persistence.GameLogger;
+import it.polimi.ingsw.am02.server.controller.persistence.NoOpCommandLogger;
 import it.polimi.ingsw.am02.server.model.Game;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -142,7 +146,18 @@ public class ControllerManager {
 
         long seed = new Random().nextLong();
         Game model = new Game(gameId, nicknames, chosenTotems, seed);
-        GameController gameController = new GameController(model, views);
+
+        GameLogger gameLogger;
+        try {
+            CommandLogger fileLogger = new CommandLogger(gameId);
+            fileLogger.logGameInit(gameId, seed, nicknames);
+            gameLogger = fileLogger;
+        } catch (IOException e) {
+            System.err.println("[ControllerManager] Failed to create CommandLogger, persistence disabled: " + e.getMessage());
+            gameLogger = new NoOpCommandLogger();
+        }
+
+        GameController gameController = new GameController(model, views, gameLogger);
         controllers.put(gameId, gameController);
         nicknames.forEach(n -> playerToGame.put(n, gameId));
 

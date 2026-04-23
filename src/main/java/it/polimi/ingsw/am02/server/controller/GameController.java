@@ -4,14 +4,11 @@ import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
-import it.polimi.ingsw.am02.common.messages.commands.Command;
 import it.polimi.ingsw.am02.common.messages.events.Event;
-import it.polimi.ingsw.am02.server.model.exceptions.GameRuleException;
+import it.polimi.ingsw.am02.server.controller.persistence.GameLogger;
 import it.polimi.ingsw.am02.server.model.listeners.GameObserver;
-import it.polimi.ingsw.am02.common.messages.*;
 import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
-import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 import it.polimi.ingsw.am02.common.messages.events.error.*;
 
 import java.util.List;
@@ -21,11 +18,13 @@ public class GameController implements GameObserver {
 
     private final ModelInterface model;
     private final Map<String, VirtualView> handlers;
+    private final GameLogger gameLogger;
 
 
-    public GameController(ModelInterface model, Map<String, VirtualView> handlers) {
+    public GameController(ModelInterface model, Map<String, VirtualView> handlers, GameLogger gameLogger) {
         this.model = model;
         this.handlers = handlers;
+        this.gameLogger = gameLogger;
         this.model.addGameObserver(this);
     }
 
@@ -56,6 +55,9 @@ public class GameController implements GameObserver {
                 case MoveTotemCommand c -> model.moveTotem(senderNickname, c.tileID());
                 case ResolveActionsCommand c -> model.resolveActions(senderNickname, c.selectedIDs());
             }
+
+            gameLogger.logCommand(cmd);
+
         } catch (RuntimeException e) {
             System.err.println("[GameController] Exception: " + e.getMessage());
             e.printStackTrace();
@@ -157,5 +159,7 @@ public class GameController implements GameObserver {
     @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
         broadcast(new GameEndedEvent(winners, finalRankings));
+        gameLogger.logGameEnded();
+        gameLogger.close();
     }
 }

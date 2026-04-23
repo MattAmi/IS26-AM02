@@ -8,12 +8,11 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 
 
 public sealed interface Event extends Message
-        permits BoardUpdatedEvent, CardTakenEvent, CurrentPlayerChangedEvent, EraChangedEvent,
-        ErrorEvent, EventResolvedEvent, ExtraTurnEndedEvent, ExtraTurnStartedEvent,
-        GameEndedEvent, GameSetupCompletedEvent,
-        GameStartedEvent, LobbyDissolvedEvent, PhaseChangedEvent, PlayerDisconnectedEvent,
-        PlayerLimitsInitializedEvent, PlayerLimitsUpdatedEvent, PlayerResourceChangedEvent
-        , TotemPlacedEvent, TotemReturnedEvent,
-        TurnOrderEstablishedEvent, UpdatedLobbiesEvent, UpdatedLobbyEvent,
-        UsernameResultEvent {
+        permits ErrorEvent, BoardUpdatedEvent, CardTakenEvent, CurrentPlayerChangedEvent,
+        EraChangedEvent, EventResolvedEvent, ExtraTurnEndedEvent, ExtraTurnStartedEvent,
+        GameAbortedEvent, GameEndedEvent, GameSetupCompletedEvent, PhaseChangedEvent,
+        PlayerDisconnectedEvent, PlayerLimitsInitializedEvent, PlayerLimitsUpdatedEvent,
+        PlayerReconnectedEvent, PlayerResourceChangedEvent, TotemPlacedEvent, TotemReturnedEvent,
+        TurnOrderEstablishedEvent, GameStartedEvent, LobbyDissolvedEvent, UpdatedLobbiesEvent,
+        UpdatedLobbyEvent, UsernameResultEvent {
 }

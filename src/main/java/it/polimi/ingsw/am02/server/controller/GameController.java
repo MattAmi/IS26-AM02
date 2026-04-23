@@ -13,6 +13,7 @@ import it.polimi.ingsw.am02.common.messages.events.game.*;
 import it.polimi.ingsw.am02.common.messages.events.error.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 public class GameController implements GameObserver {
 
@@ -20,21 +21,22 @@ public class GameController implements GameObserver {
     private final Map<String, VirtualView> handlers;
 
     private final GameLogger gameLogger;
-    private final Map<String, ConnectionStatus> connectionStatus = new HashMap<>();
-    private final Map<String, Queue<Event>> eventBuffers = new HashMap<>();
-
+    private final Map<String, ConnectionStatus> connectionStatus;
+    private final Map<String, Queue<Event>> eventBuffers;
 
     public GameController(ModelInterface model, Map<String, VirtualView> handlers, GameLogger gameLogger) {
         this.model = model;
         this.handlers = handlers;
+        this.model.addGameObserver(this);
+        this.gameLogger = gameLogger;
+
+        this.connectionStatus = new HashMap<>();
+        this.eventBuffers = new HashMap<>();
 
         for (String nickname : handlers.keySet()) {
             connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
             eventBuffers.put(nickname, new ArrayDeque<>());
         }
-
-        this.gameLogger = gameLogger;
-        this.model.addGameObserver(this);
     }
 
 
@@ -81,22 +83,32 @@ public class GameController implements GameObserver {
     }
 
     public void handlePlayerDisconnected(String nickname) {
-        if (!connectionStatus.containsKey(nickname)) {
-            throw new IllegalArgumentException("Unknown player: " + nickname);
-        }
         connectionStatus.put(nickname, ConnectionStatus.DISCONNECTED);
         broadcastOthers(nickname, new PlayerDisconnectedEvent(nickname));
 
-        // TODO: per-player timer
+        //TODO
+    }
+
+    private void startGlobalDisconnectionTimeout() {
+    }
+
+    private void onDisconnectedPlayerTimerExpired(String nickname) {
+    }
+
+    private void onGlobalDisconnectionTimerExpired() {
     }
 
     public void handlePlayerReconnected(String nickname, VirtualView newView) {
-        if (!connectionStatus.containsKey(nickname)) {
-            throw new IllegalArgumentException("Unknown player: " + nickname);
-        }
-        handlers.put(nickname, newView);
-        connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
-        // TODO: drain eventBuffers.get(nickname) toward newView with delay
+    }
+
+    private void cancelDisconnectedPlayerTimer(String nickname) {
+    }
+
+    private void cancelGlobalDisconnectionTimer() {
+    }
+
+    private void flushBufferWithDelay(String nickname, VirtualView newView) {
+
     }
 
     //GameObserver implementation (event translation and dispatching)

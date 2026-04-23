@@ -5,13 +5,14 @@ import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
-import it.polimi.ingsw.am02.common.serialization.JsonMessageCodecImpl;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
 import it.polimi.ingsw.am02.server.network.ClientHandler;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class SocketClientHandler implements ClientHandler {
 
@@ -19,6 +20,7 @@ public class SocketClientHandler implements ClientHandler {
     private final JsonMessageCodec codec;
     private final ControllerManager manager;
     private final PrintWriter out;
+    private final BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<>();
     private String myNickname;
 
     public SocketClientHandler(Socket socket, JsonMessageCodec codec) throws IOException {
@@ -30,8 +32,19 @@ public class SocketClientHandler implements ClientHandler {
         );
     }
 
-    //Runs on a dedicated thread, reads messages until the client is connected
+    /** Avvia i due thread: Reader e Writer */
     public void listen() {
+        // Thread Writer — legge dalla queue e scrive sul socket
+        Thread writerThread = new Thread(this::writerLoop);
+        writerThread.setDaemon(true);
+        writerThread.start();
+
+        // Thread Reader (questo stesso thread) — legge dal socket
+        readerLoop();
+    }
+
+    /** Legge righe JSON dal socket e le dispatcha come Command */
+    private void readerLoop() {
         try (BufferedReader in = new BufferedReader(
                 new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
@@ -42,18 +55,28 @@ public class SocketClientHandler implements ClientHandler {
                 }
             }
         } catch (IOException e) {
-            System.out.println("[SocketClientHandler] Client Disconnected: "
+            System.out.println("[SocketClientHandler] Client disconnesso: "
                     + (myNickname != null ? myNickname : socket.getInetAddress()));
         } finally {
             disconnect();
         }
     }
 
+    /** Legge dalla BlockingQueue e scrive sul socket — gira su thread dedicato */
+    private void writerLoop() {
+        try {
+            while (!socket.isClosed()) {
+                Event event = eventQueue.take(); // si blocca finché non arriva qualcosa
+                out.println(codec.encode(event));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     private void dispatch(Command cmd) {
         switch (cmd) {
-            case SetUsernameCommand c    -> {
-                manager.requestSetUsername(c.username(), this);
-            }
+            case SetUsernameCommand c    -> manager.requestSetUsername(c.username(), this);
             case CreateLobbyCommand c   -> {
                 if (myNickname == null) return;
                 manager.createLobby(c.numPlayers(), myNickname, this);
@@ -85,12 +108,17 @@ public class SocketClientHandler implements ClientHandler {
         }
     }
 
+    /**
+     * Chiamato dal GameController su un suo thread.
+     * Non scrive direttamente sul socket — mette l'evento in coda.
+     * Il Writer thread ci pensa lui.
+     */
     @Override
     public void notify(Event event) {
         if (event instanceof UsernameResultEvent e && e.isValid()) {
             this.myNickname = e.username();
         }
-        out.println(codec.encode(event));
+        eventQueue.offer(event); // non-blocking, istantaneo
     }
 
     @Override

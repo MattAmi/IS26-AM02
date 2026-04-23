@@ -31,15 +31,9 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.*;
         @JsonSubTypes.Type(value = TurnOrderEstablishedEvent.class,   name = "TurnOrderEstablished"),
         @JsonSubTypes.Type(value = UpdatedLobbiesEvent.class,         name = "UpdatedLobbies"),
         @JsonSubTypes.Type(value = UpdatedLobbyEvent.class,           name = "UpdatedLobby"),
-        @JsonSubTypes.Type(value = UsernameResultEvent.class,         name = "UsernameResult")
+        @JsonSubTypes.Type(value = UsernameResultEvent.class,         name = "UsernameResult"),
+        @JsonSubTypes.Type(value = PingEvent.class, name = "Ping")
 })
 public sealed interface Event extends Message
-        permits BoardUpdatedEvent, CardTakenEvent, CurrentPlayerChangedEvent, EraChangedEvent,
-        ErrorEvent, EventResolvedEvent, ExtraTurnEndedEvent, ExtraTurnStartedEvent,
-        GameEndedEvent, GameSetupCompletedEvent,
-        GameStartedEvent, LobbyDissolvedEvent, PhaseChangedEvent, PlayerDisconnectedEvent,
-        PlayerLimitsInitializedEvent, PlayerLimitsUpdatedEvent, PlayerResourceChangedEvent
-        , TotemPlacedEvent, TotemReturnedEvent,
-        TurnOrderEstablishedEvent, UpdatedLobbiesEvent, UpdatedLobbyEvent,
-        UsernameResultEvent {
+        permits ErrorEvent, BoardUpdatedEvent, CardTakenEvent, CurrentPlayerChangedEvent, EraChangedEvent, EventResolvedEvent, ExtraTurnEndedEvent, ExtraTurnStartedEvent, GameEndedEvent, GameSetupCompletedEvent, PhaseChangedEvent, PingEvent, PlayerDisconnectedEvent, PlayerLimitsInitializedEvent, PlayerLimitsUpdatedEvent, PlayerResourceChangedEvent, TotemPlacedEvent, TotemReturnedEvent, TurnOrderEstablishedEvent, GameStartedEvent, LobbyDissolvedEvent, UpdatedLobbiesEvent, UpdatedLobbyEvent, UsernameResultEvent {
 }

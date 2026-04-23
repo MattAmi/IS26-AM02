@@ -6,6 +6,7 @@ import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.Message;
 import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.game.PingEvent;
 import it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodecImpl;
@@ -40,7 +41,6 @@ public class SocketServerProxy implements ServerProxy {
                 new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true
         );
         connected = true;
-        // Thread separato che ascolta gli Event in arrivo dal server
         new Thread(this::listenForEvents).start();
     }
 
@@ -50,11 +50,13 @@ public class SocketServerProxy implements ServerProxy {
             String line;
             while ((line = in.readLine()) != null) {
                 Message msg = codec.decode(line);
-                if (msg instanceof Event event) {
-                    clientModel.notify(event);
+                if (msg instanceof PingEvent) {
+                    send(new PongCommand());
+                } else if (msg instanceof Event event) {
                     if (event instanceof UsernameResultEvent e && e.isValid()) {
                         this.myNickname = e.username();
                     }
+                    clientModel.notify(event);
                 }
             }
         } catch (IOException e) {

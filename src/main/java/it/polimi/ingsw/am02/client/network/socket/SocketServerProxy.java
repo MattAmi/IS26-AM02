@@ -58,7 +58,7 @@ public class SocketServerProxy implements ServerProxy {
                 }
             }
         } catch (IOException e) {
-            System.out.println("[SocketServerProxy] Connessione persa.");
+            System.out.println("[SocketServerProxy] Connection Lost.");
         } finally {
             connected = false;
         }

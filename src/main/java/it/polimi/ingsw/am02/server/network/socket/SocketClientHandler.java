@@ -32,18 +32,17 @@ public class SocketClientHandler implements ClientHandler {
         );
     }
 
-    /** Avvia i due thread: Reader e Writer */
     public void listen() {
-        // Thread Writer — legge dalla queue e scrive sul socket
+        // Reads from the queue and writes on the socket
         Thread writerThread = new Thread(this::writerLoop);
         writerThread.setDaemon(true);
         writerThread.start();
 
-        // Thread Reader (questo stesso thread) — legge dal socket
+        // Reads from socket
         readerLoop();
     }
 
-    /** Legge righe JSON dal socket e le dispatcha come Command */
+    // Reads JSON lines from the socket and dispatches them as Command
     private void readerLoop() {
         try (BufferedReader in = new BufferedReader(
                 new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
@@ -55,18 +54,17 @@ public class SocketClientHandler implements ClientHandler {
                 }
             }
         } catch (IOException e) {
-            System.out.println("[SocketClientHandler] Client disconnesso: "
+            System.out.println("[SocketClientHandler] Client Disconnected: "
                     + (myNickname != null ? myNickname : socket.getInetAddress()));
         } finally {
             disconnect();
         }
     }
 
-    /** Legge dalla BlockingQueue e scrive sul socket — gira su thread dedicato */
     private void writerLoop() {
         try {
             while (!socket.isClosed()) {
-                Event event = eventQueue.take(); // si blocca finché non arriva qualcosa
+                Event event = eventQueue.take(); // blocked until further notice
                 out.println(codec.encode(event));
             }
         } catch (InterruptedException e) {
@@ -108,17 +106,12 @@ public class SocketClientHandler implements ClientHandler {
         }
     }
 
-    /**
-     * Chiamato dal GameController su un suo thread.
-     * Non scrive direttamente sul socket — mette l'evento in coda.
-     * Il Writer thread ci pensa lui.
-     */
     @Override
     public void notify(Event event) {
         if (event instanceof UsernameResultEvent e && e.isValid()) {
             this.myNickname = e.username();
         }
-        eventQueue.offer(event); // non-blocking, istantaneo
+        eventQueue.offer(event); // non-blocking
     }
 
     @Override

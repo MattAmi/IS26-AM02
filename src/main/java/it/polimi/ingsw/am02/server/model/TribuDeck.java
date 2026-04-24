@@ -6,7 +6,7 @@ public class TribuDeck {
 
     private final Stack<String> cards;
 
-    public TribuDeck(int numPlayers) {
+    public TribuDeck(int numPlayers, Random gameRandom) {
         this.cards = new Stack<>();
 
         List<String> era1 = new ArrayList<>();
@@ -42,10 +42,10 @@ public class TribuDeck {
             }
         }
 
-        Collections.shuffle(eventiFinali);
-        Collections.shuffle(era3);
-        Collections.shuffle(era2);
-        Collections.shuffle(era1);
+        Collections.shuffle(eventiFinali, gameRandom);
+        Collections.shuffle(era3, gameRandom);
+        Collections.shuffle(era2, gameRandom);
+        Collections.shuffle(era1, gameRandom);
 
 
         eventiFinali.forEach(this.cards::push);

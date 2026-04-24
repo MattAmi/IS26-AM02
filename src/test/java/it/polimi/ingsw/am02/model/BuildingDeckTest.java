@@ -1,9 +1,6 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.enumerations.Era;
-import it.polimi.ingsw.am02.server.model.BuildingCard;
-import it.polimi.ingsw.am02.server.model.BuildingDeck;
-import it.polimi.ingsw.am02.server.model.GameRegistry;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -26,7 +23,7 @@ public class BuildingDeckTest {
             List<String> realIds = setupRealRegistryData(mockRegistry);
             when(mockRegistry.getAllBuildingsIDs()).thenReturn(realIds);
 
-            BuildingDeck deck = new BuildingDeck(2);
+            BuildingDeck deck = new BuildingDeck(2, gameRandom);
 
             assertEquals(1, deck.getBuildingsForEra(Era.I).size(), "Error Era I (2 Players Match). Expected: 1");
             assertEquals(2, deck.getBuildingsForEra(Era.II).size(), "Error Era II (2 Players Match). Expected: 2");
@@ -44,7 +41,7 @@ public class BuildingDeckTest {
             List<String> realIds = setupRealRegistryData(mockRegistry);
             when(mockRegistry.getAllBuildingsIDs()).thenReturn(realIds);
 
-            BuildingDeck deck = new BuildingDeck(3);
+            BuildingDeck deck = new BuildingDeck(3, gameRandom);
 
             assertEquals(2, deck.getBuildingsForEra(Era.I).size(), "Error Era I (3 Players Match). Expected: 2");
             assertEquals(2, deck.getBuildingsForEra(Era.II).size(), "Error Era II (3 Players Match). Expected: 2");
@@ -62,7 +59,7 @@ public class BuildingDeckTest {
             List<String> realIds = setupRealRegistryData(mockRegistry);
             when(mockRegistry.getAllBuildingsIDs()).thenReturn(realIds);
 
-            BuildingDeck deck = new BuildingDeck(4);
+            BuildingDeck deck = new BuildingDeck(4, gameRandom);
 
             assertEquals(2, deck.getBuildingsForEra(Era.I).size(), "Error Era I (4 Players Match). Expected: 2");
             assertEquals(3, deck.getBuildingsForEra(Era.II).size(), "Error Era II (4 Players Match). Expected: 3");
@@ -80,7 +77,7 @@ public class BuildingDeckTest {
             List<String> realIds = setupRealRegistryData(mockRegistry);
             when(mockRegistry.getAllBuildingsIDs()).thenReturn(realIds);
 
-            BuildingDeck deck = new BuildingDeck(5);
+            BuildingDeck deck = new BuildingDeck(5, gameRandom);
 
             assertEquals(2, deck.getBuildingsForEra(Era.I).size(), "Error Era I (5 Players Match). Expected: 3");
             assertEquals(3, deck.getBuildingsForEra(Era.II).size(), "Error Era II (5 Players Match). Expected: 2");

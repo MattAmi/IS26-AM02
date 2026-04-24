@@ -32,6 +32,7 @@ public class GameController implements GameObserver {
     private final Map<String, ConnectionStatus> connectionStatus = new HashMap<>();
     private final List<Event> globalEventHistory = new CopyOnWriteArrayList<>();
     private final Map<String, Integer> playerSyncIndex = new ConcurrentHashMap<>();
+    private final Set<String> gracePeriodExpired = ConcurrentHashMap.newKeySet();
 
     // Concurrency infrastructure
     private final ExecutorService drainExecutor; // Thread pool for per-player drain loops
@@ -146,6 +147,7 @@ public class GameController implements GameObserver {
 
             connectionStatus.put(nickname, ConnectionStatus.RECONNECTING);
             log("Player reconnecting: " + nickname + " from event index " + playerSyncIndex.get(nickname));
+            gracePeriodExpired.remove(nickname);
         }
 
         // Notifichiamo agli ALTRI che questo player si sta riconnettendo (fuori dalla storia globale)
@@ -251,13 +253,29 @@ public class GameController implements GameObserver {
     // Per-player disconnection timer
     private void handleCurrentPlayerTransition(String newCurrentPlayer) {
         this.currentPlayerNickname = newCurrentPlayer;
+
+        // Pulizia timer precedenti
         if (disconnectedPlayerTimer != null && !newCurrentPlayer.equals(disconnectedPlayerTimerTarget)) {
             cancelDisconnectedPlayerTimer(disconnectedPlayerTimerTarget);
         }
+
         if (connectionStatus.get(newCurrentPlayer) == ConnectionStatus.DISCONNECTED) {
-            startDisconnectedPlayerTimer(newCurrentPlayer);
+            // Se il giocatore ha già consumato la sua "grazia", gioca subito
+            if (gracePeriodExpired.contains(newCurrentPlayer)) {
+                log("Player " + newCurrentPlayer + " is still absent. Invoking AutoPlayer immediately.");
+
+                GameCommand autoCmd = AutoPlayer.computeMove(newCurrentPlayer, snapshot);
+                if (autoCmd != null) {
+                    handle(autoCmd, newCurrentPlayer);
+                }
+
+            } else {
+                // Prima volta che è il suo turno da disconnesso: facciamo partire il timer da 30s
+                startDisconnectedPlayerTimer(newCurrentPlayer);
+            }
         }
     }
+
 
     private void startDisconnectedPlayerTimer(String nickname) {
         if (disconnectedPlayerTimer != null) {
@@ -296,6 +314,8 @@ public class GameController implements GameObserver {
                 return;
             }
             log("Per-player timer expired for " + nickname + " — invoking AutoPlayer.");
+            gracePeriodExpired.add(nickname);
+
             disconnectedPlayerTimer = null;
             disconnectedPlayerTimerTarget = null;
             autoCmd = AutoPlayer.computeMove(nickname, snapshot);

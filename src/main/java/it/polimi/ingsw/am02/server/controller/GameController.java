@@ -44,6 +44,9 @@ public class GameController implements GameObserver {
     // Turn tracking
     private String currentPlayerNickname;
 
+    // Server-side snapshot for AutoPlayer
+    private final ServerGameSnapshot snapshot = new ServerGameSnapshot();
+
 
     public GameController(String gameId, ModelInterface model,
                           Map<String, VirtualView> handlers, GameLogger gameLogger) {
@@ -96,9 +99,12 @@ public class GameController implements GameObserver {
             gameLogger.logCommand(cmd);
 
         } catch (RuntimeException e) {
-            System.err.println("[GameController:" + gameId + "] Exception in handle: " + e.getMessage());
-            e.printStackTrace();
-            unicast(senderNickname, new ErrorEvent(e.getMessage()));
+            if (connectionStatus.get(senderNickname) == ConnectionStatus.DISCONNECTED) {
+                // The rejected command came from AutoPlayer, so the human player is not present to receive the error.
+                log("AutoPlayer command rejected for disconnected player " + senderNickname + ": " + e.getMessage());
+            } else {
+                unicast(senderNickname, new ErrorEvent(e.getMessage()));
+            }
         }
     }
 
@@ -113,7 +119,6 @@ public class GameController implements GameObserver {
 
         connectionStatus.put(nickname, ConnectionStatus.DISCONNECTED);
         log("Player disconnected: " + nickname);
-
         broadcastOthers(nickname, new PlayerDisconnectedEvent(nickname));
 
         if (nickname.equals(currentPlayerNickname)) {
@@ -277,6 +282,7 @@ public class GameController implements GameObserver {
     }
 
     private void onDisconnectedPlayerTimerExpired(String nickname) {
+        GameCommand autoCmd;
         synchronized (this) {
             if (connectionStatus.get(nickname) != ConnectionStatus.DISCONNECTED) {
                 log("Per-player timer expired but " + nickname + " is no longer disconnected — skipping.");
@@ -289,12 +295,14 @@ public class GameController implements GameObserver {
             log("Per-player timer expired for " + nickname + " — invoking AutoPlayer.");
             disconnectedPlayerTimer = null;
             disconnectedPlayerTimerTarget = null;
+            autoCmd = AutoPlayer.computeMove(nickname, snapshot);
         }
-        //TODO
-        // Invoked outside the lock so handle() can reacquire it normally.
-        // Step 5 placeholder:
-        // GameCommand autoCmd = AutoPlayer.computeMove(nickname, ...);
-        // handle(autoCmd, nickname);
+        if (autoCmd == null) {
+            log("AutoPlayer produced no command for " + nickname + " in current phase — skipping.");
+            return;
+        }
+
+        handle(autoCmd, nickname);
     }
 
     // Global forfeit timer
@@ -356,31 +364,35 @@ public class GameController implements GameObserver {
     public synchronized void onGameSetupCompleted(List<String> turnOrder,
                                                   Map<String, Integer> initialFood,
                                                   BoardSnapshot boardSnapshot) {
+        snapshot.applySetup(boardSnapshot);
         broadcast(new GameSetupCompletedEvent(turnOrder, initialFood, boardSnapshot));
     }
 
     @Override
     public synchronized void onPhaseChanged(PhaseType phase) {
+        snapshot.setPhase(phase, null);
         broadcast(new PhaseChangedEvent(phase, null, null));
     }
 
     @Override
     public synchronized void onPhaseChanged(PhaseType phase, String currentPlayer) {
+        snapshot.setPhase(phase, currentPlayer);
         broadcast(new PhaseChangedEvent(phase, currentPlayer, null));
         if (currentPlayer != null)
             handleCurrentPlayerTransition(currentPlayer);
     }
 
     @Override
-    public synchronized void onPhaseChanged(PhaseType phase,
-                                            String currentPlayer,
-                                            List<String> resolutionOrder) {
+    public synchronized void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
+        snapshot.setPhase(phase, currentPlayer);
         broadcast(new PhaseChangedEvent(phase, currentPlayer, resolutionOrder));
-        if (currentPlayer != null) handleCurrentPlayerTransition(currentPlayer);
+        if (currentPlayer != null)
+            handleCurrentPlayerTransition(currentPlayer);
     }
 
     @Override
     public synchronized void onCurrentPlayerChanged(String nextPlayer) {
+        snapshot.setCurrentPlayer(nextPlayer);
         broadcast(new CurrentPlayerChangedEvent(nextPlayer));
         handleCurrentPlayerTransition(nextPlayer);
     }
@@ -405,6 +417,7 @@ public class GameController implements GameObserver {
                                             List<String> discardedCards,
                                             List<String> movedToLowerRow,
                                             int deckRemainingCount) {
+        snapshot.applyBoardUpdated(newUpperRow, newLowerRow);
         broadcast(new BoardUpdatedEvent(newUpperRow, newLowerRow,
                 discardedCards, movedToLowerRow, deckRemainingCount));
     }
@@ -414,16 +427,19 @@ public class GameController implements GameObserver {
                                          String cardID,
                                          CardType cardType,
                                          RowPosition sourceRow) {
+        snapshot.applyCardTaken(cardID);
         broadcast(new CardTakenEvent(nickname, cardID, cardType, sourceRow));
     }
 
     @Override
     public synchronized void onTotemPlaced(String nickname, char tileID) {
+        snapshot.applyTotemPlaced(nickname, tileID);
         broadcast(new TotemPlacedEvent(nickname, tileID));
     }
 
     @Override
     public synchronized void onTotemReturned(String nickname, int turnOrderPosition) {
+        snapshot.applyTotemReturned(nickname);
         broadcast(new TotemReturnedEvent(nickname, turnOrderPosition));
     }
 
@@ -431,6 +447,7 @@ public class GameController implements GameObserver {
     public synchronized void onPlayerLimitsInitialized(String nickname,
                                                        int remainingUpper,
                                                        int remainingLower) {
+        snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         broadcast(new PlayerLimitsInitializedEvent(nickname, remainingUpper, remainingLower));
     }
 
@@ -438,6 +455,7 @@ public class GameController implements GameObserver {
     public synchronized void onPlayerLimitsUpdated(String nickname,
                                                    int remainingUpper,
                                                    int remainingLower) {
+        snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         broadcast(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower));
     }
 
@@ -458,6 +476,7 @@ public class GameController implements GameObserver {
     public synchronized void onExtraTurnStarted(String nickname,
                                                 int remainingUpper,
                                                 int remainingLower) {
+        snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         broadcast(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
     }
 

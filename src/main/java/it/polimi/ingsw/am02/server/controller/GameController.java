@@ -24,13 +24,14 @@ public class GameController implements GameObserver {
 
     private final String gameId;
     private final ModelInterface model;
-    private final Map<String, VirtualView> handlers;
+    private final Map<String, VirtualView> handlers = new HashMap<>();
     private final GameLogger gameLogger;
 
     private Runnable gameEndedCallback;
 
-    private final Map<String, ConnectionStatus> connectionStatus;
-    private final Map<String, Deque<Event>> eventBuffers;
+    private final Map<String, ConnectionStatus> connectionStatus = new HashMap<>();
+    private final List<Event> globalEventHistory = new CopyOnWriteArrayList<>();
+    private final Map<String, Integer> playerSyncIndex = new ConcurrentHashMap<>();
 
     // Concurrency infrastructure
     private final ExecutorService drainExecutor; // Thread pool for per-player drain loops
@@ -53,15 +54,12 @@ public class GameController implements GameObserver {
 
         this.gameId = gameId;
         this.model = model;
-        this.handlers = new HashMap<>();
         this.gameLogger = gameLogger;
         this.gameEndedCallback = null;
 
-        this.connectionStatus = new HashMap<>();
-        this.eventBuffers = new HashMap<>();
         for (String nickname : handlers.keySet()) {
             connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
-            eventBuffers.put(nickname, new ArrayDeque<>());
+            playerSyncIndex.put(nickname, 0);
         }
 
         this.drainExecutor = Executors.newCachedThreadPool(r -> {
@@ -69,6 +67,7 @@ public class GameController implements GameObserver {
             t.setDaemon(true);
             return t;
         });
+
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "GC[" + gameId + "]-Scheduler");
             t.setDaemon(true);
@@ -103,7 +102,7 @@ public class GameController implements GameObserver {
                 // The rejected command came from AutoPlayer, so the human player is not present to receive the error.
                 log("AutoPlayer command rejected for disconnected player " + senderNickname + ": " + e.getMessage());
             } else {
-                unicast(senderNickname, new ErrorEvent(e.getMessage()));
+                unicastTransient(senderNickname, new ErrorEvent(e.getMessage()));
             }
         }
     }
@@ -119,7 +118,7 @@ public class GameController implements GameObserver {
 
         connectionStatus.put(nickname, ConnectionStatus.DISCONNECTED);
         log("Player disconnected: " + nickname);
-        broadcastOthers(nickname, new PlayerDisconnectedEvent(nickname));
+        pushGlobalEventTransientOthers(nickname, new PlayerDisconnectedEvent(nickname));
 
         if (nickname.equals(currentPlayerNickname)) {
             startDisconnectedPlayerTimer(nickname);
@@ -134,30 +133,67 @@ public class GameController implements GameObserver {
         }
     }
 
-    public synchronized void handlePlayerReconnected(String nickname, VirtualView newView) {
-        ConnectionStatus current = connectionStatus.get(nickname);
-        if (current == null) {
-            System.err.println("[GameController:" + gameId + "] Reconnect for unknown player: " + nickname);
-            return;
-        }
-        if (current == ConnectionStatus.CONNECTED) {
-            System.err.println("[GameController:" + gameId + "] Reconnect for already-connected player: " + nickname);
-            return;
-        }
-        if (current == ConnectionStatus.RECONNECTING) {
-            System.err.println("[GameController:" + gameId + "] Already RECONNECTING: " + nickname + " (ignored)");
-            return;
+    public void handlePlayerReconnected(String nickname, VirtualView newView) {
+        synchronized(this) {
+            ConnectionStatus current = connectionStatus.get(nickname);
+            if (current == null || current == ConnectionStatus.CONNECTED || current == ConnectionStatus.RECONNECTING) {
+                return; // Stessi check di sicurezza che avevi prima
+            }
+
+            handlers.put(nickname, newView);
+            cancelDisconnectedPlayerTimer(nickname);
+            cancelGlobalDisconnectionTimer();
+
+            connectionStatus.put(nickname, ConnectionStatus.RECONNECTING);
+            log("Player reconnecting: " + nickname + " from event index " + playerSyncIndex.get(nickname));
         }
 
-        handlers.put(nickname, newView);
-        cancelDisconnectedPlayerTimer(nickname);
-        cancelGlobalDisconnectionTimer();
+        // Notifichiamo agli ALTRI che questo player si sta riconnettendo (fuori dalla storia globale)
+        pushGlobalEventTransientOthers(nickname, new PlayerReconnectedEvent(nickname));
 
-        connectionStatus.put(nickname, ConnectionStatus.RECONNECTING);
-        log("Player reconnecting: " + nickname + " (buffered events: " + eventBuffers.get(nickname).size() + ")");
+        // Lanciamo il thread di catch-up
+        drainExecutor.submit(() -> {
+            try {
+                int currentIndex;
+                synchronized(this) {
+                    playerSyncIndex.put(nickname, 0);
+                    currentIndex = 0;
+                }
 
-        broadcastOthers(nickname, new PlayerReconnectedEvent(nickname));
-        flushBufferWithDelay(nickname, newView);
+                // FASE 1: Inseguimento (Video accelerato fuori dal lock principale)
+                while (true) {
+                    Event historicalEvent = null;
+                    synchronized(this) {
+                        if (currentIndex < globalEventHistory.size()) {
+                            historicalEvent = globalEventHistory.get(currentIndex);
+                        }
+                    }
+
+                    if (historicalEvent == null) break; // Siamo arrivati alla fine (per ora)
+
+                    newView.notify(historicalEvent);
+                    currentIndex++;
+                    Thread.sleep(DRAIN_DELAY_MILLIS); // delay per evitare di inondare la rete
+                }
+
+                // FASE 2: Switch finale (Atomico)
+                synchronized(this) {
+                    // Svuotiamo gli ultimissimi eventi generati durante il nostro Thread.sleep
+                    while (currentIndex < globalEventHistory.size()) {
+                        newView.notify(globalEventHistory.get(currentIndex));
+                        currentIndex++;
+                    }
+                    // Aggiorniamo l'indice e passiamo a LIVE
+                    playerSyncIndex.put(nickname, currentIndex);
+                    connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
+                    log("Drain complete for " + nickname + " — now CONNECTED.");
+                }
+
+            } catch (Exception e) {
+                System.err.println("[GameController:" + gameId + "] Catch-up failed for " + nickname + ": " + e.getMessage());
+                handlePlayerDisconnected(nickname);
+            }
+        });
     }
 
 
@@ -176,71 +212,38 @@ public class GameController implements GameObserver {
         log("Shutdown complete.");
     }
 
-  // Private routing (caller must hold this monitor)
+    // 1. Eventi Globali (vanno nella Storia)
+    private synchronized void pushGlobalEvent(Event event) {
+        globalEventHistory.add(event);
+        int newIndex = globalEventHistory.size();
 
-    private void unicast(String nickname, Event event) {
-        route(nickname, event);
-    }
-
-    private void broadcast(Event event) {
-        for (String nickname : handlers.keySet()) {
-            route(nickname, event);
-        }
-    }
-
-    private void broadcastOthers(String exclude, Event event) {
-        for (String nickname : handlers.keySet()) {
-            if (!nickname.equals(exclude)) {
-                route(nickname, event);
+        for (Map.Entry<String, ConnectionStatus> entry : connectionStatus.entrySet()) {
+            String nickname = entry.getKey();
+            // Inviamo solo a chi è pienamente connesso
+            if (entry.getValue() == ConnectionStatus.CONNECTED) {
+                try {
+                    handlers.get(nickname).notify(event);
+                    playerSyncIndex.put(nickname, newIndex); // Aggiorniamo l'indice
+                } catch (RuntimeException e) {
+                    log("Failed to notify " + nickname + " during pushGlobalEvent.");
+                    // La disconnessione verrà gestita dai normali meccanismi di rete
+                }
             }
         }
     }
 
-    private void route(String nickname, Event event) {
+    // 2. Eventi Transitori Privati (Es. Errori) - NON vanno nella storia
+    private synchronized void unicastTransient(String nickname, Event event) {
         if (connectionStatus.get(nickname) == ConnectionStatus.CONNECTED) {
             handlers.get(nickname).notify(event);
-        } else {
-            // DISCONNECTED or RECONNECTING: append to buffer.
-            eventBuffers.get(nickname).offerLast(event);
         }
     }
 
-    // Drain machinery
-    private void flushBufferWithDelay(String nickname, VirtualView newView) {
-        drainExecutor.submit(() -> drainLoop(nickname, newView));
-    }
-
-    private void drainLoop(String nickname, VirtualView newView) {
-        while (true) {
-            Event next;
-            synchronized (this) {
-                Deque<Event> buffer = eventBuffers.get(nickname);
-
-                if (buffer.isEmpty()) {
-                    connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
-                    log("Drain complete for " + nickname + " — now CONNECTED.");
-                    return;
-                }
-
-                next = buffer.pollFirst();
-            }
-
-            try {
-                newView.notify(next);
-            } catch (RuntimeException e) {
-                System.err.println("[GameController:" + gameId + "] Drain failed for " + nickname + ": " + e.getMessage());
-
-                synchronized (this) {
-                    connectionStatus.put(nickname, ConnectionStatus.DISCONNECTED);
-                    eventBuffers.get(nickname).offerFirst(next);
-                }
-                return;
-            }
-            try {
-                Thread.sleep(DRAIN_DELAY_MILLIS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
+    // 3. Eventi Transitori per gli Altri (Es. PlayerDisconnected) - NON vanno nella storia
+    private synchronized void pushGlobalEventTransientOthers(String exclude, Event event) {
+        for (Map.Entry<String, ConnectionStatus> entry : connectionStatus.entrySet()) {
+            if (!entry.getKey().equals(exclude) && entry.getValue() == ConnectionStatus.CONNECTED) {
+                handlers.get(entry.getKey()).notify(event);
             }
         }
     }
@@ -349,7 +352,7 @@ public class GameController implements GameObserver {
             log("Global timer expired — winner by forfeit: " + winner);
             globalTimer = null;
 
-            broadcast(new GameAbortedEvent(winner));
+            pushGlobalEvent(new GameAbortedEvent(winner));
             gameLogger.logGameEnded();
             gameLogger.close();
             shutdown();
@@ -365,19 +368,19 @@ public class GameController implements GameObserver {
                                                   Map<String, Integer> initialFood,
                                                   BoardSnapshot boardSnapshot) {
         snapshot.applySetup(boardSnapshot);
-        broadcast(new GameSetupCompletedEvent(turnOrder, initialFood, boardSnapshot));
+        pushGlobalEvent(new GameSetupCompletedEvent(turnOrder, initialFood, boardSnapshot));
     }
 
     @Override
     public synchronized void onPhaseChanged(PhaseType phase) {
         snapshot.setPhase(phase, null);
-        broadcast(new PhaseChangedEvent(phase, null, null));
+        pushGlobalEvent(new PhaseChangedEvent(phase, null, null));
     }
 
     @Override
     public synchronized void onPhaseChanged(PhaseType phase, String currentPlayer) {
         snapshot.setPhase(phase, currentPlayer);
-        broadcast(new PhaseChangedEvent(phase, currentPlayer, null));
+        pushGlobalEvent(new PhaseChangedEvent(phase, currentPlayer, null));
         if (currentPlayer != null)
             handleCurrentPlayerTransition(currentPlayer);
     }
@@ -385,7 +388,7 @@ public class GameController implements GameObserver {
     @Override
     public synchronized void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
         snapshot.setPhase(phase, currentPlayer);
-        broadcast(new PhaseChangedEvent(phase, currentPlayer, resolutionOrder));
+        pushGlobalEvent(new PhaseChangedEvent(phase, currentPlayer, resolutionOrder));
         if (currentPlayer != null)
             handleCurrentPlayerTransition(currentPlayer);
     }
@@ -393,13 +396,13 @@ public class GameController implements GameObserver {
     @Override
     public synchronized void onCurrentPlayerChanged(String nextPlayer) {
         snapshot.setCurrentPlayer(nextPlayer);
-        broadcast(new CurrentPlayerChangedEvent(nextPlayer));
+        pushGlobalEvent(new CurrentPlayerChangedEvent(nextPlayer));
         handleCurrentPlayerTransition(nextPlayer);
     }
 
     @Override
     public synchronized void onTurnOrderEstablished(List<String> turnOrder) {
-        broadcast(new TurnOrderEstablishedEvent(turnOrder));
+        pushGlobalEvent(new TurnOrderEstablishedEvent(turnOrder));
     }
 
     @Override
@@ -407,7 +410,7 @@ public class GameController implements GameObserver {
                                           List<String> newUpperRowBuildings,
                                           List<String> newLowerRowBuildings,
                                           List<String> discardedBuildings) {
-        broadcast(new EraChangedEvent(newEra, newUpperRowBuildings,
+        pushGlobalEvent(new EraChangedEvent(newEra, newUpperRowBuildings,
                 newLowerRowBuildings, discardedBuildings));
     }
 
@@ -418,7 +421,7 @@ public class GameController implements GameObserver {
                                             List<String> movedToLowerRow,
                                             int deckRemainingCount) {
         snapshot.applyBoardUpdated(newUpperRow, newLowerRow);
-        broadcast(new BoardUpdatedEvent(newUpperRow, newLowerRow,
+        pushGlobalEvent(new BoardUpdatedEvent(newUpperRow, newLowerRow,
                 discardedCards, movedToLowerRow, deckRemainingCount));
     }
 
@@ -428,19 +431,19 @@ public class GameController implements GameObserver {
                                          CardType cardType,
                                          RowPosition sourceRow) {
         snapshot.applyCardTaken(cardID);
-        broadcast(new CardTakenEvent(nickname, cardID, cardType, sourceRow));
+        pushGlobalEvent(new CardTakenEvent(nickname, cardID, cardType, sourceRow));
     }
 
     @Override
     public synchronized void onTotemPlaced(String nickname, char tileID) {
         snapshot.applyTotemPlaced(nickname, tileID);
-        broadcast(new TotemPlacedEvent(nickname, tileID));
+        pushGlobalEvent(new TotemPlacedEvent(nickname, tileID));
     }
 
     @Override
     public synchronized void onTotemReturned(String nickname, int turnOrderPosition) {
         snapshot.applyTotemReturned(nickname);
-        broadcast(new TotemReturnedEvent(nickname, turnOrderPosition));
+        pushGlobalEvent(new TotemReturnedEvent(nickname, turnOrderPosition));
     }
 
     @Override
@@ -448,7 +451,7 @@ public class GameController implements GameObserver {
                                                        int remainingUpper,
                                                        int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
-        broadcast(new PlayerLimitsInitializedEvent(nickname, remainingUpper, remainingLower));
+        pushGlobalEvent(new PlayerLimitsInitializedEvent(nickname, remainingUpper, remainingLower));
     }
 
     @Override
@@ -456,7 +459,7 @@ public class GameController implements GameObserver {
                                                    int remainingUpper,
                                                    int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
-        broadcast(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower));
+        pushGlobalEvent(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower));
     }
 
     @Override
@@ -464,12 +467,12 @@ public class GameController implements GameObserver {
                                                      ResourceType resource,
                                                      int newValue,
                                                      int delta) {
-        broadcast(new PlayerResourceChangedEvent(nickname, resource, newValue, delta));
+        pushGlobalEvent(new PlayerResourceChangedEvent(nickname, resource, newValue, delta));
     }
 
     @Override
     public synchronized void onEventResolved(String eventID, String eventName) {
-        broadcast(new EventResolvedEvent(eventID, eventName));
+        pushGlobalEvent(new EventResolvedEvent(eventID, eventName));
     }
 
     @Override
@@ -477,18 +480,18 @@ public class GameController implements GameObserver {
                                                 int remainingUpper,
                                                 int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
-        broadcast(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
+        pushGlobalEvent(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
     }
 
     @Override
     public synchronized void onExtraTurnEnded(String nickname) {
-        broadcast(new ExtraTurnEndedEvent(nickname));
+        pushGlobalEvent(new ExtraTurnEndedEvent(nickname));
     }
 
     @Override
     public synchronized void onGameEnded(List<String> winners,
                                          List<PlayerFinalScore> finalRankings) {
-        broadcast(new GameEndedEvent(winners, finalRankings));
+        pushGlobalEvent(new GameEndedEvent(winners, finalRankings));
         gameLogger.logGameEnded();
         gameLogger.close();
         shutdown();

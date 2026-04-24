@@ -1,6 +1,5 @@
 package it.polimi.ingsw.am02.server.model;
 
-import it.polimi.ingsw.am02.server.model.*;
 import it.polimi.ingsw.am02.server.model.buildingeffects.FlatPrestigeBonusEffect;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
@@ -40,7 +39,7 @@ class InsertBuildingIntegrationTest {
         List<String> nicknames = List.of("Matteo", "Raed");
         Map<String, Totem> mappa = Map.of("Matteo", Totem.WHITE, "Raed", Totem.BLUE);
 
-        game = new Game("000", nicknames, mappa);
+        game = new Game("000", nicknames, mappa, seed);
 
         // Only method that needs to be package-private in Game
         player1 = game.getPlayerByNickname("Matteo");

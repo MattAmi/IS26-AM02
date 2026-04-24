@@ -39,6 +39,7 @@ module it.polimi.ingsw.am02 {
     exports it.polimi.ingsw.am02.common.dto;
     exports it.polimi.ingsw.am02.server.network;
     exports it.polimi.ingsw.am02.common.interfaces;
+    exports it.polimi.ingsw.am02.server.controller.persistence;
 
 
 }

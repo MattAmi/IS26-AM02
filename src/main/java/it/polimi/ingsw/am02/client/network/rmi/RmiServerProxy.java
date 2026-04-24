@@ -1,8 +1,8 @@
 package it.polimi.ingsw.am02.client.network.rmi;
 
+import it.polimi.ingsw.am02.client.model.ClientModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
-import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory;
@@ -18,11 +18,11 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     private final String host;
     private final int port;
-    private final VirtualView clientModel;
+    private final ClientModel clientModel;
     private RmiServerRemote serverStub;
     private boolean connected = false;
 
-    public RmiServerProxy(String host, int port, VirtualView clientModel) throws RemoteException {
+    public RmiServerProxy(String host, int port, ClientModel clientModel) throws RemoteException {
         super();
         this.host = host;
         this.port = port;
@@ -52,7 +52,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     @Override
     public void notifyEvent(Event event) throws RemoteException {
-        clientModel.notify(event);
+        clientModel.apply(event);
     }
 
     @Override

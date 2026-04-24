@@ -8,7 +8,6 @@ import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import it.polimi.ingsw.am02.common.enumerations.RowPosition;
-import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
@@ -17,7 +16,7 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ClientModel implements VirtualView {
+public class ClientModel {
 
     // --- Lobby state ---
     private String myNickname;
@@ -62,8 +61,7 @@ public class ClientModel implements VirtualView {
 
     // --- VirtualView ---
 
-    @Override
-    public void notify(Event event) {
+    public void apply(Event event) {
         try {
             switch (event) {
                 // Lobby events

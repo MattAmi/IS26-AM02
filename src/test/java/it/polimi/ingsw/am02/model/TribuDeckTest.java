@@ -1,10 +1,6 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.enumerations.Era;
-import it.polimi.ingsw.am02.server.model.CharacterCard;
-import it.polimi.ingsw.am02.server.model.EventCard;
-import it.polimi.ingsw.am02.server.model.GameRegistry;
-import it.polimi.ingsw.am02.server.model.TribuDeck;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.MockedStatic;
@@ -36,7 +32,7 @@ public class TribuDeckTest {
 
             setupMockTribuData(mockRegistry);
 
-            TribuDeck deck = new TribuDeck(numPlayers);
+            TribuDeck deck = new TribuDeck(numPlayers, gameRandom);
 
             assertEquals(expectedSize, deck.getRemainingSize(), "Player filter error: expected " + expectedSize + " cards");
 

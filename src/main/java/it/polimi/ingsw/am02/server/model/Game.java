@@ -28,6 +28,7 @@ public class Game implements ModelInterface {
     private GameState currentState;
     private String currentPlayerNickname;
     private List<String> turnOrder;
+    private int completedRounds;
 
     private final List<PhaseObserver> phaseObservers;
 
@@ -37,8 +38,9 @@ public class Game implements ModelInterface {
     private int extraTurnLowerPicks;
 
     private final GameNotifier notifier;
+    private final Random gameRandom;
 
-    public Game(String gameID, List<String> nicknames, Map<String, Totem> chosenTotems) {
+    public Game(String gameID, List<String> nicknames, Map<String, Totem> chosenTotems, long seed) {
 
         this.gameID = gameID;
         this.numPlayers = nicknames.size();
@@ -49,6 +51,7 @@ public class Game implements ModelInterface {
             this.players.put(nickname, new Player(nickname, totem));
         }
 
+        this.completedRounds = 0;
         this.phaseObservers = new ArrayList<>();
 
         this.isExtraTurnMode = false;
@@ -57,6 +60,7 @@ public class Game implements ModelInterface {
         this.extraTurnLowerPicks = 0;
 
         this.notifier = new GameNotifier();
+        this.gameRandom = new Random(seed);
     }
 
 
@@ -99,7 +103,7 @@ public class Game implements ModelInterface {
     }
 
     private void initializeBoard() { // Initializes GameBoard
-        gameBoard = new GameBoard(numPlayers, notifier);
+        gameBoard = new GameBoard(numPlayers, notifier, gameRandom);
     }
 
     private void randomizeInitialTurnOrder() {
@@ -167,6 +171,7 @@ public class Game implements ModelInterface {
     }
 
     private void executeNewRoundPreparation() {
+        completedRounds++;
         gameBoard.prepareNewRound(numPlayers);
     }
 
@@ -175,7 +180,7 @@ public class Game implements ModelInterface {
     }
 
     private boolean isGameOverCondition() {
-        return gameBoard.isTribuDeckEmpty();
+        return completedRounds > 10;
     }
 
     private void setUpPlacementOrder() {
@@ -341,7 +346,7 @@ public class Game implements ModelInterface {
         public void onEntryActions() {
             initializeBoard();
             randomizeInitialTurnOrder();
-
+            completedRounds = 1;
 
             // Notify game observers that the setup is complete
             BoardSnapshot snapshot = gameBoard.buildSnapshot();
@@ -535,7 +540,7 @@ public class Game implements ModelInterface {
 
                 transitionTo(new NewEraState());
 
-            } else if (isGameOverCondition()) { //TODO: condizione di fine gioco non va bene! (devo poter continuare a giocare anche con deck vuoto)!
+            } else if (isGameOverCondition()) {
                 if (areFinalEventsToResolve()) {
                     transitionTo(new FinalEventsResolutionState());
                 } else {

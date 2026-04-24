@@ -9,14 +9,16 @@ import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
 import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 import it.polimi.ingsw.am02.common.messages.events.error.*;
-import it.polimi.ingsw.am02.server.controller.persistence.CommandLogger;
-import it.polimi.ingsw.am02.server.controller.persistence.GameLogger;
-import it.polimi.ingsw.am02.server.controller.persistence.NoOpCommandLogger;
+import it.polimi.ingsw.am02.server.controller.persistence.*;
 import it.polimi.ingsw.am02.server.model.Game;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 public class ControllerManager {
 
@@ -71,7 +73,10 @@ public class ControllerManager {
         }
     }
 
-    public synchronized void handleReconnect(String newClientId, VirtualView newView, String gameId, String nickname) {
+    public synchronized void handleReconnectRequest(String newClientId, VirtualView newView, ReconnectCommand command) {
+        String gameId = command.gameId();
+        String nickname = command.nickname();
+
         GameController controller = controllers.get(gameId);
         if (controller == null) {
             newView.notify(new ErrorEvent("Game not found or already ended: " + gameId));
@@ -80,25 +85,38 @@ public class ControllerManager {
 
         Map<String, String> nicknameMap = gameNicknameToClient.get(gameId);
         if (nicknameMap == null || !nicknameMap.containsKey(nickname)) {
-            newView.notify(new ErrorEvent("Nickname not found in game: " + nickname));
+            newView.notify(new ErrorEvent("Nickname not registered in this game: " + nickname));
             return;
         }
 
-        // Finds and invalidate the old clientId
-        String oldClientId = nicknameMap.get(nickname);
-        clientToGame.remove(oldClientId);
-        clientToNickname.remove(oldClientId);
-        connectedClients.remove(oldClientId);
+        // Ask the controller if this nickname is currently in a "disconnected" state.
+        // A reconnect for an already-active client should be rejected.
+        if (!controller.isPlayerDisconnected(nickname)) {
+            newView.notify(new ErrorEvent("Player " + nickname + " is not disconnected"));
+            return;
+        }
 
-        // Registers the new clientId in its place
-        nicknameMap.put(nickname, newClientId);
+        rebindClient(nicknameMap.get(nickname), newClientId, gameId, nickname);
+        controller.handlePlayerReconnected(nickname, newView);
+    }
+
+
+    // Atomic rebind of a clientId for a player mid-game.
+    private void rebindClient(String oldClientId, String newClientId, String gameId, String nickname) {
+
+        // oldClientId is null when recovering a game from log (no previous clientId).
+        if (oldClientId != null) {
+            clientToGame.remove(oldClientId);
+            clientToNickname.remove(oldClientId);
+            connectedClients.remove(oldClientId);
+        }
+
+        gameNicknameToClient.get(gameId).put(nickname, newClientId);
         clientToGame.put(newClientId, gameId);
         clientToNickname.put(newClientId, nickname);
 
-        System.out.println("[ControllerManager] Client reconnected: " + nickname
-                + " in game " + gameId + " (new clientId: " + newClientId + ")");
-
-        controller.handlePlayerReconnected(nickname, newView);
+        System.out.println("[ControllerManager] Rebound " + nickname
+                + " in game " + gameId + " (clientId: " + newClientId + ")");
     }
 
     // Lobby management (called by network layer or by Lobby callbacks)
@@ -228,7 +246,7 @@ public class ControllerManager {
         GameLogger gameLogger;
         try {
             CommandLogger fileLogger = new CommandLogger(gameId);
-            fileLogger.logGameInit(gameId, seed, nicknames);
+            fileLogger.logGameInit(gameId, seed, nicknames, chosenTotems);
             gameLogger = fileLogger;
         } catch (IOException e) {
             System.err.println("[ControllerManager] Failed to create CommandLogger, "
@@ -315,5 +333,85 @@ public class ControllerManager {
         Lobby lobby = lobbies.get(lobbyId);
         if (lobby == null) return null;
         return lobby.getView(clientId);
+    }
+
+    public synchronized void recoverGames(Path logsDirectory) {
+        if (!Files.isDirectory(logsDirectory)) {
+            System.out.println("[Recovery] No logs directory — starting fresh.");
+            return;
+        }
+
+        List<Path> candidates;
+        try (Stream<Path> stream = Files.list(logsDirectory)) {
+            candidates = stream
+                    .filter(p -> p.toString().endsWith(".ndjson"))
+                    .filter(this::isInterrupted)
+                    .toList();
+        } catch (IOException e) {
+            System.err.println("[Recovery] Cannot list logs: " + e.getMessage());
+            return;
+        }
+
+        System.out.println("[Recovery] " + candidates.size() + " game(s) to recover.");
+        for (Path logFile : candidates) {
+            try {
+                recoverSingleGame(logFile);
+                System.out.println("[Recovery] Recovered: " + logFile.getFileName());
+            } catch (Exception e) {
+                System.err.println("[Recovery] Failed: " + logFile.getFileName()
+                        + " — " + e.getMessage());
+                quarantine(logFile, logsDirectory);
+            }
+        }
+    }
+
+    private boolean isInterrupted(Path logFile) {
+        try (Stream<String> lines = Files.lines(logFile)) {
+            return lines
+                    .filter(l -> !l.isBlank())
+                    .reduce((a, b) -> b)
+                    .map(last -> !last.contains("\"type\":\"GAME_ENDED\""))
+                    .orElse(false);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private void recoverSingleGame(Path logFile) throws IOException {
+        CommandLogReader reader = new CommandLogReader(logFile);
+        GameInitRecord init = reader.readGameInit();
+
+        Game model = new Game(init.gameId(), init.nicknames(), init.chosenTotems(), init.seed());
+
+        Map<String, VirtualView> noOpViews = new HashMap<>();
+        for (String nick : init.nicknames()) {
+            noOpViews.put(nick, VirtualView.noOp());
+        }
+
+        // Riapre il file in append — NON riscrivere GAME_INIT
+        CommandLogger appender = new CommandLogger(init.gameId());
+
+        GameController controller = new GameController(init.gameId(), model, noOpViews, appender);
+        controller.setGameEndedCallback(() -> removeGameController(init.gameId()));
+        controllers.put(init.gameId(), controller);
+
+        controller.enterReplayMode();
+        model.startFSM();
+        for (CommandRecord rec : reader.readCommands()) {
+            controller.handle(rec.command(), rec.command().nickname());
+        }
+        controller.exitReplayMode();
+    }
+
+    private void quarantine(Path logFile, Path logsDirectory) {
+        try {
+            Path dest = logsDirectory.resolve("corrupted");
+            Files.createDirectories(dest);
+            Files.move(logFile, dest.resolve(logFile.getFileName()),
+                    StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            System.err.println("[Recovery] Cannot quarantine "
+                    + logFile.getFileName() + ": " + e.getMessage());
+        }
     }
 }

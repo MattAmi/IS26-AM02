@@ -49,6 +49,8 @@ public class GameController implements GameObserver {
     // Server-side snapshot for AutoPlayer
     private final ServerGameSnapshot snapshot = new ServerGameSnapshot();
 
+    private boolean replayMode = false;
+
 
     public GameController(String gameId, ModelInterface model,
                           Map<String, VirtualView> handlers, GameLogger gameLogger) {
@@ -96,7 +98,9 @@ public class GameController implements GameObserver {
                 case ResolveActionsCommand c -> model.resolveActions(senderNickname, c.selectedIDs());
             }
 
-            gameLogger.logCommand(cmd);
+            if(!replayMode) {
+                gameLogger.logCommand(cmd);
+            }
 
         } catch (RuntimeException e) {
             if (connectionStatus.get(senderNickname) == ConnectionStatus.DISCONNECTED) {
@@ -531,4 +535,11 @@ public class GameController implements GameObserver {
     private void log(String msg) {
         System.out.println("[GameController:" + gameId + "] " + msg);
     }
+
+    public boolean isPlayerDisconnected(String nickname) { return connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED; }
+
+    void enterReplayMode() { this.replayMode = true;  }
+
+    void exitReplayMode()  { this.replayMode = false; }
+
 }

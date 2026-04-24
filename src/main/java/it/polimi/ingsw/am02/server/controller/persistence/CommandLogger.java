@@ -2,11 +2,14 @@ package it.polimi.ingsw.am02.server.controller.persistence;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.messages.commands.GameCommand;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 // Log-class that enables replay of a game after a server crash
 public class CommandLogger implements GameLogger {
@@ -31,15 +34,17 @@ public class CommandLogger implements GameLogger {
 
     // Writes "GAME_INIT" record before any other command
     @Override
-    public void logGameInit(String gameId, long seed, List<String> nicknames) {
+    public void logGameInit(String gameId, long seed, List<String> nicknames, Map<String, Totem> chosenTotems) {
         ObjectNode node = mapper.createObjectNode();
-
         node.put("type", "GAME_INIT");
         node.put("gameId", gameId);
         node.put("seed", seed);
         node.put("numPlayers", nicknames.size());
         node.set("nicknames", mapper.valueToTree(nicknames));
-
+        node.set("totems", mapper.valueToTree(
+                chosenTotems.entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().name()))
+        ));
         writeLine(node);
     }
 

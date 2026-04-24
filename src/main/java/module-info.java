@@ -13,6 +13,16 @@ module it.polimi.ingsw.am02 {
     opens it.polimi.ingsw.am02.client.network.rmi to java.rmi;
     opens it.polimi.ingsw.am02.server.network.rmi to java.rmi;
 
+    // Necessario per Jackson: deve accedere ai record via reflection
+    opens it.polimi.ingsw.am02.common.messages.commands    to com.fasterxml.jackson.databind;
+    opens it.polimi.ingsw.am02.common.messages.events      to com.fasterxml.jackson.databind;
+    opens it.polimi.ingsw.am02.common.messages.events.game to com.fasterxml.jackson.databind;
+    opens it.polimi.ingsw.am02.common.messages.events.lobby to com.fasterxml.jackson.databind;
+    opens it.polimi.ingsw.am02.common.messages.events.error to com.fasterxml.jackson.databind;
+    opens it.polimi.ingsw.am02.common.dto                  to com.fasterxml.jackson.databind;
+    opens it.polimi.ingsw.am02.common.enumerations          to com.fasterxml.jackson.databind;
+    opens it.polimi.ingsw.am02.common.serialization         to com.fasterxml.jackson.databind;
+
     // Esporta anche i messaggi, altrimenti RMI non sa come leggerli
     exports it.polimi.ingsw.am02.common.messages;
     exports it.polimi.ingsw.am02.common.messages.commands;
@@ -30,5 +40,6 @@ module it.polimi.ingsw.am02 {
     exports it.polimi.ingsw.am02.server.network;
     exports it.polimi.ingsw.am02.common.interfaces;
     exports it.polimi.ingsw.am02.server.controller.persistence;
+
 
 }

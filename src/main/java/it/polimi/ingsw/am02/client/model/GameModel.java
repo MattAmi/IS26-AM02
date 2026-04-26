@@ -63,12 +63,14 @@ public class GameModel {
     public void apply(Event event) {
         try {
             switch (event) {
+
                 // --------- Game lifecycle ---------
                 case GameStartedEvent e -> {
                     this.gameId = e.gameID();
                     this.gameEnded = false;
                     clientViews.forEach(o -> o.onGameStarted(e.gameID()));
                 }
+
                 case GameSetupCompletedEvent e -> {
                     this.turnOrder = new ArrayList<>(e.turnOrder());
                     this.foodByPlayer.putAll(e.initialFood());
@@ -84,6 +86,7 @@ public class GameModel {
                     clientViews.forEach(o -> o.onGameSetupCompleted(
                             e.turnOrder(), e.initialFood(), snap));
                 }
+
                 case PhaseChangedEvent e -> {
                     this.currentPhase = e.phase();
                     if (e.currentPlayer() != null) this.currentPlayer = e.currentPlayer();
@@ -91,10 +94,12 @@ public class GameModel {
                     clientViews.forEach(o -> o.onPhaseChanged(
                             e.phase(), e.currentPlayer(), e.resolutionOrder()));
                 }
+
                 case CurrentPlayerChangedEvent e -> {
                     this.currentPlayer = e.nextPlayer();
                     clientViews.forEach(o -> o.onCurrentPlayerChanged(e.nextPlayer()));
                 }
+
                 case TurnOrderEstablishedEvent e -> {
                     this.turnOrder = new ArrayList<>(e.turnOrder());
                     clientViews.forEach(o -> o.onTurnOrderEstablished(e.turnOrder()));
@@ -112,6 +117,7 @@ public class GameModel {
                     clientViews.forEach(o -> o.onTotemPlaced(e.nickname(), e.tileID()));
                     clientViews.forEach(o -> o.onOfferTilesUpdated(offerTiles));
                 }
+
                 case TotemReturnedEvent e -> {
                     totemPositions.remove(e.nickname());
                     turnOrderPositions.put(e.nickname(), e.turnOrderPosition());
@@ -124,6 +130,7 @@ public class GameModel {
                     clientViews.forEach(o -> o.onTotemReturned(e.nickname(), e.turnOrderPosition()));
                     clientViews.forEach(o -> o.onOfferTilesUpdated(offerTiles));
                 }
+
                 case BoardUpdatedEvent e -> {
                     this.upperRow = new ArrayList<>(e.newUpperRow());
                     this.lowerRow = new ArrayList<>(e.newLowerRow());
@@ -131,6 +138,7 @@ public class GameModel {
                     clientViews.forEach(o -> o.onBoardUpdated(
                             e.newUpperRow(), e.newLowerRow(), e.deckRemainingCount()));
                 }
+
                 case EraChangedEvent e -> {
                     this.upperRowBuildings = new ArrayList<>(e.newUpperRowBuildings());
                     this.lowerRowBuildings = new ArrayList<>(e.newLowerRowBuildings());
@@ -145,12 +153,14 @@ public class GameModel {
                     clientViews.forEach(o -> o.onPlayerLimitsInitialized(
                             e.nickname(), e.remainingUpper(), e.remainingLower()));
                 }
+
                 case PlayerLimitsUpdatedEvent e -> {
                     remainingUpper.put(e.nickname(), e.remainingUpper());
                     remainingLower.put(e.nickname(), e.remainingLower());
                     clientViews.forEach(o -> o.onPlayerLimitsUpdated(
                             e.nickname(), e.remainingUpper(), e.remainingLower()));
                 }
+
                 case PlayerResourceChangedEvent e -> {
                     if (e.resource() == ResourceType.FOOD) {
                         foodByPlayer.put(e.nickname(), e.newValue());
@@ -160,6 +170,7 @@ public class GameModel {
                     clientViews.forEach(o -> o.onPlayerResourceChanged(
                             e.nickname(), e.resource(), e.newValue()));
                 }
+
                 case CardTakenEvent e -> {
                     List<String> row = (e.cardType() == CardType.BUILDING)
                             ? (e.sourceRow() == RowPosition.UPPER ? upperRowBuildings : lowerRowBuildings)
@@ -177,12 +188,14 @@ public class GameModel {
                     this.lastEventResolved = e.eventName();
                     clientViews.forEach(o -> o.onEventResolved(e.eventName()));
                 }
+
                 case ExtraTurnStartedEvent e -> {
                     remainingUpper.put(e.nickname(), e.remainingUpper());
                     remainingLower.put(e.nickname(), e.remainingLower());
                     clientViews.forEach(o -> o.onExtraTurnStarted(
                             e.nickname(), e.remainingUpper(), e.remainingLower()));
                 }
+
                 case ExtraTurnEndedEvent e -> {
                     clientViews.forEach(o -> o.onExtraTurnEnded(e.nickname()));
                 }
@@ -194,10 +207,12 @@ public class GameModel {
                     this.gameEnded = true;
                     clientViews.forEach(o -> o.onGameEnded(e.winners(), e.finalRankings()));
                 }
+
                 case PlayerDisconnectedEvent e -> {
                     this.lastErrorMessage = "Player disconnected: " + e.nickname();
                     clientViews.forEach(o -> o.onPlayerDisconnected(e.nickname()));
                 }
+
                 case ErrorEvent e -> {
                     this.lastErrorMessage = e.errorMessage();
                     clientViews.forEach(o -> o.onError(e.errorMessage()));

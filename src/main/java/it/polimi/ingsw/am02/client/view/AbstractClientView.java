@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public abstract class AbstractClientView implements ClientView {
 
-    @Override public void onUsernameResult(String username, boolean accepted) {}
+    @Override public void onUsernameResult(String username, boolean accepted, String reason) {}
     @Override public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {}
     @Override public void onCurrentLobbyUpdated(LobbyInfo lobby) {}
     @Override public void onLobbyDissolved() {}

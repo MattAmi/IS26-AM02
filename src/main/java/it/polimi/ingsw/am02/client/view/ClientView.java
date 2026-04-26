@@ -26,7 +26,7 @@ public interface ClientView {
 
     // Lobby lifecycle
 
-    void onUsernameResult(String username, boolean accepted);
+    void onUsernameResult(String username, boolean accepted, String reason);
     void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies);
     void onCurrentLobbyUpdated(LobbyInfo lobby);
     void onLobbyDissolved();

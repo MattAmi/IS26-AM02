@@ -1,60 +1,68 @@
 package it.polimi.ingsw.am02.client.view.tui;
 
 import it.polimi.ingsw.am02.client.model.GameModel;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.view.AbstractClientView;
-import it.polimi.ingsw.am02.client.view.View;
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.common.enumerations.RowPosition;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
 import java.util.List;
+import java.util.Map;
 
+/**
+ * Textual user interface. Registered as observer on both {@link LobbyModel}
+ * and {@link GameModel}. Receives granular push updates and renders only
+ * the affected section, falling back to a full re-render on structural changes.
+ */
 public class TuiView extends AbstractClientView {
 
-    private final GameModel model;
+    private final LobbyModel lobbyModel;
+    private GameModel gameModel; // null until GameStartedEvent
 
-    public TuiView(GameModel model) {
-        this.model = model;
-        this.model.addObserver(this);
+    public TuiView(LobbyModel lobbyModel) {
+        this.lobbyModel = lobbyModel;
+        lobbyModel.addObserver(this);
     }
+
+    /**
+     * Called by the ServerProxy when GameModel is created (on GameStartedEvent).
+     * Registers this view as observer of the new game model.
+     *
+     * @param gameModel the newly created game model
+     */
+    public void onGameModelCreated(GameModel gameModel) {
+        this.gameModel = gameModel;
+        gameModel.addObserver(this);
+    }
+
+    // LOBBY CALLBACKS
 
     @Override
-    public void update() {
-        render();
-    }
-
-    public void render() {
-        clearScreen();
-        printHeader();
-
-        if (model.getMyNickname() == null) {
-            renderLogin();
-        } else if (model.isGameEnded()) {
-            renderFinalScoring();
-        } else if (model.isInGame()) {
-            renderGame();
-        } else if (model.getCurrentLobby() != null) {
-            renderLobby();
+    public void onUsernameResult(String username, boolean accepted, String reason) {
+        if (accepted) {
+            clearScreen();
+            printHeader();
+            System.out.println("Logged in as: " + username);
+            System.out.println("\nCommands: create <size> | join <index> | quit");
         } else {
-            renderLobbyList();
+            System.err.println("[ERROR] Username '" + username + "' is not available: " + reason);
         }
-
         System.out.print("\n> ");
     }
 
-    // ------------------------------------------------------------------ lobby
-
-    private void renderLogin() {
-        System.out.println("\nWelcome! Please log in.");
-        System.out.println("  login <nickname>");
-    }
-
-    private void renderLobbyList() {
-        System.out.println("Logged in as: " + model.getMyNickname());
+    @Override
+    public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
+        clearScreen();
+        printHeader();
+        System.out.println("Logged in as: " + lobbyModel.getMyNickname());
         System.out.println("\n--- AVAILABLE LOBBIES ---");
-        List<LobbyInfo> lobbies = model.getAvailableLobbies();
         if (lobbies.isEmpty()) {
             System.out.println("No active lobbies. Create one with: create <size>");
         } else {
@@ -65,11 +73,14 @@ public class TuiView extends AbstractClientView {
             }
         }
         System.out.println("\nCommands: create <size> | join <index> | quit");
+        System.out.print("\n> ");
     }
 
-    private void renderLobby() {
-        LobbyInfo lobby = model.getCurrentLobby();
-        System.out.println("Logged in as: " + model.getMyNickname());
+    @Override
+    public void onCurrentLobbyUpdated(LobbyInfo lobby) {
+        clearScreen();
+        printHeader();
+        System.out.println("Logged in as: " + lobbyModel.getMyNickname());
         System.out.println("\n--- LOBBY: " + lobby.lobbyId() + " ---");
         System.out.printf("Players: %d/%d%n",
                 lobby.currentPlayers().size(), lobby.expectedPlayers());
@@ -79,103 +90,226 @@ public class TuiView extends AbstractClientView {
             System.out.println("  - " + n + totemStr);
         });
         System.out.println("\nCommands: totem <color> | leave | quit");
+        System.out.print("\n> ");
     }
 
-    // ------------------------------------------------------------------ game
+    @Override
+    public void onLobbyDissolved() {
+        System.out.println("\n[LOBBY] The lobby has been dissolved.");
+        System.out.print("\n> ");
+    }
 
-    private void renderGame() {
-        PhaseType phase = model.getCurrentPhase();
-        System.out.println("Game: " + model.getGameId());
+    // ==================== GAME CALLBACKS ====================
+
+    @Override
+    public void onGameStarted(String gameId) {
+        clearScreen();
+        printHeader();
+        System.out.println("Game started! ID: " + gameId);
+    }
+
+    @Override
+    public void onGameSetupCompleted(List<String> turnOrder,
+                                     Map<String, Integer> initialFood,
+                                     BoardSnapshot board) {
+        renderFullGame();
+    }
+
+    @Override
+    public void onPhaseChanged(PhaseType phase,
+                               String currentPlayer,
+                               List<String> resolutionOrder) {
+        renderFullGame();
+    }
+
+    @Override
+    public void onCurrentPlayerChanged(String nextPlayer) {
+        System.out.println("\n[TURN] Current player: " + nextPlayer);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onTotemPlaced(String nickname, char tileID) {
+        System.out.printf("[BOARD] %s placed totem on tile %c%n", nickname, tileID);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onTotemReturned(String nickname, int turnOrderPosition) {
+        System.out.printf("[BOARD] %s returned totem to slot %d%n",
+                nickname, turnOrderPosition);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onBoardUpdated(List<String> newUpperRow,
+                               List<String> newLowerRow,
+                               int deckRemainingCount) {
+        renderFullGame();
+    }
+
+    @Override
+    public void onEraChanged(List<String> newUpperRowBuildings,
+                             List<String> newLowerRowBuildings) {
+        System.out.println("\n[ERA] A new era has begun.");
+        renderFullGame();
+    }
+
+    @Override
+    public void onPlayerResourceChanged(String nickname,
+                                        ResourceType resource,
+                                        int newValue) {
+        System.out.printf("[PLAYER] %s — %s: %d%n", nickname, resource, newValue);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onCardTaken(String nickname,
+                            String cardID,
+                            CardType cardType,
+                            RowPosition sourceRow) {
+        System.out.printf("[PLAYER] %s took %s '%s' from %s row%n",
+                nickname, cardType, cardID, sourceRow);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onEventResolved(String eventName) {
+        System.out.println("[EVENT] Resolved: " + eventName);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+        System.out.printf("[EXTRA] %s gained an extra turn (upper=%d, lower=%d)%n",
+                nickname, remainingUpper, remainingLower);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onExtraTurnEnded(String nickname) {
+        System.out.printf("[EXTRA] %s's extra turn ended%n", nickname);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
+        clearScreen();
+        printHeader();
+        System.out.println("=== GAME OVER ===");
+        System.out.println("Winners: " + String.join(", ", winners));
+        System.out.println("\n--- FINAL RANKINGS ---");
+        for (int i = 0; i < finalRankings.size(); i++) {
+            PlayerFinalScore s = finalRankings.get(i);
+            System.out.printf("  %d. %-15s  PP: %d%n",
+                    i + 1, s.nickname(), s.totalPrestigePoints());
+        }
+        System.out.println("\nType quit to exit.");
+    }
+
+    @Override
+    public void onPlayerDisconnected(String nickname) {
+        System.out.println("\n[!] Player disconnected: " + nickname);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onError(String message) {
+        System.err.println("\n[ERROR] " + message);
+        System.out.print("\n> ");
+    }
+
+    // ==================== FULL RE-RENDER ====================
+
+    private void renderFullGame() {
+        if (gameModel == null) return;
+        clearScreen();
+        printHeader();
+        PhaseType phase = gameModel.getCurrentPhase();
+        System.out.println("Game: " + gameModel.getGameId());
         System.out.println("Phase: " + (phase != null ? phase : "starting..."));
-        System.out.println("Current player: " + model.getCurrentPlayer());
+        System.out.println("Current player: " + gameModel.getCurrentPlayer());
         System.out.println();
-
         renderBoard();
         System.out.println();
         renderPlayers();
         System.out.println();
         renderCommands(phase);
-
-        if (model.getLastEventResolved() != null) {
-            System.out.println("\n[Last event resolved]: " + model.getLastEventResolved());
-        }
-        if (model.getLastErrorMessage() != null) {
-            System.out.println("\n[!] " + model.getLastErrorMessage());
-        }
+        System.out.print("\n> ");
     }
 
     private void renderBoard() {
         System.out.println("--- OFFER TRACK ---");
-        for (OfferTileInfo tile : model.getOfferTiles()) {
-            String occupant = tile.occupantNickname() != null ? " <- " + tile.occupantNickname() : "";
+        for (OfferTileInfo tile : gameModel.getOfferTiles()) {
+            String occupant = tile.occupantNickname() != null
+                    ? " <- " + tile.occupantNickname() : "";
             System.out.printf("  [%c] food:+%d  upper:%d  lower:%d%s%n",
                     tile.tileID(), tile.foodBonus(),
                     tile.upperChoosable(), tile.lowerChoosable(), occupant);
         }
         System.out.println();
-        System.out.println("Upper row (cards): " + formatRow(model.getUpperRow()));
-        System.out.println("Lower row (cards): " + formatRow(model.getLowerRow()));
-        if (!model.getUpperRowBuildings().isEmpty())
-            System.out.println("Upper row (buildings): " + formatRow(model.getUpperRowBuildings()));
-        if (!model.getLowerRowBuildings().isEmpty())
-            System.out.println("Lower row (buildings): " + formatRow(model.getLowerRowBuildings()));
-        System.out.println("Deck remaining: " + model.getDeckRemainingCount());
+        System.out.println("Upper row (cards): " + formatRow(gameModel.getUpperRow()));
+        System.out.println("Lower row (cards): " + formatRow(gameModel.getLowerRow()));
+        if (!gameModel.getUpperRowBuildings().isEmpty()) {
+            System.out.println("Upper row (buildings): "
+                    + formatRow(gameModel.getUpperRowBuildings()));
+        }
+        if (!gameModel.getLowerRowBuildings().isEmpty()) {
+            System.out.println("Lower row (buildings): "
+                    + formatRow(gameModel.getLowerRowBuildings()));
+        }
+        System.out.println("Deck remaining: " + gameModel.getDeckRemainingCount());
     }
 
     private void renderPlayers() {
         System.out.println("--- PLAYERS ---");
-        for (String n : model.getTurnOrder()) {
-            int food = model.getFoodByPlayer().getOrDefault(n, 0);
-            int pp = model.getPpByPlayer().getOrDefault(n, 0);
-            int remU = model.getRemainingUpper().getOrDefault(n, 0);
-            int remL = model.getRemainingLower().getOrDefault(n, 0);
-            String marker = n.equals(model.getMyNickname()) ? " (YOU)" : "";
+        for (String n : gameModel.getTurnOrder()) {
+            int food = gameModel.getFoodByPlayer().getOrDefault(n, 0);
+            int pp = gameModel.getPpByPlayer().getOrDefault(n, 0);
+            int remU = gameModel.getRemainingUpper().getOrDefault(n, 0);
+            int remL = gameModel.getRemainingLower().getOrDefault(n, 0);
+            String marker = n.equals(gameModel.getMyNickname()) ? " (YOU)" : "";
             System.out.printf("  %-15s  Food: %2d  PP: %3d  Picks: upper=%d lower=%d%s%n",
                     n, food, pp, remU, remL, marker);
-
-            List<String> chars = model.getCharactersByPlayer().getOrDefault(n, List.of());
-            List<String> builds = model.getBuildingsByPlayer().getOrDefault(n, List.of());
-            if (!chars.isEmpty())  System.out.println("      characters: " + String.join(", ", chars));
-            if (!builds.isEmpty()) System.out.println("      buildings:  " + String.join(", ", builds));
+            List<String> chars =
+                    gameModel.getCharactersByPlayer().getOrDefault(n, List.of());
+            List<String> builds =
+                    gameModel.getBuildingsByPlayer().getOrDefault(n, List.of());
+            if (!chars.isEmpty())  System.out.println("      characters: "
+                    + String.join(", ", chars));
+            if (!builds.isEmpty()) System.out.println("      buildings:  "
+                    + String.join(", ", builds));
         }
     }
 
     private void renderCommands(PhaseType phase) {
         if (phase == null) return;
-        boolean isMyTurn = model.getMyNickname().equals(model.getCurrentPlayer());
-
+        boolean isMyTurn = gameModel.getMyNickname().equals(gameModel.getCurrentPlayer());
         switch (phase) {
             case TOTEM_PLACEMENT -> {
                 System.out.println("Commands:");
-                if (isMyTurn) System.out.println("  move <tileID>   — place your totem on a tile (e.g. move B)");
-                else          System.out.println("  Waiting for " + model.getCurrentPlayer() + " to place their totem...");
+                if (isMyTurn) {
+                    System.out.println("  move <tileID>   — place your totem (e.g. move B)");
+                } else {
+                    System.out.println("  Waiting for "
+                            + gameModel.getCurrentPlayer() + " to place their totem...");
+                }
             }
             case ACTION_RESOLUTION -> {
                 System.out.println("Commands:");
                 if (isMyTurn) {
                     System.out.println("  resolve <id1> [id2 ...]  — pick card IDs from the board");
-                    System.out.println("  move T                   — return your totem to the TurnOrderTile (end your turn)");
+                    System.out.println("  move T                   — return your totem (end your turn)");
                 } else {
-                    System.out.println("  Waiting for " + model.getCurrentPlayer() + " to resolve actions...");
+                    System.out.println("  Waiting for "
+                            + gameModel.getCurrentPlayer() + " to resolve actions...");
                 }
             }
             default -> System.out.println("  (waiting for server...)");
         }
     }
 
-    private void renderFinalScoring() {
-        System.out.println("=== GAME OVER ===");
-        System.out.println("Winners: " + String.join(", ", model.getWinners()));
-        System.out.println("\n--- FINAL RANKINGS ---");
-        List<PlayerFinalScore> rankings = model.getFinalRankings();
-        for (int i = 0; i < rankings.size(); i++) {
-            PlayerFinalScore s = rankings.get(i);
-            System.out.printf("  %d. %-15s  PP: %d%n", i + 1, s.nickname(), s.totalPrestigePoints());
-        }
-        System.out.println("\nType quit to exit.");
-    }
-
-    // ------------------------------------------------------------------ utils
+    // ==================== UTILS ====================
 
     private String formatRow(List<String> row) {
         return row.isEmpty() ? "(empty)" : String.join(", ", row);
@@ -190,9 +324,5 @@ public class TuiView extends AbstractClientView {
     private void clearScreen() {
         System.out.print("\033[H\033[2J");
         System.out.flush();
-    }
-
-    public void displayError(String message) {
-        System.err.println("\n[ERROR] " + message);
     }
 }

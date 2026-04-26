@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.view;
 
+import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
@@ -14,7 +15,7 @@ import java.util.Map;
 
 /**
  * Observer interface implemented by all client views (TUI, GUI).
- * The {@link it.polimi.ingsw.am02.client.model.ClientModel} pushes
+ * The {@link GameModel} pushes
  * granular updates to registered views, one method per event type.
  *
  * <p>Each method corresponds to a server-originated event and carries

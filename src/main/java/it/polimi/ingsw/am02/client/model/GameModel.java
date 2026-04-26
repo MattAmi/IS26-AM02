@@ -17,14 +17,9 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ClientModel {
+public class GameModel {
 
-    // --- Lobby state ---
-    private String myNickname;
-    private List<LobbyInfo> availableLobbies = new ArrayList<>();
-    private LobbyInfo currentLobby;
-
-    // --- Game state ---
+    private final String myNickname;
     private String gameId;
     private PhaseType currentPhase;
     private String currentPlayer;
@@ -37,47 +32,42 @@ public class ClientModel {
     private int deckRemainingCount;
     private final Map<String, Integer> foodByPlayer = new LinkedHashMap<>();
     private final Map<String, Integer> ppByPlayer = new LinkedHashMap<>();
-    private final Map<String, Character> totemPositions = new LinkedHashMap<>(); // nickname -> tileID placed
-    private final Map<String, Integer> turnOrderPositions = new LinkedHashMap<>(); // nickname -> position after returning
+    private final Map<String, Character> totemPositions = new LinkedHashMap<>();
+    private final Map<String, Integer> turnOrderPositions = new LinkedHashMap<>();
     private final Map<String, Integer> remainingUpper = new LinkedHashMap<>();
     private final Map<String, Integer> remainingLower = new LinkedHashMap<>();
     private final Map<String, List<String>> charactersByPlayer = new LinkedHashMap<>();
-    private final Map<String, List<String>> buildingsByPlayer  = new LinkedHashMap<>();
+    private final Map<String, List<String>> buildingsByPlayer = new LinkedHashMap<>();
     private List<String> winners = new ArrayList<>();
     private List<PlayerFinalScore> finalRankings = new ArrayList<>();
     private boolean gameEnded = false;
     private String lastErrorMessage;
     private String lastEventResolved;
 
-    // --- Observers ---
-    private final List<ClientView> observers = new ArrayList<>();
+    private final List<ClientView> clientViews = new ArrayList<>();
 
-    public void addObserver(ClientView observer) {
-        observers.add(observer);
+
+    public GameModel(String myNickname) {
+        this.myNickname = myNickname;
     }
 
-    private void notifyObservers() {
-        observers.forEach(ClientView::update);
-    }
+    public void addObserver(ClientView clientView) { clientViews.add(clientView);}
+    public void removeObserver(ClientView clientView) { clientViews.remove(clientView); }
 
-    // --- VirtualView ---
+    // EVENT DISPATCH
 
+    /**
+     * Applies a server-originated event: updates internal state and
+     * notifies registered views via the corresponding granular callback.
+     */
     public void apply(Event event) {
         try {
             switch (event) {
-                // Lobby events
-                case UsernameResultEvent e -> {
-                    if (e.isValid()) this.myNickname = e.username();
-                }
-                case UpdatedLobbiesEvent e -> this.availableLobbies = e.lobbies();
-                case UpdatedLobbyEvent e -> this.currentLobby = e.lobby();
-                case LobbyDissolvedEvent ignored -> this.currentLobby = null;
-
-                // Game events
+                // --------- Game lifecycle ---------
                 case GameStartedEvent e -> {
                     this.gameId = e.gameID();
-                    this.currentLobby = null;
                     this.gameEnded = false;
+                    clientViews.forEach(o -> o.onGameStarted(e.gameID()));
                 }
                 case GameSetupCompletedEvent e -> {
                     this.turnOrder = new ArrayList<>(e.turnOrder());
@@ -91,99 +81,145 @@ public class ClientModel {
                         this.lowerRowBuildings = new ArrayList<>(snap.lowerRowBuildings());
                         this.offerTiles = new ArrayList<>(snap.offerTiles());
                     }
+                    clientViews.forEach(o -> o.onGameSetupCompleted(
+                            e.turnOrder(), e.initialFood(), snap));
                 }
                 case PhaseChangedEvent e -> {
                     this.currentPhase = e.phase();
                     if (e.currentPlayer() != null) this.currentPlayer = e.currentPlayer();
                     if (e.resolutionOrder() != null) this.turnOrder = new ArrayList<>(e.resolutionOrder());
+                    clientViews.forEach(o -> o.onPhaseChanged(
+                            e.phase(), e.currentPlayer(), e.resolutionOrder()));
                 }
-                case CurrentPlayerChangedEvent e -> this.currentPlayer = e.nextPlayer();
-                case TurnOrderEstablishedEvent e -> this.turnOrder = new ArrayList<>(e.turnOrder());
+                case CurrentPlayerChangedEvent e -> {
+                    this.currentPlayer = e.nextPlayer();
+                    clientViews.forEach(o -> o.onCurrentPlayerChanged(e.nextPlayer()));
+                }
+                case TurnOrderEstablishedEvent e -> {
+                    this.turnOrder = new ArrayList<>(e.turnOrder());
+                    clientViews.forEach(o -> o.onTurnOrderEstablished(e.turnOrder()));
+                }
 
+                // --------- Totem & board ---------
                 case TotemPlacedEvent e -> {
                     totemPositions.put(e.nickname(), e.tileID());
                     this.offerTiles = offerTiles.stream()
                             .map(t -> t.tileID() == e.tileID()
-                                    ? new OfferTileInfo(t.tileID(), t.foodBonus(), t.upperChoosable(), t.lowerChoosable(), e.nickname())
+                                    ? new OfferTileInfo(t.tileID(), t.foodBonus(),
+                                    t.upperChoosable(), t.lowerChoosable(), e.nickname())
                                     : t)
                             .collect(Collectors.toCollection(ArrayList::new));
+                    clientViews.forEach(o -> o.onTotemPlaced(e.nickname(), e.tileID()));
+                    clientViews.forEach(o -> o.onOfferTilesUpdated(offerTiles));
                 }
-
                 case TotemReturnedEvent e -> {
                     totemPositions.remove(e.nickname());
                     turnOrderPositions.put(e.nickname(), e.turnOrderPosition());
                     this.offerTiles = offerTiles.stream()
                             .map(t -> e.nickname().equals(t.occupantNickname())
-                                    ? new OfferTileInfo(t.tileID(), t.foodBonus(), t.upperChoosable(), t.lowerChoosable(), null)
+                                    ? new OfferTileInfo(t.tileID(), t.foodBonus(),
+                                    t.upperChoosable(), t.lowerChoosable(), null)
                                     : t)
                             .collect(Collectors.toCollection(ArrayList::new));
+                    clientViews.forEach(o -> o.onTotemReturned(e.nickname(), e.turnOrderPosition()));
+                    clientViews.forEach(o -> o.onOfferTilesUpdated(offerTiles));
                 }
                 case BoardUpdatedEvent e -> {
                     this.upperRow = new ArrayList<>(e.newUpperRow());
                     this.lowerRow = new ArrayList<>(e.newLowerRow());
                     this.deckRemainingCount = e.deckRemainingCount();
+                    clientViews.forEach(o -> o.onBoardUpdated(
+                            e.newUpperRow(), e.newLowerRow(), e.deckRemainingCount()));
                 }
+                case EraChangedEvent e -> {
+                    this.upperRowBuildings = new ArrayList<>(e.newUpperRowBuildings());
+                    this.lowerRowBuildings = new ArrayList<>(e.newLowerRowBuildings());
+                    clientViews.forEach(o -> o.onEraChanged(
+                            e.newUpperRowBuildings(), e.newLowerRowBuildings()));
+                }
+
+                // --------- Player state ---------
                 case PlayerLimitsInitializedEvent e -> {
                     remainingUpper.put(e.nickname(), e.remainingUpper());
                     remainingLower.put(e.nickname(), e.remainingLower());
+                    clientViews.forEach(o -> o.onPlayerLimitsInitialized(
+                            e.nickname(), e.remainingUpper(), e.remainingLower()));
                 }
                 case PlayerLimitsUpdatedEvent e -> {
                     remainingUpper.put(e.nickname(), e.remainingUpper());
                     remainingLower.put(e.nickname(), e.remainingLower());
+                    clientViews.forEach(o -> o.onPlayerLimitsUpdated(
+                            e.nickname(), e.remainingUpper(), e.remainingLower()));
                 }
                 case PlayerResourceChangedEvent e -> {
-                    if (e.resource() == ResourceType.FOOD) foodByPlayer.put(e.nickname(), e.newValue());
-                    else if (e.resource() == ResourceType.PRESTIGE_POINTS) ppByPlayer.put(e.nickname(), e.newValue());
+                    if (e.resource() == ResourceType.FOOD) {
+                        foodByPlayer.put(e.nickname(), e.newValue());
+                    } else if (e.resource() == ResourceType.PRESTIGE_POINTS) {
+                        ppByPlayer.put(e.nickname(), e.newValue());
+                    }
+                    clientViews.forEach(o -> o.onPlayerResourceChanged(
+                            e.nickname(), e.resource(), e.newValue()));
                 }
                 case CardTakenEvent e -> {
-                    // 1) rimuovi dalla riga del board
                     List<String> row = (e.cardType() == CardType.BUILDING)
                             ? (e.sourceRow() == RowPosition.UPPER ? upperRowBuildings : lowerRowBuildings)
                             : (e.sourceRow() == RowPosition.UPPER ? upperRow : lowerRow);
                     row.remove(e.cardID());
-
-                    // 2) aggiungi alla tribù del player
                     Map<String, List<String>> target =
                             (e.cardType() == CardType.BUILDING) ? buildingsByPlayer : charactersByPlayer;
                     target.computeIfAbsent(e.nickname(), k -> new ArrayList<>()).add(e.cardID());
+                    clientViews.forEach(o -> o.onCardTaken(
+                            e.nickname(), e.cardID(), e.cardType(), e.sourceRow()));
                 }
-                case EventResolvedEvent e -> this.lastEventResolved = e.eventName();
-                case EraChangedEvent e -> {
-                    this.upperRowBuildings = new ArrayList<>(e.newUpperRowBuildings());
-                    this.lowerRowBuildings = new ArrayList<>(e.newLowerRowBuildings());
+
+                // --------- Events & extra turns ---------
+                case EventResolvedEvent e -> {
+                    this.lastEventResolved = e.eventName();
+                    clientViews.forEach(o -> o.onEventResolved(e.eventName()));
                 }
                 case ExtraTurnStartedEvent e -> {
                     remainingUpper.put(e.nickname(), e.remainingUpper());
                     remainingLower.put(e.nickname(), e.remainingLower());
+                    clientViews.forEach(o -> o.onExtraTurnStarted(
+                            e.nickname(), e.remainingUpper(), e.remainingLower()));
                 }
-                case ExtraTurnEndedEvent ignored -> {}
+                case ExtraTurnEndedEvent e -> {
+                    clientViews.forEach(o -> o.onExtraTurnEnded(e.nickname()));
+                }
+
+                // --------- Game end & errors ---------
                 case GameEndedEvent e -> {
                     this.winners = new ArrayList<>(e.winners());
                     this.finalRankings = new ArrayList<>(e.finalRankings());
                     this.gameEnded = true;
+                    clientViews.forEach(o -> o.onGameEnded(e.winners(), e.finalRankings()));
                 }
-                case PlayerDisconnectedEvent e -> this.lastErrorMessage = "Player disconnected: " + e.nickname();
-
-                case ErrorEvent e -> this.lastErrorMessage = e.errorMessage();
+                case PlayerDisconnectedEvent e -> {
+                    this.lastErrorMessage = "Player disconnected: " + e.nickname();
+                    clientViews.forEach(o -> o.onPlayerDisconnected(e.nickname()));
+                }
+                case ErrorEvent e -> {
+                    this.lastErrorMessage = e.errorMessage();
+                    clientViews.forEach(o -> o.onError(e.errorMessage()));
+                }
 
                 default -> {}
             }
         } catch (Exception ex) {
-            this.lastErrorMessage = "Internal client error on "
+            String msg = "Internal client error on "
                     + event.getClass().getSimpleName() + ": " + ex.getMessage();
-            // Utile durante lo sviluppo: stampa lo stack trace sulla console del client.
+            this.lastErrorMessage = msg;
             ex.printStackTrace();
-        } finally {
-            notifyObservers();
+            clientViews.forEach(o -> o.onError(msg));
         }
     }
 
-    // --- Getters lobby ---
-    public String getMyNickname() { return myNickname; }
-    public List<LobbyInfo> getAvailableLobbies() { return availableLobbies; }
-    public LobbyInfo getCurrentLobby() { return currentLobby; }
+    //  GETTERS
+    // (tutti i getter rimangono come nella tua versione attuale: servono al
+    //  ClientController per recuperare contesto, e alle view per leggere stato
+    //  globale che non è strettamente legato all'ultimo evento)
 
-    // --- Getters game ---
+    public String getMyNickname() { return myNickname; }
     public String getGameId() { return gameId; }
     public PhaseType getCurrentPhase() { return currentPhase; }
     public String getCurrentPlayer() { return currentPlayer; }
@@ -201,7 +237,7 @@ public class ClientModel {
     public Map<String, Integer> getRemainingUpper() { return remainingUpper; }
     public Map<String, Integer> getRemainingLower() { return remainingLower; }
     public Map<String, List<String>> getCharactersByPlayer() { return charactersByPlayer; }
-    public Map<String, List<String>> getBuildingsByPlayer()  { return buildingsByPlayer; }
+    public Map<String, List<String>> getBuildingsByPlayer() { return buildingsByPlayer; }
     public boolean isGameEnded() { return gameEnded; }
     public List<String> getWinners() { return winners; }
     public List<PlayerFinalScore> getFinalRankings() { return finalRankings; }

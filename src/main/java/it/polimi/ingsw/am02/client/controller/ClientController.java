@@ -1,6 +1,6 @@
 package it.polimi.ingsw.am02.client.controller;
 
-import it.polimi.ingsw.am02.client.model.ClientModel;
+import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.view.tui.TuiView;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
@@ -13,10 +13,10 @@ import java.util.Scanner;
 public class ClientController {
 
     private final ServerProxy proxy;
-    private final ClientModel model;
+    private final GameModel model;
     private final TuiView view;
 
-    public ClientController(ServerProxy proxy, ClientModel model, TuiView view) {
+    public ClientController(ServerProxy proxy, GameModel model, TuiView view) {
         this.proxy = proxy;
         this.model = model;
         this.view = view;

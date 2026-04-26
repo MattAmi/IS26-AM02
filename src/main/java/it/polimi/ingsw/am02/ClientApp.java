@@ -1,6 +1,6 @@
 package it.polimi.ingsw.am02;
 
-import it.polimi.ingsw.am02.client.model.ClientModel;
+import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy;
 import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.view.tui.TuiView;
@@ -8,7 +8,7 @@ import it.polimi.ingsw.am02.client.view.tui.TuiView;
 public class ClientApp {
     public static void main(String[] args) {
         try {
-            ClientModel model = new ClientModel();
+            GameModel model = new GameModel();
 
             RmiServerProxy proxy = new RmiServerProxy("127.0.0.1", 1099, model);
 

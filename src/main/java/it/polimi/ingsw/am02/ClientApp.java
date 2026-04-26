@@ -2,7 +2,7 @@ package it.polimi.ingsw.am02;
 
 import it.polimi.ingsw.am02.client.model.ClientModel;
 import it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy;
-import it.polimi.ingsw.am02.client.view.tui.TuiController;
+import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.view.tui.TuiView;
 
 public class ClientApp {
@@ -14,7 +14,7 @@ public class ClientApp {
 
             TuiView view = new TuiView(model);
 
-            TuiController controller = new TuiController(proxy, model, view);
+            ClientController controller = new ClientController(proxy, model, view);
 
             proxy.connect();
 

@@ -1,7 +1,8 @@
-package it.polimi.ingsw.am02.client.view.tui;
+package it.polimi.ingsw.am02.client.controller;
 
 import it.polimi.ingsw.am02.client.model.ClientModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.view.tui.TuiView;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
 import java.util.ArrayList;
@@ -9,13 +10,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
-public class TuiController {
+public class ClientController {
 
     private final ServerProxy proxy;
     private final ClientModel model;
     private final TuiView view;
 
-    public TuiController(ServerProxy proxy, ClientModel model, TuiView view) {
+    public ClientController(ServerProxy proxy, ClientModel model, TuiView view) {
         this.proxy = proxy;
         this.model = model;
         this.view = view;

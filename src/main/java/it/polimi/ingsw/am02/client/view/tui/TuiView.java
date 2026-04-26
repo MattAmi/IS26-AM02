@@ -1,7 +1,8 @@
 package it.polimi.ingsw.am02.client.view.tui;
 
 import it.polimi.ingsw.am02.client.model.ClientModel;
-import it.polimi.ingsw.am02.client.model.ClientModelObserver;
+import it.polimi.ingsw.am02.client.view.AbstractClientView;
+import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.client.view.View;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
@@ -10,9 +11,8 @@ import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
 import java.util.List;
-import java.util.Map;
 
-public class TuiView implements View, ClientModelObserver {
+public class TuiView extends AbstractClientView {
 
     private final ClientModel model;
 

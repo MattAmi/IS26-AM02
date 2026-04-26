@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.model;
 
+import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
@@ -49,14 +50,14 @@ public class ClientModel {
     private String lastEventResolved;
 
     // --- Observers ---
-    private final List<ClientModelObserver> observers = new ArrayList<>();
+    private final List<ClientView> observers = new ArrayList<>();
 
-    public void addObserver(ClientModelObserver observer) {
+    public void addObserver(ClientView observer) {
         observers.add(observer);
     }
 
     private void notifyObservers() {
-        observers.forEach(ClientModelObserver::update);
+        observers.forEach(ClientView::update);
     }
 
     // --- VirtualView ---

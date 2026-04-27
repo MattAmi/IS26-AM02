@@ -9,8 +9,6 @@ import java.util.Map;
 
 public interface VirtualView {
     void notify(Event event);
-
-
     static VirtualView noOp() {
         return event -> {};
     }

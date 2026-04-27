@@ -1,6 +1,6 @@
 package it.polimi.ingsw.am02.client.network.rmi;
 
-import it.polimi.ingsw.am02.client.model.ClientModel;
+import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.messages.events.Event;
@@ -18,15 +18,15 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     private final String host;
     private final int port;
-    private final ClientModel clientModel;
+    private final GameModel gameModel;
     private RmiServerRemote serverStub;
     private boolean connected = false;
 
-    public RmiServerProxy(String host, int port, ClientModel clientModel) throws RemoteException {
+    public RmiServerProxy(String host, int port, GameModel gameModel) throws RemoteException {
         super();
         this.host = host;
         this.port = port;
-        this.clientModel = clientModel;
+        this.gameModel = gameModel;
     }
 
     @Override
@@ -52,7 +52,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     @Override
     public void notifyEvent(Event event) throws RemoteException {
-        clientModel.apply(event);
+        gameModel.apply(event);
     }
 
     @Override

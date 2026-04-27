@@ -1,5 +1,0 @@
-package it.polimi.ingsw.am02.client.model;
-
-public interface ClientModelObserver {
-    void update();
-}

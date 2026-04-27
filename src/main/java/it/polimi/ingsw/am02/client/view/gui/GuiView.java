@@ -1,12 +1,6 @@
 package it.polimi.ingsw.am02.client.view.gui;
 
-import it.polimi.ingsw.am02.client.model.ClientModelObserver;
-import it.polimi.ingsw.am02.client.view.View;
+import it.polimi.ingsw.am02.client.view.AbstractClientView;
 
-public class GuiView implements View, ClientModelObserver {
-
-    @Override
-    public void update() {
-
-    }
+public class GuiView extends AbstractClientView {
 }

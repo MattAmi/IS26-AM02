@@ -21,23 +21,28 @@ import java.util.Scanner;
  * In the GUI, button click handlers invoke {@link ServerProxy} methods
  * directly and this class is not instantiated.</p>
  */
-public class ClientController {
 
-    private final ServerProxy proxy;
-    private final LobbyModel lobbyModel;
-    private GameModel gameModel; // null until game starts
-    private final ClientView view;
 
-    public ClientController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
-        this.proxy = proxy;
-        this.lobbyModel = lobbyModel;
-        this.view = view;
-    }
+// Sostituisci la dichiarazione nel tuo ClientController.java
 
-    /** Called by ServerProxy when GameModel is created (on GameStartedEvent). */
-    public void setGameModel(GameModel gameModel) {
-        this.gameModel = gameModel;
-    }
+    public class ClientController {
+
+        private final ServerProxy proxy;
+        private final LobbyModel lobbyModel;
+        private final ClientView view; // Rimosso gameModel, non serve!
+
+        public ClientController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
+            this.proxy = proxy;
+            this.lobbyModel = lobbyModel;
+            this.view = view;
+        }
+
+        // Getter utile per la fase di avvio in ClientApp
+        public ClientView getView() {
+            return view;
+        }
+
+        // ... [il resto del codice run() e dispatch() rimane identico] ...
     /** Blocking loop: reads commands from stdin until the process exits. */
     public void run() {
         Scanner scanner = new Scanner(System.in);
@@ -60,8 +65,8 @@ public class ClientController {
 
     private void dispatch(String cmd, String[] args) {
         switch (cmd) {
-            case "login" -> {
-                if (args.length < 2) view.onError("Usage: login <nickname>");
+            case "nick" -> {
+                if (args.length < 2) view.onError("Usage: nick <nickname>");
                 else proxy.requestSetUsername(args[1]);
             }
             case "create" -> {
@@ -72,7 +77,6 @@ public class ClientController {
                 if (args.length < 2) view.onError("Usage: join <lobby_index>");
                 else {
                     int idx = Integer.parseInt(args[1]);
-                    // reads from LobbyModel, not GameModel
                     String lobbyId = lobbyModel.getAvailableLobbies().get(idx).lobbyId();
                     proxy.requestJoinLobby(lobbyId);
                 }
@@ -100,4 +104,5 @@ public class ClientController {
             default -> view.onError("Unknown command: " + cmd);
         }
     }
+
 }

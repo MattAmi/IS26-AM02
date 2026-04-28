@@ -63,18 +63,23 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     // --- RMI CLIENT REMOTE (Inbound routing from Server) ---
     @Override
     public void notifyEvent(Event event) throws RemoteException {
-        // 1. Lazy initialization of the GameModel
-        if (event instanceof GameStartedEvent && gameModel == null) {
-            String myNick = lobbyModel.getMyNickname();
-            this.gameModel = new GameModel(myNick);
+        // 1. Intercept GameStartedEvent explicitly
+        if (event instanceof GameStartedEvent e) {
+            if (gameModel == null) {
+                String myNick = lobbyModel.getMyNickname();
+                this.gameModel = new GameModel(myNick);
 
-            // Automatically wire the view to the newly created game model!
-            this.gameModel.addObserver(this.clientView);
-
-            System.out.println("[RMI Proxy] GameModel created and wired for: " + myNick);
+                if (this.clientView instanceof it.polimi.ingsw.am02.client.view.tui.TuiView tui) {
+                    tui.onGameModelCreated(this.gameModel);
+                }
+                System.out.println("[RMI Proxy] GameModel created and wired for: " + myNick);
+            }
+            // Explicitly route this event to the GameModel so the UI updates!
+            gameModel.apply(e);
+            return; // We stop here so it doesn't get processed twice
         }
 
-        // 2. Pattern Matching Routing
+        // 2. Pattern Matching Routing for everything else
         if (event instanceof LobbyEvent lobbyEvent) {
             lobbyModel.apply(lobbyEvent);
         } else if (event instanceof GameEvent gameEvent) {

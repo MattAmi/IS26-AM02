@@ -82,6 +82,7 @@ public class GameModel {
                         this.upperRowBuildings = new ArrayList<>(snap.upperRowBuildings());
                         this.lowerRowBuildings = new ArrayList<>(snap.lowerRowBuildings());
                         this.offerTiles = new ArrayList<>(snap.offerTiles());
+                        this.deckRemainingCount = snap.tribuDeckSize();
                     }
                     clientViews.forEach(o -> o.onGameSetupCompleted(
                             e.turnOrder(), e.initialFood(), snap));
@@ -211,6 +212,20 @@ public class GameModel {
                 case PlayerDisconnectedEvent e -> {
                     this.lastErrorMessage = "Player disconnected: " + e.nickname();
                     clientViews.forEach(o -> o.onPlayerDisconnected(e.nickname()));
+                }
+
+                case GameAbortedEvent e -> {
+                    this.gameEnded = true;
+                    clientViews.forEach(o -> o.onGameAborted(e.lastManStanding()));
+                }
+
+                case GameRecoveryFailedEvent e -> {
+                    this.gameEnded = true;
+                    clientViews.forEach(o -> o.onGameRecoveryFailed());
+                }
+
+                case PlayerReconnectedEvent e -> {
+                    clientViews.forEach(o -> o.onPlayerReconnected(e.nickname()));
                 }
 
                 case ErrorEvent e -> {

@@ -41,6 +41,7 @@ public class GameController implements GameObserver {
     // Concurrency
     private final ExecutorService drainExecutor;
     private final ScheduledExecutorService scheduler;
+    private final ExecutorService autoPlayerExecutor;
 
     private ScheduledFuture<?> disconnectedPlayerTimer;
     private String disconnectedPlayerTimerTarget;
@@ -78,6 +79,12 @@ public class GameController implements GameObserver {
 
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "GC[" + gameId + "]-Scheduler");
+            t.setDaemon(true);
+            return t;
+        });
+
+        this.autoPlayerExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "GC[" + gameId + "]-AutoPlayer");
             t.setDaemon(true);
             return t;
         });
@@ -184,6 +191,13 @@ public class GameController implements GameObserver {
                     playerSyncIndex.put(nickname, currentIndex);
                     connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
                     log("Drain complete for " + nickname + " — now CONNECTED.");
+
+                    long pendingCount = connectionStatus.values().stream()
+                            .filter(s -> s == ConnectionStatus.PENDING_RECONNECTION)
+                            .count();
+                    if (pendingCount > 0) {
+                        startGlobalDisconnectionTimeout();
+                    }
                 }
             } catch (Exception e) {
                 log("Catch-up failed for " + nickname + ": " + e.getMessage());
@@ -192,11 +206,21 @@ public class GameController implements GameObserver {
         });
     }
 
+    synchronized void markAllPlayersPendingReconnection() {
+        connectionStatus.replaceAll((nickname, status) -> ConnectionStatus.PENDING_RECONNECTION);
+    }
+
+    public synchronized boolean areAllPlayersPendingReconnection() {
+        return connectionStatus.values().stream()
+                .allMatch(s -> s == ConnectionStatus.PENDING_RECONNECTION);
+    }
+
     public synchronized void shutdown() {
         if (disconnectedPlayerTimer != null) disconnectedPlayerTimer.cancel(false);
         if (globalTimer != null) globalTimer.cancel(false);
         scheduler.shutdownNow();
         drainExecutor.shutdownNow();
+        autoPlayerExecutor.shutdownNow();
         log("Shutdown complete.");
     }
 
@@ -236,14 +260,27 @@ public class GameController implements GameObserver {
         }
         if (connectionStatus.get(newCurrentPlayer) == ConnectionStatus.DISCONNECTED) {
             if (gracePeriodExpired.contains(newCurrentPlayer)) {
-                log("Invoking AutoPlayer for absent player " + newCurrentPlayer);
-                GameCommand autoCmd = AutoPlayer.computeMove(newCurrentPlayer, snapshot);
-                if (autoCmd != null) handle(autoCmd, newCurrentPlayer);
+                log("Player " + newCurrentPlayer + " is still absent. Invoking AutoPlayer immediately.");
+                scheduleAutoPlayerMove(newCurrentPlayer);
+
             } else {
                 startDisconnectedPlayerTimer(newCurrentPlayer);
             }
         }
     }
+
+    private void scheduleAutoPlayerMove(String nickname) {
+        GameCommand autoCmd = AutoPlayer.computeMove(nickname, snapshot);
+        if (autoCmd == null) {
+            log("AutoPlayer produced no command for " + nickname + " in current phase — skipping.");
+            return;
+        }
+        // Eseguito fuori dal lock tramite lo autoPlayerExecutor per evitare deadlock:
+        // handle() è synchronized, e questo metodo viene chiamato da callback
+        // già dentro il monitor (onPlayerLimitsUpdated, handleCurrentPlayerTransition).
+        autoPlayerExecutor.execute(() -> handle(autoCmd, nickname));
+    }
+
 
     private void startDisconnectedPlayerTimer(String nickname) {
         if (disconnectedPlayerTimer != null) disconnectedPlayerTimer.cancel(false);
@@ -262,14 +299,16 @@ public class GameController implements GameObserver {
     }
 
     private void onDisconnectedPlayerTimerExpired(String nickname) {
-        GameCommand autoCmd;
         synchronized (this) {
             if (connectionStatus.get(nickname) != ConnectionStatus.DISCONNECTED || !nickname.equals(currentPlayerNickname)) return;
             log("Timer expired for " + nickname + " — invoking AutoPlayer.");
             gracePeriodExpired.add(nickname);
-            autoCmd = AutoPlayer.computeMove(nickname, snapshot);
+
+            disconnectedPlayerTimer = null;
+            disconnectedPlayerTimerTarget = null;
         }
-        if (autoCmd != null) handle(autoCmd, nickname);
+
+        scheduleAutoPlayerMove(nickname);
     }
 
     private void startGlobalDisconnectionTimeout() {
@@ -289,13 +328,39 @@ public class GameController implements GameObserver {
 
     private void onGlobalDisconnectionTimerExpired() {
         synchronized (this) {
+            int pendingCount = (int) connectionStatus.values().stream()
+                    .filter(s -> s == ConnectionStatus.PENDING_RECONNECTION)
+                    .count();
+
             int activeCount = (int) connectionStatus.values().stream()
-                    .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING).count();
-            if (activeCount > 1) { globalTimer = null; return; }
-            String winner = connectionStatus.entrySet().stream()
-                    .filter(e -> e.getValue() == ConnectionStatus.CONNECTED || e.getValue() == ConnectionStatus.RECONNECTING)
-                    .map(Map.Entry::getKey).findFirst().orElseThrow();
-            pushGlobalEvent(new GameAbortedEvent(winner));
+                    .filter(s -> s == ConnectionStatus.CONNECTED
+                            || s == ConnectionStatus.RECONNECTING)
+                    .count();
+
+            if (pendingCount == 0 && activeCount > 1) {
+                log("Global timer expired but " + activeCount + " players active — skipping.");
+                globalTimer = null;
+                return;
+            }
+
+            globalTimer = null;
+
+            if (pendingCount > 0) {
+                // Recovery failed: not all players reconnected in time
+                log("Global timer expired — recovery failed, " + pendingCount + " players never reconnected.");
+                pushGlobalEvent(new GameRecoveryFailedEvent());
+            } else {
+                // Normal flow: one player left, wins by forfeit
+                String winner = connectionStatus.entrySet().stream()
+                        .filter(e -> e.getValue() == ConnectionStatus.CONNECTED
+                                || e.getValue() == ConnectionStatus.RECONNECTING)
+                        .map(Map.Entry::getKey)
+                        .findFirst()
+                        .orElseThrow();
+                log("Global timer expired — winner by forfeit: " + winner);
+                pushGlobalEvent(new GameAbortedEvent(winner));
+            }
+
             gameLogger.logGameEnded();
             gameLogger.close();
             shutdown();
@@ -347,6 +412,18 @@ public class GameController implements GameObserver {
         snapshot.applyTotemReturned(nick);
         pushGlobalEvent(new TotemReturnedEvent(nick, pos));
     }
+    @Override
+    public synchronized void onPlayerLimitsUpdated(String nickname,
+                                                   int remainingUpper,
+                                                   int remainingLower) {
+        snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
+        pushGlobalEvent(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower));
+
+        if (nickname.equals(currentPlayerNickname)
+                && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
+            scheduleAutoPlayerMove(nickname);
+        }
+    }
     @Override public synchronized void onPlayerLimitsInitialized(String nick, int u, int l) {
         snapshot.setPlayerLimits(nick, u, l);
         pushGlobalEvent(new PlayerLimitsInitializedEvent(nick, u, l));
@@ -380,9 +457,9 @@ public class GameController implements GameObserver {
     private void log(String msg) { System.out.println("[GameController:" + gameId + "] " + msg); }
 
     public boolean isPlayerDisconnected(String nickname) {
-        VirtualView currentHandler = handlers.get(nickname);
-        return connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED
-                || currentHandler == null;
+        ConnectionStatus status = connectionStatus.get(nickname);
+        return status == ConnectionStatus.DISCONNECTED
+                || status == ConnectionStatus.PENDING_RECONNECTION;
     }
 
     void enterReplayMode() { this.replayMode = true; }

@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.view.tui;
 
+import it.polimi.ingsw.am02.client.view.CardCatalog;
 import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.view.AbstractClientView;
@@ -15,26 +16,19 @@ import it.polimi.ingsw.am02.common.enumerations.Totem;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-/**
- * Textual user interface. Registered as observer on both {@link LobbyModel}
- * and {@link GameModel}. Receives granular push updates and renders only
- * the affected section, falling back to a full re-render on structural changes.
- */
 public class TuiView extends AbstractClientView {
 
     private final LobbyModel lobbyModel;
-    private GameModel gameModel; // null until GameStartedEvent
+    private GameModel gameModel;
 
     public TuiView(LobbyModel lobbyModel) {
         this.lobbyModel = lobbyModel;
         lobbyModel.addObserver(this);
     }
 
-
-
-    @Override
-    public void setGameModel(GameModel gameModel) {
+    public void onGameModelCreated(GameModel gameModel) {
         this.gameModel = gameModel;
         gameModel.addObserver(this);
     }
@@ -200,12 +194,36 @@ public class TuiView extends AbstractClientView {
     }
 
     @Override
+    public void onPlayerReconnected(String nickname) {
+        System.out.println("\n[!] Player reconnected: " + nickname);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onGameAborted(String lastManStanding) {
+        clearScreen();
+        printHeader();
+        System.out.println("=== GAME ABORTED ===");
+        System.out.println("Winner by forfeit: " + lastManStanding);
+        System.out.println("\nType quit to exit.");
+    }
+
+    @Override
+    public void onGameRecoveryFailed() {
+        clearScreen();
+        printHeader();
+        System.out.println("=== GAME RECOVERY FAILED ===");
+        System.out.println("Not all players reconnected in time. The game has been terminated.");
+        System.out.println("\nType quit to exit.");
+    }
+
+    @Override
     public void onError(String message) {
         lastNotification = "[ERROR] " + message;
         renderFullGame();
     }
 
-    // ==================== FULL RE-RENDER ====================
+    // FULL RE-RENDER
 
     private void renderFullGame() {
         if (gameModel == null) return;
@@ -240,15 +258,21 @@ public class TuiView extends AbstractClientView {
                     tile.upperChoosable(), tile.lowerChoosable(), occupant);
         }
         System.out.println();
-        System.out.println("Upper row (cards): " + formatRow(gameModel.getUpperRow()));
-        System.out.println("Lower row (cards): " + formatRow(gameModel.getLowerRow()));
+        System.out.println("Upper row (cards):");
+        gameModel.getUpperRow().forEach(id ->
+                System.out.println("  " + CardCatalog.getInstance().format(id)));
+        System.out.println("Lower row (cards):");
+        gameModel.getLowerRow().forEach(id ->
+                System.out.println("  " + CardCatalog.getInstance().format(id)));
         if (!gameModel.getUpperRowBuildings().isEmpty()) {
-            System.out.println("Upper row (buildings): "
-                    + formatRow(gameModel.getUpperRowBuildings()));
+            System.out.println("Upper row (buildings):");
+            gameModel.getUpperRowBuildings().forEach(id ->
+                    System.out.println("  " + CardCatalog.getInstance().format(id)));
         }
         if (!gameModel.getLowerRowBuildings().isEmpty()) {
-            System.out.println("Lower row (buildings): "
-                    + formatRow(gameModel.getLowerRowBuildings()));
+            System.out.println("Lower row (buildings):");
+            gameModel.getLowerRowBuildings().forEach(id ->
+                    System.out.println("  " + CardCatalog.getInstance().format(id)));
         }
         System.out.println("Deck remaining: " + gameModel.getDeckRemainingCount());
     }
@@ -263,14 +287,16 @@ public class TuiView extends AbstractClientView {
             String marker = n.equals(gameModel.getMyNickname()) ? " (YOU)" : "";
             System.out.printf("  %-15s  Food: %2d  PP: %3d  Picks: upper=%d lower=%d%s%n",
                     n, food, pp, remU, remL, marker);
-            List<String> chars =
-                    gameModel.getCharactersByPlayer().getOrDefault(n, List.of());
-            List<String> builds =
-                    gameModel.getBuildingsByPlayer().getOrDefault(n, List.of());
-            if (!chars.isEmpty())  System.out.println("      characters: "
-                    + String.join(", ", chars));
-            if (!builds.isEmpty()) System.out.println("      buildings:  "
-                    + String.join(", ", builds));
+            List<String> chars = gameModel.getCharactersByPlayer().getOrDefault(n, List.of());
+            List<String> builds = gameModel.getBuildingsByPlayer().getOrDefault(n, List.of());
+            if (!chars.isEmpty()) {
+                System.out.println("      characters:");
+                chars.forEach(id -> System.out.println("        " + CardCatalog.getInstance().format(id)));
+            }
+            if (!builds.isEmpty()) {
+                System.out.println("      buildings:");
+                builds.forEach(id -> System.out.println("        " + CardCatalog.getInstance().format(id)));
+            }
         }
     }
 
@@ -301,11 +327,7 @@ public class TuiView extends AbstractClientView {
         }
     }
 
-    // ==================== UTILS ====================
-
-    private String formatRow(List<String> row) {
-        return row.isEmpty() ? "(empty)" : String.join(", ", row);
-    }
+    // UTILS
 
     private void printHeader() {
         System.out.println("========================================");

@@ -18,6 +18,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public class ControllerManager {
@@ -33,6 +36,9 @@ public class ControllerManager {
     private final Map<String, String> clientToNickname;
     private final Map<String, Map<String, String>> gameNicknameToClient;
 
+    private static final long RECOVERY_WINDOW_SECONDS = 300;
+    private final ScheduledExecutorService recoveryScheduler;
+
     private ControllerManager() {
         this.connectedClients = new ConcurrentHashMap<>();
         this.lobbies = new ConcurrentHashMap<>();
@@ -41,6 +47,12 @@ public class ControllerManager {
         this.clientToGame = new ConcurrentHashMap<>();
         this.clientToNickname = new ConcurrentHashMap<>();
         this.gameNicknameToClient = new ConcurrentHashMap<>();
+
+        this.recoveryScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "ControllerManager-RecoveryScheduler");
+            t.setDaemon(true);
+            return t;
+        });
     }
 
     public static ControllerManager getInstance() {
@@ -295,6 +307,7 @@ public class ControllerManager {
     public synchronized void shutdown() {
         controllers.values().forEach(GameController::shutdown);
         controllers.clear();
+        recoveryScheduler.shutdownNow();
     }
 
     // Helper methods
@@ -406,6 +419,20 @@ public class ControllerManager {
             controller.handle(rec.command(), rec.command().nickname());
         }
         controller.exitReplayMode();
+
+        controller.markAllPlayersPendingReconnection();
+
+        String gameId = init.gameId();
+        recoveryScheduler.schedule(() -> {
+            synchronized (ControllerManager.this) {
+                GameController c = controllers.get(gameId);
+                if (c != null && c.areAllPlayersPendingReconnection()) {
+                    System.out.println("[Recovery] No players reconnected for game "
+                            + gameId + " — removing.");
+                    removeGameController(gameId);
+                }
+            }
+        }, RECOVERY_WINDOW_SECONDS, TimeUnit.SECONDS);
     }
 
     private void quarantine(Path logFile, Path logsDirectory) {

@@ -49,6 +49,10 @@ public abstract class AbstractClientView implements ClientView {
     @Override public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {}
     @Override public void onPlayerDisconnected(String nickname) {}
 
+    @Override public void onGameAborted(String lastManStanding) {}
+    @Override public void onGameRecoveryFailed() {}
+    @Override public void onPlayerReconnected(String nickname) {}
+
     @Override
     public void onError(String message) {
         System.err.println("[ERROR] " + message);

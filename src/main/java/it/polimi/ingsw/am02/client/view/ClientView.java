@@ -59,6 +59,9 @@ public interface ClientView {
     // Game end & errors
     void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings);
     void onPlayerDisconnected(String nickname);
+    void onGameAborted(String lastManStanding);
+    void onGameRecoveryFailed();
+    void onPlayerReconnected(String nickname);
     void onError(String message);
 
     /**

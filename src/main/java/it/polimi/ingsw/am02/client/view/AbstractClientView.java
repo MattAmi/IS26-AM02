@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.view;
 
+import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
@@ -56,4 +57,5 @@ public abstract class AbstractClientView implements ClientView {
     public void onError(String message) {
         System.err.println("[ERROR] " + message);
     }
+    @Override public void setGameModel(GameModel gameModel) {}
 }

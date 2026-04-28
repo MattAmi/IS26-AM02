@@ -63,4 +63,5 @@ public interface ClientView {
     void onGameRecoveryFailed();
     void onPlayerReconnected(String nickname);
     void onError(String message);
+    void setGameModel(GameModel gameModel);
 }

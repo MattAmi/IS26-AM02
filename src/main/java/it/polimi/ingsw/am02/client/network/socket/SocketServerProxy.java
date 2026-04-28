@@ -109,12 +109,6 @@ public class SocketServerProxy implements ServerProxy {
     @Override public void requestSelectTotem(Totem color)             { send(new SelectTotemCommand(color)); }
     @Override public void requestStartGame()                          { send(new StartGameCommand()); }
     @Override public void requestLeaveLobby()                         { send(new LeaveLobbyCommand(myNickname)); }
-
-    @Override
-    public void requestReconnect(String nickname, String gameId) {
-        send(new ReconnectCommand(nickname, gameId));
-    }
-
-    @Override public void moveTotem(char tileID)     { send(new MoveTotemCommand("not_set", tileID)); }
-    @Override public void resolveActions(List<String> ids) { send(new ResolveActionsCommand("not_set", ids)); }
+    @Override public void moveTotem(String nickname, char tileID)     { send(new MoveTotemCommand(nickname, tileID)); }
+    @Override public void resolveActions(String nickname, List<String> ids) { send(new ResolveActionsCommand(nickname, ids)); }
 }

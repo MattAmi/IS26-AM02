@@ -58,6 +58,7 @@ public class GameController implements GameObserver {
 
         this.gameId = gameId;
         this.model = model;
+        this.handlers.putAll(handlers);
         this.gameLogger = gameLogger;
         this.gameEndedCallback = null;
 
@@ -546,6 +547,11 @@ public class GameController implements GameObserver {
                                                 int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         pushGlobalEvent(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
+
+        if (nickname.equals(currentPlayerNickname)
+                && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
+            scheduleAutoPlayerMove(nickname);
+        }
     }
 
     @Override

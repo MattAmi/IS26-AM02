@@ -213,6 +213,11 @@ public class GameController implements GameObserver {
         connectionStatus.replaceAll((nickname, status) -> ConnectionStatus.PENDING_RECONNECTION);
     }
 
+    public synchronized boolean areAllPlayersPendingReconnection() {
+        return connectionStatus.values().stream()
+                .allMatch(s -> s == ConnectionStatus.PENDING_RECONNECTION);
+    }
+
     public synchronized void shutdown() {
         if (disconnectedPlayerTimer != null) {
             disconnectedPlayerTimer.cancel(false);

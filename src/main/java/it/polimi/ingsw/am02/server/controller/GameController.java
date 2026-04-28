@@ -547,6 +547,11 @@ public class GameController implements GameObserver {
                                                 int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         pushGlobalEvent(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
+
+        if (nickname.equals(currentPlayerNickname)
+                && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
+            scheduleAutoPlayerMove(nickname);
+        }
     }
 
     @Override

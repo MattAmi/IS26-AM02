@@ -507,6 +507,11 @@ public class GameBoard {
 
         extraTurnRemainingUpper -= counts[0];
         extraTurnRemainingLower -= counts[1];
+
+        notifier.notifyPlayerLimitsUpdated(
+                player.getNickname(),
+                extraTurnRemainingUpper,
+                extraTurnRemainingLower);
     }
 
     public void clearExtraTurn() {

@@ -146,6 +146,21 @@ public class GuiView extends AbstractClientView {
     }
 
     @Override
+    public void onGameAborted(String lastManStanding) {
+        super.onGameAborted(lastManStanding);
+    }
+
+    @Override
+    public void onGameRecoveryFailed() {
+        super.onGameRecoveryFailed();
+    }
+
+    @Override
+    public void onPlayerReconnected(String nickname) {
+        super.onPlayerReconnected(nickname);
+    }
+
+    @Override
     public void onError(String message) {
         super.onError(message);
     }

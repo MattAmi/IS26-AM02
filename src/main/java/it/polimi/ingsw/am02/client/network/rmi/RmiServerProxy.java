@@ -28,9 +28,11 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     private final ClientView clientView;
     private GameModel gameModel;
     private RmiServerRemote serverStub;
-    private boolean connected = false;
 
-    // Cache per gestire la riconnessione
+    private volatile boolean connected = false;
+    private volatile boolean attemptingReconnection = false;
+
+    // Cache vitale per l'Auto-Reconnect
     private String activeNickname = null;
     private String activeGameId = null;
 
@@ -57,11 +59,11 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override public boolean isConnected() { return connected; }
-    @Override public void ping() throws RemoteException {}
+    @Override public void ping() throws RemoteException { /* Heartbeat dal server */ }
 
+    // --- INBOUND ---
     @Override
     public void notifyEvent(Event event) throws RemoteException {
-        // Memorizziamo nick e gameId se passano dalla lobby
         if (event instanceof UsernameResultEvent e && e.isValid()) {
             this.activeNickname = e.username();
         }
@@ -76,10 +78,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
             }
         } else if (event instanceof GameEvent gameEvent) {
             if (gameModel == null) {
-                // Se siamo in riconnessione, lobbyModel.getMyNickname() è null.
-                // Usiamo activeNickname che abbiamo salvato nel comando reconnect.
                 initGameModel(this.activeNickname);
-                System.out.println("[RMI Proxy] GameModel inizializzato durante la riconnessione per: " + this.activeNickname);
             }
             gameModel.apply(gameEvent);
         }
@@ -87,39 +86,75 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     private void initGameModel(String nickname) {
         this.gameModel = new GameModel(nickname);
-
-        // Colleghiamo la TUI
         if (clientView instanceof TuiView tui) {
             tui.onGameModelCreated(this.gameModel);
         }
         this.clientView.setGameModel(this.gameModel);
-
-        // Se conosciamo il gameId (da reconnect o da cache), lo iniettiamo nel model
-        // così la TUI non stampa più "Game: null"
         if (this.activeGameId != null) {
             this.gameModel.apply(new GameStartedEvent(this.activeGameId));
         }
     }
 
-    @Override
-    public void requestReconnect(String nickname, String gameId) {
-        // SALVATAGGIO VITALE: salviamo i dati PRIMA di mandare il comando
-        this.activeNickname = nickname;
-        this.activeGameId = gameId;
+    // --- OUTBOUND CON GESTIONE ERRORI RETE ---
+
+    private void execute(NetworkAction action) {
         try {
-            serverStub.requestReconnect(nickname, gameId);
+            action.run();
         } catch (RemoteException e) {
-            this.connected = false;
+            handleNetworkFailure(e);
         }
     }
 
-    // --- Altri metodi Outbound ---
-    @Override public void requestSetUsername(String u) { try { serverStub.requestSetUsername(u); } catch (RemoteException e) { connected = false; } }
-    @Override public void requestCreateLobby(int n) { try { serverStub.requestCreateLobby(n); } catch (RemoteException e) { connected = false; } }
-    @Override public void requestJoinLobby(String id) { try { serverStub.requestJoinLobby(id); } catch (RemoteException e) { connected = false; } }
-    @Override public void requestSelectTotem(Totem t) { try { serverStub.requestSelectTotem(t); } catch (RemoteException e) { connected = false; } }
-    @Override public void requestStartGame() {}
-    @Override public void requestLeaveLobby() { try { serverStub.requestLeaveLobby(); } catch (RemoteException e) { connected = false; } }
-    @Override public void moveTotem(char t) { try { serverStub.moveTotem(t); } catch (RemoteException e) { connected = false; } }
-    @Override public void resolveActions(List<String> ids) { try { serverStub.resolveActions(ids); } catch (RemoteException e) { connected = false; } }
+    @FunctionalInterface interface NetworkAction { void run() throws RemoteException; }
+
+    @Override public void requestSetUsername(String u) { execute(() -> serverStub.requestSetUsername(u)); }
+    @Override public void requestCreateLobby(int n) { execute(() -> serverStub.requestCreateLobby(n)); }
+    @Override public void requestJoinLobby(String id) { execute(() -> serverStub.requestJoinLobby(id)); }
+    @Override public void requestSelectTotem(Totem t) { execute(() -> serverStub.requestSelectTotem(t)); }
+    @Override public void requestStartGame() { execute(() -> serverStub.requestStartGame()); }
+    @Override public void requestLeaveLobby() { execute(() -> serverStub.requestLeaveLobby()); }
+    @Override public void moveTotem(char t) { execute(() -> serverStub.moveTotem(t)); }
+    @Override public void resolveActions(List<String> ids) { execute(() -> serverStub.resolveActions(ids)); }
+    @Override public void requestReconnect(String n, String g) {
+        this.activeNickname = n; this.activeGameId = g;
+        execute(() -> serverStub.requestReconnect(n, g));
+    }
+
+    // --- LOGICA DI RICONNESSIONE AUTOMATICA ---
+
+    private synchronized void handleNetworkFailure(Exception e) {
+        if (attemptingReconnection) return;
+
+        this.connected = false;
+        this.attemptingReconnection = true;
+
+        // Notifichiamo la TUI
+        clientView.onError("Connessione persa con il server! Tentativo di ripristino automatico...");
+
+        Thread t = new Thread(() -> {
+            System.err.println("[RMI Proxy] Server crash rilevato. Avvio polling di riconnessione...");
+            while (!this.connected) {
+                try {
+                    Thread.sleep(5000); // Prova ogni 5 secondi
+                    connect(); // Tenta di rifare il lookup e registrarsi
+
+                    System.out.println("[RMI Proxy] Server tornato online!");
+
+                    // Se stavamo giocando, forziamo il rientro automatico
+                    if (activeNickname != null && activeGameId != null) {
+                        System.out.println("[RMI Proxy] Ripristino partita " + activeGameId + " per " + activeNickname);
+                        serverStub.requestReconnect(activeNickname, activeGameId);
+                    }
+
+                    clientView.onError("Server di nuovo online! Partita ripristinata.");
+                    this.attemptingReconnection = false;
+
+                } catch (Exception ex) {
+                    // Server ancora giù, continua il loop
+                }
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+    }
 }

@@ -306,8 +306,10 @@ public class TuiView extends AbstractClientView {
     }
 
     private void renderCommands(PhaseType phase) {
-        if (phase == null || gameModel == null) return;
-
+        if (phase == null || gameModel == null) {
+            System.out.println("  (In attesa del server...)");
+            return;
+        }
         String myNick = gameModel.getMyNickname();
         String currentP = gameModel.getCurrentPlayer();
 

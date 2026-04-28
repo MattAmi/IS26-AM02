@@ -396,20 +396,19 @@ public class ControllerManager {
 
         Game model = new Game(init.gameId(), init.nicknames(), init.chosenTotems(), init.seed());
 
-        Map<String, VirtualView> offlineViews = new HashMap<>();
+        Map<String, VirtualView> noOpViews = new HashMap<>();
         Map<String, String> nicknameToClient = new HashMap<>();
-
         for (String nick : init.nicknames()) {
-            offlineViews.put(nick, null); // <-- IL FIX: Passiamo NULL, non noOp()!
-            nicknameToClient.put(nick, null);
+            noOpViews.put(nick, VirtualView.noOp());
+            nicknameToClient.put(nick, null); //clientId will be reassigned at reconnection
         }
 
         gameNicknameToClient.put(init.gameId(), nicknameToClient);
 
-
+        // Riapre il file in append — NON riscrivere GAME_INIT
         CommandLogger appender = new CommandLogger(init.gameId());
 
-        GameController controller = new GameController(init.gameId(), model, offlineViews, appender);
+        GameController controller = new GameController(init.gameId(), model, noOpViews, appender);
         controller.setGameEndedCallback(() -> removeGameController(init.gameId()));
         controllers.put(init.gameId(), controller);
 

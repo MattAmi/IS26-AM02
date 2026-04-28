@@ -69,7 +69,7 @@ public class TuiView extends AbstractClientView {
                         i, info.currentPlayers().size(), info.expectedPlayers());
             }
         }
-        System.out.println("\nCommands: create <size> | join <index> | quit");
+        System.out.println("\nCommands: create <size> | join <index> | reconnect <gameId> <nickname> | quit");
         System.out.print("\n> ");
     }
 

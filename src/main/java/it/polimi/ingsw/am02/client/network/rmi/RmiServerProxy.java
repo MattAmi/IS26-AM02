@@ -60,34 +60,44 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
         return connected;
     }
 
-    // --- RMI CLIENT REMOTE (Inbound routing from Server) ---
+// ... inside RmiServerProxy.java ...
+
+    private String reconnectedNickname = null;
+
+    @Override
+    public void ping() throws RemoteException {
+        // Do nothing. We just need to receive the call to prove we are alive.
+    }
+
+    @Override
+    public void requestReconnect(String gameId, String nickname) {
+        this.reconnectedNickname = nickname; // Save it for lazy initialization
+        try { serverStub.requestReconnect(gameId, nickname); } catch (RemoteException e) { handleNetworkError(e); }
+    }
+
+    // Replace the existing notifyEvent with this one:
     @Override
     public void notifyEvent(Event event) throws RemoteException {
-        // 1. Intercept GameStartedEvent explicitly
-        if (event instanceof GameStartedEvent e) {
-            if (gameModel == null) {
-                String myNick = lobbyModel.getMyNickname();
-                this.gameModel = new GameModel(myNick);
-
-                if (this.clientView instanceof it.polimi.ingsw.am02.client.view.tui.TuiView tui) {
-                    tui.onGameModelCreated(this.gameModel);
-                }
-                System.out.println("[RMI Proxy] GameModel created and wired for: " + myNick);
-            }
-            // Explicitly route this event to the GameModel so the UI updates!
-            gameModel.apply(e);
-            return; // We stop here so it doesn't get processed twice
-        }
-
-        // 2. Pattern Matching Routing for everything else
         if (event instanceof LobbyEvent lobbyEvent) {
             lobbyModel.apply(lobbyEvent);
-        } else if (event instanceof GameEvent gameEvent) {
-            if (gameModel != null) {
-                gameModel.apply(gameEvent);
-            } else {
-                System.err.println("[RMI Proxy] Received GameEvent but GameModel is null!");
+            if (event instanceof GameStartedEvent && gameModel == null) {
+                initGameModel(lobbyModel.getMyNickname());
             }
+        } else if (event instanceof GameEvent gameEvent) {
+            if (gameModel == null) {
+                // RECONNECTION FIRED! We missed the GameStartedEvent, initialize now!
+                String nick = lobbyModel.getMyNickname() != null ? lobbyModel.getMyNickname() : reconnectedNickname;
+                initGameModel(nick);
+                System.out.println("[RMI Proxy] GameModel RECOVERED via GameEvent for: " + nick);
+            }
+            gameModel.apply(gameEvent);
+        }
+    }
+
+    private void initGameModel(String nickname) {
+        this.gameModel = new GameModel(nickname);
+        if (this.clientView instanceof it.polimi.ingsw.am02.client.view.tui.TuiView tui) {
+            tui.onGameModelCreated(this.gameModel);
         }
     }
 
@@ -140,4 +150,5 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     public GameModel getGameModel() {
         return gameModel;
     }
+
 }

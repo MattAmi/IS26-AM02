@@ -2,6 +2,7 @@ package it.polimi.ingsw.am02.server.network.rmi;
 
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.messages.commands.MoveTotemCommand;
+import it.polimi.ingsw.am02.common.messages.commands.ReconnectCommand;
 import it.polimi.ingsw.am02.common.messages.commands.ResolveActionsCommand;
 import it.polimi.ingsw.am02.common.messages.commands.StartGameCommand;
 import it.polimi.ingsw.am02.common.messages.events.Event;
@@ -12,10 +13,7 @@ import it.polimi.ingsw.am02.server.network.ClientHandler;
 
 import java.rmi.RemoteException;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
@@ -67,16 +65,21 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     private void processOutboundQueue() {
         while (running) {
             try {
-                // Blocks until an event is available
-                Event event = outboundQueue.take();
-                // Send over the network
-                clientRemoteStub.notifyEvent(event);
+                // Wait for an event, but wake up every 2 seconds if queue is empty
+                Event event = outboundQueue.poll(2, TimeUnit.SECONDS);
+
+                if (event != null) {
+                    clientRemoteStub.notifyEvent(event);
+                } else {
+                    // 2 seconds passed with no traffic. Ping the client!
+                    clientRemoteStub.ping();
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                break; // Graceful shutdown
+                break;
             } catch (RemoteException ex) {
-                System.err.println("[RMI Handler] Cannot reach client " + clientId + ". Disconnecting.");
-                disconnect(); // Triggers the removal from the game
+                System.err.println("[RMI Handler] Client " + clientId + " is DEAD. Disconnecting.");
+                disconnect(); // Instantly removes the player and triggers AutoPlayer logic
                 break;
             }
         }
@@ -126,5 +129,14 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     @Override
     public void resolveActions(List<String> selectedIDs) throws RemoteException {
         inboundExecutor.submit(() -> manager.routeGameCommand(clientId, new ResolveActionsCommand("", selectedIDs)));
+    }
+
+    @Override
+    public void requestReconnect(String gameId, String nickname) throws RemoteException {
+        // We use the inbound executor to prevent blocking the RMI thread.
+        // We create the ReconnectCommand expected by Matteo's ControllerManager.
+        inboundExecutor.submit(() ->
+                manager.handleReconnectRequest(this.clientId, this, new ReconnectCommand(gameId, nickname))
+        );
     }
 }

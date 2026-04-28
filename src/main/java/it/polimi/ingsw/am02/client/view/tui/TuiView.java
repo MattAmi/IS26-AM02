@@ -306,8 +306,18 @@ public class TuiView extends AbstractClientView {
     }
 
     private void renderCommands(PhaseType phase) {
-        if (phase == null) return;
-        boolean isMyTurn = gameModel.getMyNickname().equals(gameModel.getCurrentPlayer());
+        if (phase == null || gameModel == null) return;
+
+        String myNick = gameModel.getMyNickname();
+        String currentP = gameModel.getCurrentPlayer();
+
+        // Protezione contro i null durante la fase di inizializzazione asincrona
+        if (myNick == null || currentP == null) {
+            System.out.println("  (Inizializzazione dati giocatore...)");
+            return;
+        }
+
+        boolean isMyTurn = myNick.equals(currentP);
         switch (phase) {
             case TOTEM_PLACEMENT -> {
                 System.out.println("Commands:");

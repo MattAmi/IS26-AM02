@@ -4,12 +4,13 @@ import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.view.ClientView;
-import it.polimi.ingsw.am02.client.view.tui.TuiView; // Import specifico
+import it.polimi.ingsw.am02.client.view.tui.TuiView;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.messages.events.game.GameEvent;
 import it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent;
 import it.polimi.ingsw.am02.common.messages.events.lobby.LobbyEvent;
+import it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent;
 import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
@@ -28,6 +29,10 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     private GameModel gameModel;
     private RmiServerRemote serverStub;
     private boolean connected = false;
+
+    // Cache per gestire la riconnessione
+    private String activeNickname = null;
+    private String activeGameId = null;
 
     public RmiServerProxy(String host, int port, LobbyModel lobbyModel, ClientView clientView) throws RemoteException {
         super();
@@ -56,34 +61,26 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     @Override
     public void notifyEvent(Event event) throws RemoteException {
-        // --- 1. GESTIONE EVENTI LOBBY ---
-        if (event instanceof LobbyEvent lobbyEvent) {
-            lobbyModel.apply(lobbyEvent);
-
-            // Se la partita inizia normalmente, creiamo il GameModel
-            if (event instanceof GameStartedEvent e && gameModel == null) {
-                initGameModel(lobbyModel.getMyNickname());
-                gameModel.apply(e); // Necessario per settare il GameID nel model
-            }
+        // Memorizziamo nick e gameId se passano dalla lobby
+        if (event instanceof UsernameResultEvent e && e.isValid()) {
+            this.activeNickname = e.username();
+        }
+        if (event instanceof GameStartedEvent e) {
+            this.activeGameId = e.gameID();
         }
 
-        // --- 2. GESTIONE EVENTI PARTITA (GameEvent) ---
-        else if (event instanceof GameEvent gameEvent) {
-            if (gameModel == null) {
-                /* * CASO RICONNESSIONE: Se riceviamo un GameEvent ma il gameModel è null,
-                 * significa che siamo appena rientrati in una partita in corso.
-                 * Dobbiamo inizializzare il modello immediatamente per non perdere l'evento.
-                 */
-                String myNick = lobbyModel.getMyNickname();
-
-                // Nota: Se lobbyModel.getMyNickname() fosse null (perché il client è appena rinato),
-                // dovresti usare una variabile 'activeNickname' salvata nel Proxy durante la richiesta di reconnect.
-                initGameModel(myNick);
-
-                System.out.println("[RMI Proxy] GameModel inizializzato durante la riconnessione per: " + myNick);
+        if (event instanceof LobbyEvent lobbyEvent) {
+            lobbyModel.apply(lobbyEvent);
+            if (event instanceof GameStartedEvent && gameModel == null) {
+                initGameModel(this.activeNickname);
             }
-
-            // Inoltriamo l'evento al GameModel che aggiornerà i dati e notificherà la TUI
+        } else if (event instanceof GameEvent gameEvent) {
+            if (gameModel == null) {
+                // Se siamo in riconnessione, lobbyModel.getMyNickname() è null.
+                // Usiamo activeNickname che abbiamo salvato nel comando reconnect.
+                initGameModel(this.activeNickname);
+                System.out.println("[RMI Proxy] GameModel inizializzato durante la riconnessione per: " + this.activeNickname);
+            }
             gameModel.apply(gameEvent);
         }
     }
@@ -91,28 +88,38 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     private void initGameModel(String nickname) {
         this.gameModel = new GameModel(nickname);
 
-        // INTEGRAZIONE TUI BRO:
+        // Colleghiamo la TUI
         if (clientView instanceof TuiView tui) {
             tui.onGameModelCreated(this.gameModel);
         }
-
-        // Notifichiamo anche il controller se necessario
         this.clientView.setGameModel(this.gameModel);
+
+        // Se conosciamo il gameId (da reconnect o da cache), lo iniettiamo nel model
+        // così la TUI non stampa più "Game: null"
+        if (this.activeGameId != null) {
+            this.gameModel.apply(new GameStartedEvent(this.activeGameId));
+        }
     }
 
-    // --- Metodi di invio (Outbound) ---
+    @Override
+    public void requestReconnect(String nickname, String gameId) {
+        // SALVATAGGIO VITALE: salviamo i dati PRIMA di mandare il comando
+        this.activeNickname = nickname;
+        this.activeGameId = gameId;
+        try {
+            serverStub.requestReconnect(nickname, gameId);
+        } catch (RemoteException e) {
+            this.connected = false;
+        }
+    }
+
+    // --- Altri metodi Outbound ---
     @Override public void requestSetUsername(String u) { try { serverStub.requestSetUsername(u); } catch (RemoteException e) { connected = false; } }
     @Override public void requestCreateLobby(int n) { try { serverStub.requestCreateLobby(n); } catch (RemoteException e) { connected = false; } }
     @Override public void requestJoinLobby(String id) { try { serverStub.requestJoinLobby(id); } catch (RemoteException e) { connected = false; } }
     @Override public void requestSelectTotem(Totem t) { try { serverStub.requestSelectTotem(t); } catch (RemoteException e) { connected = false; } }
-
-    @Override
-    public void requestStartGame() {
-
-    }
-
+    @Override public void requestStartGame() {}
     @Override public void requestLeaveLobby() { try { serverStub.requestLeaveLobby(); } catch (RemoteException e) { connected = false; } }
     @Override public void moveTotem(char t) { try { serverStub.moveTotem(t); } catch (RemoteException e) { connected = false; } }
     @Override public void resolveActions(List<String> ids) { try { serverStub.resolveActions(ids); } catch (RemoteException e) { connected = false; } }
-    @Override public void requestReconnect(String n, String g) { try { serverStub.requestReconnect(n, g); } catch (RemoteException e) { connected = false; } }
 }

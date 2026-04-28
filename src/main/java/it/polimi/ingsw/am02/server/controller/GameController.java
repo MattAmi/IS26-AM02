@@ -58,6 +58,7 @@ public class GameController implements GameObserver {
 
         this.gameId = gameId;
         this.model = model;
+        this.handlers.putAll(handlers);
         this.gameLogger = gameLogger;
         this.gameEndedCallback = null;
 

@@ -5,8 +5,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface RmiClientRemote extends Remote {
+
     void notifyEvent(Event event) throws RemoteException;
 
-    // Used by the server to check if the client is still alive
-    void ping() throws RemoteException;
 }

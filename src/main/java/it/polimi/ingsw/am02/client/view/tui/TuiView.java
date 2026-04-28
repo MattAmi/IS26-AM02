@@ -38,9 +38,12 @@ public class TuiView extends AbstractClientView {
     @Override
     public void onUsernameResult(String username, boolean accepted, String reason) {
         if (accepted) {
-            System.out.println("\n[SUCCESS] Nickname set to: " + username);
+            clearScreen();
+            printHeader();
+            System.out.println("Logged in as: " + username);
+            System.out.println("\nCommands: create <size> | join <index> | quit");
         } else {
-            System.err.println("\n[ERROR] Nickname '" + username + "' is not available: " + reason);
+            System.err.println("[ERROR] Username '" + username + "' is not available: " + reason);
         }
         System.out.print("\n> ");
     }
@@ -49,18 +52,18 @@ public class TuiView extends AbstractClientView {
     public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
         clearScreen();
         printHeader();
-        System.out.println("Status: Anonymous");
+        System.out.println("Logged in as: " + lobbyModel.getMyNickname());
         System.out.println("\n--- AVAILABLE LOBBIES ---");
         if (lobbies.isEmpty()) {
             System.out.println("No active lobbies. Create one with: create <size>");
         } else {
             for (int i = 0; i < lobbies.size(); i++) {
                 LobbyInfo info = lobbies.get(i);
-                System.out.printf("  [%d] Players: %d/%d%n",
-                        i, info.currentPlayers().size(), info.expectedPlayers());
+                System.out.printf("  [%d] Players: %s/%d%n",
+                        i, info.currentPlayers(), info.expectedPlayers());
             }
         }
-        System.out.println("\nCommands: create <size> | join <index> | reconnect <gameId> <nickname> | quit");
+        System.out.println("\nCommands: create <size> | join <index> | quit");
         System.out.print("\n> ");
     }
 
@@ -68,20 +71,16 @@ public class TuiView extends AbstractClientView {
     public void onCurrentLobbyUpdated(LobbyInfo lobby) {
         clearScreen();
         printHeader();
-        String myNick = lobbyModel.getMyNickname();
-        System.out.println("Status: " + (myNick != null ? myNick : "Anonymous (Set a nick!)"));
+        System.out.println("Logged in as: " + lobbyModel.getMyNickname());
         System.out.println("\n--- LOBBY: " + lobby.lobbyId() + " ---");
         System.out.printf("Players: %d/%d%n",
                 lobby.currentPlayers().size(), lobby.expectedPlayers());
-
         lobby.currentPlayers().forEach(n -> {
             Totem chosen = lobby.chosenTotems().get(n);
             String totemStr = (chosen != null) ? " [" + chosen + "]" : " [no totem]";
-            // If the player hasn't set a nickname yet, the server might send a placeholder like "Unknown" or the clientId.
             System.out.println("  - " + n + totemStr);
         });
-
-        System.out.println("\nCommands: nick <name> | totem <color> | leave | quit");
+        System.out.println("\nCommands: totem <color> | leave | quit");
         System.out.print("\n> ");
     }
 
@@ -91,86 +90,97 @@ public class TuiView extends AbstractClientView {
         System.out.print("\n> ");
     }
 
-    private String lastNotification = "";
-
-    // ==================== GAME CALLBACKS ====================
+    // GAME CALLBACKS
 
     @Override
     public void onGameStarted(String gameId) {
-        lastNotification = "Game started! ID: " + gameId;
+        clearScreen();
+        printHeader();
+        System.out.println("Game started! ID: " + gameId);
+    }
+
+    @Override
+    public void onGameSetupCompleted(List<String> turnOrder,
+                                     Map<String, Integer> initialFood,
+                                     BoardSnapshot board) {
         renderFullGame();
     }
 
     @Override
-    public void onGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot board) {
-        lastNotification = "Game setup completed.";
-        renderFullGame();
-    }
-
-    @Override
-    public void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
-        lastNotification = "Phase changed to " + phase;
+    public void onPhaseChanged(PhaseType phase,
+                               String currentPlayer,
+                               List<String> resolutionOrder) {
         renderFullGame();
     }
 
     @Override
     public void onCurrentPlayerChanged(String nextPlayer) {
-        lastNotification = "It is now " + nextPlayer + "'s turn.";
-        renderFullGame();
+        System.out.println("\n[TURN] Current player: " + nextPlayer);
+        System.out.print("\n> ");
     }
 
     @Override
     public void onTotemPlaced(String nickname, char tileID) {
-        lastNotification = nickname + " placed totem on tile " + tileID;
-        renderFullGame();
+        System.out.printf("[BOARD] %s placed totem on tile %c%n", nickname, tileID);
+        System.out.print("\n> ");
     }
 
     @Override
     public void onTotemReturned(String nickname, int turnOrderPosition) {
-        lastNotification = nickname + " returned totem to slot " + turnOrderPosition;
+        System.out.printf("[BOARD] %s returned totem to slot %d%n",
+                nickname, turnOrderPosition);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onBoardUpdated(List<String> newUpperRow,
+                               List<String> newLowerRow,
+                               int deckRemainingCount) {
         renderFullGame();
     }
 
     @Override
-    public void onBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, int deckRemainingCount) {
-        lastNotification = "Board updated.";
+    public void onEraChanged(List<String> newUpperRowBuildings,
+                             List<String> newLowerRowBuildings) {
+        System.out.println("\n[ERA] A new era has begun.");
         renderFullGame();
     }
 
     @Override
-    public void onEraChanged(List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
-        lastNotification = "A new era has begun!";
-        renderFullGame();
+    public void onPlayerResourceChanged(String nickname,
+                                        ResourceType resource,
+                                        int newValue) {
+        System.out.printf("[PLAYER] %s — %s: %d%n", nickname, resource, newValue);
+        System.out.print("\n> ");
     }
 
     @Override
-    public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-        lastNotification = nickname + " now has " + newValue + " " + resource;
-        renderFullGame();
-    }
-
-    @Override
-    public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
-        lastNotification = nickname + " took " + cardType + " '" + cardID + "' from " + sourceRow + " row";
-        renderFullGame();
+    public void onCardTaken(String nickname,
+                            String cardID,
+                            CardType cardType,
+                            RowPosition sourceRow) {
+        System.out.printf("[PLAYER] %s took %s from %s row%n",
+                nickname, CardCatalog.getInstance().format(cardID), sourceRow);
+        System.out.print("\n> ");
     }
 
     @Override
     public void onEventResolved(String eventName) {
-        lastNotification = "Event resolved: " + eventName;
-        renderFullGame();
+        System.out.println("[EVENT] Resolved: " + eventName);
+        System.out.print("\n> ");
     }
 
     @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-        lastNotification = nickname + " gained an extra turn!";
-        renderFullGame();
+        System.out.printf("[EXTRA] %s gained an extra turn (upper=%d, lower=%d)%n",
+                nickname, remainingUpper, remainingLower);
+        System.out.print("\n> ");
     }
 
     @Override
     public void onExtraTurnEnded(String nickname) {
-        lastNotification = nickname + "'s extra turn ended.";
-        renderFullGame();
+        System.out.printf("[EXTRA] %s's extra turn ended%n", nickname);
+        System.out.print("\n> ");
     }
 
     @Override
@@ -182,15 +192,16 @@ public class TuiView extends AbstractClientView {
         System.out.println("\n--- FINAL RANKINGS ---");
         for (int i = 0; i < finalRankings.size(); i++) {
             PlayerFinalScore s = finalRankings.get(i);
-            System.out.printf("  %d. %-15s  PP: %d%n", i + 1, s.nickname(), s.totalPrestigePoints());
+            System.out.printf("  %d. %-15s  PP: %d%n",
+                    i + 1, s.nickname(), s.totalPrestigePoints());
         }
         System.out.println("\nType quit to exit.");
     }
 
     @Override
     public void onPlayerDisconnected(String nickname) {
-        lastNotification = "[!] Player disconnected: " + nickname;
-        renderFullGame();
+        System.out.println("\n[!] Player disconnected: " + nickname);
+        System.out.print("\n> ");
     }
 
     @Override
@@ -219,8 +230,8 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onError(String message) {
-        lastNotification = "[ERROR] " + message;
-        renderFullGame();
+        System.err.println("\n[ERROR] " + message);
+        System.out.print("\n> ");
     }
 
     // FULL RE-RENDER
@@ -229,22 +240,16 @@ public class TuiView extends AbstractClientView {
         if (gameModel == null) return;
         clearScreen();
         printHeader();
-
-        System.out.println(">>> LATEST UPDATE: " + lastNotification);
-        System.out.println("----------------------------------------");
-
         PhaseType phase = gameModel.getCurrentPhase();
         System.out.println("Game: " + gameModel.getGameId());
         System.out.println("Phase: " + (phase != null ? phase : "starting..."));
         System.out.println("Current player: " + gameModel.getCurrentPlayer());
         System.out.println();
-
         renderBoard();
         System.out.println();
-        renderPlayers(); // This ALREADY prints cards, food, and PP for every player!
+        renderPlayers();
         System.out.println();
         renderCommands(phase);
-
         System.out.print("\n> ");
     }
 

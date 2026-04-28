@@ -21,28 +21,23 @@ import java.util.Scanner;
  * In the GUI, button click handlers invoke {@link ServerProxy} methods
  * directly and this class is not instantiated.</p>
  */
+public class ClientController {
 
+    private final ServerProxy proxy;
+    private final LobbyModel lobbyModel;
+    private GameModel gameModel; // null until game starts
+    private final ClientView view;
 
-// Sostituisci la dichiarazione nel tuo ClientController.java
+    public ClientController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
+        this.proxy = proxy;
+        this.lobbyModel = lobbyModel;
+        this.view = view;
+    }
 
-    public class ClientController {
-
-        private final ServerProxy proxy;
-        private final LobbyModel lobbyModel;
-        private final ClientView view; // Rimosso gameModel, non serve!
-
-        public ClientController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
-            this.proxy = proxy;
-            this.lobbyModel = lobbyModel;
-            this.view = view;
-        }
-
-        // Getter utile per la fase di avvio in ClientApp
-        public ClientView getView() {
-            return view;
-        }
-
-        // ... [il resto del codice run() e dispatch() rimane identico] ...
+    /** Called by ServerProxy when GameModel is created (on GameStartedEvent). */
+    public void setGameModel(GameModel gameModel) {
+        this.gameModel = gameModel;
+    }
     /** Blocking loop: reads commands from stdin until the process exits. */
     public void run() {
         Scanner scanner = new Scanner(System.in);
@@ -64,54 +59,45 @@ import java.util.Scanner;
     }
 
     private void dispatch(String cmd, String[] args) {
-        // Extract arguments safely to avoid local IndexOutOfBoundsException.
-        // If missing, we pass empty/dummy values to let the SERVER reject them!
-        String arg1 = args.length > 1 ? args[1] : "";
-        String arg2 = args.length > 2 ? args[2] : "";
-
         switch (cmd) {
-            case "nick" -> proxy.requestSetUsername(arg1);
+            case "login" -> {
+                if (args.length < 2) view.onError("Usage: login <nickname>");
+                else proxy.requestSetUsername(args[1]);
+            }
             case "create" -> {
-                int size = arg1.matches("\\d+") ? Integer.parseInt(arg1) : 0; // Server will reject 0
-                proxy.requestCreateLobby(size);
+                if (args.length < 2) view.onError("Usage: create <expected_players>");
+                else proxy.requestCreateLobby(Integer.parseInt(args[1]));
             }
             case "join" -> {
-                try {
-                    int idx = Integer.parseInt(arg1);
+                if (args.length < 2) view.onError("Usage: join <lobby_index>");
+                else {
+                    int idx = Integer.parseInt(args[1]);
+                    // reads from LobbyModel, not GameModel
                     String lobbyId = lobbyModel.getAvailableLobbies().get(idx).lobbyId();
                     proxy.requestJoinLobby(lobbyId);
-                } catch (Exception e) {
-                    view.onError("Client syntax error. Use: join <index number>");
                 }
-            }
-            case "reconnect" -> {
-                // Command format: reconnect <nickname> <gameId>
-                proxy.requestReconnect(arg1, arg2);
             }
             case "totem" -> {
-                try {
-                    proxy.requestSelectTotem(Totem.valueOf(arg1.toUpperCase()));
-                } catch (IllegalArgumentException e) {
-                    view.onError("Client syntax error. Valid totems: PURPLE, WHITE, etc.");
-                }
+                if (args.length < 2) view.onError("Usage: totem <color>");
+                else proxy.requestSelectTotem(Totem.valueOf(args[1].toUpperCase()));
             }
             case "leave" -> proxy.requestLeaveLobby();
             case "move" -> {
-                char tile = arg1.isEmpty() ? ' ' : arg1.charAt(0);
-                proxy.moveTotem(tile); // Send to server, let it evaluate!
+                if (args.length < 2) view.onError("Usage: move <tileID> (e.g. move B)");
+                else proxy.moveTotem(gameModel.getMyNickname(), args[1].charAt(0));
             }
             case "resolve" -> {
-                List<String> ids = args.length > 1 ?
-                        new java.util.ArrayList<>(java.util.Arrays.asList(args).subList(1, args.length)) :
-                        new java.util.ArrayList<>();
-                proxy.resolveActions(ids); // Send empty list to server, let it evaluate!
+                if (args.length < 2) view.onError("Usage: resolve <id1> [id2 ...]");
+                else {
+                    List<String> ids = new ArrayList<>(Arrays.asList(args).subList(1, args.length));
+                    proxy.resolveActions(gameModel.getMyNickname(), ids);
+                }
             }
             case "quit" -> {
                 proxy.disconnect();
                 System.exit(0);
             }
-            default -> proxy.resolveActions(List.of(cmd)); // Throw unrecognized commands to the server!
+            default -> view.onError("Unknown command: " + cmd);
         }
     }
-
 }

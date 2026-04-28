@@ -1,5 +1,5 @@
 package it.polimi.ingsw.am02.server.controller.persistence;
 
 public enum ConnectionStatus {
-    CONNECTED,  DISCONNECTED, RECONNECTING
+    CONNECTED,  DISCONNECTED, RECONNECTING, PENDING_RECONNECTION
 }

@@ -193,6 +193,13 @@ public class GameController implements GameObserver {
                     playerSyncIndex.put(nickname, currentIndex);
                     connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
                     log("Drain complete for " + nickname + " — now CONNECTED.");
+
+                    long pendingCount = connectionStatus.values().stream()
+                            .filter(s -> s == ConnectionStatus.PENDING_RECONNECTION)
+                            .count();
+                    if (pendingCount > 0) {
+                        startGlobalDisconnectionTimeout();
+                    }
                 }
 
             } catch (Exception e) {
@@ -202,6 +209,9 @@ public class GameController implements GameObserver {
         });
     }
 
+    synchronized void markAllPlayersPendingReconnection() {
+        connectionStatus.replaceAll((nickname, status) -> ConnectionStatus.PENDING_RECONNECTION);
+    }
 
     public synchronized void shutdown() {
         if (disconnectedPlayerTimer != null) {
@@ -355,28 +365,39 @@ public class GameController implements GameObserver {
 
     private void onGlobalDisconnectionTimerExpired() {
         synchronized (this) {
+            int pendingCount = (int) connectionStatus.values().stream()
+                    .filter(s -> s == ConnectionStatus.PENDING_RECONNECTION)
+                    .count();
+
             int activeCount = (int) connectionStatus.values().stream()
                     .filter(s -> s == ConnectionStatus.CONNECTED
                             || s == ConnectionStatus.RECONNECTING)
                     .count();
 
-            if (activeCount > 1) {
+            if (pendingCount == 0 && activeCount > 1) {
                 log("Global timer expired but " + activeCount + " players active — skipping.");
                 globalTimer = null;
                 return;
             }
 
-            String winner = connectionStatus.entrySet().stream()
-                    .filter(e -> e.getValue() == ConnectionStatus.CONNECTED
-                            || e.getValue() == ConnectionStatus.RECONNECTING)
-                    .map(Map.Entry::getKey)
-                    .findFirst()
-                    .orElseThrow();
-
-            log("Global timer expired — winner by forfeit: " + winner);
             globalTimer = null;
 
-            pushGlobalEvent(new GameAbortedEvent(winner));
+            if (pendingCount > 0) {
+                // Recovery failed: not all players reconnected in time
+                log("Global timer expired — recovery failed, " + pendingCount + " players never reconnected.");
+                pushGlobalEvent(new GameRecoveryFailedEvent());
+            } else {
+                // Normal flow: one player left, wins by forfeit
+                String winner = connectionStatus.entrySet().stream()
+                        .filter(e -> e.getValue() == ConnectionStatus.CONNECTED
+                                || e.getValue() == ConnectionStatus.RECONNECTING)
+                        .map(Map.Entry::getKey)
+                        .findFirst()
+                        .orElseThrow();
+                log("Global timer expired — winner by forfeit: " + winner);
+                pushGlobalEvent(new GameAbortedEvent(winner));
+            }
+
             gameLogger.logGameEnded();
             gameLogger.close();
             shutdown();
@@ -537,10 +558,9 @@ public class GameController implements GameObserver {
     }
 
     public boolean isPlayerDisconnected(String nickname) {
-        VirtualView currentHandler = handlers.get(nickname);
-        return connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED
-                || currentHandler == null
-                || currentHandler == VirtualView.noOp();
+        ConnectionStatus status = connectionStatus.get(nickname);
+        return status == ConnectionStatus.DISCONNECTED
+                || status == ConnectionStatus.PENDING_RECONNECTION;
     }
 
     void enterReplayMode() { this.replayMode = true;  }

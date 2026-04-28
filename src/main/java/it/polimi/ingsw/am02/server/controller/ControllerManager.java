@@ -405,6 +405,8 @@ public class ControllerManager {
             controller.handle(rec.command(), rec.command().nickname());
         }
         controller.exitReplayMode();
+
+        controller.markAllPlayersPendingReconnection();
     }
 
     private void quarantine(Path logFile, Path logsDirectory) {

@@ -214,6 +214,30 @@ public class TuiView extends AbstractClientView {
     }
 
     @Override
+    public void onPlayerReconnected(String nickname) {
+        System.out.println("\n[!] Player reconnected: " + nickname);
+        System.out.print("\n> ");
+    }
+
+    @Override
+    public void onGameAborted(String lastManStanding) {
+        clearScreen();
+        printHeader();
+        System.out.println("=== GAME ABORTED ===");
+        System.out.println("Winner by forfeit: " + lastManStanding);
+        System.out.println("\nType quit to exit.");
+    }
+
+    @Override
+    public void onGameRecoveryFailed() {
+        clearScreen();
+        printHeader();
+        System.out.println("=== GAME RECOVERY FAILED ===");
+        System.out.println("Not all players reconnected in time. The game has been terminated.");
+        System.out.println("\nType quit to exit.");
+    }
+
+    @Override
     public void onError(String message) {
         System.err.println("\n[ERROR] " + message);
         System.out.print("\n> ");

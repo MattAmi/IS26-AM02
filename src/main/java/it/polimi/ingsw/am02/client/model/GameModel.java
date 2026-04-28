@@ -213,6 +213,20 @@ public class GameModel {
                     clientViews.forEach(o -> o.onPlayerDisconnected(e.nickname()));
                 }
 
+                case GameAbortedEvent e -> {
+                    this.gameEnded = true;
+                    clientViews.forEach(o -> o.onGameAborted(e.lastManStanding()));
+                }
+
+                case GameRecoveryFailedEvent e -> {
+                    this.gameEnded = true;
+                    clientViews.forEach(o -> o.onGameRecoveryFailed());
+                }
+
+                case PlayerReconnectedEvent e -> {
+                    clientViews.forEach(o -> o.onPlayerReconnected(e.nickname()));
+                }
+
                 case ErrorEvent e -> {
                     this.lastErrorMessage = e.errorMessage();
                     clientViews.forEach(o -> o.onError(e.errorMessage()));

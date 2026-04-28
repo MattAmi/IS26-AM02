@@ -36,5 +36,5 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.*;
         @JsonSubTypes.Type(value = PingEvent.class, name = "Ping")
 })
 public sealed interface Event extends Message
-        permits ErrorEvent, BoardUpdatedEvent, CardTakenEvent, CurrentPlayerChangedEvent, EraChangedEvent, EventResolvedEvent, ExtraTurnEndedEvent, ExtraTurnStartedEvent, GameAbortedEvent, GameEndedEvent, GameSetupCompletedEvent, PhaseChangedEvent, PingEvent, PlayerDisconnectedEvent, PlayerLimitsInitializedEvent, PlayerLimitsUpdatedEvent, PlayerReconnectedEvent, PlayerResourceChangedEvent, TotemPlacedEvent, TotemReturnedEvent, TurnOrderEstablishedEvent, GameStartedEvent, LobbyDissolvedEvent, UpdatedLobbiesEvent, UpdatedLobbyEvent, UsernameResultEvent {
+        permits ErrorEvent, BoardUpdatedEvent, CardTakenEvent, CurrentPlayerChangedEvent, EraChangedEvent, EventResolvedEvent, ExtraTurnEndedEvent, ExtraTurnStartedEvent, GameAbortedEvent, GameEndedEvent, GameEvent, GameSetupCompletedEvent, PhaseChangedEvent, PingEvent, PlayerDisconnectedEvent, PlayerLimitsInitializedEvent, PlayerLimitsUpdatedEvent, PlayerReconnectedEvent, PlayerResourceChangedEvent, TotemPlacedEvent, TotemReturnedEvent, TurnOrderEstablishedEvent, GameStartedEvent, LobbyDissolvedEvent, LobbyEvent, UpdatedLobbiesEvent, UpdatedLobbyEvent, UsernameResultEvent {
 }

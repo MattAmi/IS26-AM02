@@ -16,8 +16,7 @@ public interface RmiServerRemote extends Remote {
     void requestStartGame() throws RemoteException;
     void requestLeaveLobby() throws RemoteException;
     // Reconnection
-    void requestReconnect(String gameId, String nickname) throws RemoteException;
-    // --- Game ---
+    void requestReconnect(String nickname, String gameId) throws RemoteException;    // --- Game ---
     void moveTotem(char tileID) throws RemoteException;
     void resolveActions(List<String> selectedIDs) throws RemoteException;
 }

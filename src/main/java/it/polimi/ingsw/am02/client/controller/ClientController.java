@@ -84,7 +84,10 @@ import java.util.Scanner;
                     view.onError("Client syntax error. Use: join <index number>");
                 }
             }
-            case "reconnect" -> proxy.requestReconnect(arg1, arg2);
+            case "reconnect" -> {
+                // Command format: reconnect <nickname> <gameId>
+                proxy.requestReconnect(arg1, arg2);
+            }
             case "totem" -> {
                 try {
                     proxy.requestSelectTotem(Totem.valueOf(arg1.toUpperCase()));

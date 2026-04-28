@@ -70,9 +70,9 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void requestReconnect(String gameId, String nickname) {
-        this.reconnectedNickname = nickname; // Save it for lazy initialization
-        try { serverStub.requestReconnect(gameId, nickname); } catch (RemoteException e) { handleNetworkError(e); }
+    public void requestReconnect(String nickname, String gameId) {
+        this.reconnectedNickname = nickname;
+        try { serverStub.requestReconnect(nickname, gameId); } catch (RemoteException e) { handleNetworkError(e); }
     }
 
     // Replace the existing notifyEvent with this one:
@@ -96,9 +96,8 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     private void initGameModel(String nickname) {
         this.gameModel = new GameModel(nickname);
-        if (this.clientView instanceof it.polimi.ingsw.am02.client.view.tui.TuiView tui) {
-            tui.onGameModelCreated(this.gameModel);
-        }
+        // Nessun if instanceof! La View espone il metodo ufficialmente.
+        this.clientView.setGameModel(this.gameModel);
     }
 
     // --- SERVER PROXY (Outbound calls to Server) ---
@@ -143,8 +142,49 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     private void handleNetworkError(RemoteException e) {
+        if (!this.connected) return; // Prevent multiple auto-reconnect threads
         this.connected = false;
-        System.err.println("[RMI Proxy] Network disconnected: " + e.getMessage());
+
+        // Notify the UI
+        if (this.clientView != null) {
+            this.clientView.onError("Server offline. Attempting to reconnect automatically...");
+        } else {
+            System.err.println("[RMI Proxy] Server offline. Attempting to reconnect automatically...");
+        }
+
+        // Start Auto-Reconnect Thread
+        Thread reconnectThread = new Thread(() -> {
+            while (!this.connected) {
+                try {
+                    Thread.sleep(5000); // Wait 5 seconds between attempts
+                    System.out.println("[RMI Proxy] Trying to reconnect to server...");
+
+                    // Attempt to reconnect to the registry and get the stub
+                    Registry registry = LocateRegistry.getRegistry(host, port);
+                    RmiServerFactory factory = (RmiServerFactory) registry.lookup("AM02-GameServer");
+                    this.serverStub = factory.registerClient(this);
+                    this.connected = true;
+
+                    // Re-register to the active game if we were in one
+                    if (this.gameModel != null && this.gameModel.getGameId() != null) {
+                        String myNick = lobbyModel.getMyNickname() != null ? lobbyModel.getMyNickname() : reconnectedNickname;
+                        System.out.println("[RMI Proxy] Connected! Re-joining game " + this.gameModel.getGameId() + " as " + myNick);
+                        this.serverStub.requestReconnect(myNick, this.gameModel.getGameId());
+                    } else {
+                        System.out.println("[RMI Proxy] Connected! Returned to lobby phase.");
+                    }
+
+                    if (this.clientView != null) {
+                        this.clientView.onError("Successfully reconnected to the server!");
+                    }
+
+                } catch (Exception ex) {
+                    // Still offline, loop will continue
+                }
+            }
+        });
+        reconnectThread.setDaemon(true);
+        reconnectThread.start();
     }
 
     public GameModel getGameModel() {

@@ -31,13 +31,10 @@ public class TuiView extends AbstractClientView {
         lobbyModel.addObserver(this);
     }
 
-    /**
-     * Called by the ServerProxy when GameModel is created (on GameStartedEvent).
-     * Registers this view as observer of the new game model.
-     *
-     * @param gameModel the newly created game model
-     */
-    public void onGameModelCreated(GameModel gameModel) {
+
+
+    @Override
+    public void setGameModel(GameModel gameModel) {
         this.gameModel = gameModel;
         gameModel.addObserver(this);
     }

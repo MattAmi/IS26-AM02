@@ -57,17 +57,12 @@ public class GameController implements GameObserver {
         this.model = model;
         this.gameLogger = gameLogger;
         this.gameEndedCallback = null;
-
-        // VITAL FIX: Store the handlers!
         this.handlers.putAll(handlers);
 
-        // PERSISTENCE FIX: Detect if players are offline during recovery
+        // SAFELY INITIALIZE CONNECTION STATUS
         for (Map.Entry<String, VirtualView> entry : this.handlers.entrySet()) {
             String nickname = entry.getKey();
-            VirtualView view = entry.getValue();
-
-            // If the view is null or a noOp proxy, the player is DISCONNECTED (offline)
-            if (view == null || view.getClass().getName().contains("noOp")) {
+            if (entry.getValue() == null) {
                 connectionStatus.put(nickname, ConnectionStatus.DISCONNECTED);
             } else {
                 connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
@@ -387,8 +382,7 @@ public class GameController implements GameObserver {
     public boolean isPlayerDisconnected(String nickname) {
         VirtualView currentHandler = handlers.get(nickname);
         return connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED
-                || currentHandler == null
-                || currentHandler.getClass().getName().contains("noOp");
+                || currentHandler == null;
     }
 
     void enterReplayMode() { this.replayMode = true; }

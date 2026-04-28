@@ -6,6 +6,7 @@ import it.polimi.ingsw.am02.common.messages.commands.ReconnectCommand;
 import it.polimi.ingsw.am02.common.messages.commands.ResolveActionsCommand;
 import it.polimi.ingsw.am02.common.messages.commands.StartGameCommand;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent;
 import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
@@ -20,6 +21,7 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     private final ControllerManager manager;
     private final RmiClientRemote clientRemoteStub;
     private final String clientId;
+    private String myNickname = null;
 
     // --- ASYNCHRONY COMPONENTS ---
     // Inbound: Thread pool for incoming client commands (prevents blocking RMI threads)
@@ -50,7 +52,12 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     @Override
     public void notify(Event event) {
         if (!running) return;
-        // Non-blocking: just queue the event and return instantly to the GameController
+
+        // Cattura il nickname dal server quando il login ha successo!
+        if (event instanceof UsernameResultEvent e && e.isValid()) {
+            this.myNickname = e.username();
+        }
+
         outboundQueue.offer(event);
     }
 
@@ -121,22 +128,20 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
     @Override
     public void moveTotem(char tileID) throws RemoteException {
-        // Look closely: We pass 'clientId', not the nickname.
-        // ControllerManager's routeGameCommand internally retrieves the real nickname.
-        inboundExecutor.submit(() -> manager.routeGameCommand(clientId, new MoveTotemCommand("", tileID)));
+        // Usa myNickname invece di ""
+        inboundExecutor.submit(() -> manager.routeGameCommand(clientId, new MoveTotemCommand(myNickname, tileID)));
     }
 
     @Override
     public void resolveActions(List<String> selectedIDs) throws RemoteException {
-        inboundExecutor.submit(() -> manager.routeGameCommand(clientId, new ResolveActionsCommand("", selectedIDs)));
+        // Usa myNickname invece di ""
+        inboundExecutor.submit(() -> manager.routeGameCommand(clientId, new ResolveActionsCommand(myNickname, selectedIDs)));
     }
 
     @Override
-    public void requestReconnect(String gameId, String nickname) throws RemoteException {
-        // We use the inbound executor to prevent blocking the RMI thread.
-        // We create the ReconnectCommand expected by Matteo's ControllerManager.
+    public void requestReconnect(String nickname, String gameId) throws RemoteException {
         inboundExecutor.submit(() ->
-                manager.handleReconnectRequest(this.clientId, this, new ReconnectCommand(gameId, nickname))
+                manager.handleReconnectRequest(this.clientId, this, new ReconnectCommand(gameId, nickname)) // Matteo's command might still take (gameId, nickname) internally, check his class if needed, but this aligns the RMI call.
         );
     }
 }

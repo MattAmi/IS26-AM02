@@ -60,4 +60,10 @@ public interface ClientView {
     void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings);
     void onPlayerDisconnected(String nickname);
     void onError(String message);
+
+    /**
+     * Wires the view to the game model. Called when the game starts or resumes.
+     * @param gameModel the active game model.
+     */
+    void setGameModel(GameModel gameModel);
 }

@@ -59,45 +59,50 @@ public class ClientController {
     }
 
     private void dispatch(String cmd, String[] args) {
+        // Extract arguments safely to avoid local IndexOutOfBoundsException.
+        // If missing, we pass empty/dummy values to let the SERVER reject them!
+        String arg1 = args.length > 1 ? args[1] : "";
+        String arg2 = args.length > 2 ? args[2] : "";
+
         switch (cmd) {
-            case "login" -> {
-                if (args.length < 2) view.onError("Usage: login <nickname>");
-                else proxy.requestSetUsername(args[1]);
-            }
+            case "nick" -> proxy.requestSetUsername(arg1);
             case "create" -> {
-                if (args.length < 2) view.onError("Usage: create <expected_players>");
-                else proxy.requestCreateLobby(Integer.parseInt(args[1]));
+                int size = arg1.matches("\\d+") ? Integer.parseInt(arg1) : 0; // Server will reject 0
+                proxy.requestCreateLobby(size);
             }
             case "join" -> {
-                if (args.length < 2) view.onError("Usage: join <lobby_index>");
-                else {
-                    int idx = Integer.parseInt(args[1]);
-                    // reads from LobbyModel, not GameModel
+                try {
+                    int idx = Integer.parseInt(arg1);
                     String lobbyId = lobbyModel.getAvailableLobbies().get(idx).lobbyId();
                     proxy.requestJoinLobby(lobbyId);
+                } catch (Exception e) {
+                    view.onError("Client syntax error. Use: join <index number>");
                 }
             }
+            case "reconnect" -> proxy.requestReconnect(arg1, arg2);
             case "totem" -> {
-                if (args.length < 2) view.onError("Usage: totem <color>");
-                else proxy.requestSelectTotem(Totem.valueOf(args[1].toUpperCase()));
+                try {
+                    proxy.requestSelectTotem(Totem.valueOf(arg1.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    view.onError("Client syntax error. Valid totems: PURPLE, WHITE, etc.");
+                }
             }
             case "leave" -> proxy.requestLeaveLobby();
             case "move" -> {
-                if (args.length < 2) view.onError("Usage: move <tileID> (e.g. move B)");
-                else proxy.moveTotem(args[1].charAt(0));
+                char tile = arg1.isEmpty() ? ' ' : arg1.charAt(0);
+                proxy.moveTotem(tile); // Send to server, let it evaluate!
             }
             case "resolve" -> {
-                if (args.length < 2) view.onError("Usage: resolve <id1> [id2 ...]");
-                else {
-                    List<String> ids = new ArrayList<>(Arrays.asList(args).subList(1, args.length));
-                    proxy.resolveActions(ids);
-                }
+                List<String> ids = args.length > 1 ?
+                        new java.util.ArrayList<>(java.util.Arrays.asList(args).subList(1, args.length)) :
+                        new java.util.ArrayList<>();
+                proxy.resolveActions(ids); // Send empty list to server, let it evaluate!
             }
             case "quit" -> {
                 proxy.disconnect();
                 System.exit(0);
             }
-            default -> view.onError("Unknown command: " + cmd);
+            default -> proxy.resolveActions(List.of(cmd)); // Throw unrecognized commands to the server!
         }
     }
 }

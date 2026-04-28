@@ -9,14 +9,18 @@ import java.util.Map;
 
 public class CardCatalog {
 
+
+    private static final String CHARACTERS_PATH = "/it/polimi/ingsw/am02/JSON/Characters.JSON";
+    private static final String EVENTS_PATH = "/it/polimi/ingsw/am02/JSON/Events.JSON";
+    private static final String BUILDINGS_PATH = "/it/polimi/ingsw/am02/JSON/Buildings.JSON";
     private static final CardCatalog INSTANCE = new CardCatalog();
     private final Map<String, JsonNode> cards = new HashMap<>();
     private final ObjectMapper mapper = new ObjectMapper();
 
     private CardCatalog() {
-        loadJson("/it.polimi.ingsw.am02.JSON/Characters.JSON");
-        loadJson("/it.polimi.ingsw.am02.JSON/Buildings.JSON");
-        loadJson("/it.polimi.ingsw.am02.JSON/Events.JSON");
+        loadJson(CHARACTERS_PATH);
+        loadJson(BUILDINGS_PATH);
+        loadJson(EVENTS_PATH);
     }
 
     public static CardCatalog getInstance() { return INSTANCE; }

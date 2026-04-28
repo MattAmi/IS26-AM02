@@ -63,7 +63,7 @@ public class TuiView extends AbstractClientView {
                         i, info.currentPlayers(), info.expectedPlayers());
             }
         }
-        System.out.println("\nCommands: create <size> | join <index> | quit");
+        System.out.println("\nCommands: create <size> | join <index> | reconnect <nickname> <gameID> | quit");
         System.out.print("\n> ");
     }
 
@@ -80,7 +80,7 @@ public class TuiView extends AbstractClientView {
             String totemStr = (chosen != null) ? " [" + chosen + "]" : " [no totem]";
             System.out.println("  - " + n + totemStr);
         });
-        System.out.println("\nCommands: totem <color> | leave | quit");
+        System.out.println("\nCommands: nick <nickname> | totem <color> | leave | quit");
         System.out.print("\n> ");
     }
 

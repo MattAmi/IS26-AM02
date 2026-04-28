@@ -63,7 +63,7 @@ public class TuiView extends AbstractClientView {
                         i, info.currentPlayers(), info.expectedPlayers());
             }
         }
-        System.out.println("\nCommands: create <size> | join <index> | quit");
+        System.out.println("\nCommands: create <size> | join <index> | reconnect <nickname> <gameID> | quit");
         System.out.print("\n> ");
     }
 
@@ -80,7 +80,7 @@ public class TuiView extends AbstractClientView {
             String totemStr = (chosen != null) ? " [" + chosen + "]" : " [no totem]";
             System.out.println("  - " + n + totemStr);
         });
-        System.out.println("\nCommands: totem <color> | leave | quit");
+        System.out.println("\nCommands: nick <nickname> | totem <color> | leave | quit");
         System.out.print("\n> ");
     }
 
@@ -306,8 +306,20 @@ public class TuiView extends AbstractClientView {
     }
 
     private void renderCommands(PhaseType phase) {
-        if (phase == null) return;
-        boolean isMyTurn = gameModel.getMyNickname().equals(gameModel.getCurrentPlayer());
+        if (phase == null || gameModel == null) {
+            System.out.println("  (In attesa del server...)");
+            return;
+        }
+        String myNick = gameModel.getMyNickname();
+        String currentP = gameModel.getCurrentPlayer();
+
+        // Protezione contro i null durante la fase di inizializzazione asincrona
+        if (myNick == null || currentP == null) {
+            System.out.println("  (Inizializzazione dati giocatore...)");
+            return;
+        }
+
+        boolean isMyTurn = myNick.equals(currentP);
         switch (phase) {
             case TOTEM_PLACEMENT -> {
                 System.out.println("Commands:");

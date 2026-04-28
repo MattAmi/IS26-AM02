@@ -54,7 +54,7 @@ public class GameController implements GameObserver {
 
     public GameController(String gameId, ModelInterface model,
                           Map<String, VirtualView> handlers, GameLogger gameLogger) {
-
+        this.handlers.putAll(handlers);
         this.gameId = gameId;
         this.model = model;
         this.gameLogger = gameLogger;

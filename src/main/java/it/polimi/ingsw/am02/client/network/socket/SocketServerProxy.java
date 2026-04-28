@@ -1,13 +1,18 @@
 package it.polimi.ingsw.am02.client.network.socket;
 
+import it.polimi.ingsw.am02.client.model.GameModel;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
-import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.Message;
 import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;
+import it.polimi.ingsw.am02.common.messages.events.game.GameEvent;
 import it.polimi.ingsw.am02.common.messages.events.game.PingEvent;
-import it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent;
+import it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent;
+import it.polimi.ingsw.am02.common.messages.events.lobby.LobbyEvent;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodecImpl;
 
@@ -20,18 +25,21 @@ public class SocketServerProxy implements ServerProxy {
 
     private final String host;
     private final int port;
-    private final VirtualView clientModel;
+    private final LobbyModel lobbyModel;
+    private final ClientView view;
+    private GameModel gameModel; // null fino a GameStartedEvent
+
     private final JsonMessageCodec codec = new JsonMessageCodecImpl();
     private String myNickname;
-
     private Socket socket;
     private PrintWriter out;
     private boolean connected = false;
 
-    public SocketServerProxy(String host, int port, VirtualView clientModel) {
+    public SocketServerProxy(String host, int port, LobbyModel lobbyModel, ClientView view) {
         this.host = host;
         this.port = port;
-        this.clientModel = clientModel;
+        this.lobbyModel = lobbyModel;
+        this.view = view;
     }
 
     @Override
@@ -53,16 +61,32 @@ public class SocketServerProxy implements ServerProxy {
                 if (msg instanceof PingEvent) {
                     send(new PongCommand());
                 } else if (msg instanceof Event event) {
-                    if (event instanceof UsernameResultEvent e && e.isValid()) {
-                        this.myNickname = e.username();
-                    }
-                    clientModel.notify(event);
+                    route(event);
                 }
             }
         } catch (IOException e) {
-            System.out.println("[SocketServerProxy] Connection Lost.");
+            System.out.println("[SocketServerProxy] Connection lost.");
         } finally {
             connected = false;
+        }
+    }
+
+    private void route(Event event) {
+        switch (event) {
+            case GameStartedEvent e -> {
+                this.gameModel = new GameModel(lobbyModel.getMyNickname());
+                this.gameModel.addObserver(view);
+                gameModel.apply(e);
+            }
+            case LobbyEvent e -> lobbyModel.apply(e);
+            case GameEvent e -> {
+                if (gameModel != null) gameModel.apply(e);
+            }
+            case ErrorEvent e -> {
+                if (gameModel != null) gameModel.apply(e);
+                else lobbyModel.apply(e);
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + event);
         }
     }
 
@@ -79,13 +103,12 @@ public class SocketServerProxy implements ServerProxy {
     @Override
     public boolean isConnected() { return connected; }
 
-    // --- VirtualServer ---
-    @Override public void requestSetUsername(String username) { send(new SetUsernameCommand(username)); }
-    @Override public void requestCreateLobby(int numPlayers) { send(new CreateLobbyCommand(numPlayers)); }
-    @Override public void requestJoinLobby(String lobbyID) { send(new JoinLobbyCommand(lobbyID)); }
-    @Override public void requestSelectTotem(Totem color) { send(new SelectTotemCommand(color)); }
-    @Override public void requestStartGame() { send(new StartGameCommand()); }
-    @Override public void requestLeaveLobby() { send(new LeaveLobbyCommand(myNickname)); }
-    @Override public void moveTotem(String nickname, char tileID) { send(new MoveTotemCommand(nickname, tileID)); }
-    @Override public void resolveActions(String nickname, List<String> selectedIDs) { send(new ResolveActionsCommand(nickname, selectedIDs));}
+    @Override public void requestSetUsername(String username)          { send(new SetUsernameCommand(username)); }
+    @Override public void requestCreateLobby(int numPlayers)          { send(new CreateLobbyCommand(numPlayers)); }
+    @Override public void requestJoinLobby(String lobbyID)            { send(new JoinLobbyCommand(lobbyID)); }
+    @Override public void requestSelectTotem(Totem color)             { send(new SelectTotemCommand(color)); }
+    @Override public void requestStartGame()                          { send(new StartGameCommand()); }
+    @Override public void requestLeaveLobby()                         { send(new LeaveLobbyCommand(myNickname)); }
+    @Override public void moveTotem(String nickname, char tileID)     { send(new MoveTotemCommand(nickname, tileID)); }
+    @Override public void resolveActions(String nickname, List<String> ids) { send(new ResolveActionsCommand(nickname, ids)); }
 }

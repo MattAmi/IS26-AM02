@@ -82,6 +82,7 @@ public class GameModel {
                         this.upperRowBuildings = new ArrayList<>(snap.upperRowBuildings());
                         this.lowerRowBuildings = new ArrayList<>(snap.lowerRowBuildings());
                         this.offerTiles = new ArrayList<>(snap.offerTiles());
+                        this.deckRemainingCount = snap.tribuDeckSize();
                     }
                     clientViews.forEach(o -> o.onGameSetupCompleted(
                             e.turnOrder(), e.initialFood(), snap));

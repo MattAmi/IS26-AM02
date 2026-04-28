@@ -232,7 +232,7 @@ public class ControllerManager {
         }
         gameNicknameToClient.put(gameId, nicknameToClient);
 
-        // Build the nickname → VirtualView map that GameController expects.
+        // nickname -> VirtualView map that GameController expects
         Map<String, VirtualView> nicknameToView = new HashMap<>();
         for (int i = 0; i < clientIds.size(); i++) {
             nicknameToView.put(nicknames.get(i), views.get(clientIds.get(i)));
@@ -384,9 +384,13 @@ public class ControllerManager {
         Game model = new Game(init.gameId(), init.nicknames(), init.chosenTotems(), init.seed());
 
         Map<String, VirtualView> noOpViews = new HashMap<>();
+        Map<String, String> nicknameToClient = new HashMap<>();
         for (String nick : init.nicknames()) {
             noOpViews.put(nick, VirtualView.noOp());
+            nicknameToClient.put(nick, null); //clientId will be reassigned at reconnection
         }
+
+        gameNicknameToClient.put(init.gameId(), nicknameToClient);
 
         // Riapre il file in append — NON riscrivere GAME_INIT
         CommandLogger appender = new CommandLogger(init.gameId());

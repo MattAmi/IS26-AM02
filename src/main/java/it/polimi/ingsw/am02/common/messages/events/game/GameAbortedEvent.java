@@ -2,4 +2,4 @@ package it.polimi.ingsw.am02.common.messages.events.game;
 
 import it.polimi.ingsw.am02.common.messages.events.Event;
 
-public record GameAbortedEvent(String lastManStanding) implements Event, GameEvent {}
+public record GameAbortedEvent(String lastManStanding) implements GameEvent {}

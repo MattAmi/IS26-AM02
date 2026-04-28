@@ -41,5 +41,7 @@ module it.polimi.ingsw.am02 {
     exports it.polimi.ingsw.am02.common.interfaces;
     exports it.polimi.ingsw.am02.server.controller.persistence;
 
+    exports it.polimi.ingsw.am02.server.network.socket;
+    exports it.polimi.ingsw.am02.client.network.socket;
 
 }

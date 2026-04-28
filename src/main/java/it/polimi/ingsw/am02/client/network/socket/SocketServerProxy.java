@@ -108,7 +108,7 @@ public class SocketServerProxy implements ServerProxy {
     @Override public void requestJoinLobby(String lobbyID)            { send(new JoinLobbyCommand(lobbyID)); }
     @Override public void requestSelectTotem(Totem color)             { send(new SelectTotemCommand(color)); }
     @Override public void requestStartGame()                          { send(new StartGameCommand()); }
-    @Override public void requestLeaveLobby() { send(new LeaveLobbyCommand(lobbyModel.getMyNickname())); }
+    @Override public void requestLeaveLobby()                         { send(new LeaveLobbyCommand(myNickname)); }
     @Override public void moveTotem(String nickname, char tileID)     { send(new MoveTotemCommand(nickname, tileID)); }
     @Override public void resolveActions(String nickname, List<String> ids) { send(new ResolveActionsCommand(nickname, ids)); }
 }

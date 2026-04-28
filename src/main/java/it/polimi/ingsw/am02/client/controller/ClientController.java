@@ -84,13 +84,13 @@ public class ClientController {
             case "leave" -> proxy.requestLeaveLobby();
             case "move" -> {
                 if (args.length < 2) view.onError("Usage: move <tileID> (e.g. move B)");
-                else proxy.moveTotem(gameModel.getMyNickname(), args[1].charAt(0));
+                else proxy.moveTotem(args[1].charAt(0));
             }
             case "resolve" -> {
                 if (args.length < 2) view.onError("Usage: resolve <id1> [id2 ...]");
                 else {
                     List<String> ids = new ArrayList<>(Arrays.asList(args).subList(1, args.length));
-                    proxy.resolveActions(gameModel.getMyNickname(), ids);
+                    proxy.resolveActions(ids);
                 }
             }
             case "quit" -> {

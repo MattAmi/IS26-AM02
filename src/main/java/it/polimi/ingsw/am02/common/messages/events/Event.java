@@ -3,9 +3,10 @@ package it.polimi.ingsw.am02.common.messages.events;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import it.polimi.ingsw.am02.common.messages.Message;
-import it.polimi.ingsw.am02.common.messages.events.error.*;
+import it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
 import it.polimi.ingsw.am02.common.messages.events.lobby.*;
+
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
 @JsonSubTypes({

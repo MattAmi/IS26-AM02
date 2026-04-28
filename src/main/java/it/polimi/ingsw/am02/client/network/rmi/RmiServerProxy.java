@@ -1,9 +1,14 @@
 package it.polimi.ingsw.am02.client.network.rmi;
 
 import it.polimi.ingsw.am02.client.model.GameModel;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.game.GameEvent;
+import it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent;
+import it.polimi.ingsw.am02.common.messages.events.lobby.LobbyEvent;
 import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
@@ -18,15 +23,20 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     private final String host;
     private final int port;
-    private final GameModel gameModel;
+
+    private final LobbyModel lobbyModel;
+    private final ClientView clientView; // Added to fix the Factory signature
+    private GameModel gameModel; // Lazily initialized
+
     private RmiServerRemote serverStub;
     private boolean connected = false;
 
-    public RmiServerProxy(String host, int port, GameModel gameModel) throws RemoteException {
+    public RmiServerProxy(String host, int port, LobbyModel lobbyModel, ClientView clientView) throws RemoteException {
         super();
         this.host = host;
         this.port = port;
-        this.gameModel = gameModel;
+        this.lobbyModel = lobbyModel;
+        this.clientView = clientView; // Store the view reference
     }
 
     @Override
@@ -50,11 +60,33 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
         return connected;
     }
 
+    // --- RMI CLIENT REMOTE (Inbound routing from Server) ---
     @Override
     public void notifyEvent(Event event) throws RemoteException {
-        gameModel.apply(event);
+        // 1. Lazy initialization of the GameModel
+        if (event instanceof GameStartedEvent && gameModel == null) {
+            String myNick = lobbyModel.getMyNickname();
+            this.gameModel = new GameModel(myNick);
+
+            // Automatically wire the view to the newly created game model!
+            this.gameModel.addObserver(this.clientView);
+
+            System.out.println("[RMI Proxy] GameModel created and wired for: " + myNick);
+        }
+
+        // 2. Pattern Matching Routing
+        if (event instanceof LobbyEvent lobbyEvent) {
+            lobbyModel.apply(lobbyEvent);
+        } else if (event instanceof GameEvent gameEvent) {
+            if (gameModel != null) {
+                gameModel.apply(gameEvent);
+            } else {
+                System.err.println("[RMI Proxy] Received GameEvent but GameModel is null!");
+            }
+        }
     }
 
+    // --- SERVER PROXY (Outbound calls to Server) ---
     @Override
     public void requestSetUsername(String username) {
         try { serverStub.requestSetUsername(username); } catch (RemoteException e) { handleNetworkError(e); }
@@ -86,16 +118,21 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void moveTotem(String nickname, char tileID) {
-        try { serverStub.moveTotem(nickname, tileID); } catch (RemoteException e) { handleNetworkError(e); }
+    public void moveTotem(char tileID) {
+        try { serverStub.moveTotem(tileID); } catch (RemoteException e) { handleNetworkError(e); }
     }
 
     @Override
-    public void resolveActions(String nickname, List<String> selectedIDs) {
-        try { serverStub.resolveActions(nickname, selectedIDs); } catch (RemoteException e) { handleNetworkError(e); }
+    public void resolveActions(List<String> selectedIDs) {
+        try { serverStub.resolveActions(selectedIDs); } catch (RemoteException e) { handleNetworkError(e); }
     }
 
     private void handleNetworkError(RemoteException e) {
         this.connected = false;
+        System.err.println("[RMI Proxy] Network disconnected: " + e.getMessage());
+    }
+
+    public GameModel getGameModel() {
+        return gameModel;
     }
 }

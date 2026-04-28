@@ -37,6 +37,7 @@ public class GameController implements GameObserver {
     // Concurrency infrastructure
     private final ExecutorService drainExecutor; // Thread pool for per-player drain loops
     private final ScheduledExecutorService scheduler;
+    private final ExecutorService autoPlayerExecutor;
 
     // Timer state
     private ScheduledFuture<?> disconnectedPlayerTimer;
@@ -73,6 +74,12 @@ public class GameController implements GameObserver {
 
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "GC[" + gameId + "]-Scheduler");
+            t.setDaemon(true);
+            return t;
+        });
+
+        this.autoPlayerExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "GC[" + gameId + "]-AutoPlayer");
             t.setDaemon(true);
             return t;
         });
@@ -230,6 +237,7 @@ public class GameController implements GameObserver {
         }
         scheduler.shutdownNow();
         drainExecutor.shutdownNow();
+        autoPlayerExecutor.shutdownNow();
         log("Shutdown complete.");
     }
 
@@ -282,17 +290,25 @@ public class GameController implements GameObserver {
             // Se il giocatore ha già consumato la sua "grazia", gioca subito
             if (gracePeriodExpired.contains(newCurrentPlayer)) {
                 log("Player " + newCurrentPlayer + " is still absent. Invoking AutoPlayer immediately.");
-
-                GameCommand autoCmd = AutoPlayer.computeMove(newCurrentPlayer, snapshot);
-                if (autoCmd != null) {
-                    handle(autoCmd, newCurrentPlayer);
-                }
+                scheduleAutoPlayerMove(newCurrentPlayer);
 
             } else {
                 // Prima volta che è il suo turno da disconnesso: facciamo partire il timer da 30s
                 startDisconnectedPlayerTimer(newCurrentPlayer);
             }
         }
+    }
+
+    private void scheduleAutoPlayerMove(String nickname) {
+        GameCommand autoCmd = AutoPlayer.computeMove(nickname, snapshot);
+        if (autoCmd == null) {
+            log("AutoPlayer produced no command for " + nickname + " in current phase — skipping.");
+            return;
+        }
+        // Eseguito fuori dal lock tramite lo autoPlayerExecutor per evitare deadlock:
+        // handle() è synchronized, e questo metodo viene chiamato da callback
+        // già dentro il monitor (onPlayerLimitsUpdated, handleCurrentPlayerTransition).
+        autoPlayerExecutor.execute(() -> handle(autoCmd, nickname));
     }
 
 
@@ -322,7 +338,6 @@ public class GameController implements GameObserver {
     }
 
     private void onDisconnectedPlayerTimerExpired(String nickname) {
-        GameCommand autoCmd;
         synchronized (this) {
             if (connectionStatus.get(nickname) != ConnectionStatus.DISCONNECTED) {
                 log("Per-player timer expired but " + nickname + " is no longer disconnected — skipping.");
@@ -337,14 +352,9 @@ public class GameController implements GameObserver {
 
             disconnectedPlayerTimer = null;
             disconnectedPlayerTimerTarget = null;
-            autoCmd = AutoPlayer.computeMove(nickname, snapshot);
-        }
-        if (autoCmd == null) {
-            log("AutoPlayer produced no command for " + nickname + " in current phase — skipping.");
-            return;
         }
 
-        handle(autoCmd, nickname);
+        scheduleAutoPlayerMove(nickname);
     }
 
     // Global forfeit timer
@@ -510,6 +520,11 @@ public class GameController implements GameObserver {
                                                    int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         pushGlobalEvent(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower));
+
+        if (nickname.equals(currentPlayerNickname)
+                && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
+            scheduleAutoPlayerMove(nickname);
+        }
     }
 
     @Override

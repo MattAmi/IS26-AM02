@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.polimi.ingsw.am02.common.messages.Message;
-import it.polimi.ingsw.am02.common.messages.commands.Command;
-import it.polimi.ingsw.am02.common.messages.events.Event;
 
 public class JsonMessageCodecImpl implements JsonMessageCodec {
 
@@ -15,6 +13,7 @@ public class JsonMessageCodecImpl implements JsonMessageCodec {
     @Override
     public String encode(Message message) {
         try {
+            // Jackson will read the annotation on Message and will add "@type"
             return MAPPER.writeValueAsString(message);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Serialization Error: " + message.getClass().getSimpleName(), e);
@@ -24,15 +23,8 @@ public class JsonMessageCodecImpl implements JsonMessageCodec {
     @Override
     public Message decode(String json) {
         try {
-            //"@type" is used by Jackson to know which concrete class is to be istanced.
-            if (json.contains("\"@type\"")) {
-                try {
-                    return MAPPER.readValue(json, Command.class);
-                } catch (Exception e) {
-                    return MAPPER.readValue(json, Event.class);
-                }
-            }
-            throw new RuntimeException("JSON message without a @type field: " + json);
+            // Jackson will read "@type" and will automatically create the correct class
+            return MAPPER.readValue(json, Message.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Deserialization Error: " + json, e);
         }

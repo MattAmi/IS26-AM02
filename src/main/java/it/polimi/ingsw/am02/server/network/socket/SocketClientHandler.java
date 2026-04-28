@@ -4,7 +4,6 @@ import it.polimi.ingsw.am02.common.messages.Message;
 import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.messages.events.game.PingEvent;
-import it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
 import it.polimi.ingsw.am02.server.network.ClientHandler;
@@ -23,7 +22,7 @@ public class SocketClientHandler implements ClientHandler {
     private final BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<>();
     private final ScheduledExecutorService pingScheduler = Executors.newSingleThreadScheduledExecutor();
     private volatile boolean pongReceived = false;
-    private String myNickname;
+    private String clientId;
 
     private static final int PING_INTERVAL_SECONDS = 5;
     private static final int PING_TIMEOUT_SECONDS = 10;
@@ -35,6 +34,7 @@ public class SocketClientHandler implements ClientHandler {
         this.out = new PrintWriter(
                 new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true
         );
+        this.clientId = manager.handleClientConnected(this);
     }
 
     public void listen() {
@@ -53,10 +53,9 @@ public class SocketClientHandler implements ClientHandler {
             pongReceived = false;
             eventQueue.offer(new PingEvent());
 
-            // Aspetta PING_TIMEOUT_SECONDS e controlla se è arrivato il pong
             pingScheduler.schedule(() -> {
                 if (!pongReceived) {
-                    System.out.println("[SocketClientHandler] Timeout PING per: " + myNickname);
+                    System.out.println("[SocketClientHandler] Timeout PING per clientId: " + clientId);
                     disconnect();
                 }
             }, PING_TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -64,7 +63,6 @@ public class SocketClientHandler implements ClientHandler {
         }, PING_INTERVAL_SECONDS, PING_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
-    // Reads JSON lines from the socket and dispatches them as Command
     private void readerLoop() {
         try (BufferedReader in = new BufferedReader(
                 new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
@@ -76,8 +74,7 @@ public class SocketClientHandler implements ClientHandler {
                 }
             }
         } catch (IOException e) {
-            System.out.println("[SocketClientHandler] Client Disconnected: "
-                    + (myNickname != null ? myNickname : socket.getInetAddress()));
+            System.out.println("[SocketClientHandler] Client Disconnected: " + clientId);
         } finally {
             disconnect();
         }
@@ -96,52 +93,32 @@ public class SocketClientHandler implements ClientHandler {
 
     private void dispatch(Command cmd) {
         switch (cmd) {
-            case PongCommand c -> pongReceived = true;
-            case SetUsernameCommand c    -> manager.requestSetUsername(c.username(), this);
-            case CreateLobbyCommand c   -> {
-                if (myNickname == null) return;
-                manager.createLobby(c.numPlayers(), myNickname, this);
-            }
-            case JoinLobbyCommand c     -> {
-                if (myNickname == null) return;
-                manager.joinLobby(c.lobbyID(), myNickname, this);
-            }
-            case SelectTotemCommand c   -> {
-                if (myNickname == null) return;
-                manager.selectTotem(myNickname, c.color());
-            }
-            case StartGameCommand c     -> {
-                if (myNickname == null) return;
-                manager.routeGameCommand(myNickname, c);
-            }
-            case LeaveLobbyCommand c    -> {
-                if (myNickname == null) return;
-                manager.leaveLobby(myNickname);
-            }
-            case MoveTotemCommand c     -> {
-                if (myNickname == null) return;
-                manager.routeGameCommand(myNickname, c);
-            }
-            case ResolveActionsCommand c -> {
-                if (myNickname == null) return;
-                manager.routeGameCommand(myNickname, c);
-            }
+            case PongCommand c           -> pongReceived = true;
+            case SetUsernameCommand c    -> manager.requestSetUsernameInLobby(clientId, c.username());
+            case CreateLobbyCommand c    -> manager.createLobby(clientId, c.numPlayers());
+            case JoinLobbyCommand c      -> manager.joinLobby(clientId, c.lobbyID());
+            case SelectTotemCommand c    -> manager.selectTotem(clientId, c.color());
+            case StartGameCommand c      -> manager.routeGameCommand(clientId, c);
+            case LeaveLobbyCommand c     -> manager.leaveLobby(clientId);
+            case MoveTotemCommand c      -> manager.routeGameCommand(clientId, c);
+            case ResolveActionsCommand c -> manager.routeGameCommand(clientId, c);
+            case ReconnectCommand c      -> manager.handleReconnectRequest(clientId, this, c);
         }
     }
 
+
     @Override
     public void notify(Event event) {
-        if (event instanceof UsernameResultEvent e && e.isValid()) {
-            this.myNickname = e.username();
-        }
-        eventQueue.offer(event); // non-blocking
+        eventQueue.offer(event);
     }
 
     @Override
     public void disconnect() {
+        pingScheduler.shutdownNow();
         try { socket.close(); } catch (IOException ignored) {}
-        if (myNickname != null) {
-            manager.handleDisconnection(myNickname);
+        if (clientId != null) {
+            manager.handleDisconnection(clientId);
+            clientId = null;
         }
     }
 }

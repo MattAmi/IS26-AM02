@@ -13,9 +13,9 @@ public interface VirtualServer {
     void requestSelectTotem(Totem color);
     void requestStartGame();
     void requestLeaveLobby();
-
-    // Game
-    void moveTotem(String nickname, char tileID);
-    void resolveActions(String nickname, List<String> selectedIDs);
+    // Reconnection
+    void requestReconnect(String nickname, String gameId);    // Game
+    void moveTotem(char tileID);
+    void resolveActions(List<String> selectedIDs);
 
 }

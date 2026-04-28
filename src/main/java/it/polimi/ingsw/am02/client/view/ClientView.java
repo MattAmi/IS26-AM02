@@ -63,4 +63,10 @@ public interface ClientView {
     void onGameRecoveryFailed();
     void onPlayerReconnected(String nickname);
     void onError(String message);
+
+    /**
+     * Wires the view to the game model. Called when the game starts or resumes.
+     * @param gameModel the active game model.
+     */
+    void setGameModel(GameModel gameModel);
 }

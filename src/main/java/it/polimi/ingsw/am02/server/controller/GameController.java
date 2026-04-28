@@ -536,7 +536,12 @@ public class GameController implements GameObserver {
         System.out.println("[GameController:" + gameId + "] " + msg);
     }
 
-    public boolean isPlayerDisconnected(String nickname) { return connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED; }
+    public boolean isPlayerDisconnected(String nickname) {
+        VirtualView currentHandler = handlers.get(nickname);
+        return connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED
+                || currentHandler == null
+                || currentHandler == VirtualView.noOp();
+    }
 
     void enterReplayMode() { this.replayMode = true;  }
 

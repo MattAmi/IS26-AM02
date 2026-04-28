@@ -8,8 +8,11 @@ import java.util.List;
 import java.util.Map;
 
 public interface VirtualView {
+
+    VirtualView NO_OP = event -> {};
+
     void notify(Event event);
     static VirtualView noOp() {
-        return event -> {};
+        return NO_OP;
     }
 }

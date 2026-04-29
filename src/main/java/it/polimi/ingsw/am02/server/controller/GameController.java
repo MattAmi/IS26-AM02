@@ -344,15 +344,26 @@ public class GameController implements GameObserver {
             return;
         }
 
-        GameCommand autoCmd = AutoPlayer.computeMove(nickname, snapshot);
-        if (autoCmd == null) {
-            log("AutoPlayer produced no command for " + nickname + " in current phase — skipping.");
-            return;
-        }
-        // Eseguito fuori dal lock tramite lo autoPlayerExecutor per evitare deadlock:
-        // handle() è synchronized, e questo metodo viene chiamato da callback
-        // già dentro il monitor (onPlayerLimitsUpdated, handleCurrentPlayerTransition).
-        autoPlayerExecutor.execute(() -> handle(autoCmd, nickname));
+        // DELEGHIAMO IL CALCOLO AL THREAD DELL'AUTOPLAYER.
+        // In questo modo, il thread aspetterà che il lock venga rilasciato,
+        // ovvero che tutti gli eventi (limiti inclusi) siano arrivati nello snapshot!
+        autoPlayerExecutor.execute(() -> {
+
+            GameCommand autoCmd;
+
+            // Sincronizziamo la lettura per assicurarci di leggere lo snapshot fresco
+            synchronized(this) {
+                autoCmd = AutoPlayer.computeMove(nickname, snapshot);
+            }
+
+            if (autoCmd == null) {
+                log("AutoPlayer produced no command for " + nickname + " in current phase — skipping.");
+                return;
+            }
+
+            // Esegue la mossa
+            handle(autoCmd, nickname);
+        });
     }
 
 

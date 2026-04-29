@@ -147,7 +147,7 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
         // We use the inbound executor to prevent blocking the RMI thread.
         // We create the ReconnectCommand expected by Matteo's ControllerManager.
         inboundExecutor.submit(() ->
-                manager.handleReconnectRequest(this.clientId, this, new ReconnectCommand(gameId, nickname))
+                manager.handleReconnectRequest(this.clientId, this, new ReconnectCommand(nickname, gameId))
         );
     }
 }

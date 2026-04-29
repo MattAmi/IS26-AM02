@@ -327,7 +327,11 @@ public class TuiView extends AbstractClientView {
         addNotification(RED + BOLD + "[NETWORK] Connection lost. Attempting to restore..." + RESET);
 
         if (idToPrint != null) {
-            addNotification(YELLOW + "Server crashed? If you need to reconnect later, use GameID: " + BOLD + idToPrint + RESET);
+            String myNick = lobbyModel.getMyNickname();
+            if (myNick != null) {
+                addNotification(YELLOW + "Server crashed? To reconnect, use: " + BOLD
+                        + "reconnect " + myNick + " " + idToPrint + RESET);
+            }
         }
     }
 

@@ -40,7 +40,7 @@ public class ClientController {
      *
      * @param nickname the local player's confirmed nickname
      */
-    public void onGameModelRequired(String nickname) {
+    public synchronized void onGameModelRequired(String nickname) {
         if (this.gameModel != null) return; // già inizializzato, ignora
         GameModel model = new GameModel(nickname);
         this.gameModel = model;

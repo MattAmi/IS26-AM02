@@ -39,8 +39,8 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     private Thread pingThread; // thread che monitora la connessione verso il server
     private static final long PING_INTERVAL_MILLIS = 5000;
 
-    private String activeNickname = null;
-    private String activeGameId = null;
+    private volatile String activeNickname = null;
+    private volatile String activeGameId = null;
 
     public RmiServerProxy(String host, int port, LobbyModel lobbyModel, ClientView clientView)
             throws RemoteException {

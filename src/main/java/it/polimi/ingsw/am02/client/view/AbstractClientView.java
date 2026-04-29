@@ -42,7 +42,7 @@ public abstract class AbstractClientView implements ClientView {
     @Override public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {}
     @Override public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {}
 
-    @Override public void onEventResolved(String eventName) {}
+    @Override public void onEventResolved(String EventID, String eventName) {}
     @Override public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {}
     @Override public void onExtraTurnEnded(String nickname) {}
 

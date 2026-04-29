@@ -480,6 +480,7 @@ public class GameBoard {
             notifier.emitOutcome(observer.eventStart(event.getType()));
         }
 
+        notifier.notifyEventResolved(event.getID(), event.getType().toString());
         notifier.emitOutcome(event.applyEventEffect(players, eventObservers));
 
         for(EventObserver observer: eventObservers) {

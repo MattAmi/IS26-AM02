@@ -51,7 +51,7 @@ public class TuiView extends AbstractClientView {
     // -----------------------------------------------------------------------
 
     /** Maximum number of recent log entries shown on screen. */
-    private static final int MAX_NOTIFICATIONS = 5;
+    private static final int MAX_NOTIFICATIONS = 10;
 
     // -----------------------------------------------------------------------
     // State
@@ -287,7 +287,7 @@ public class TuiView extends AbstractClientView {
     }
 
     @Override
-    public void onEventResolved(String eventName) {
+    public void onEventResolved(String eventID, String eventName) {
         addNotification(PURPLE + "[EVENT] Resolved: " + eventName + RESET);
     }
 

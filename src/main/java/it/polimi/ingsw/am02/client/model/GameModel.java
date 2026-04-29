@@ -231,7 +231,7 @@ public class GameModel {
                 // --------- Events & extra turns ---------
                 case EventResolvedEvent e -> {
                     this.lastEventResolved = e.eventName();
-                    clientViews.forEach(o -> o.onEventResolved(e.eventName()));
+                    clientViews.forEach(v -> v.onEventResolved(e.eventID(), e.eventName()));
                 }
 
                 case ExtraTurnStartedEvent e -> {

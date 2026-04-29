@@ -83,6 +83,14 @@ public class GameModel {
                         this.offerTiles = new ArrayList<>(snap.offerTiles());
                         this.deckRemainingCount = snap.tribuDeckSize();
                         this.turnOrderSlots = new ArrayList<>(snap.turnOrderSlots());
+
+                        // --- AGGIUNTA: Popola i limiti iniziali ---
+                        for (OfferTileInfo tile : snap.offerTiles()) {
+                            if (tile.occupantNickname() != null) {
+                                remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());
+                                remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());
+                            }
+                        }
                     }
                     clientViews.forEach(o -> o.onGameSetupCompleted(
                             e.turnOrder(), e.initialFood(), snap));
@@ -92,6 +100,17 @@ public class GameModel {
                     this.currentPhase = e.phase();
                     if (e.currentPlayer() != null) this.currentPlayer = e.currentPlayer();
                     if (e.resolutionOrder() != null) this.turnOrder = new ArrayList<>(e.resolutionOrder());
+
+                    // --- AGGIUNTA: Sincronizza i limiti all'inizio della risoluzione ---
+                    if (e.phase() == PhaseType.ACTION_RESOLUTION) {
+                        for (OfferTileInfo tile : offerTiles) {
+                            if (tile.occupantNickname() != null) {
+                                remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());
+                                remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());
+                            }
+                        }
+                    }
+
                     clientViews.forEach(o -> o.onPhaseChanged(
                             e.phase(), e.currentPlayer(), e.resolutionOrder()));
                 }
@@ -291,5 +310,6 @@ public class GameModel {
     public String getLastErrorMessage() { return lastErrorMessage; }
     public boolean isInGame() { return gameId != null && !gameEnded; }
     public List<TurnOrderSlotInfo> getTurnOrderSlots() { return Collections.unmodifiableList(turnOrderSlots); }
+    public void setGameId(String gameId) { this.gameId = gameId; }
 
 }

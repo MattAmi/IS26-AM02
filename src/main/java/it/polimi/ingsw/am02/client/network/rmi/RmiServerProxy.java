@@ -84,7 +84,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     @Override
     public void notifyEvent(Event event) throws RemoteException {
-        // Aggiorna la cache per la riconnessione automatica
+        // Aggiorna la cache per la riconnessione
         if (event instanceof UsernameResultEvent e && e.isValid()) {
             this.activeNickname = e.username();
         }
@@ -95,15 +95,25 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
         if (event instanceof LobbyEvent lobbyEvent) {
             lobbyModel.apply(lobbyEvent);
 
-            // Intervento 3: delega al controller la creazione del GameModel
-            if (event instanceof GameStartedEvent && clientController.getGameModel() == null) {
-                clientController.onGameModelRequired(this.activeNickname);
+            // --- CORREZIONE: Crea il GameModel per il setup se siamo in riconnessione ---
+            if (clientController.getGameModel() == null && activeNickname != null && activeGameId != null) {
+                clientController.onGameModelRequired(activeNickname);
+                clientController.getGameModel().setGameId(activeGameId);
             }
+
+            // Passa l'evento al GameModel (fondamentale per GameSetupCompletedEvent!)
+            if (clientController.getGameModel() != null) {
+                clientController.getGameModel().apply(lobbyEvent);
+            }
+            // --------------------------------------------------------------------------
 
         } else if (event instanceof GameEvent gameEvent) {
             if (clientController.getGameModel() == null) {
-                if (activeNickname == null) return; // troppo presto, ignora
+                if (activeNickname == null) return;
                 clientController.onGameModelRequired(activeNickname);
+                if (activeGameId != null) {
+                    clientController.getGameModel().setGameId(activeGameId);
+                }
             }
             clientController.getGameModel().apply(gameEvent);
 
@@ -165,6 +175,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
                     if (activeNickname != null && activeGameId != null) {
                         clientController.onGameModelRequired(activeNickname);
+                        clientController.getGameModel().setGameId(activeGameId);
                         serverStub.requestReconnect(activeNickname, activeGameId);
                     }
 

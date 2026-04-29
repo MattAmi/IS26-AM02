@@ -99,6 +99,11 @@ public class Lobby {
     public synchronized void selectTotem(String clientId, Totem totem) {
         if (!clientIds.contains(clientId)) return;
 
+        if (!clientToNickname.containsKey(clientId)) {
+            views.get(clientId).notify(new ErrorEvent("You must choose a nickname before selecting a totem."));
+            return;
+        }
+
         if (totem == null) {
             views.get(clientId).notify(new ErrorEvent("Invalid totem selection"));
             return;

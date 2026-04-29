@@ -204,10 +204,18 @@ public class GameBoard {
             if (registry.isBuilding(cardID)) {
                 int actualCost = buildingCosts.get(cardID);
 
+                RowPosition sourceRow;
+                if (upperRowBuildings.remove(cardID)) {
+                    sourceRow = RowPosition.UPPER;
+                } else {
+                    lowerRowBuildings.remove(cardID);
+                    sourceRow = RowPosition.LOWER;
+                }
+
+                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.BUILDING, sourceRow);
+
                 if (actualCost > 0) {
                     player.getTribu().addFoodPoints(-actualCost);
-
-                    // Notify observers of food consumption due to building purchase
                     notifier.notifyPlayerResourceChanged(
                             player.getNickname(),
                             ResourceType.FOOD,
@@ -218,21 +226,7 @@ public class GameBoard {
                 EffectOutcome buildingOutcome = player.getTribu().insertBuilding(cardID, player, game);
                 notifier.emitOutcome(buildingOutcome);
 
-                RowPosition sourceRow;
-                if (upperRowBuildings.remove(cardID)) {
-                    sourceRow = RowPosition.UPPER;
-                } else {
-                    lowerRowBuildings.remove(cardID);
-                    sourceRow = RowPosition.LOWER;
-                }
-
-                // Notify observers that a player has taken a building card from the board
-                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.BUILDING, sourceRow);
-
             } else {
-                EffectOutcome characterOutcome = player.getTribu().insertCharacter(cardID, player);
-                notifier.emitOutcome(characterOutcome);
-
                 RowPosition sourceRow;
                 if (upperRow.remove(cardID)) {
                     sourceRow = RowPosition.UPPER;
@@ -240,9 +234,10 @@ public class GameBoard {
                     lowerRow.remove(cardID);
                     sourceRow = RowPosition.LOWER;
                 }
-
-                // Notify observers that a player has taken a character card from the board
                 notifier.notifyCardTaken(player.getNickname(), cardID, CardType.CHARACTER, sourceRow);
+
+                EffectOutcome characterOutcome = player.getTribu().insertCharacter(cardID, player);
+                notifier.emitOutcome(characterOutcome);
             }
         }
     }

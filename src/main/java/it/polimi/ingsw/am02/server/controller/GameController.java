@@ -132,15 +132,19 @@ public class GameController implements GameObserver {
         log("Player disconnected: " + nickname);
         pushGlobalEventTransientOthers(nickname, new PlayerDisconnectedEvent(nickname));
 
-        if (nickname.equals(currentPlayerNickname)) {
+        // --- NUOVO CALCOLO --- Considera attivi anche i RECONNECTING
+        long activeCount = connectionStatus.values().stream()
+                .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                .count();
+
+        if (activeCount == 0) {
+            log("Mass disconnection: 0 players active. Pausing game.");
+            cancelDisconnectedPlayerTimer(currentPlayerNickname); // GELA IL GIOCO
+        } else if (nickname.equals(currentPlayerNickname)) {
             startDisconnectedPlayerTimer(nickname);
         }
 
-        int connectedCount = (int) connectionStatus.values().stream()
-                .filter(s -> s == ConnectionStatus.CONNECTED)
-                .count();
-
-        if (connectedCount == 1) {
+        if (activeCount == 1) {
             startGlobalDisconnectionTimeout();
         }
     }
@@ -159,6 +163,22 @@ public class GameController implements GameObserver {
             connectionStatus.put(nickname, ConnectionStatus.RECONNECTING);
             log("Player reconnecting: " + nickname + " from event index " + playerSyncIndex.get(nickname));
             gracePeriodExpired.remove(nickname);
+
+            long activeCount = connectionStatus.values().stream()
+                    .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                    .count();
+
+            if (activeCount == 1 && currentPlayerNickname != null) {
+                if (connectionStatus.get(currentPlayerNickname) == ConnectionStatus.DISCONNECTED) {
+                    if (gracePeriodExpired.contains(currentPlayerNickname)) {
+                        log("First human returned. Waking AutoPlayer immediately for " + currentPlayerNickname);
+                        scheduleAutoPlayerMove(currentPlayerNickname);
+                    } else {
+                        log("First human returned. Starting AutoPlayer timer for " + currentPlayerNickname);
+                        startDisconnectedPlayerTimer(currentPlayerNickname);
+                    }
+                }
+            }
         }
 
         // Notifichiamo agli ALTRI che questo player si sta riconnettendo (fuori dalla storia globale)
@@ -204,7 +224,14 @@ public class GameController implements GameObserver {
                     long pendingCount = connectionStatus.values().stream()
                             .filter(s -> s == ConnectionStatus.PENDING_RECONNECTION)
                             .count();
-                    if (pendingCount > 0) {
+
+                    long activeCount = connectionStatus.values().stream()
+                            .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                            .count();
+
+                    // Riavvia se ci sono player in recovery (pending > 0)
+                    // OPPURE se ci sono disconnessi normali e tu sei rimasto l'unico attivo
+                    if (pendingCount > 0 || (activeCount == 1 && connectionStatus.size() > 1)) {
                         startGlobalDisconnectionTimeout();
                     }
                 }
@@ -287,19 +314,36 @@ public class GameController implements GameObserver {
         }
 
         if (connectionStatus.get(newCurrentPlayer) == ConnectionStatus.DISCONNECTED) {
+            // --- NUOVO: Fermati se non c'è nessuno ---
+            long activeCount = connectionStatus.values().stream()
+                    .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                    .count();
+            if (activeCount == 0) {
+                log("Game is paused (0 players). Deferring turn timer for " + newCurrentPlayer);
+                return;
+            }
+
             // Se il giocatore ha già consumato la sua "grazia", gioca subito
             if (gracePeriodExpired.contains(newCurrentPlayer)) {
                 log("Player " + newCurrentPlayer + " is still absent. Invoking AutoPlayer immediately.");
                 scheduleAutoPlayerMove(newCurrentPlayer);
 
             } else {
-                // Prima volta che è il suo turno da disconnesso: facciamo partire il timer da 30s
                 startDisconnectedPlayerTimer(newCurrentPlayer);
             }
         }
     }
 
     private void scheduleAutoPlayerMove(String nickname) {
+
+        long activeCount = connectionStatus.values().stream()
+                .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                .count();
+        if (activeCount == 0) {
+            log("AutoPlayer aborted: no human players connected.");
+            return;
+        }
+
         GameCommand autoCmd = AutoPlayer.computeMove(nickname, snapshot);
         if (autoCmd == null) {
             log("AutoPlayer produced no command for " + nickname + " in current phase — skipping.");

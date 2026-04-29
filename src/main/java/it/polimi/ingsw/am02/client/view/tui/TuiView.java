@@ -170,6 +170,7 @@ public class TuiView extends AbstractClientView {
         System.out.printf("Capacity: %d/%d players%n",
                 lobby.currentPlayers().size(), lobby.expectedPlayers());
         System.out.println("\nPlayers:");
+
         lobby.currentPlayers().forEach(n -> {
             Totem chosen = lobby.chosenTotems().get(n);
             String totemStr = (chosen != null)
@@ -177,7 +178,21 @@ public class TuiView extends AbstractClientView {
                     : RED + "[no totem selected]";
             System.out.println("  • " + n + " " + totemStr + RESET);
         });
-        System.out.println("\nCommands: nick <name> | totem <color> | leave | quit");
+
+        // --- CONDITIONAL COMMAND LOGIC ---
+        String myNick = lobbyModel.getMyNickname(); // Retrieve local nickname
+
+        if (myNick == null || myNick.isBlank()) {
+            // Player hasn't set a nickname yet
+            System.out.println("\n" + YELLOW + BOLD + ">> STEP 1: Enter a nickname to join" + RESET);
+            System.out.println("Commands: nick <name> | leave | quit");
+        } else {
+            // Nickname set, player can now choose a totem
+            System.out.println("\n" + GREEN + BOLD + ">> STEP 2: Nickname set (" + myNick + "). Pick your totem!" + RESET);
+            System.out.println("Commands: nick <name> (to change) | totem <color> | leave | quit");
+        }
+        // -----------------------------------------
+
         System.out.print("\n" + CYAN + "> " + RESET);
     }
 
@@ -251,12 +266,12 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onPlayerLimitsInitialized(String nickname, int upper, int lower) {
-        // Silently reflected in the model; no separate notification needed.
+        renderFullGame();
     }
 
     @Override
     public void onPlayerLimitsUpdated(String nickname, int upper, int lower) {
-        // Silently reflected in the model; no separate notification needed.
+        renderFullGame();
     }
 
     @Override
@@ -304,7 +319,16 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onConnectionLost() {
-        addNotification(RED + "[NETWORK] Connection lost. Attempting to restore..." + RESET);
+        // Recupera l'ID del gioco se disponibile
+        String idToPrint = (gameModel != null && gameModel.getGameId() != null)
+                ? gameModel.getGameId()
+                : currentGameId;
+
+        addNotification(RED + BOLD + "[NETWORK] Connection lost. Attempting to restore..." + RESET);
+
+        if (idToPrint != null) {
+            addNotification(YELLOW + "Server crashed? If you need to reconnect later, use GameID: " + BOLD + idToPrint + RESET);
+        }
     }
 
     @Override
@@ -492,12 +516,17 @@ public class TuiView extends AbstractClientView {
         for (String nickname : gameModel.getTurnOrder()) {
             int food   = gameModel.getFoodByPlayer().getOrDefault(nickname, 0);
             int pp     = gameModel.getPpByPlayer().getOrDefault(nickname, 0);
+
+            int picksUp = gameModel.getRemainingUpper().getOrDefault(nickname, 0);
+            int picksLow = gameModel.getRemainingLower().getOrDefault(nickname, 0);
+
             boolean isMe = nickname.equals(gameModel.getMyNickname());
             String marker = isMe ? YELLOW + BOLD + " (YOU)" + RESET : "";
 
             System.out.printf("  %-15s | Food: " + GREEN + "%2d" + RESET
-                            + "  | PP: " + YELLOW + "%3d" + RESET + "%s%n",
-                    nickname, food, pp, marker);
+                            + "  | PP: " + YELLOW + "%3d" + RESET
+                            + "  | Picks (Up/Low): " + CYAN + "%d/%d" + RESET + "%s%n",
+                    nickname, food, pp, picksUp, picksLow, marker);
 
             List<String> chars = gameModel.getCharactersByPlayer()
                     .getOrDefault(nickname, List.of());

@@ -422,7 +422,7 @@ public class ControllerManager {
         controller.enterReplayMode();
         model.startFSM();
         for (CommandRecord rec : reader.readCommands()) {
-            controller.handle(rec.command(), rec.command().nickname());
+            controller.handle(rec.command(), rec.nickname());
         }
         controller.exitReplayMode();
 

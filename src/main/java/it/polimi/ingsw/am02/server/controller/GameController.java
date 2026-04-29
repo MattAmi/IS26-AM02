@@ -115,7 +115,7 @@ public class GameController implements GameObserver {
             }
         }
         if (success && !replayMode) {
-            gameLogger.logCommand(cmd);
+            gameLogger.logCommand(cmd, senderNickname);
         }
     }
 

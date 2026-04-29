@@ -50,12 +50,15 @@ public class CommandLogger implements GameLogger {
 
     // Writes a COMMAND after a command has been successfully applied to the model
     @Override
-    public void logCommand(GameCommand cmd) {
+    public void logCommand(GameCommand cmd, String senderNickname) {
         try {
             ObjectNode node = mapper.createObjectNode();
 
             node.put("type", "COMMAND");
             node.put("seq", seq++);
+
+            node.put("nickname", senderNickname);
+
             node.set("cmd", mapper.valueToTree(cmd));
 
             writeLine(node);

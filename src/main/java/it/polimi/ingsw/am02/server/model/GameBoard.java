@@ -291,14 +291,24 @@ public class GameBoard {
     public boolean canPlayerFinish(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
 
+        // Se il giocatore ha già soddisfatto tutti i pick previsti, può terminare il turno.
         if (currentTile.isSatisfied()) {
             return true;
         }
 
-        boolean hasAvailableUpperCharacters = currentTile.getRemainingUpper() > 0 && !upperRow.isEmpty();
-        boolean hasAvailableLowerCharacters = currentTile.getRemainingLower() > 0 && !lowerRow.isEmpty();
+        GameRegistry registry = GameRegistry.getInstance();
 
-        return !hasAvailableUpperCharacters && !hasAvailableLowerCharacters;
+        // Controlliamo se ci sono effettivamente dei Personaggi (Characters) nelle righe.
+        // Gli Edifici (Buildings) e gli Eventi vengono ignorati per l'obbligo di pesca.
+        boolean hasCharacterInUpper = upperRow.stream().anyMatch(registry::isCharacter);
+        boolean hasCharacterInLower = lowerRow.stream().anyMatch(registry::isCharacter);
+
+        // L'obbligo sussiste solo se il giocatore ha pick residui E ci sono Personaggi disponibili.
+        boolean forcedByUpper = currentTile.getRemainingUpper() > 0 && hasCharacterInUpper;
+        boolean forcedByLower = currentTile.getRemainingLower() > 0 && hasCharacterInLower;
+
+        // Se non è forzato né dalla riga superiore né da quella inferiore, può passare.
+        return !forcedByUpper && !forcedByLower;
     }
 
     public void movePlayerToTurnOrder(Player player) {

@@ -139,6 +139,13 @@ public class ControllerManager {
             return;
         }
 
+        // --- NUOVO: Validazione dimensione lobby ---
+        if (numPlayers < 2 || numPlayers > 5) {
+            view.notify(new ErrorEvent("Lobbies must contain between 2 and 5 players."));
+            return;
+        }
+        // -------------------------------------------
+
         String lobbyId = UUID.randomUUID().toString();
         Lobby lobby = new Lobby(lobbyId, numPlayers, this);
         lobbies.put(lobbyId, lobby);

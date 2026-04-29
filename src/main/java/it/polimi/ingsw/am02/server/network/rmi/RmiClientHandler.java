@@ -143,7 +143,7 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void requestReconnect(String nickname, String gameId) throws RemoteException {
+    public void requestReconnect(String gameId, String nickname) throws RemoteException {
         // We use the inbound executor to prevent blocking the RMI thread.
         // We create the ReconnectCommand expected by Matteo's ControllerManager.
         inboundExecutor.submit(() ->

@@ -72,6 +72,15 @@ public class GameModel {
 
                 case GameSetupCompletedEvent e -> {
                     this.turnOrder = new ArrayList<>(e.turnOrder());
+
+                    //Clean
+                    this.foodByPlayer.clear();
+                    this.ppByPlayer.clear();
+                    this.charactersByPlayer.clear();
+                    this.buildingsByPlayer.clear();
+                    this.remainingUpper.clear();
+                    this.remainingLower.clear();
+
                     this.foodByPlayer.putAll(e.initialFood());
                     e.initialFood().keySet().forEach(n -> ppByPlayer.put(n, 0));
                     BoardSnapshot snap = e.boardSnapshot();

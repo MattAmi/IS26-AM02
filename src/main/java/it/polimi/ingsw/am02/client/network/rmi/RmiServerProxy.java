@@ -6,6 +6,7 @@ import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;
 import it.polimi.ingsw.am02.common.messages.events.game.GameEvent;
 import it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent;
 import it.polimi.ingsw.am02.common.messages.events.lobby.LobbyEvent;
@@ -100,12 +101,18 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
             }
 
         } else if (event instanceof GameEvent gameEvent) {
-            // Intervento 3: se il GameModel non esiste ancora (es. catch-up post-reconnect),
-            // chiediamo al controller di crearlo prima di applicare l'evento
             if (clientController.getGameModel() == null) {
-                clientController.onGameModelRequired(this.activeNickname);
+                if (activeNickname == null) return; // troppo presto, ignora
+                clientController.onGameModelRequired(activeNickname);
             }
             clientController.getGameModel().apply(gameEvent);
+
+        } else if (event instanceof ErrorEvent errorEvent) {
+            if (clientController.getGameModel() != null) {
+                clientController.getGameModel().apply(errorEvent);
+            } else {
+                lobbyModel.apply(errorEvent);
+            }
         }
     }
 

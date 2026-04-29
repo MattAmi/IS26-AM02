@@ -41,10 +41,11 @@ public class ClientController {
      * @param nickname the local player's confirmed nickname
      */
     public void onGameModelRequired(String nickname) {
+        if (this.gameModel != null) return; // già inizializzato, ignora
         GameModel model = new GameModel(nickname);
         this.gameModel = model;
-        model.addObserver(this.view);
         this.view.setGameModel(model);
+        model.addObserver(this.view);
     }
 
     /**

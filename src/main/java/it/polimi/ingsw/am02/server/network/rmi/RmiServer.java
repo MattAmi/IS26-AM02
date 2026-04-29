@@ -18,21 +18,27 @@ public class RmiServer implements NetworkServer {
     @Override
     public void start(int port) {
         try {
+            // Tenta di riusare un registry esistente (es. post-crash con stesso processo)
+            try {
+                registry = LocateRegistry.getRegistry(port);
+                registry.list(); // forza una chiamata per verificare che sia vivo
+            } catch (Exception e) {
+                // Registry non esiste o non risponde: lo creiamo noi
+                registry = LocateRegistry.createRegistry(port);
+            }
+
             factory = new RmiServerFactory() {
                 @Override
                 public RmiServerRemote registerClient(RmiClientRemote clientCallback) throws RemoteException {
-                    System.out.println("[RMI] New client connected! Assigning Handler...");
                     RmiClientHandler handler = new RmiClientHandler(clientCallback);
                     return (RmiServerRemote) UnicastRemoteObject.exportObject(handler, 0);
                 }
             };
 
             RmiServerFactory stub = (RmiServerFactory) UnicastRemoteObject.exportObject(factory, 0);
-
-            registry = LocateRegistry.createRegistry(port);
             registry.rebind("AM02-GameServer", stub);
 
-            System.out.println("RMI Server started. Reception listening on port " + port);
+            System.out.println("RMI Server started on port " + port);
 
         } catch (Exception e) {
             System.err.println("RMI Server start error: " + e.getMessage());

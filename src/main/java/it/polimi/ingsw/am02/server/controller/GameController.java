@@ -100,23 +100,22 @@ public class GameController implements GameObserver {
 
     public synchronized void handle(GameCommand cmd, String senderNickname) {
         log("handle: " + cmd.getClass().getSimpleName() + " from " + senderNickname);
+        boolean success = false;
         try {
             switch (cmd) {
-                case MoveTotemCommand c -> model.moveTotem(senderNickname, c.tileID());
+                case MoveTotemCommand c      -> model.moveTotem(senderNickname, c.tileID());
                 case ResolveActionsCommand c -> model.resolveActions(senderNickname, c.selectedIDs());
             }
-
-            if(!replayMode) {
-                gameLogger.logCommand(cmd);
-            }
-
+            success = true;
         } catch (RuntimeException e) {
             if (connectionStatus.get(senderNickname) == ConnectionStatus.DISCONNECTED) {
-                // The rejected command came from AutoPlayer, so the human player is not present to receive the error.
-                log("AutoPlayer command rejected for disconnected player " + senderNickname + ": " + e.getMessage());
+                log("AutoPlayer rejected for " + senderNickname + ": " + e.getMessage());
             } else {
                 unicastTransient(senderNickname, new ErrorEvent(e.getMessage()));
             }
+        }
+        if (success && !replayMode) {
+            gameLogger.logCommand(cmd);
         }
     }
 

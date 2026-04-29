@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.network.socket;
 
+import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
@@ -102,6 +103,11 @@ public class SocketServerProxy implements ServerProxy {
 
     @Override
     public boolean isConnected() { return connected; }
+
+    @Override
+    public void setClientController(ClientController controller) {
+
+    }
 
     @Override public void requestSetUsername(String username)          { send(new SetUsernameCommand(username)); }
     @Override public void requestCreateLobby(int numPlayers)          { send(new CreateLobbyCommand(numPlayers)); }

@@ -28,9 +28,9 @@ public class TuiView extends AbstractClientView {
         lobbyModel.addObserver(this);
     }
 
-    public void onGameModelCreated(GameModel gameModel) {
+    @Override
+    public void setGameModel(GameModel gameModel) {
         this.gameModel = gameModel;
-        gameModel.addObserver(this);
     }
 
     // LOBBY CALLBACKS

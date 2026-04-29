@@ -1,10 +1,7 @@
 package it.polimi.ingsw.am02.client.model;
 
 import it.polimi.ingsw.am02.client.view.ClientView;
-import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
-import it.polimi.ingsw.am02.common.dto.LobbyInfo;
-import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
-import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
@@ -43,6 +40,8 @@ public class GameModel {
     private boolean gameEnded = false;
     private String lastErrorMessage;
     private String lastEventResolved;
+    private List<TurnOrderSlotInfo> turnOrderSlots = new ArrayList<>();
+
 
     private final List<ClientView> clientViews = new ArrayList<>();
 
@@ -83,6 +82,7 @@ public class GameModel {
                         this.lowerRowBuildings = new ArrayList<>(snap.lowerRowBuildings());
                         this.offerTiles = new ArrayList<>(snap.offerTiles());
                         this.deckRemainingCount = snap.tribuDeckSize();
+                        this.turnOrderSlots = new ArrayList<>(snap.turnOrderSlots());
                     }
                     clientViews.forEach(o -> o.onGameSetupCompleted(
                             e.turnOrder(), e.initialFood(), snap));
@@ -109,6 +109,15 @@ public class GameModel {
                 // --------- Totem & board ---------
                 case TotemPlacedEvent e -> {
                     totemPositions.put(e.nickname(), e.tileID());
+
+                    for (int i = 0; i < turnOrderSlots.size(); i++) {
+                        TurnOrderSlotInfo slot = turnOrderSlots.get(i);
+                        if (e.nickname().equals(slot.occupantNickname())) {
+                            turnOrderSlots.set(i, new TurnOrderSlotInfo(null, slot.foodBonus(), slot.prestigePointsMalus()));
+                            break;
+                        }
+                    }
+
                     this.offerTiles = offerTiles.stream()
                             .map(t -> t.tileID() == e.tileID()
                                     ? new OfferTileInfo(t.tileID(), t.foodBonus(),
@@ -122,6 +131,13 @@ public class GameModel {
                 case TotemReturnedEvent e -> {
                     totemPositions.remove(e.nickname());
                     turnOrderPositions.put(e.nickname(), e.turnOrderPosition());
+                    // Aggiorna lo slot nella lista (position è 0-based o 1-based? verifica nel tuo server)
+                    int idx = e.turnOrderPosition(); // adatta se 1-based: idx = e.turnOrderPosition() - 1
+                    if (idx >= 0 && idx < turnOrderSlots.size()) {
+                        TurnOrderSlotInfo old = turnOrderSlots.get(idx);
+                        turnOrderSlots.set(idx, new TurnOrderSlotInfo(e.nickname(), old.foodBonus(), old.prestigePointsMalus()));
+                    }
+
                     this.offerTiles = offerTiles.stream()
                             .map(t -> e.nickname().equals(t.occupantNickname())
                                     ? new OfferTileInfo(t.tileID(), t.foodBonus(),
@@ -274,4 +290,6 @@ public class GameModel {
     public String getLastEventResolved() { return lastEventResolved; }
     public String getLastErrorMessage() { return lastErrorMessage; }
     public boolean isInGame() { return gameId != null && !gameEnded; }
+    public List<TurnOrderSlotInfo> getTurnOrderSlots() { return Collections.unmodifiableList(turnOrderSlots); }
+
 }

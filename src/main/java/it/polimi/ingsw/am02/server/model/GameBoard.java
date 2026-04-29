@@ -565,7 +565,7 @@ public class GameBoard {
                 List.copyOf(upperRowBuildings),
                 List.copyOf(lowerRowBuildings),
                 offerTiles,
-                turnOrderPositions,
+                turnOrderTile.toSlotSnapshot(),
                 tribuDeck.getRemainingSize()
         );
     }

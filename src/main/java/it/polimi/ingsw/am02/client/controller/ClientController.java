@@ -34,10 +34,26 @@ public class ClientController {
         this.view = view;
     }
 
-    /** Called by ServerProxy when GameModel is created (on GameStartedEvent). */
-    public void setGameModel(GameModel gameModel) {
-        this.gameModel = gameModel;
+    /**
+     * Called by the network proxy when the server confirms the game has started.
+     * Creates the GameModel, wires it to the view, and stores it locally.
+     *
+     * @param nickname the local player's confirmed nickname
+     */
+    public void onGameModelRequired(String nickname) {
+        GameModel model = new GameModel(nickname);
+        this.gameModel = model;
+        model.addObserver(this.view);
+        this.view.setGameModel(model);
     }
+
+    /**
+     * Returns the current GameModel, or null if the game has not started yet.
+     */
+    public GameModel getGameModel() {
+        return gameModel;
+    }
+
     /** Blocking loop: reads commands from stdin until the process exits. */
     public void run() {
         Scanner scanner = new Scanner(System.in);

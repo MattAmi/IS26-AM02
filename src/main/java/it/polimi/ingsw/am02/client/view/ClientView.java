@@ -64,4 +64,6 @@ public interface ClientView {
     void onPlayerReconnected(String nickname);
     void onError(String message);
     void setGameModel(GameModel gameModel);
+    void onConnectionLost();
+    void onConnectionRestored();
 }

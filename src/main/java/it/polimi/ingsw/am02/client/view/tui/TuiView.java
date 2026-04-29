@@ -234,6 +234,16 @@ public class TuiView extends AbstractClientView {
         System.out.print("\n> ");
     }
 
+    @Override
+    public void onConnectionLost() {
+        System.out.println("[RETE] Connessione persa. Tentativo di ripristino automatico...");
+    }
+
+    @Override
+    public void onConnectionRestored() {
+        System.out.println("[RETE] Connessione ripristinata. Partita in corso di recupero.");
+    }
+
     // FULL RE-RENDER
 
     private void renderFullGame() {

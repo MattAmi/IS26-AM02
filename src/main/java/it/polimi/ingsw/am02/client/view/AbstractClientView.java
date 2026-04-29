@@ -58,4 +58,6 @@ public abstract class AbstractClientView implements ClientView {
         System.err.println("[ERROR] " + message);
     }
     @Override public void setGameModel(GameModel gameModel) {}
+    @Override public void onConnectionLost() {}
+    @Override public void onConnectionRestored() {}
 }

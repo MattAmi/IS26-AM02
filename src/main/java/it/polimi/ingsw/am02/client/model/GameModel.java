@@ -253,24 +253,24 @@ public class GameModel {
     public String getGameId() { return gameId; }
     public PhaseType getCurrentPhase() { return currentPhase; }
     public String getCurrentPlayer() { return currentPlayer; }
-    public List<String> getTurnOrder() { return turnOrder; }
-    public List<String> getUpperRow() { return upperRow; }
-    public List<String> getLowerRow() { return lowerRow; }
-    public List<OfferTileInfo> getOfferTiles() { return offerTiles; }
-    public List<String> getUpperRowBuildings() { return upperRowBuildings; }
-    public List<String> getLowerRowBuildings() { return lowerRowBuildings; }
+    public List<String> getTurnOrder() { return Collections.unmodifiableList(turnOrder); }
+    public List<String> getUpperRow() { return Collections.unmodifiableList(upperRow); }
+    public List<String> getLowerRow() { return Collections.unmodifiableList(lowerRow); }
+    public List<String> getUpperRowBuildings() { return Collections.unmodifiableList(upperRowBuildings); }
+    public List<String> getLowerRowBuildings() { return Collections.unmodifiableList(lowerRowBuildings); }
+    public List<OfferTileInfo> getOfferTiles() { return Collections.unmodifiableList(offerTiles); }
+    public Map<String, Integer> getFoodByPlayer() { return Collections.unmodifiableMap(foodByPlayer); }
+    public Map<String, Integer> getPpByPlayer() { return Collections.unmodifiableMap(ppByPlayer); }
+    public Map<String, Character> getTotemPositions() { return Collections.unmodifiableMap(totemPositions); }
+    public Map<String, Integer> getTurnOrderPositions() { return Collections.unmodifiableMap(turnOrderPositions); }
+    public Map<String, Integer> getRemainingUpper() { return Collections.unmodifiableMap(remainingUpper); }
+    public Map<String, Integer> getRemainingLower() { return Collections.unmodifiableMap(remainingLower); }
+    public Map<String, List<String>> getCharactersByPlayer() { return Collections.unmodifiableMap(charactersByPlayer); }
+    public Map<String, List<String>> getBuildingsByPlayer() { return Collections.unmodifiableMap(buildingsByPlayer); }
+    public List<String> getWinners() { return Collections.unmodifiableList(winners); }
+    public List<PlayerFinalScore> getFinalRankings() { return Collections.unmodifiableList(finalRankings); }
     public int getDeckRemainingCount() { return deckRemainingCount; }
-    public Map<String, Integer> getFoodByPlayer() { return foodByPlayer; }
-    public Map<String, Integer> getPpByPlayer() { return ppByPlayer; }
-    public Map<String, Character> getTotemPositions() { return totemPositions; }
-    public Map<String, Integer> getTurnOrderPositions() { return turnOrderPositions; }
-    public Map<String, Integer> getRemainingUpper() { return remainingUpper; }
-    public Map<String, Integer> getRemainingLower() { return remainingLower; }
-    public Map<String, List<String>> getCharactersByPlayer() { return charactersByPlayer; }
-    public Map<String, List<String>> getBuildingsByPlayer() { return buildingsByPlayer; }
     public boolean isGameEnded() { return gameEnded; }
-    public List<String> getWinners() { return winners; }
-    public List<PlayerFinalScore> getFinalRankings() { return finalRankings; }
     public String getLastEventResolved() { return lastEventResolved; }
     public String getLastErrorMessage() { return lastErrorMessage; }
     public boolean isInGame() { return gameId != null && !gameEnded; }

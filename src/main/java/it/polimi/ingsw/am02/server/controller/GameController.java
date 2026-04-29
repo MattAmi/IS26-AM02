@@ -151,6 +151,14 @@ public class GameController implements GameObserver {
 
     public void handlePlayerReconnected(String nickname, VirtualView newView) {
         synchronized(this) {
+
+            if (replayMode) {
+                log("Reconnection rejected for " + nickname + ": server still recovering state.");
+                // Lanciamo un'eccezione che il proxy del client riceverà come errore
+                // e lo costringerà a riprovare tra qualche secondo.
+                throw new IllegalStateException("Server is still recovering. Please retry in a few seconds.");
+            }
+
             ConnectionStatus current = connectionStatus.get(nickname);
             if (current == null || current == ConnectionStatus.CONNECTED || current == ConnectionStatus.RECONNECTING) {
                 return; // Stessi check di sicurezza che avevi prima

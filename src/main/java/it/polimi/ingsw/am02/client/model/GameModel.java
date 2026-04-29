@@ -74,12 +74,17 @@ public class GameModel {
                     this.turnOrder = new ArrayList<>(e.turnOrder());
 
                     //Clean
+                    this.upperRow.clear();
+                    this.lowerRow.clear();
+                    this.upperRowBuildings.clear();
+                    this.lowerRowBuildings.clear();
                     this.foodByPlayer.clear();
                     this.ppByPlayer.clear();
                     this.charactersByPlayer.clear();
                     this.buildingsByPlayer.clear();
                     this.remainingUpper.clear();
                     this.remainingLower.clear();
+                    this.turnOrderSlots.clear();
 
                     this.foodByPlayer.putAll(e.initialFood());
                     e.initialFood().keySet().forEach(n -> ppByPlayer.put(n, 0));

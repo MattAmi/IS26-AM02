@@ -81,62 +81,104 @@ public class ClientController {
 
     private void dispatch(String cmd, String[] args) {
         // Extract arguments safely to avoid local IndexOutOfBoundsException.
-        // If missing, we pass empty/dummy values to let the SERVER reject them!
         String arg1 = args.length > 1 ? args[1] : "";
         String arg2 = args.length > 2 ? args[2] : "";
 
+        // Determiniamo in quale "schermata" si trova l'utente
+        boolean inGame = (gameModel != null);
+        boolean inLobby = (!inGame && lobbyModel.getCurrentLobby() != null);
+        boolean inPreLobby = (!inGame && lobbyModel.getCurrentLobby() == null);
+
         switch (cmd) {
-            case "nick" -> proxy.requestSetUsername(arg1);
+            case "nick" -> {
+                if (inGame) view.onError("Command 'nick' is not allowed during a game.");
+                else proxy.requestSetUsername(arg1);
+            }
+
             case "create" -> {
-                int size = arg1.matches("\\d+") ? Integer.parseInt(arg1) : 0; // Server will reject 0
-                proxy.requestCreateLobby(size);
+                if (!inPreLobby) view.onError("You can only create a lobby from the main menu.");
+                else {
+                    int size = arg1.matches("\\d+") ? Integer.parseInt(arg1) : 0;
+                    proxy.requestCreateLobby(size);
+                }
             }
+
             case "join" -> {
-                try {
-                    int idx = Integer.parseInt(arg1);
-                    String lobbyId = lobbyModel.getAvailableLobbies().get(idx).lobbyId();
-                    proxy.requestJoinLobby(lobbyId);
-                } catch (Exception e) {
-                    view.onError("Client syntax error. Use: join <index number>");
+                if (!inPreLobby) view.onError("You can only join a lobby from the main menu.");
+                else {
+                    try {
+                        int idx = Integer.parseInt(arg1);
+                        String lobbyId = lobbyModel.getAvailableLobbies().get(idx).lobbyId();
+                        proxy.requestJoinLobby(lobbyId);
+                    } catch (Exception e) {
+                        view.onError("Client syntax error. Use: join <index number>");
+                    }
                 }
             }
-            case "reconnect" -> proxy.requestReconnect(arg1, arg2);
+
+            case "reconnect" -> {
+                if (inGame) view.onError("You are already in a game.");
+                else proxy.requestReconnect(arg1, arg2);
+            }
+
             case "totem" -> {
-                try {
-                    proxy.requestSelectTotem(Totem.valueOf(arg1.toUpperCase()));
-                } catch (IllegalArgumentException e) {
-                    view.onError("Client syntax error. Valid totems: PURPLE, WHITE, etc.");
+                if (!inLobby) view.onError("You can only select a totem while waiting in a lobby.");
+                else {
+                    try {
+                        proxy.requestSelectTotem(Totem.valueOf(arg1.toUpperCase()));
+                    } catch (IllegalArgumentException e) {
+                        view.onError("Client syntax error. Valid totems: PURPLE, WHITE, etc.");
+                    }
                 }
             }
-            case "leave" -> proxy.requestLeaveLobby();
-            case "move" -> {
-                char tile = arg1.isEmpty() ? ' ' : arg1.charAt(0);
-                proxy.moveTotem(tile); // Send to server, let it evaluate!
+
+            case "leave" -> {
+                if (!inLobby) view.onError("You are not currently in a lobby.");
+                else proxy.requestLeaveLobby();
             }
+
+            case "move" -> {
+                if (!inGame) view.onError("Command 'move' is only available during a game.");
+                else {
+                    char tile = arg1.isEmpty() ? ' ' : arg1.charAt(0);
+                    proxy.moveTotem(tile);
+                }
+            }
+
             case "resolve" -> {
-                List<String> ids = args.length > 1 ?
-                        new java.util.ArrayList<>(java.util.Arrays.asList(args).subList(1, args.length)) :
-                        new java.util.ArrayList<>();
-                proxy.resolveActions(ids); // Send empty list to server, let it evaluate!
+                if (!inGame) view.onError("Command 'resolve' is only available during a game.");
+                else {
+                    List<String> ids = args.length > 1 ?
+                            new java.util.ArrayList<>(java.util.Arrays.asList(args).subList(1, args.length)) :
+                            new java.util.ArrayList<>();
+                    proxy.resolveActions(ids);
+                }
             }
 
             case "lobby" -> {
-                if (gameModel != null && !gameModel.isGameEnded()) {
-                    view.onError("You cannot return to lobby while a game is in progress.");
-                } else {
-                    String oldNick = lobbyModel.getMyNickname();
-
-                    try {
-                        proxy.disconnect();
-                        proxy.connect();
-                        if (oldNick != null) {
-                            proxy.requestSetUsername(oldNick);
+                // Questo mantiene tutta la logica avanzata che avevamo costruito!
+                if (gameModel != null) {
+                    if (!gameModel.isGameEnded()) {
+                        view.onError("You cannot return to lobby while a game is in progress.");
+                    } else {
+                        String oldNick = lobbyModel.getMyNickname();
+                        try {
+                            proxy.disconnect();
+                            proxy.connect();
+                            if (oldNick != null) {
+                                proxy.requestSetUsername(oldNick);
+                            }
+                            this.gameModel = null;
+                            view.onReturnToLobby();
+                        } catch (Exception e) {
+                            view.onError("Return to lobby failed: Server is unreachable.");
                         }
-                        // Solo se tutto va bene resettiamo il modello e cambiamo view
-                        this.gameModel = null;
+                    }
+                } else {
+                    if (lobbyModel.getCurrentLobby() != null) {
+                        proxy.requestLeaveLobby();
+                    } else {
                         view.onReturnToLobby();
-                    } catch (Exception e) {
-                        view.onError("Return to lobby failed: Server is unreachable.");
                     }
                 }
             }
@@ -145,7 +187,17 @@ public class ClientController {
                 proxy.disconnect();
                 System.exit(0);
             }
-            default -> proxy.resolveActions(List.of(cmd)); // Throw unrecognized commands to the server!
+
+            default -> {
+                // Se l'utente digita una stringa a caso (es. "CIAO"):
+                // Se è in gioco, usiamo il tuo fallback originale (lo tratta come una carta da risolvere).
+                // Se non è in gioco, blocchiamolo per non spammarlo al server.
+                if (inGame) {
+                    proxy.resolveActions(List.of(cmd));
+                } else {
+                    view.onError("Unrecognized command: '" + cmd + "'. Check the available commands.");
+                }
+            }
         }
     }
 }

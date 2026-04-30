@@ -73,9 +73,14 @@ public final class CommandLogReader {
                 JsonNode root = mapper.readTree(line);
                 if (!"COMMAND".equals(root.path("type").asText())) continue;
 
-                GameCommand cmd = mapper.treeToValue(
-                        root.path("cmd"), GameCommand.class);
-                commands.add(new CommandRecord(cmd));
+                // Estrae il comando (che avrà il nickname vuoto)
+                GameCommand cmd = mapper.treeToValue(root.path("cmd"), GameCommand.class);
+
+                // Estrae il VERO nickname dalla busta (es. "Matteo")
+                String nickname = root.path("nickname").asText();
+
+                // Salva entrambi nel record
+                commands.add(new CommandRecord(cmd, nickname));
             }
         }
 

@@ -204,10 +204,18 @@ public class GameBoard {
             if (registry.isBuilding(cardID)) {
                 int actualCost = buildingCosts.get(cardID);
 
+                RowPosition sourceRow;
+                if (upperRowBuildings.remove(cardID)) {
+                    sourceRow = RowPosition.UPPER;
+                } else {
+                    lowerRowBuildings.remove(cardID);
+                    sourceRow = RowPosition.LOWER;
+                }
+
+                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.BUILDING, sourceRow);
+
                 if (actualCost > 0) {
                     player.getTribu().addFoodPoints(-actualCost);
-
-                    // Notify observers of food consumption due to building purchase
                     notifier.notifyPlayerResourceChanged(
                             player.getNickname(),
                             ResourceType.FOOD,
@@ -218,21 +226,7 @@ public class GameBoard {
                 EffectOutcome buildingOutcome = player.getTribu().insertBuilding(cardID, player, game);
                 notifier.emitOutcome(buildingOutcome);
 
-                RowPosition sourceRow;
-                if (upperRowBuildings.remove(cardID)) {
-                    sourceRow = RowPosition.UPPER;
-                } else {
-                    lowerRowBuildings.remove(cardID);
-                    sourceRow = RowPosition.LOWER;
-                }
-
-                // Notify observers that a player has taken a building card from the board
-                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.BUILDING, sourceRow);
-
             } else {
-                EffectOutcome characterOutcome = player.getTribu().insertCharacter(cardID, player);
-                notifier.emitOutcome(characterOutcome);
-
                 RowPosition sourceRow;
                 if (upperRow.remove(cardID)) {
                     sourceRow = RowPosition.UPPER;
@@ -240,9 +234,10 @@ public class GameBoard {
                     lowerRow.remove(cardID);
                     sourceRow = RowPosition.LOWER;
                 }
-
-                // Notify observers that a player has taken a character card from the board
                 notifier.notifyCardTaken(player.getNickname(), cardID, CardType.CHARACTER, sourceRow);
+
+                EffectOutcome characterOutcome = player.getTribu().insertCharacter(cardID, player);
+                notifier.emitOutcome(characterOutcome);
             }
         }
     }
@@ -291,14 +286,24 @@ public class GameBoard {
     public boolean canPlayerFinish(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
 
+        // Se il giocatore ha già soddisfatto tutti i pick previsti, può terminare il turno.
         if (currentTile.isSatisfied()) {
             return true;
         }
 
-        boolean hasAvailableUpperCharacters = currentTile.getRemainingUpper() > 0 && !upperRow.isEmpty();
-        boolean hasAvailableLowerCharacters = currentTile.getRemainingLower() > 0 && !lowerRow.isEmpty();
+        GameRegistry registry = GameRegistry.getInstance();
 
-        return !hasAvailableUpperCharacters && !hasAvailableLowerCharacters;
+        // Controlliamo se ci sono effettivamente dei Personaggi (Characters) nelle righe.
+        // Gli Edifici (Buildings) e gli Eventi vengono ignorati per l'obbligo di pesca.
+        boolean hasCharacterInUpper = upperRow.stream().anyMatch(registry::isCharacter);
+        boolean hasCharacterInLower = lowerRow.stream().anyMatch(registry::isCharacter);
+
+        // L'obbligo sussiste solo se il giocatore ha pick residui E ci sono Personaggi disponibili.
+        boolean forcedByUpper = currentTile.getRemainingUpper() > 0 && hasCharacterInUpper;
+        boolean forcedByLower = currentTile.getRemainingLower() > 0 && hasCharacterInLower;
+
+        // Se non è forzato né dalla riga superiore né da quella inferiore, può passare.
+        return !forcedByUpper && !forcedByLower;
     }
 
     public void movePlayerToTurnOrder(Player player) {
@@ -475,6 +480,7 @@ public class GameBoard {
             notifier.emitOutcome(observer.eventStart(event.getType()));
         }
 
+        notifier.notifyEventResolved(event.getID(), event.getType().toString());
         notifier.emitOutcome(event.applyEventEffect(players, eventObservers));
 
         for(EventObserver observer: eventObservers) {
@@ -555,7 +561,7 @@ public class GameBoard {
                 List.copyOf(upperRowBuildings),
                 List.copyOf(lowerRowBuildings),
                 offerTiles,
-                turnOrderPositions,
+                turnOrderTile.toSlotSnapshot(),
                 tribuDeck.getRemainingSize()
         );
     }

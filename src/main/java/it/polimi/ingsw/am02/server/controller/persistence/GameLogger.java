@@ -7,7 +7,9 @@ import java.util.Map;
 
 public interface GameLogger {
     void logGameInit(String gameId, long seed, List<String> nicknames, Map<String, Totem> chosenTotems);
-    void logCommand(GameCommand cmd);
+    // Writes a COMMAND after a command has been successfully applied to the model
+    void logCommand(GameCommand cmd, String senderNickname);
+
     void logGameEnded();
     void close();
 }

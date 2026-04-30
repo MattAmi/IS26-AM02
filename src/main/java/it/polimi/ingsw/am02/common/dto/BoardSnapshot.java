@@ -9,6 +9,6 @@ public record BoardSnapshot(
         List<String> upperRowBuildings,
         List<String> lowerRowBuildings,
         List<OfferTileInfo> offerTiles,
-        List<String> turnOrderPositions,
+        List<TurnOrderSlotInfo> turnOrderSlots,
         int tribuDeckSize
 ) implements Serializable {}

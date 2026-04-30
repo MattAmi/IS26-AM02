@@ -109,7 +109,7 @@ public class Game implements ModelInterface {
     private void randomizeInitialTurnOrder() {
         // (a) Shuffles the nickname list
         turnOrder = new ArrayList<>(players.keySet());
-        shuffle(turnOrder);
+        Collections.shuffle(turnOrder, gameRandom);
 
         // (b) Sets the first player that has right to play
         currentPlayerNickname = turnOrder.getFirst();

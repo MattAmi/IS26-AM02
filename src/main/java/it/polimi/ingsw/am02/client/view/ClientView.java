@@ -52,7 +52,7 @@ public interface ClientView {
     void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow);
 
     // Events & extra turns
-    void onEventResolved(String eventName);
+    void onEventResolved(String EventID, String eventName);
     void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower);
     void onExtraTurnEnded(String nickname);
 
@@ -64,4 +64,9 @@ public interface ClientView {
     void onPlayerReconnected(String nickname);
     void onError(String message);
     void setGameModel(GameModel gameModel);
+    void onConnectionLost();
+    void onConnectionRestored();
+
+    void onReturnToLobby();
+
 }

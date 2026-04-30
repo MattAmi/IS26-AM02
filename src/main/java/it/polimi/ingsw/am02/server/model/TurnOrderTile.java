@@ -1,6 +1,9 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.dto.TurnOrderSlotInfo;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class TurnOrderTile {
@@ -133,11 +136,19 @@ public class TurnOrderTile {
         return 0;
     }
 
-
     public record TurnOrderRewardResult(int foodGained, int foodPenalty, int ppPenalty) {
 
         public static TurnOrderRewardResult empty() {
             return new TurnOrderRewardResult(0, 0, 0);
         }
+    }
+
+    public List<TurnOrderSlotInfo> toSlotSnapshot() {
+        List<TurnOrderSlotInfo> slots = new ArrayList<>();
+        for (int i = 0; i < numPlayers; i++) {
+            String occupant = (playerPositions[i] != null) ? playerPositions[i].getNickname() : null;
+            slots.add(new TurnOrderSlotInfo(occupant, foodBonuses[i], prestigePointsMalus[i]));
+        }
+        return Collections.unmodifiableList(slots);
     }
 }

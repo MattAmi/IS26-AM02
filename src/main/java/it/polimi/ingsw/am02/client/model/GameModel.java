@@ -1,10 +1,7 @@
 package it.polimi.ingsw.am02.client.model;
 
 import it.polimi.ingsw.am02.client.view.ClientView;
-import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
-import it.polimi.ingsw.am02.common.dto.LobbyInfo;
-import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
-import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
@@ -43,6 +40,8 @@ public class GameModel {
     private boolean gameEnded = false;
     private String lastErrorMessage;
     private String lastEventResolved;
+    private List<TurnOrderSlotInfo> turnOrderSlots = new ArrayList<>();
+
 
     private final List<ClientView> clientViews = new ArrayList<>();
 
@@ -73,6 +72,20 @@ public class GameModel {
 
                 case GameSetupCompletedEvent e -> {
                     this.turnOrder = new ArrayList<>(e.turnOrder());
+
+                    //Clean
+                    this.upperRow.clear();
+                    this.lowerRow.clear();
+                    this.upperRowBuildings.clear();
+                    this.lowerRowBuildings.clear();
+                    this.foodByPlayer.clear();
+                    this.ppByPlayer.clear();
+                    this.charactersByPlayer.clear();
+                    this.buildingsByPlayer.clear();
+                    this.remainingUpper.clear();
+                    this.remainingLower.clear();
+                    this.turnOrderSlots.clear();
+
                     this.foodByPlayer.putAll(e.initialFood());
                     e.initialFood().keySet().forEach(n -> ppByPlayer.put(n, 0));
                     BoardSnapshot snap = e.boardSnapshot();
@@ -83,6 +96,15 @@ public class GameModel {
                         this.lowerRowBuildings = new ArrayList<>(snap.lowerRowBuildings());
                         this.offerTiles = new ArrayList<>(snap.offerTiles());
                         this.deckRemainingCount = snap.tribuDeckSize();
+                        this.turnOrderSlots = new ArrayList<>(snap.turnOrderSlots());
+
+                        // --- AGGIUNTA: Popola i limiti iniziali ---
+                        for (OfferTileInfo tile : snap.offerTiles()) {
+                            if (tile.occupantNickname() != null) {
+                                remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());
+                                remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());
+                            }
+                        }
                     }
                     clientViews.forEach(o -> o.onGameSetupCompleted(
                             e.turnOrder(), e.initialFood(), snap));
@@ -92,6 +114,17 @@ public class GameModel {
                     this.currentPhase = e.phase();
                     if (e.currentPlayer() != null) this.currentPlayer = e.currentPlayer();
                     if (e.resolutionOrder() != null) this.turnOrder = new ArrayList<>(e.resolutionOrder());
+
+                    // --- AGGIUNTA: Sincronizza i limiti all'inizio della risoluzione ---
+                    if (e.phase() == PhaseType.ACTION_RESOLUTION) {
+                        for (OfferTileInfo tile : offerTiles) {
+                            if (tile.occupantNickname() != null) {
+                                remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());
+                                remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());
+                            }
+                        }
+                    }
+
                     clientViews.forEach(o -> o.onPhaseChanged(
                             e.phase(), e.currentPlayer(), e.resolutionOrder()));
                 }
@@ -109,6 +142,15 @@ public class GameModel {
                 // --------- Totem & board ---------
                 case TotemPlacedEvent e -> {
                     totemPositions.put(e.nickname(), e.tileID());
+
+                    for (int i = 0; i < turnOrderSlots.size(); i++) {
+                        TurnOrderSlotInfo slot = turnOrderSlots.get(i);
+                        if (e.nickname().equals(slot.occupantNickname())) {
+                            turnOrderSlots.set(i, new TurnOrderSlotInfo(null, slot.foodBonus(), slot.prestigePointsMalus()));
+                            break;
+                        }
+                    }
+
                     this.offerTiles = offerTiles.stream()
                             .map(t -> t.tileID() == e.tileID()
                                     ? new OfferTileInfo(t.tileID(), t.foodBonus(),
@@ -122,6 +164,13 @@ public class GameModel {
                 case TotemReturnedEvent e -> {
                     totemPositions.remove(e.nickname());
                     turnOrderPositions.put(e.nickname(), e.turnOrderPosition());
+                    // Aggiorna lo slot nella lista (position è 0-based o 1-based? verifica nel tuo server)
+                    int idx = e.turnOrderPosition(); // adatta se 1-based: idx = e.turnOrderPosition() - 1
+                    if (idx >= 0 && idx < turnOrderSlots.size()) {
+                        TurnOrderSlotInfo old = turnOrderSlots.get(idx);
+                        turnOrderSlots.set(idx, new TurnOrderSlotInfo(e.nickname(), old.foodBonus(), old.prestigePointsMalus()));
+                    }
+
                     this.offerTiles = offerTiles.stream()
                             .map(t -> e.nickname().equals(t.occupantNickname())
                                     ? new OfferTileInfo(t.tileID(), t.foodBonus(),
@@ -187,7 +236,7 @@ public class GameModel {
                 // --------- Events & extra turns ---------
                 case EventResolvedEvent e -> {
                     this.lastEventResolved = e.eventName();
-                    clientViews.forEach(o -> o.onEventResolved(e.eventName()));
+                    clientViews.forEach(v -> v.onEventResolved(e.eventID(), e.eventName()));
                 }
 
                 case ExtraTurnStartedEvent e -> {
@@ -253,25 +302,28 @@ public class GameModel {
     public String getGameId() { return gameId; }
     public PhaseType getCurrentPhase() { return currentPhase; }
     public String getCurrentPlayer() { return currentPlayer; }
-    public List<String> getTurnOrder() { return turnOrder; }
-    public List<String> getUpperRow() { return upperRow; }
-    public List<String> getLowerRow() { return lowerRow; }
-    public List<OfferTileInfo> getOfferTiles() { return offerTiles; }
-    public List<String> getUpperRowBuildings() { return upperRowBuildings; }
-    public List<String> getLowerRowBuildings() { return lowerRowBuildings; }
+    public List<String> getTurnOrder() { return Collections.unmodifiableList(turnOrder); }
+    public List<String> getUpperRow() { return Collections.unmodifiableList(upperRow); }
+    public List<String> getLowerRow() { return Collections.unmodifiableList(lowerRow); }
+    public List<String> getUpperRowBuildings() { return Collections.unmodifiableList(upperRowBuildings); }
+    public List<String> getLowerRowBuildings() { return Collections.unmodifiableList(lowerRowBuildings); }
+    public List<OfferTileInfo> getOfferTiles() { return Collections.unmodifiableList(offerTiles); }
+    public Map<String, Integer> getFoodByPlayer() { return Collections.unmodifiableMap(foodByPlayer); }
+    public Map<String, Integer> getPpByPlayer() { return Collections.unmodifiableMap(ppByPlayer); }
+    public Map<String, Character> getTotemPositions() { return Collections.unmodifiableMap(totemPositions); }
+    public Map<String, Integer> getTurnOrderPositions() { return Collections.unmodifiableMap(turnOrderPositions); }
+    public Map<String, Integer> getRemainingUpper() { return Collections.unmodifiableMap(remainingUpper); }
+    public Map<String, Integer> getRemainingLower() { return Collections.unmodifiableMap(remainingLower); }
+    public Map<String, List<String>> getCharactersByPlayer() { return Collections.unmodifiableMap(charactersByPlayer); }
+    public Map<String, List<String>> getBuildingsByPlayer() { return Collections.unmodifiableMap(buildingsByPlayer); }
+    public List<String> getWinners() { return Collections.unmodifiableList(winners); }
+    public List<PlayerFinalScore> getFinalRankings() { return Collections.unmodifiableList(finalRankings); }
     public int getDeckRemainingCount() { return deckRemainingCount; }
-    public Map<String, Integer> getFoodByPlayer() { return foodByPlayer; }
-    public Map<String, Integer> getPpByPlayer() { return ppByPlayer; }
-    public Map<String, Character> getTotemPositions() { return totemPositions; }
-    public Map<String, Integer> getTurnOrderPositions() { return turnOrderPositions; }
-    public Map<String, Integer> getRemainingUpper() { return remainingUpper; }
-    public Map<String, Integer> getRemainingLower() { return remainingLower; }
-    public Map<String, List<String>> getCharactersByPlayer() { return charactersByPlayer; }
-    public Map<String, List<String>> getBuildingsByPlayer() { return buildingsByPlayer; }
     public boolean isGameEnded() { return gameEnded; }
-    public List<String> getWinners() { return winners; }
-    public List<PlayerFinalScore> getFinalRankings() { return finalRankings; }
     public String getLastEventResolved() { return lastEventResolved; }
     public String getLastErrorMessage() { return lastErrorMessage; }
     public boolean isInGame() { return gameId != null && !gameEnded; }
+    public List<TurnOrderSlotInfo> getTurnOrderSlots() { return Collections.unmodifiableList(turnOrderSlots); }
+    public void setGameId(String gameId) { this.gameId = gameId; }
+
 }

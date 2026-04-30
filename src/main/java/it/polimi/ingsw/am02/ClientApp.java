@@ -26,6 +26,7 @@ public class ClientApp {
 
             ServerProxy proxy = ServerProxyFactory.create(networkType, host, 1099, lobbyModel, view);
             ClientController controller = new ClientController(proxy, lobbyModel, view);
+            proxy.setClientController(controller); // ← AGGIUNTA: collega il proxy al controller
 
             System.out.println("Connecting...");
             proxy.connect();

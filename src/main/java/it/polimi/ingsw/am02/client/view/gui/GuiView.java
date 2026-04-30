@@ -121,8 +121,8 @@ public class GuiView extends AbstractClientView {
     }
 
     @Override
-    public void onEventResolved(String eventName) {
-        super.onEventResolved(eventName);
+    public void onEventResolved(String eventID, String eventName) {
+        super.onEventResolved(eventID, eventName);
     }
 
     @Override

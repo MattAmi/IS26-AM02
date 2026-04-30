@@ -20,7 +20,7 @@ public class GameController implements GameObserver {
     // Timeout / delay constants
     private static final long DISCONNECTED_PLAYER_TIMEOUT_SECONDS = 30;
     private static final long GLOBAL_DISCONNECTION_TIMEOUT_SECONDS = 120;
-    private static final long DRAIN_DELAY_MILLIS = 50;
+    private static final long DRAIN_DELAY_MILLIS = 5;
 
     private final String gameId;
     private final ModelInterface model;
@@ -100,23 +100,27 @@ public class GameController implements GameObserver {
 
     public synchronized void handle(GameCommand cmd, String senderNickname) {
         log("handle: " + cmd.getClass().getSimpleName() + " from " + senderNickname);
+        boolean success = false;
         try {
             switch (cmd) {
-                case MoveTotemCommand c -> model.moveTotem(senderNickname, c.tileID());
+                case MoveTotemCommand c      -> model.moveTotem(senderNickname, c.tileID());
                 case ResolveActionsCommand c -> model.resolveActions(senderNickname, c.selectedIDs());
             }
+            success = true;
+        } catch (RuntimeException e) {
 
-            if(!replayMode) {
-                gameLogger.logCommand(cmd);
+            if (replayMode) {
+                System.err.println("[GameController:" + gameId + "] REPLAY ERROR: Command rejected for " + senderNickname + " -> " + e.getMessage());
             }
 
-        } catch (RuntimeException e) {
             if (connectionStatus.get(senderNickname) == ConnectionStatus.DISCONNECTED) {
-                // The rejected command came from AutoPlayer, so the human player is not present to receive the error.
-                log("AutoPlayer command rejected for disconnected player " + senderNickname + ": " + e.getMessage());
+                log("AutoPlayer rejected for " + senderNickname + ": " + e.getMessage());
             } else {
                 unicastTransient(senderNickname, new ErrorEvent(e.getMessage()));
             }
+        }
+        if (success && !replayMode) {
+            gameLogger.logCommand(cmd, senderNickname);
         }
     }
 
@@ -133,21 +137,33 @@ public class GameController implements GameObserver {
         log("Player disconnected: " + nickname);
         pushGlobalEventTransientOthers(nickname, new PlayerDisconnectedEvent(nickname));
 
-        if (nickname.equals(currentPlayerNickname)) {
+        // --- NUOVO CALCOLO --- Considera attivi anche i RECONNECTING
+        long activeCount = connectionStatus.values().stream()
+                .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                .count();
+
+        if (activeCount == 0) {
+            log("Mass disconnection: 0 players active. Pausing game.");
+            cancelDisconnectedPlayerTimer(currentPlayerNickname); // GELA IL GIOCO
+        } else if (nickname.equals(currentPlayerNickname)) {
             startDisconnectedPlayerTimer(nickname);
         }
 
-        int connectedCount = (int) connectionStatus.values().stream()
-                .filter(s -> s == ConnectionStatus.CONNECTED)
-                .count();
-
-        if (connectedCount == 1) {
+        if (activeCount == 1) {
             startGlobalDisconnectionTimeout();
         }
     }
 
     public void handlePlayerReconnected(String nickname, VirtualView newView) {
         synchronized(this) {
+
+            if (replayMode) {
+                log("Reconnection rejected for " + nickname + ": server still recovering state.");
+                // Lanciamo un'eccezione che il proxy del client riceverà come errore
+                // e lo costringerà a riprovare tra qualche secondo.
+                throw new IllegalStateException("Server is still recovering. Please retry in a few seconds.");
+            }
+
             ConnectionStatus current = connectionStatus.get(nickname);
             if (current == null || current == ConnectionStatus.CONNECTED || current == ConnectionStatus.RECONNECTING) {
                 return; // Stessi check di sicurezza che avevi prima
@@ -160,6 +176,22 @@ public class GameController implements GameObserver {
             connectionStatus.put(nickname, ConnectionStatus.RECONNECTING);
             log("Player reconnecting: " + nickname + " from event index " + playerSyncIndex.get(nickname));
             gracePeriodExpired.remove(nickname);
+
+            long activeCount = connectionStatus.values().stream()
+                    .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                    .count();
+
+            if (activeCount == 1 && currentPlayerNickname != null) {
+                if (connectionStatus.get(currentPlayerNickname) == ConnectionStatus.DISCONNECTED) {
+                    if (gracePeriodExpired.contains(currentPlayerNickname)) {
+                        log("First human returned. Waking AutoPlayer immediately for " + currentPlayerNickname);
+                        scheduleAutoPlayerMove(currentPlayerNickname);
+                    } else {
+                        log("First human returned. Starting AutoPlayer timer for " + currentPlayerNickname);
+                        startDisconnectedPlayerTimer(currentPlayerNickname);
+                    }
+                }
+            }
         }
 
         // Notifichiamo agli ALTRI che questo player si sta riconnettendo (fuori dalla storia globale)
@@ -205,7 +237,14 @@ public class GameController implements GameObserver {
                     long pendingCount = connectionStatus.values().stream()
                             .filter(s -> s == ConnectionStatus.PENDING_RECONNECTION)
                             .count();
-                    if (pendingCount > 0) {
+
+                    long activeCount = connectionStatus.values().stream()
+                            .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                            .count();
+
+                    // Riavvia se ci sono player in recovery (pending > 0)
+                    // OPPURE se ci sono disconnessi normali e tu sei rimasto l'unico attivo
+                    if (pendingCount > 0 || (activeCount == 1 && connectionStatus.size() > 1)) {
                         startGlobalDisconnectionTimeout();
                     }
                 }
@@ -288,28 +327,56 @@ public class GameController implements GameObserver {
         }
 
         if (connectionStatus.get(newCurrentPlayer) == ConnectionStatus.DISCONNECTED) {
+            // --- NUOVO: Fermati se non c'è nessuno ---
+            long activeCount = connectionStatus.values().stream()
+                    .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                    .count();
+            if (activeCount == 0) {
+                log("Game is paused (0 players). Deferring turn timer for " + newCurrentPlayer);
+                return;
+            }
+
             // Se il giocatore ha già consumato la sua "grazia", gioca subito
             if (gracePeriodExpired.contains(newCurrentPlayer)) {
                 log("Player " + newCurrentPlayer + " is still absent. Invoking AutoPlayer immediately.");
                 scheduleAutoPlayerMove(newCurrentPlayer);
 
             } else {
-                // Prima volta che è il suo turno da disconnesso: facciamo partire il timer da 30s
                 startDisconnectedPlayerTimer(newCurrentPlayer);
             }
         }
     }
 
     private void scheduleAutoPlayerMove(String nickname) {
-        GameCommand autoCmd = AutoPlayer.computeMove(nickname, snapshot);
-        if (autoCmd == null) {
-            log("AutoPlayer produced no command for " + nickname + " in current phase — skipping.");
+
+        long activeCount = connectionStatus.values().stream()
+                .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
+                .count();
+        if (activeCount == 0) {
+            log("AutoPlayer aborted: no human players connected.");
             return;
         }
-        // Eseguito fuori dal lock tramite lo autoPlayerExecutor per evitare deadlock:
-        // handle() è synchronized, e questo metodo viene chiamato da callback
-        // già dentro il monitor (onPlayerLimitsUpdated, handleCurrentPlayerTransition).
-        autoPlayerExecutor.execute(() -> handle(autoCmd, nickname));
+
+        // DELEGHIAMO IL CALCOLO AL THREAD DELL'AUTOPLAYER.
+        // In questo modo, il thread aspetterà che il lock venga rilasciato,
+        // ovvero che tutti gli eventi (limiti inclusi) siano arrivati nello snapshot!
+        autoPlayerExecutor.execute(() -> {
+
+            GameCommand autoCmd;
+
+            // Sincronizziamo la lettura per assicurarci di leggere lo snapshot fresco
+            synchronized(this) {
+                autoCmd = AutoPlayer.computeMove(nickname, snapshot);
+            }
+
+            if (autoCmd == null) {
+                log("AutoPlayer produced no command for " + nickname + " in current phase — skipping.");
+                return;
+            }
+
+            // Esegue la mossa
+            handle(autoCmd, nickname);
+        });
     }
 
 
@@ -589,7 +656,10 @@ public class GameController implements GameObserver {
                 || status == ConnectionStatus.PENDING_RECONNECTION;
     }
 
-    void enterReplayMode() { this.replayMode = true;  }
+    void enterReplayMode() {
+        this.replayMode = true;
+        connectionStatus.replaceAll((nick, status) -> ConnectionStatus.PENDING_RECONNECTION);
+    }
 
     void exitReplayMode()  { this.replayMode = false; }
 

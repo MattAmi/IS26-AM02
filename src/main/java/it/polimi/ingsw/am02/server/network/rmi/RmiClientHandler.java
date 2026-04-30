@@ -14,6 +14,7 @@ import it.polimi.ingsw.am02.server.network.ClientHandler;
 import java.rmi.RemoteException;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
@@ -30,6 +31,7 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     private final Thread outboundWorker;
 
     private volatile boolean running = true;
+    private final AtomicBoolean disconnected = new AtomicBoolean(false);
 
     public RmiClientHandler(RmiClientRemote clientRemoteStub) {
         this.manager = ControllerManager.getInstance();
@@ -56,6 +58,8 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
     @Override
     public void disconnect() {
+        if (!disconnected.compareAndSet(false, true))
+            return; // già disconnesso, uscita immediata
         this.running = false;
         this.inboundExecutor.shutdownNow();
         this.outboundWorker.interrupt();
@@ -83,6 +87,13 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
                 break;
             }
         }
+    }
+
+    @Override
+    public void ping() throws RemoteException {
+        // Heartbeat dal client: nessuna logica necessaria.
+        // Il fatto che la chiamata arrivi senza RemoteException
+        // è sufficiente a confermare che il server è vivo.
     }
 
     // ==========================================================
@@ -132,11 +143,11 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void requestReconnect(String gameId, String nickname) throws RemoteException {
+    public void requestReconnect(String nickname, String gameId) throws RemoteException {
         // We use the inbound executor to prevent blocking the RMI thread.
         // We create the ReconnectCommand expected by Matteo's ControllerManager.
         inboundExecutor.submit(() ->
-                manager.handleReconnectRequest(this.clientId, this, new ReconnectCommand(gameId, nickname))
+                manager.handleReconnectRequest(this.clientId, this, new ReconnectCommand(nickname, gameId))
         );
     }
 }

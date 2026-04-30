@@ -17,10 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
 public class ControllerManager {
@@ -38,6 +35,9 @@ public class ControllerManager {
 
     private static final long RECOVERY_WINDOW_SECONDS = 300;
     private final ScheduledExecutorService recoveryScheduler;
+
+    private final Map<String, ScheduledFuture<?>> pendingRecoveryTasks = new ConcurrentHashMap<>();
+
 
     private ControllerManager() {
         this.connectedClients = new ConcurrentHashMap<>();
@@ -138,6 +138,13 @@ public class ControllerManager {
             System.err.println("[ControllerManager] createLobby: unknown clientId " + clientId);
             return;
         }
+
+        // --- NUOVO: Validazione dimensione lobby ---
+        if (numPlayers < 2 || numPlayers > 5) {
+            view.notify(new ErrorEvent("Lobbies must contain between 2 and 5 players."));
+            return;
+        }
+        // -------------------------------------------
 
         String lobbyId = UUID.randomUUID().toString();
         Lobby lobby = new Lobby(lobbyId, numPlayers, this);
@@ -400,12 +407,11 @@ public class ControllerManager {
         Map<String, String> nicknameToClient = new HashMap<>();
         for (String nick : init.nicknames()) {
             noOpViews.put(nick, VirtualView.noOp());
-            nicknameToClient.put(nick, null); //clientId will be reassigned at reconnection
+            nicknameToClient.put(nick, null);
         }
 
         gameNicknameToClient.put(init.gameId(), nicknameToClient);
 
-        // Riapre il file in append — NON riscrivere GAME_INIT
         CommandLogger appender = new CommandLogger(init.gameId());
 
         GameController controller = new GameController(init.gameId(), model, noOpViews, appender);
@@ -415,15 +421,19 @@ public class ControllerManager {
         controller.enterReplayMode();
         model.startFSM();
         for (CommandRecord rec : reader.readCommands()) {
-            controller.handle(rec.command(), rec.command().nickname());
+            controller.handle(rec.command(), rec.nickname());
         }
         controller.exitReplayMode();
 
-        controller.markAllPlayersPendingReconnection();
-
         String gameId = init.gameId();
-        recoveryScheduler.schedule(() -> {
+
+        // Cancel any stale recovery task for this gameId (left over from a previous crash)
+        ScheduledFuture<?> stale = pendingRecoveryTasks.remove(gameId);
+        if (stale != null) stale.cancel(false);
+
+        ScheduledFuture<?> task = recoveryScheduler.schedule(() -> {
             synchronized (ControllerManager.this) {
+                pendingRecoveryTasks.remove(gameId);
                 GameController c = controllers.get(gameId);
                 if (c != null && c.areAllPlayersPendingReconnection()) {
                     System.out.println("[Recovery] No players reconnected for game "
@@ -432,6 +442,8 @@ public class ControllerManager {
                 }
             }
         }, RECOVERY_WINDOW_SECONDS, TimeUnit.SECONDS);
+
+        pendingRecoveryTasks.put(gameId, task);
     }
 
     private void quarantine(Path logFile, Path logsDirectory) {

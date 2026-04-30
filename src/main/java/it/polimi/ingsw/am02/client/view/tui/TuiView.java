@@ -145,6 +145,7 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
+        if (gameModel != null) return;
         clearScreen();
         printHeader();
         System.out.println(YELLOW + "Logged in as: " + BOLD + lobbyModel.getMyNickname() + RESET);
@@ -164,6 +165,7 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onCurrentLobbyUpdated(LobbyInfo lobby) {
+        if (gameModel != null) return;
         clearScreen();
         printHeader();
         System.out.println(PURPLE + BOLD + "--- LOBBY: " + lobby.lobbyId() + " ---" + RESET);
@@ -320,21 +322,29 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onConnectionLost() {
+        clearScreen();
+        printHeader();
+        System.out.println(RED + BOLD + "=== SERVER CONNECTION LOST ===" + RESET);
+        System.out.println(YELLOW + "The server is currently offline or unreachable." + RESET);
+        System.out.println("Please wait. The client will attempt to reconnect automatically...\n");
+
         // Recupera l'ID del gioco se disponibile
         String idToPrint = (gameModel != null && gameModel.getGameId() != null)
                 ? gameModel.getGameId()
                 : currentGameId;
 
-        addNotification(RED + BOLD + "[NETWORK] Connection lost. Attempting to restore..." + RESET);
-
         if (idToPrint != null) {
-            addNotification(YELLOW + "Server crashed? If you need to reconnect later, use GameID: " + BOLD + idToPrint + RESET);
+            System.out.println(CYAN + "Your Game ID (in case you need to reconnect later): " + BOLD + idToPrint + RESET);
         }
     }
 
     @Override
     public void onConnectionRestored() {
-        addNotification(GREEN + "[NETWORK] Connection restored successfully." + RESET);
+        clearScreen();
+        printHeader();
+        System.out.println(GREEN + BOLD + "=== CONNECTION RESTORED ===" + RESET);
+        System.out.println("Successfully reconnected to the server!");
+        System.out.println("Resynchronizing state, please wait...\n");
     }
 
     @Override
@@ -375,6 +385,7 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onReturnToLobby() {
+        this.currentGameId = null;
         lobbyModel.addObserver(this);
         this.gameModel = null;
         clearScreen();

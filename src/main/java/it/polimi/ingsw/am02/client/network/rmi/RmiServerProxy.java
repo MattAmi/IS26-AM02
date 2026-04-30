@@ -150,10 +150,11 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     @Override
     public void requestReconnect(String nickname, String gameId) {
+        // Salviamo i dati per la sincronizzazione successiva,
+        // MA non creiamo ancora il modello e non cambiamo view.
         this.activeNickname = nickname;
         this.activeGameId = gameId;
-        clientController.resetGameModel(nickname);
-        clientController.getGameModel().setGameId(gameId);
+
         execute(() -> serverStub.requestReconnect(nickname, gameId));
     }
 
@@ -169,23 +170,28 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
         clientView.onConnectionLost();
 
         Thread t = new Thread(() -> {
-            stopPingThread(); // ferma il vecchio ping prima di iniziare il loop
+            stopPingThread();
             while (!this.connected) {
                 try {
                     Thread.sleep(5000);
-                    connect(); // connect() avvierà automaticamente un nuovo pingThread
+                    connect();
 
                     if (activeNickname != null && activeGameId != null) {
-                        clientController.resetGameModel(activeNickname);
-                        clientController.getGameModel().setGameId(activeGameId);
+                        // Inviamo solo la richiesta. Il passaggio alla view di gioco
+                        // avverrà automaticamente quando riceveremo il primo evento (GameStartedEvent).
                         serverStub.requestReconnect(activeNickname, activeGameId);
+                    } else {
+                        if (activeNickname != null) {
+                            serverStub.requestSetUsername(activeNickname);
+                        }
+                        clientView.onReturnToLobby();
                     }
 
                     clientView.onConnectionRestored();
                     this.attemptingReconnection = false;
 
                 } catch (Exception ex) {
-                    // Server ancora giù, continua il loop
+                    // Continua a provare...
                 }
             }
         });

@@ -20,7 +20,7 @@ public class GameController implements GameObserver {
     // Timeout / delay constants
     private static final long DISCONNECTED_PLAYER_TIMEOUT_SECONDS = 30;
     private static final long GLOBAL_DISCONNECTION_TIMEOUT_SECONDS = 120;
-    private static final long DRAIN_DELAY_MILLIS = 50;
+    private static final long DRAIN_DELAY_MILLIS = 5;
 
     private final String gameId;
     private final ModelInterface model;
@@ -108,6 +108,11 @@ public class GameController implements GameObserver {
             }
             success = true;
         } catch (RuntimeException e) {
+
+            if (replayMode) {
+                System.err.println("[GameController:" + gameId + "] REPLAY ERROR: Command rejected for " + senderNickname + " -> " + e.getMessage());
+            }
+
             if (connectionStatus.get(senderNickname) == ConnectionStatus.DISCONNECTED) {
                 log("AutoPlayer rejected for " + senderNickname + ": " + e.getMessage());
             } else {

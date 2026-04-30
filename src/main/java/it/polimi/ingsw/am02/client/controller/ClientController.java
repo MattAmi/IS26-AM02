@@ -124,7 +124,19 @@ public class ClientController {
                 if (gameModel != null && !gameModel.isGameEnded()) {
                     view.onError("You cannot return to lobby while a game is in progress.");
                 } else {
+                    String oldNick = lobbyModel.getMyNickname();
                     this.gameModel = null;
+
+                    // Disconnessione e riconnessione silenziosa per azzerare lo stato sul Server
+                    proxy.disconnect();
+                    try {
+                        proxy.connect();
+                        if (oldNick != null) {
+                            proxy.requestSetUsername(oldNick);
+                        }
+                    } catch (Exception e) {
+                        view.onError("Server currently unreachable.");
+                    }
                     view.onReturnToLobby();
                 }
             }

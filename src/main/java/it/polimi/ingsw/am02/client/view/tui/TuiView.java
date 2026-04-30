@@ -404,7 +404,9 @@ public class TuiView extends AbstractClientView {
      * {@link GameModel} state. No-op if the model is not yet available.
      */
     private void renderFullGame() {
-        if (gameModel == null) return;
+        if (gameModel == null || gameModel.getGameId() == null) {
+            return;
+        }
         clearScreen();
         printHeader();
 

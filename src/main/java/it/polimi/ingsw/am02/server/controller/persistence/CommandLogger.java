@@ -7,6 +7,7 @@ import it.polimi.ingsw.am02.common.messages.commands.GameCommand;
 
 import java.io.*;
 import java.nio.file.*;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,10 +42,19 @@ public class CommandLogger implements GameLogger {
         node.put("seed", seed);
         node.put("numPlayers", nicknames.size());
         node.set("nicknames", mapper.valueToTree(nicknames));
-        node.set("totems", mapper.valueToTree(
-                chosenTotems.entrySet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().name()))
-        ));
+
+
+
+        // CORREZIONE: Usiamo una LinkedHashMap per garantire un ordine deterministico
+        // nel JSON, seguendo l'ordine della lista nicknames passata dal ControllerManager.
+        Map<String, String> orderedTotems = new LinkedHashMap<>();
+        for (String nick : nicknames) {
+            if (chosenTotems.containsKey(nick)) {
+                orderedTotems.put(nick, chosenTotems.get(nick).name());
+            }
+        }
+        node.set("totems", mapper.valueToTree(orderedTotems));
+
         writeLine(node);
     }
 

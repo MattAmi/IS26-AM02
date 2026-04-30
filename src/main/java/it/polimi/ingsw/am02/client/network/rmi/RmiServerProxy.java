@@ -118,6 +118,12 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
             clientController.getGameModel().apply(gameEvent);
 
         } else if (event instanceof ErrorEvent errorEvent) {
+            // Se riceviamo un errore durante un tentativo di riconnessione,
+            // dobbiamo "dimenticare" i dati della partita per evitare falsi positivi dopo.
+            if (clientController.getGameModel() == null) {
+                this.activeGameId = null;
+            }
+
             if (clientController.getGameModel() != null) {
                 clientController.getGameModel().apply(errorEvent);
             } else {

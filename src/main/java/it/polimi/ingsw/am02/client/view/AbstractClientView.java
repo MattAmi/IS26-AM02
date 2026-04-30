@@ -60,4 +60,6 @@ public abstract class AbstractClientView implements ClientView {
     @Override public void setGameModel(GameModel gameModel) {}
     @Override public void onConnectionLost() {}
     @Override public void onConnectionRestored() {}
+
+    @Override public void onReturnToLobby() {}
 }

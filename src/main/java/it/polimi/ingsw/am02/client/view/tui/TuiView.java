@@ -209,6 +209,7 @@ public class TuiView extends AbstractClientView {
     @Override
     public void onGameStarted(String gameId) {
         this.currentGameId = gameId;
+        lobbyModel.removeObserver(this);
         addNotification(GREEN + BOLD + "GAME STARTED! ID: " + gameId + RESET);
     }
 
@@ -348,7 +349,7 @@ public class TuiView extends AbstractClientView {
             System.out.printf("  %d. %-15s  PP: %d%n",
                     i + 1, s.nickname(), s.totalPrestigePoints());
         }
-        System.out.println("\nType 'quit' to exit.");
+        System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
         System.out.print("\n" + CYAN + "> " + RESET);
     }
 
@@ -358,7 +359,7 @@ public class TuiView extends AbstractClientView {
         printHeader();
         System.out.println(RED + BOLD + "=== GAME ABORTED ===" + RESET);
         System.out.println("Winner by forfeit: " + lastManStanding);
-        System.out.println("\nType 'quit' to exit.");
+        System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
         System.out.print("\n" + CYAN + "> " + RESET);
     }
 
@@ -368,7 +369,18 @@ public class TuiView extends AbstractClientView {
         printHeader();
         System.out.println(RED + BOLD + "=== GAME RECOVERY FAILED ===" + RESET);
         System.out.println("Not all players reconnected in time. The game has been terminated.");
-        System.out.println("\nType 'quit' to exit.");
+        System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
+        System.out.print("\n" + CYAN + "> " + RESET);
+    }
+
+    @Override
+    public void onReturnToLobby() {
+        lobbyModel.addObserver(this);
+        this.gameModel = null;
+        clearScreen();
+        printHeader();
+        System.out.println(GREEN + "You are back in the lobby." + RESET);
+        System.out.println("\nCommands: create <size> | join <index> | quit");
         System.out.print("\n" + CYAN + "> " + RESET);
     }
 

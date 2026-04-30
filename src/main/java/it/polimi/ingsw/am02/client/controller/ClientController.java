@@ -42,6 +42,10 @@ public class ClientController {
      */
     public void onGameModelRequired(String nickname) {
         if (this.gameModel != null) return; // già inizializzato, ignora
+        resetGameModel(nickname);
+    }
+
+    public void resetGameModel(String nickname) {
         GameModel model = new GameModel(nickname);
         this.gameModel = model;
         this.view.setGameModel(model);
@@ -115,6 +119,16 @@ public class ClientController {
                         new java.util.ArrayList<>();
                 proxy.resolveActions(ids); // Send empty list to server, let it evaluate!
             }
+
+            case "lobby" -> {
+                if (gameModel != null && !gameModel.isGameEnded()) {
+                    view.onError("You cannot return to lobby while a game is in progress.");
+                } else {
+                    this.gameModel = null;
+                    view.onReturnToLobby();
+                }
+            }
+
             case "quit" -> {
                 proxy.disconnect();
                 System.exit(0);

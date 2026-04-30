@@ -152,6 +152,8 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     public void requestReconnect(String nickname, String gameId) {
         this.activeNickname = nickname;
         this.activeGameId = gameId;
+        clientController.resetGameModel(nickname);
+        clientController.getGameModel().setGameId(gameId);
         execute(() -> serverStub.requestReconnect(nickname, gameId));
     }
 
@@ -174,7 +176,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
                     connect(); // connect() avvierà automaticamente un nuovo pingThread
 
                     if (activeNickname != null && activeGameId != null) {
-                        clientController.onGameModelRequired(activeNickname);
+                        clientController.resetGameModel(activeNickname);
                         clientController.getGameModel().setGameId(activeGameId);
                         serverStub.requestReconnect(activeNickname, activeGameId);
                     }

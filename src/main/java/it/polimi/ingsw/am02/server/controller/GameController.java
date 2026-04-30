@@ -651,7 +651,10 @@ public class GameController implements GameObserver {
                 || status == ConnectionStatus.PENDING_RECONNECTION;
     }
 
-    void enterReplayMode() { this.replayMode = true;  }
+    void enterReplayMode() {
+        this.replayMode = true;
+        connectionStatus.replaceAll((nick, status) -> ConnectionStatus.PENDING_RECONNECTION);
+    }
 
     void exitReplayMode()  { this.replayMode = false; }
 

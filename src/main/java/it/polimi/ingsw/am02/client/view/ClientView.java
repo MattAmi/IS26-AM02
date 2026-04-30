@@ -66,4 +66,7 @@ public interface ClientView {
     void setGameModel(GameModel gameModel);
     void onConnectionLost();
     void onConnectionRestored();
+
+    void onReturnToLobby();
+
 }

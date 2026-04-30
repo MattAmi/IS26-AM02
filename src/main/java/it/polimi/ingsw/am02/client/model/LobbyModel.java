@@ -37,6 +37,11 @@ public class LobbyModel {
             }
 
             case UpdatedLobbiesEvent e -> {
+                // CORREZIONE: Se riceviamo la lista globale, significa che siamo in Pre-Lobby.
+                // Svuotiamo lo stato locale (lobby e nickname) per sincronizzarci col server.
+                this.currentLobby = null;
+                this.myNickname = null;
+
                 this.availableLobbies = new ArrayList<>(e.lobbies());
                 clientViews.forEach(o -> o.onAvailableLobbiesUpdated(e.lobbies()));
             }

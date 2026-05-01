@@ -104,11 +104,10 @@ public class SocketServerProxy implements ServerProxy {
                 new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             while ((line = in.readLine()) != null) {
+                lastPongReceivedAt = System.currentTimeMillis();
                 Message msg = codec.decode(line);
                 if (msg instanceof PingEvent) {
-                    // Il server ci fa ping: rispondiamo con pong e aggiorniamo timestamp
                     send(new PongCommand());
-                    lastPongReceivedAt = System.currentTimeMillis();
                 } else if (msg instanceof Event event) {
                     route(event);
                 }

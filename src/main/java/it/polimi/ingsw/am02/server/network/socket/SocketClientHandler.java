@@ -23,6 +23,7 @@ public class SocketClientHandler implements ClientHandler {
     private final ScheduledExecutorService pingScheduler = Executors.newSingleThreadScheduledExecutor();
     private volatile boolean pongReceived = false;
     private String clientId;
+    private volatile long lastPongReceivedAt = System.currentTimeMillis();
 
     private static final int PING_INTERVAL_SECONDS = 5;
     private static final int PING_TIMEOUT_SECONDS = 10;
@@ -35,6 +36,7 @@ public class SocketClientHandler implements ClientHandler {
                 new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true
         );
         this.clientId = manager.handleClientConnected(this);
+        this.lastPongReceivedAt = System.currentTimeMillis();
     }
 
     public void listen() {
@@ -49,18 +51,19 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     private void startPingTimer() {
+        // Invio periodico del ping
         pingScheduler.scheduleAtFixedRate(() -> {
-            pongReceived = false;
             eventQueue.offer(new PingEvent());
-
-            pingScheduler.schedule(() -> {
-                if (!pongReceived) {
-                    System.out.println("[SocketClientHandler] Timeout PING per clientId: " + clientId);
-                    disconnect();
-                }
-            }, PING_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-
         }, PING_INTERVAL_SECONDS, PING_INTERVAL_SECONDS, TimeUnit.SECONDS);
+
+        // Check timeout separato e più lento (non accoppiato all'invio)
+        pingScheduler.scheduleAtFixedRate(() -> {
+            long elapsed = System.currentTimeMillis() - lastPongReceivedAt;
+            if (elapsed > (PING_TIMEOUT_SECONDS + PING_INTERVAL_SECONDS) * 1000L) {
+                System.out.println("[SocketClientHandler] Timeout PING per clientId: " + clientId);
+                disconnect();
+            }
+        }, PING_TIMEOUT_SECONDS, PING_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
     private void readerLoop() {
@@ -93,7 +96,10 @@ public class SocketClientHandler implements ClientHandler {
 
     private void dispatch(Command cmd) {
         switch (cmd) {
-            case PongCommand c           -> pongReceived = true;
+            case PongCommand c -> {
+                pongReceived = true;
+                lastPongReceivedAt = System.currentTimeMillis();
+            }
             case SetUsernameCommand c    -> manager.requestSetUsernameInLobby(clientId, c.username());
             case CreateLobbyCommand c    -> manager.createLobby(clientId, c.numPlayers());
             case JoinLobbyCommand c      -> manager.joinLobby(clientId, c.lobbyID());
@@ -113,12 +119,12 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void disconnect() {
+    public synchronized void disconnect() {
+        if (clientId == null) return;  // già disconnesso, esce subito
+        String id = clientId;
+        clientId = null;               // nullifica PRIMA di chiamare il manager
         pingScheduler.shutdownNow();
         try { socket.close(); } catch (IOException ignored) {}
-        if (clientId != null) {
-            manager.handleDisconnection(clientId);
-            clientId = null;
-        }
+        manager.handleDisconnection(id);
     }
 }

@@ -16,6 +16,8 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.LobbyEvent;
 import it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodecImpl;
+import it.polimi.ingsw.am02.common.messages.events.game.PingEvent;
+import it.polimi.ingsw.am02.common.messages.commands.PongCommand;
 
 import java.io.*;
 import java.net.Socket;
@@ -107,8 +109,11 @@ public class SocketServerProxy implements ServerProxy {
                 lastPongReceivedAt = System.currentTimeMillis();
                 Message msg = codec.decode(line);
                 if (msg instanceof PingEvent) {
-                    send(new PongCommand());
-                } else if (msg instanceof Event event) {
+                    out.println(codec.encode(new PongCommand()));
+                    out.flush();
+                    continue; // Ignora il resto del ciclo e aspetta il prossimo messaggio
+                }
+                if (msg instanceof Event event) {
                     route(event);
                 }
             }
@@ -134,7 +139,6 @@ public class SocketServerProxy implements ServerProxy {
         if (event instanceof GameStartedEvent e) {
             this.activeGameId = e.gameID();
         }
-
         if (event instanceof LobbyEvent lobbyEvent) {
             lobbyModel.apply(lobbyEvent);
 
@@ -223,7 +227,10 @@ public class SocketServerProxy implements ServerProxy {
 
     // Invio comandi al server
     private void send(Command command) {
-        if (out != null) out.println(codec.encode(command));
+        if (out != null){
+            out.println(codec.encode(command));
+            out.flush();
+        }
     }
 
     @Override public void requestSetUsername(String username)        { send(new SetUsernameCommand(username)); }

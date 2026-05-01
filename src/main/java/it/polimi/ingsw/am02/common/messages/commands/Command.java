@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import it.polimi.ingsw.am02.common.messages.Message;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "commandType")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = SetUsernameCommand.class,    name = "SetUsername"),
         @JsonSubTypes.Type(value = CreateLobbyCommand.class,   name = "CreateLobby"),
@@ -12,9 +12,9 @@ import it.polimi.ingsw.am02.common.messages.Message;
         @JsonSubTypes.Type(value = SelectTotemCommand.class,   name = "SelectTotem"),
         @JsonSubTypes.Type(value = StartGameCommand.class,     name = "StartGame"),
         @JsonSubTypes.Type(value = LeaveLobbyCommand.class,    name = "LeaveLobby"),
-        @JsonSubTypes.Type(value = MoveTotemCommand.class,     name = "MoveTotem"),
-        @JsonSubTypes.Type(value = ResolveActionsCommand.class, name = "ResolveActions"),
-        @JsonSubTypes.Type(value = PongCommand.class, name = "Pong")
+        @JsonSubTypes.Type(value = PongCommand.class, name = "Pong"),
+        @JsonSubTypes.Type(value = MoveTotemCommand.class, name = "MoveTotemCommand"),
+        @JsonSubTypes.Type(value = ResolveActionsCommand.class, name = "ResolveActionsCommand")
 })
 
 public sealed interface Command extends Message permits GameCommand, LobbyCommand, ReconnectCommand {}

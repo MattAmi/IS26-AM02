@@ -215,6 +215,14 @@ public class ClientController {
                 }
             }
 
+            case "help" -> {
+                if (this.view instanceof TuiView tuiView) {
+                    tuiView.onShowHelp(inPreLobby, inLobby, inGame);
+                } else {
+                    view.onError("Help command not supported in this view.");
+                }
+            }
+
             case "quit" -> {
                 proxy.disconnect();
                 System.exit(0);

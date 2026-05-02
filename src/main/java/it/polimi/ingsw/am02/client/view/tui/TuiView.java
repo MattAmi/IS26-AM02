@@ -119,7 +119,8 @@ public class TuiView extends AbstractClientView {
         if (notifications.size() > MAX_NOTIFICATIONS) {
             notifications.removeFirst();
         }
-        if (gameModel != null) {
+
+        if (gameModel != null && gameModel.getGameId() != null) {
             renderFullGame();
         } else {
             System.out.println(message);
@@ -380,6 +381,7 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
+        this.gameModel = null;
         clearScreen();
         printHeader();
         System.out.println(GREEN + BOLD + "=== GAME OVER ===" + RESET);
@@ -396,6 +398,7 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onGameAborted(String lastManStanding) {
+        this.gameModel = null;
         clearScreen();
         printHeader();
         System.out.println(RED + BOLD + "=== GAME ABORTED ===" + RESET);
@@ -406,6 +409,7 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onGameRecoveryFailed() {
+        this.gameModel = null;
         clearScreen();
         printHeader();
         System.out.println(RED + BOLD + "=== GAME RECOVERY FAILED ===" + RESET);
@@ -417,13 +421,19 @@ public class TuiView extends AbstractClientView {
     @Override
     public void onReturnToLobby() {
         this.currentGameId = null;
-        lobbyModel.addObserver(this);
         this.gameModel = null;
+
+        this.notifications.clear();
+        this.disconnectedPlayers.clear();
+        this.graceConsumed.clear();
+
+        lobbyModel.removeObserver(this);
+        lobbyModel.addObserver(this);
         clearScreen();
         printHeader();
-        System.out.println(GREEN + "You are back in the lobby." + RESET);
+        /*System.out.println(GREEN + "You are back in the lobby." + RESET);
         System.out.println("\nCommands: create <size> | join <index> | quit");
-        System.out.print("\n" + CYAN + "> " + RESET);
+        System.out.print("\n" + CYAN + "> " + RESET);*/
     }
 
     // -----------------------------------------------------------------------

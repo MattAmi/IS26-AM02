@@ -193,13 +193,9 @@ public class ClientController {
                     if (!gameModel.isGameEnded()) {
                         view.onError("You cannot return to lobby while a game is in progress.");
                     } else {
-                        String oldNick = lobbyModel.getMyNickname();
                         try {
                             proxy.disconnect();
                             proxy.connect();
-                            if (oldNick != null) {
-                                proxy.requestSetUsername(oldNick);
-                            }
                             this.gameModel = null;
                             view.onReturnToLobby();
                         } catch (Exception e) {

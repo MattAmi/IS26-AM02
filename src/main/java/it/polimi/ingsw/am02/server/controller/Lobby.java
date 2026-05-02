@@ -202,4 +202,6 @@ public class Lobby {
     private void broadcast(Event event) {
         views.values().forEach(v -> v.notify(event));
     }
+
+    public int getPlayerCount() { return views.size(); }
 }

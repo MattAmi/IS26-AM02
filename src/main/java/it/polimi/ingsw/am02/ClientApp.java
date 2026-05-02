@@ -26,8 +26,7 @@ public class ClientApp {
             String uiChoice = setupScanner.nextLine().trim();
             ClientView view;
             if (uiChoice.equals("2")) {
-                System.out.println("[GUI] Non ancora implementata, avvio TUI come fallback.");
-                view = new TuiView(lobbyModel);
+                view = new GuiView(lobbyModel);
             } else {
                 view = new TuiView(lobbyModel);
             }

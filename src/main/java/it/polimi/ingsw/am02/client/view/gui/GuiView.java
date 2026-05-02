@@ -165,4 +165,7 @@ public class GuiView extends AbstractClientView {
         super.onError(message);
     }
 
+    @Override
+    public void onShowAvailableTotems() {super.onShowAvailableTotems();}
+
 }

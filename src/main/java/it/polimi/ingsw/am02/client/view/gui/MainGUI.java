@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.view.gui;
 
+import it.polimi.ingsw.am02.client.view.gui.scenes.LobbyScene;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
@@ -10,17 +11,14 @@ public class MainGUI extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // 1. Creiamo un'istanza della tua LoginScene
-        LoginScene loginScene = new LoginScene();
 
-        // 2. Costruiamo la scena e la inseriamo nel palcoscenico principale (Stage)
+        LobbyScene loginScene = new LobbyScene();
+
         primaryStage.setScene(loginScene.buildScene());
 
-        // 3. Impostiamo il titolo della finestra e le dimensioni fisse
         primaryStage.setTitle("Mesos");
-        primaryStage.setResizable(false); // Blocca il ridimensionamento della finestra
+        primaryStage.setResizable(true);
 
-        // 4. Mostriamo lo spettacolo!
         primaryStage.show();
     }
 

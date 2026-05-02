@@ -21,11 +21,12 @@ public class LoginScene {
 
     public Scene buildScene() {
 
-        // 1. IL LAYOUT RADICE
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");
 
-        Rectangle clip = new Rectangle(800, 600);
+        Rectangle clip = new Rectangle();
+        clip.widthProperty().bind(root.widthProperty());
+        clip.heightProperty().bind(root.heightProperty());
         root.setClip(clip);
 
         ImageView bgImageView = new ImageView();
@@ -34,9 +35,8 @@ public class LoginScene {
         bgImageView.setImage(bgImage);
         bgImageView.setPreserveRatio(true);
 
-        bgImageView.setFitWidth(1050);
+        bgImageView.fitWidthProperty().bind(root.widthProperty().add(100));
 
-        // Animazione di Spostamento (movimento in diagonale per sfruttare l'altezza extra)
         TranslateTransition move = new TranslateTransition(Duration.seconds(15), bgImageView);
         move.setFromX(-20);
         move.setToX(20);
@@ -60,14 +60,14 @@ public class LoginScene {
         uiPanel.setPadding(new Insets(0, 0, 80, 0));
 
         String fontUrl = getClass().getResource("/it.polimi.ingsw.am02.fonts/tribal.ttf").toExternalForm();
-        Font rupestreFont = Font.loadFont(fontUrl, 36);
+        Font customFont = Font.loadFont(fontUrl, 36);
 
-        if (rupestreFont == null) {
-            rupestreFont = Font.font("System", FontWeight.BOLD, 36);
+        if (customFont == null) {
+            customFont = Font.font("System", FontWeight.BOLD, 36);
         }
 
         Label continueLabel = new Label("CLICK TO CONTINUE");
-        continueLabel.setFont(rupestreFont);
+        continueLabel.setFont(customFont);
         continueLabel.setTextFill(Color.web("#F2D5A3"));
         continueLabel.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 10, 0, 0, 0);");
 
@@ -78,19 +78,17 @@ public class LoginScene {
         fade.setCycleCount(FadeTransition.INDEFINITE);
         fade.play();
 
-        // GESTIONE DELL'INTERAZIONE
         root.setCursor(javafx.scene.Cursor.HAND);
         root.setOnMouseClicked(event -> handleContinue());
 
-        // ASSEMBLAGGIO DEI LIVELLI
         uiPanel.getChildren().add(continueLabel);
         root.getChildren().addAll(bgImageView, uiPanel);
 
-        return new Scene(root, 800, 600);
+        return new Scene(root, 1280, 720);
     }
 
     private void handleContinue() {
-        System.out.println("[LoginScene] Schermata cliccata: pronto per passare alla prossima scena");
-        // Logica per il cambio scena: TODO
+        System.out.println("[LoginScene] Schermata cliccata: pronto per passare alla prossima scena!");
+        // Qui in futuro aggiungeremo la logica per cambiare scena (verso la Lobby)
     }
 }

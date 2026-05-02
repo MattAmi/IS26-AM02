@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.view.gui;
 
+import it.polimi.ingsw.am02.client.view.gui.scenes.LobbyListScene;
 import it.polimi.ingsw.am02.client.view.gui.scenes.LobbyScene;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -12,7 +13,7 @@ public class MainGUI extends Application {
     @Override
     public void start(Stage primaryStage) {
 
-        LobbyScene loginScene = new LobbyScene();
+        LoginScene loginScene = new LoginScene();
 
         primaryStage.setScene(loginScene.buildScene());
 

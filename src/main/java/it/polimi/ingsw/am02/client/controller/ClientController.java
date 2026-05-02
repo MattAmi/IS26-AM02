@@ -122,14 +122,28 @@ public class ClientController {
                 else proxy.requestReconnect(arg1, arg2);
             }
 
+            // ... dentro ClientController.java -> dispatch() ...
+
             case "totem" -> {
-                if (!inLobby) view.onError("You can only select a totem while waiting in a lobby.");
-                else {
+                if (lobbyModel.getCurrentLobby() == null || inGame) {
+                    view.onError("You can only select a totem while waiting in a lobby.");
+                } else if (arg1.isEmpty()) {
+                    view.onError("Client syntax error. Use: totem <color> (e.g., totem WHITE)");
+                } else {
                     try {
-                        proxy.requestSelectTotem(Totem.valueOf(arg1.toUpperCase()));
+                        Totem selected = Totem.valueOf(arg1.toUpperCase());
+                        proxy.requestSelectTotem(selected);
                     } catch (IllegalArgumentException e) {
-                        view.onError("Client syntax error. Valid totems: PURPLE, WHITE, etc.");
+                        view.onError("Invalid totem color: '" + arg1 + "'. Type 'totems' to see available colors.");
                     }
+                }
+            }
+
+            case "totems" -> {
+                if (lobbyModel.getCurrentLobby() == null) {
+                    view.onError("You can only check available totems while in a lobby.");
+                } else if (this.view instanceof TuiView tuiView) {
+                    tuiView.onShowAvailableTotems();
                 }
             }
 

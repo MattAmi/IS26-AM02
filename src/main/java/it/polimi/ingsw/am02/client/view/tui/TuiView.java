@@ -7,9 +7,7 @@ import it.polimi.ingsw.am02.client.view.AbstractClientView;
 import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.*;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Text-based user interface for the MESOS game client.
@@ -181,6 +179,12 @@ public class TuiView extends AbstractClientView {
             System.out.println("  • " + n + " " + totemStr + RESET);
         });
 
+        // CALCOLO T
+        List<Totem> availableTotems = new ArrayList<>(Arrays.asList(Totem.values()));
+        availableTotems.removeAll(lobby.chosenTotems().values());
+
+        System.out.println("\n" + CYAN + "Available totems: " + RESET + availableTotems);
+
         // --- CONDITIONAL COMMAND LOGIC ---
         String myNick = lobbyModel.getMyNickname(); // Retrieve local nickname
 
@@ -189,13 +193,28 @@ public class TuiView extends AbstractClientView {
             System.out.println("\n" + YELLOW + BOLD + ">> STEP 1: Enter a nickname to join" + RESET);
             System.out.println("Commands: nick <name> | leave | quit");
         } else {
-            // Nickname set, player can now choose a totem
-            System.out.println("\n" + GREEN + BOLD + ">> STEP 2: Nickname set (" + myNick + "). Pick your totem!" + RESET);
-            System.out.println("Commands: nick <name> (to change) | totem <color> | leave | quit");
+            // Nickname set, check if they already have a totem
+            boolean hasTotem = lobby.chosenTotems().containsKey(myNick);
+            String totemCmd = hasTotem ? "totem <color> (to change)" : "totem <color>";
+            String statusMsg = hasTotem ? "You are ready!" : "Pick your totem!";
+
+            System.out.println("\n" + GREEN + BOLD + ">> STEP 2: Nickname set (" + myNick + "). " + statusMsg + RESET);
+            System.out.println("Commands: nick <name> (to change) | " + totemCmd + " | totems | leave | quit");
         }
         // -----------------------------------------
 
         System.out.print("\n" + CYAN + "> " + RESET);
+    }
+
+    @Override
+    public void onShowAvailableTotems() {
+        LobbyInfo lobby = lobbyModel.getCurrentLobby();
+        if (lobby != null) {
+            List<Totem> available = new ArrayList<>(Arrays.asList(Totem.values()));
+            available.removeAll(lobby.chosenTotems().values());
+
+            addNotification(CYAN + "[LOBBY] Available totems: " + GREEN + available + RESET);
+        }
     }
 
     @Override

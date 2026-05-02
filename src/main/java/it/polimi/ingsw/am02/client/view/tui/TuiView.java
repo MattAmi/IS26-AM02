@@ -7,9 +7,7 @@ import it.polimi.ingsw.am02.client.view.AbstractClientView;
 import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.*;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Text-based user interface for the MESOS game client.
@@ -181,6 +179,12 @@ public class TuiView extends AbstractClientView {
             System.out.println("  • " + n + " " + totemStr + RESET);
         });
 
+        // CALCOLO T
+        List<Totem> availableTotems = new ArrayList<>(Arrays.asList(Totem.values()));
+        availableTotems.removeAll(lobby.chosenTotems().values());
+
+        System.out.println("\n" + CYAN + "Available totems: " + RESET + availableTotems);
+
         // --- CONDITIONAL COMMAND LOGIC ---
         String myNick = lobbyModel.getMyNickname(); // Retrieve local nickname
 
@@ -189,13 +193,28 @@ public class TuiView extends AbstractClientView {
             System.out.println("\n" + YELLOW + BOLD + ">> STEP 1: Enter a nickname to join" + RESET);
             System.out.println("Commands: nick <name> | leave | quit");
         } else {
-            // Nickname set, player can now choose a totem
-            System.out.println("\n" + GREEN + BOLD + ">> STEP 2: Nickname set (" + myNick + "). Pick your totem!" + RESET);
-            System.out.println("Commands: nick <name> (to change) | totem <color> | leave | quit");
+            // Nickname set, check if they already have a totem
+            boolean hasTotem = lobby.chosenTotems().containsKey(myNick);
+            String totemCmd = hasTotem ? "totem <color> (to change)" : "totem <color>";
+            String statusMsg = hasTotem ? "You are ready!" : "Pick your totem!";
+
+            System.out.println("\n" + GREEN + BOLD + ">> STEP 2: Nickname set (" + myNick + "). " + statusMsg + RESET);
+            System.out.println("Commands: nick <name> (to change) | " + totemCmd + " | totems | leave | quit");
         }
         // -----------------------------------------
 
         System.out.print("\n" + CYAN + "> " + RESET);
+    }
+
+    @Override
+    public void onShowAvailableTotems() {
+        LobbyInfo lobby = lobbyModel.getCurrentLobby();
+        if (lobby != null) {
+            List<Totem> available = new ArrayList<>(Arrays.asList(Totem.values()));
+            available.removeAll(lobby.chosenTotems().values());
+
+            addNotification(CYAN + "[LOBBY] Available totems: " + GREEN + available + RESET);
+        }
     }
 
     @Override
@@ -586,6 +605,23 @@ public class TuiView extends AbstractClientView {
     }
 
     /**
+     * Retrieves the full description of a card from the catalog and displays it.
+     *
+     * @param cardId the ID of the card to lookup (e.g., "C_008")
+     */
+    public void onShowCardInfo(String cardId) {
+        // Fetch the detailed description
+        String fullInfo = CardCatalog.getInstance().getFullDescription(cardId);
+
+        // Split the info by newlines to add them cleanly to the notification buffer
+        String[] lines = fullInfo.split("\n");
+        for (String line : lines) {
+            // We use standard white text for the info output, or you can add color codes
+            addNotification(WHITE + line + RESET);
+        }
+    }
+
+    /**
      * Renders the context-sensitive command list.
      * Shows a waiting message when it is not this client's turn.
      *
@@ -612,13 +648,20 @@ public class TuiView extends AbstractClientView {
         switch (phase) {
             case TOTEM_PLACEMENT -> {
                 System.out.println("  move <tileID>     — Place your totem on a free offer tile  (e.g., move B)");
+                System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)"); // Added
             }
+
             case ACTION_RESOLUTION -> {
-                System.out.println("  resolve <id...>   — Pick card IDs from the board  (e.g., resolve C_01 E_02)");
+                System.out.println("  resolve <id...>   — Pick card IDs from the board  (e.g., resolve C_001 E_002)");
                 System.out.println("  move T            — Return your totem and END YOUR TURN");
+                System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)"); // Added
                 System.out.println(YELLOW + "  (You MUST type 'move T' after resolving actions.)" + RESET);
             }
-            default -> System.out.println("  (Waiting for the current phase to complete...)");
+
+            default -> {
+                System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)"); // Added
+                System.out.println("  (Waiting for the current phase to complete...)");
+            }
         }
     }
 

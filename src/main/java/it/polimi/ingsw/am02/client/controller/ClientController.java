@@ -4,6 +4,7 @@ import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.client.view.tui.TuiView;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
 import java.util.ArrayList;
@@ -121,14 +122,28 @@ public class ClientController {
                 else proxy.requestReconnect(arg1, arg2);
             }
 
+            // ... dentro ClientController.java -> dispatch() ...
+
             case "totem" -> {
-                if (!inLobby) view.onError("You can only select a totem while waiting in a lobby.");
-                else {
+                if (lobbyModel.getCurrentLobby() == null || inGame) {
+                    view.onError("You can only select a totem while waiting in a lobby.");
+                } else if (arg1.isEmpty()) {
+                    view.onError("Client syntax error. Use: totem <color> (e.g., totem WHITE)");
+                } else {
                     try {
-                        proxy.requestSelectTotem(Totem.valueOf(arg1.toUpperCase()));
+                        Totem selected = Totem.valueOf(arg1.toUpperCase());
+                        proxy.requestSelectTotem(selected);
                     } catch (IllegalArgumentException e) {
-                        view.onError("Client syntax error. Valid totems: PURPLE, WHITE, etc.");
+                        view.onError("Invalid totem color: '" + arg1 + "'. Type 'totems' to see available colors.");
                     }
+                }
+            }
+
+            case "totems" -> {
+                if (lobbyModel.getCurrentLobby() == null) {
+                    view.onError("You can only check available totems while in a lobby.");
+                } else if (this.view instanceof TuiView tuiView) {
+                    tuiView.onShowAvailableTotems();
                 }
             }
 
@@ -152,6 +167,23 @@ public class ClientController {
                             new java.util.ArrayList<>(java.util.Arrays.asList(args).subList(1, args.length)) :
                             new java.util.ArrayList<>();
                     proxy.resolveActions(ids);
+                }
+            }
+
+            case "info" -> {
+                if (!inGame) {
+                    view.onError("Command 'info' is only available during a game.");
+                } else if (arg1.isEmpty()) {
+                    view.onError("Client syntax error. Use: info <cardID> (e.g., info C_008)");
+                } else {
+                    // Call the specific TUI view method if the view supports it.
+                    // We check if the view is a TuiView to avoid breaking other UI implementations.
+                    if (this.view instanceof TuiView tuiView) {
+                        tuiView.onShowCardInfo(arg1);
+                    } else {
+                        // For GUI or other views where this command might not be supported via CLI
+                        view.onError("The 'info' command is not supported in this view mode.");
+                    }
                 }
             }
 

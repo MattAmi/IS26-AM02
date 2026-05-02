@@ -89,6 +89,6 @@ public class LoginScene {
 
     private void handleContinue() {
         System.out.println("[LoginScene] Schermata cliccata: pronto per passare alla prossima scena!");
-        // Qui in futuro aggiungeremo la logica per cambiare scena (verso la Lobby)
+        // Qui in futuro aggiungeremo la logica per cambiare scena (verso la Lobby): TODO
     }
 }

@@ -586,6 +586,23 @@ public class TuiView extends AbstractClientView {
     }
 
     /**
+     * Retrieves the full description of a card from the catalog and displays it.
+     *
+     * @param cardId the ID of the card to lookup (e.g., "C_008")
+     */
+    public void onShowCardInfo(String cardId) {
+        // Fetch the detailed description
+        String fullInfo = CardCatalog.getInstance().getFullDescription(cardId);
+
+        // Split the info by newlines to add them cleanly to the notification buffer
+        String[] lines = fullInfo.split("\n");
+        for (String line : lines) {
+            // We use standard white text for the info output, or you can add color codes
+            addNotification(WHITE + line + RESET);
+        }
+    }
+
+    /**
      * Renders the context-sensitive command list.
      * Shows a waiting message when it is not this client's turn.
      *
@@ -612,13 +629,20 @@ public class TuiView extends AbstractClientView {
         switch (phase) {
             case TOTEM_PLACEMENT -> {
                 System.out.println("  move <tileID>     — Place your totem on a free offer tile  (e.g., move B)");
+                System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)"); // Added
             }
+
             case ACTION_RESOLUTION -> {
-                System.out.println("  resolve <id...>   — Pick card IDs from the board  (e.g., resolve C_01 E_02)");
+                System.out.println("  resolve <id...>   — Pick card IDs from the board  (e.g., resolve C_001 E_002)");
                 System.out.println("  move T            — Return your totem and END YOUR TURN");
+                System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)"); // Added
                 System.out.println(YELLOW + "  (You MUST type 'move T' after resolving actions.)" + RESET);
             }
-            default -> System.out.println("  (Waiting for the current phase to complete...)");
+
+            default -> {
+                System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)"); // Added
+                System.out.println("  (Waiting for the current phase to complete...)");
+            }
         }
     }
 

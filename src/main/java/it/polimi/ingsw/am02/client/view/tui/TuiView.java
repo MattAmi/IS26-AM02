@@ -64,9 +64,6 @@ public class TuiView extends AbstractClientView {
     /** Ring buffer of recent log lines. */
     private final LinkedList<String> notifications = new LinkedList<>();
 
-    private final Set<String> disconnectedPlayers = new HashSet<>();
-    private final Set<String> graceConsumed = new HashSet<>();
-
     // -----------------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------------
@@ -247,13 +244,12 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> order) {
-        handleTurnLogic(currentPlayer);
         renderFullGame();
     }
 
     @Override
     public void onCurrentPlayerChanged(String nextPlayer) {
-        handleTurnLogic(nextPlayer);
+        renderFullGame();
     }
 
     @Override
@@ -263,14 +259,14 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onTotemPlaced(String nickname, char tileID) {
-        addNotification(WHITE + "[BOARD] " + getDisplayName(nickname)
+        addNotification(WHITE + "[BOARD] " + nickname
                 + " placed their totem on tile " + BOLD + tileID + RESET);
     }
 
     @Override
     public void onTotemReturned(String nickname, int turnOrderPosition) {
         // turnOrderPosition is 0-based from the server; display as 1-based
-        addNotification(WHITE + "[BOARD] " + getDisplayName(nickname)
+        addNotification(WHITE + "[BOARD] " + nickname
                 + " returned to turn-order slot " + (turnOrderPosition + 1) + RESET);
     }
 
@@ -309,7 +305,7 @@ public class TuiView extends AbstractClientView {
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
         String formatted = CardCatalog.getInstance().format(cardID);
-        addNotification(CYAN + "[ACTION] " + getDisplayName(nickname) + " took " + formatted + RESET);
+        addNotification(CYAN + "[ACTION] " + nickname + " took " + formatted + RESET);
     }
 
     @Override
@@ -330,20 +326,11 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onPlayerDisconnected(String nickname) {
-        disconnectedPlayers.add(nickname);
         addNotification(RED + BOLD + "[!] Player disconnected: " + nickname + RESET);
-        if (gameModel != null && nickname.equals(gameModel.getCurrentPlayer())) {
-            if (!graceConsumed.contains(nickname)) {
-                addNotification(YELLOW + ">> 30s Timer started: waiting for reconnection before AutoPlayer." + RESET);
-                graceConsumed.add(nickname);
-            }
-        }
     }
 
     @Override
     public void onPlayerReconnected(String nickname) {
-        disconnectedPlayers.remove(nickname);
-        graceConsumed.remove(nickname);
         addNotification(GREEN + "[!] Player reconnected: " + nickname + RESET);
     }
 
@@ -360,7 +347,7 @@ public class TuiView extends AbstractClientView {
         System.out.println(YELLOW + "The server is currently offline or unreachable." + RESET);
         System.out.println("Please wait. The client will attempt to reconnect automatically...\n");
 
-        // Recupera l'ID del gioco se disponibile
+        // Recupera l'id del gioco se disponibile
         String idToPrint = (gameModel != null && gameModel.getGameId() != null)
                 ? gameModel.getGameId()
                 : currentGameId;
@@ -377,6 +364,18 @@ public class TuiView extends AbstractClientView {
         System.out.println(GREEN + BOLD + "=== CONNECTION RESTORED ===" + RESET);
         System.out.println("Successfully reconnected to the server!");
         System.out.println("Resynchronizing state, please wait...\n");
+    }
+
+    @Override
+    public void onAutoPlayerTimerStarted(String nickname) {
+        addNotification(YELLOW + "[BOT] " + nickname
+                + " is disconnected — 30s timer started before AutoPlayer takes over." + RESET);
+    }
+
+    @Override
+    public void onAutoPlayerInvoked(String nickname) {
+        addNotification(PURPLE + BOLD + "[BOT] AutoPlayer acting for "
+                + nickname + "..." + RESET);
     }
 
     @Override
@@ -424,8 +423,6 @@ public class TuiView extends AbstractClientView {
         this.gameModel = null;
 
         this.notifications.clear();
-        this.disconnectedPlayers.clear();
-        this.graceConsumed.clear();
 
         lobbyModel.removeObserver(this);
         lobbyModel.addObserver(this);
@@ -593,13 +590,8 @@ public class TuiView extends AbstractClientView {
             int picksLow = gameModel.getRemainingLower().getOrDefault(nickname, 0);
 
             boolean isMe = nickname.equals(gameModel.getMyNickname());
-            boolean isOffline = disconnectedPlayers.contains(nickname);
-
             String prefix = isMe ? GREEN + BOLD + "=> " + RESET : "   ";
-            String marker = isMe ? YELLOW + BOLD + " (YOU)" + RESET : "";
-
-            if (isOffline) marker += RED + " (OFFLINE/BOT)" + RESET;
-            else marker += RESET;
+            String marker = isMe ? YELLOW + BOLD + " (YOU)" + RESET : RESET;
 
             System.out.printf("%s%-15s | Food: " + GREEN + "%2d" + RESET
                             + "  | PP: " + YELLOW + "%3d" + RESET
@@ -745,28 +737,5 @@ public class TuiView extends AbstractClientView {
     private void clearScreen() {
         System.out.print("\033[H\033[2J");
         System.out.flush();
-    }
-
-    private String getDisplayName(String nickname) {
-        return disconnectedPlayers.contains(nickname) ? nickname + " (BOT)" : nickname;
-    }
-
-    private void handleTurnLogic(String nextPlayer) {
-        if (nextPlayer == null) return;
-
-        boolean isOffline = disconnectedPlayers.contains(nextPlayer);
-        boolean alreadyUsedGrace = graceConsumed.contains(nextPlayer);
-
-        if (isOffline) {
-            if (!alreadyUsedGrace) {
-                addNotification(RED + BOLD + "[!] Active player " + nextPlayer + " is OFFLINE." + RESET);
-                addNotification(YELLOW + ">> 30s Timer started: waiting for reconnection before AutoPlayer." + RESET);
-                graceConsumed.add(nextPlayer);
-            } else {
-                addNotification(PURPLE + BOLD + "[BOT] Invoking AutoPlayer for offline player " + nextPlayer + "..." + RESET);
-            }
-        } else {
-            addNotification(BLUE + "[TURN] It's now " + BOLD + nextPlayer + RESET + BLUE + "'s turn." + RESET);
-        }
     }
 }

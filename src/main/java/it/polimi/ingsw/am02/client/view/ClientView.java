@@ -67,6 +67,8 @@ public interface ClientView {
     void setGameModel(GameModel gameModel);
     void onConnectionLost();
     void onConnectionRestored();
+    void onAutoPlayerTimerStarted(String nickname);
+    void onAutoPlayerInvoked(String nickname);
 
     void onReturnToLobby();
 

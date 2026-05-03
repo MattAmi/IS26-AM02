@@ -233,6 +233,14 @@ public class GameModel {
                             e.nickname(), e.cardID(), e.cardType(), e.sourceRow()));
                 }
 
+                case AutoPlayerTimerStartedEvent e -> {
+                    clientViews.forEach(o -> o.onAutoPlayerTimerStarted(e.nickname()));
+                }
+
+                case AutoPlayerInvokedEvent e -> {
+                    clientViews.forEach(o -> o.onAutoPlayerInvoked(e.nickname()));
+                }
+
                 // --------- Events & extra turns ---------
                 case EventResolvedEvent e -> {
                     this.lastEventResolved = e.eventName();

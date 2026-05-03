@@ -244,7 +244,7 @@ public class ControllerManager {
         lobbies.remove(gameId);
         clientIds.forEach(clientToLobby::remove);
 
-        // Build the nickname → clientId reverse map for this game.
+        // Build the nickname -> clientId reverse map for this game.
         Map<String, String> nicknameToClient = new HashMap<>();
         for (int i = 0; i < clientIds.size(); i++) {
             nicknameToClient.put(nicknames.get(i), clientIds.get(i));
@@ -340,6 +340,7 @@ public class ControllerManager {
 
     private List<LobbyInfo> getLobbyInfoList() {
         return lobbies.values().stream()
+                .filter(lobby -> lobby.getPlayerCount() > 0)
                 .map(Lobby::toLobbyInfo)
                 .toList();
     }

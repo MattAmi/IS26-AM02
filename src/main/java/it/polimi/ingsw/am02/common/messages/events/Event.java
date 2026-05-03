@@ -36,6 +36,8 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.*;
         @JsonSubTypes.Type(value = PingEvent.class,                   name = "Ping"),
         @JsonSubTypes.Type(value = GameAbortedEvent.class,            name = "GameAborted"),
         @JsonSubTypes.Type(value = GameRecoveryFailedEvent.class,     name = "GameRecoveryFailed"),
+        @JsonSubTypes.Type(value = AutoPlayerTimerStartedEvent.class, name = "AutoPlayerTimerStarted"),
+        @JsonSubTypes.Type(value = AutoPlayerInvokedEvent.class,      name = "AutoPlayerInvoked")
 })
 public sealed interface Event extends Message
         permits LobbyEvent, GameEvent, ErrorEvent, PingEvent {

@@ -21,11 +21,10 @@ import java.util.Map;
 public class GuiController {
 
     private final Stage primaryStage;
-    private final ServerProxy proxy;
+    private ServerProxy proxy;
 
     private GameModel gameModel; // Null until game starts
 
-    // Scene References
     private LobbyListScene lobbyListScene;
     // private GameScene gameScene;
 
@@ -95,9 +94,6 @@ public class GuiController {
         proxy.disconnect();
     }
 
-    /**
-     * Replicata la logica esatta del case "lobby" del ClientController
-     */
     public void returnToMainMenu() {
         if (gameModel != null) {
             if (!gameModel.isGameEnded()) {
@@ -268,4 +264,9 @@ public class GuiController {
         alert.setContentText(content);
         alert.showAndWait();
     }
+
+    public void setServerProxy(ServerProxy proxy) {
+        this.proxy = proxy;
+    }
+
 }

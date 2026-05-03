@@ -193,13 +193,9 @@ public class ClientController {
                     if (!gameModel.isGameEnded()) {
                         view.onError("You cannot return to lobby while a game is in progress.");
                     } else {
-                        String oldNick = lobbyModel.getMyNickname();
                         try {
                             proxy.disconnect();
                             proxy.connect();
-                            if (oldNick != null) {
-                                proxy.requestSetUsername(oldNick);
-                            }
                             this.gameModel = null;
                             view.onReturnToLobby();
                         } catch (Exception e) {
@@ -212,6 +208,14 @@ public class ClientController {
                     } else {
                         view.onReturnToLobby();
                     }
+                }
+            }
+
+            case "help" -> {
+                if (this.view instanceof TuiView tuiView) {
+                    tuiView.onShowHelp(inPreLobby, inLobby, inGame);
+                } else {
+                    view.onError("Help command not supported in this view.");
                 }
             }
 

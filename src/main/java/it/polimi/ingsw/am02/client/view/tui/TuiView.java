@@ -116,7 +116,8 @@ public class TuiView extends AbstractClientView {
         if (notifications.size() > MAX_NOTIFICATIONS) {
             notifications.removeFirst();
         }
-        if (gameModel != null) {
+
+        if (gameModel != null && gameModel.getGameId() != null) {
             renderFullGame();
         } else {
             System.out.println(message);
@@ -248,8 +249,7 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onCurrentPlayerChanged(String nextPlayer) {
-        addNotification(BLUE + "[TURN] It's now " + BOLD + nextPlayer + RESET
-                + BLUE + "'s turn." + RESET);
+        renderFullGame();
     }
 
     @Override
@@ -347,7 +347,7 @@ public class TuiView extends AbstractClientView {
         System.out.println(YELLOW + "The server is currently offline or unreachable." + RESET);
         System.out.println("Please wait. The client will attempt to reconnect automatically...\n");
 
-        // Recupera l'ID del gioco se disponibile
+        // Recupera l'id del gioco se disponibile
         String idToPrint = (gameModel != null && gameModel.getGameId() != null)
                 ? gameModel.getGameId()
                 : currentGameId;
@@ -367,7 +367,20 @@ public class TuiView extends AbstractClientView {
     }
 
     @Override
+    public void onAutoPlayerTimerStarted(String nickname) {
+        addNotification(YELLOW + "[BOT] " + nickname
+                + " is disconnected — 30s timer started before AutoPlayer takes over." + RESET);
+    }
+
+    @Override
+    public void onAutoPlayerInvoked(String nickname) {
+        addNotification(PURPLE + BOLD + "[BOT] AutoPlayer acting for "
+                + nickname + "..." + RESET);
+    }
+
+    @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
+        this.gameModel = null;
         clearScreen();
         printHeader();
         System.out.println(GREEN + BOLD + "=== GAME OVER ===" + RESET);
@@ -384,6 +397,7 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onGameAborted(String lastManStanding) {
+        this.gameModel = null;
         clearScreen();
         printHeader();
         System.out.println(RED + BOLD + "=== GAME ABORTED ===" + RESET);
@@ -394,6 +408,7 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onGameRecoveryFailed() {
+        this.gameModel = null;
         clearScreen();
         printHeader();
         System.out.println(RED + BOLD + "=== GAME RECOVERY FAILED ===" + RESET);
@@ -405,13 +420,17 @@ public class TuiView extends AbstractClientView {
     @Override
     public void onReturnToLobby() {
         this.currentGameId = null;
-        lobbyModel.addObserver(this);
         this.gameModel = null;
+
+        this.notifications.clear();
+
+        lobbyModel.removeObserver(this);
+        lobbyModel.addObserver(this);
         clearScreen();
         printHeader();
-        System.out.println(GREEN + "You are back in the lobby." + RESET);
+        /*System.out.println(GREEN + "You are back in the lobby." + RESET);
         System.out.println("\nCommands: create <size> | join <index> | quit");
-        System.out.print("\n" + CYAN + "> " + RESET);
+        System.out.print("\n" + CYAN + "> " + RESET);*/
     }
 
     // -----------------------------------------------------------------------
@@ -454,7 +473,13 @@ public class TuiView extends AbstractClientView {
         System.out.println();
         renderCommands(phase);
 
-        System.out.print("\n" + CYAN + "> " + RESET);
+        if (currentP != null && currentP.equals(gameModel.getMyNickname())) {
+            System.out.print("\n" + GREEN + BOLD + "[YOUR TURN] > " + RESET);
+        } else if (currentP != null) {
+            System.out.print("\n" + YELLOW + "[Waiting for " + currentP + "...] > " + RESET);
+        } else {
+            System.out.print("\n" + CYAN + "> " + RESET);
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -565,12 +590,13 @@ public class TuiView extends AbstractClientView {
             int picksLow = gameModel.getRemainingLower().getOrDefault(nickname, 0);
 
             boolean isMe = nickname.equals(gameModel.getMyNickname());
-            String marker = isMe ? YELLOW + BOLD + " (YOU)" + RESET : "";
+            String prefix = isMe ? GREEN + BOLD + "=> " + RESET : "   ";
+            String marker = isMe ? YELLOW + BOLD + " (YOU)" + RESET : RESET;
 
-            System.out.printf("  %-15s | Food: " + GREEN + "%2d" + RESET
+            System.out.printf("%s%-15s | Food: " + GREEN + "%2d" + RESET
                             + "  | PP: " + YELLOW + "%3d" + RESET
                             + "  | Picks (Up/Low): " + CYAN + "%d/%d" + RESET + "%s%n",
-                    nickname, food, pp, picksUp, picksLow, marker);
+                    prefix, nickname, food, pp, picksUp, picksLow, marker);
 
             List<String> chars = gameModel.getCharactersByPlayer()
                     .getOrDefault(nickname, List.of());
@@ -618,6 +644,37 @@ public class TuiView extends AbstractClientView {
         for (String line : lines) {
             // We use standard white text for the info output, or you can add color codes
             addNotification(WHITE + line + RESET);
+        }
+    }
+
+    public void onShowHelp(boolean inPreLobby, boolean inLobby, boolean inGame) {
+        System.out.println("\n" + CYAN + BOLD + "--- COMMAND CHEATSHEET ---" + RESET);
+        if (inPreLobby) {
+            System.out.println("  create <size>         - Start a new lobby (size 2-5)");
+            System.out.println("  join <index>          - Join a waiting lobby");
+            System.out.println("  reconnect <nick> <id> - Rejoin a crashed game");
+        } else if (inLobby) {
+            System.out.println("  nick <name>           - Set or change your nickname");
+            System.out.println("  totem <color>         - Pick your totem (WHITE, PURPLE, BLUE, RED, YELLOW)");
+            System.out.println("  totems                - View available totems");
+            System.out.println("  leave                 - Exit the lobby");
+        } else if (inGame) {
+            System.out.println("  move <tileID>         - Place totem on the offer track (e.g., move B)");
+            System.out.println("  resolve <id...>       - Take specific cards (e.g., resolve C_001 E_002)");
+            System.out.println("  move T                - Return totem and END YOUR TURN");
+            System.out.println("  info <cardID>         - Read full card details (e.g., info B_004)");
+        }
+        System.out.println("  quit                  - Close the application");
+
+        // Ristampa il prompt per non lasciare l'utente "sospeso"
+        if (inGame && gameModel != null && gameModel.getCurrentPlayer() != null) {
+            if (gameModel.getCurrentPlayer().equals(gameModel.getMyNickname())) {
+                System.out.print("\n" + GREEN + BOLD + "[YOUR TURN] > " + RESET);
+            } else {
+                System.out.print("\n" + YELLOW + "[Waiting for " + gameModel.getCurrentPlayer() + "...] > " + RESET);
+            }
+        } else {
+            System.out.print("\n" + CYAN + "> " + RESET);
         }
     }
 

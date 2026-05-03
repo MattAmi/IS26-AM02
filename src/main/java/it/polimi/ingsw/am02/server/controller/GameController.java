@@ -143,13 +143,12 @@ public class GameController implements GameObserver {
                 .count();
 
         if (activeCount == 0) {
-            log("Mass disconnection: 0 players active. Pausing game.");
-            cancelDisconnectedPlayerTimer(currentPlayerNickname); // GELA IL GIOCO
+            log("Mass disconnection: 0 players active. Pausing game and arming global timer.");
+            cancelDisconnectedPlayerTimer(currentPlayerNickname);
+            startGlobalDisconnectionTimeout();
         } else if (nickname.equals(currentPlayerNickname)) {
             startDisconnectedPlayerTimer(nickname);
-        }
-
-        if (activeCount == 1) {
+        } else if (activeCount == 1) {
             startGlobalDisconnectionTimeout();
         }
     }
@@ -374,6 +373,10 @@ public class GameController implements GameObserver {
                 return;
             }
 
+            synchronized (this) {
+                pushGlobalEventTransientOthers(nickname, new AutoPlayerInvokedEvent(nickname));
+            }
+
             // Esegue la mossa
             handle(autoCmd, nickname);
         });
@@ -391,6 +394,9 @@ public class GameController implements GameObserver {
 
         log("Per-player timer armed for " + nickname
                 + " (" + DISCONNECTED_PLAYER_TIMEOUT_SECONDS + "s).");
+
+        // Notify connected players that the grace timer has started
+        pushGlobalEventTransientOthers(nickname, new AutoPlayerTimerStartedEvent(nickname));
     }
 
     private void cancelDisconnectedPlayerTimer(String nickname) {

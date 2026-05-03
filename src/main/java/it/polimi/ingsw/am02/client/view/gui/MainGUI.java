@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.view.gui;
 
+import it.polimi.ingsw.am02.client.view.gui.scenes.IntroScene;
 import it.polimi.ingsw.am02.client.view.gui.scenes.LobbyListScene;
 import it.polimi.ingsw.am02.client.view.gui.scenes.LobbyScene;
 import javafx.application.Application;
@@ -13,11 +14,12 @@ public class MainGUI extends Application {
     @Override
     public void start(Stage primaryStage) {
 
-        LoginScene loginScene = new LoginScene();
+        IntroScene loginScene = new IntroScene();
+        //PROVA
 
         primaryStage.setScene(loginScene.buildScene());
 
-        primaryStage.setTitle("Mesos");
+        primaryStage.setTitle("MESOS");
         primaryStage.setResizable(true);
 
         primaryStage.show();

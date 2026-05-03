@@ -16,34 +16,23 @@ public class IntroScene {
 
     private String customFontFamily = "System";
 
-    // =================================================================
-    // METODO 1 (SALVAVITA): buildScene() con parentesi vuote
-    // =================================================================
-    public Scene buildScene() {
-        return buildScene(null); // Chiama il Metodo 2 in automatico passando 'null'
-    }
-
-    // =================================================================
-    // METODO 2: Quello vero e proprio che costruisce la scena
-    // =================================================================
     public Scene buildScene(Runnable onFinished) {
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");
 
         String fontUrl = getClass().getResource("/it.polimi.ingsw.am02.fonts/intro.ttf").toExternalForm();
-        Font baseFont = Font.loadFont(fontUrl, 24);
+        Font baseFont = Font.loadFont(fontUrl, 25);
         if (baseFont != null) {
             customFontFamily = baseFont.getFamily();
         }
 
-        String introText = "Migliaia di anni fa, una nuova era stava iniziando per il genere umano.\n\n" +
-                "I cacciatori-raccoglitori nomadi che avevano faticosamente guadagnato\n" +
-                "il loro posto sulla terra si organizzarono in piccoli gruppi differenziando ruoli sociali,\n" +
-                "costruirono i primi insediamenti e diedero avvio a una grande rivoluzione.\n\n" +
-                "Gli studiosi chiamano questo periodo Mesolitico, e questo gioco tratta di quelle persone.\n\n" +
-                "Vesti i panni di un capo tribale, scegli attentamente che lavori affidare alle persone\n" +
-                "che si uniranno alla tua tribu', costruisci edifici specializzati e preparati con saggezza\n" +
-                "per gli eventi che la tua tribu' dovra' affrontare, guidandola alla vittoria!";
+        String introText = "Thousands of years ago, a new era was beginning for humankind.\n\n" +
+                "The nomadic hunter-gatherers who had laboriously earned their place on Earth organized into small" +
+                "groups, differentiating social roles, building the first settlements, and initiating a great revolution.\n\n" +
+                "Scientists call this period Mesolithic, and this game talks about those people.\n" +
+                "Step into the role of a tribal leader, carefully choose the tasks to entrust to the people joining your tribe," +
+                "construct specialized buildings, and prepare wisely for the events you will face" +
+                "guiding your tribe to victory!";
 
         Label textLabel = new Label(introText);
         textLabel.setFont(Font.font(customFontFamily, 25));

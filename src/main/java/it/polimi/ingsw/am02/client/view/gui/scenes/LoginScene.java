@@ -19,7 +19,7 @@ import javafx.util.Duration;
 
 public class LoginScene {
 
-    public Scene buildScene() {
+    public Scene buildScene(Runnable onFinished) {
 
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");

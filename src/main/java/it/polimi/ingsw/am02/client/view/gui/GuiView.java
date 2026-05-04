@@ -11,158 +11,185 @@ import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import it.polimi.ingsw.am02.common.enumerations.RowPosition;
+import javafx.application.Platform;
 
 import java.util.List;
 import java.util.Map;
 
 public class GuiView extends AbstractClientView {
 
+    private final GuiController guiController;
     private final LobbyModel lobbyModel;
-    private GameModel gameModel; // null until GameStartedEvent
+    private GameModel gameModel;
 
-    public GuiView(LobbyModel lobbyModel) {
+    public GuiView(GuiController guiController, LobbyModel lobbyModel) {
+        this.guiController = guiController;
         this.lobbyModel = lobbyModel;
-        lobbyModel.addObserver(this);
+        this.lobbyModel.addObserver(this);
     }
 
-    public void onGameModelCreated(GameModel gameModel) {
+    @Override
+    public void setGameModel(GameModel gameModel) {
         this.gameModel = gameModel;
-        gameModel.addObserver(this);
+        if (this.gameModel != null) {
+            this.gameModel.addObserver(this);
+            Platform.runLater(() -> guiController.refreshFullGameScene(gameModel));
+        }
     }
 
     @Override
     public void onUsernameResult(String username, boolean accepted, String reason) {
-        super.onUsernameResult(username, accepted, reason);
+        Platform.runLater(() -> guiController.handleUsernameResult(username, accepted, reason));
     }
 
     @Override
     public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
-        super.onAvailableLobbiesUpdated(lobbies);
+        Platform.runLater(() -> guiController.handleAvailableLobbiesUpdated(lobbies));
     }
 
     @Override
     public void onCurrentLobbyUpdated(LobbyInfo lobby) {
-        super.onCurrentLobbyUpdated(lobby);
+        Platform.runLater(() -> guiController.handleCurrentLobbyUpdated(lobby));
     }
 
     @Override
     public void onLobbyDissolved() {
-        super.onLobbyDissolved();
+        Platform.runLater(guiController::handleLobbyDissolved);
     }
 
     @Override
     public void onGameStarted(String gameId) {
-        super.onGameStarted(gameId);
+        lobbyModel.removeObserver(this);
+        Platform.runLater(() -> guiController.switchToGameScene(gameId));
     }
 
     @Override
     public void onGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot board) {
-        super.onGameSetupCompleted(turnOrder, initialFood, board);
+        Platform.runLater(() -> guiController.handleGameSetupCompleted(turnOrder, initialFood, board));
     }
 
     @Override
     public void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
-        super.onPhaseChanged(phase, currentPlayer, resolutionOrder);
+        Platform.runLater(() -> guiController.handlePhaseChanged(phase, currentPlayer, resolutionOrder));
     }
 
     @Override
     public void onCurrentPlayerChanged(String nextPlayer) {
-        super.onCurrentPlayerChanged(nextPlayer);
+        Platform.runLater(() -> guiController.handleCurrentPlayerChanged(nextPlayer));
     }
 
     @Override
     public void onTurnOrderEstablished(List<String> turnOrder) {
-        super.onTurnOrderEstablished(turnOrder);
+        Platform.runLater(() -> guiController.handleTurnOrderEstablished(turnOrder));
     }
 
     @Override
     public void onTotemPlaced(String nickname, char tileID) {
-        super.onTotemPlaced(nickname, tileID);
+        Platform.runLater(() -> guiController.handleTotemPlaced(nickname, tileID));
     }
 
     @Override
     public void onTotemReturned(String nickname, int turnOrderPosition) {
-        super.onTotemReturned(nickname, turnOrderPosition);
+        Platform.runLater(() -> guiController.handleTotemReturned(nickname, turnOrderPosition));
     }
 
     @Override
     public void onOfferTilesUpdated(List<OfferTileInfo> offerTiles) {
-        super.onOfferTilesUpdated(offerTiles);
+        Platform.runLater(() -> guiController.handleOfferTilesUpdated(offerTiles));
     }
 
     @Override
     public void onBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, int deckRemainingCount) {
-        super.onBoardUpdated(newUpperRow, newLowerRow, deckRemainingCount);
+        Platform.runLater(() -> guiController.handleBoardUpdated(newUpperRow, newLowerRow, deckRemainingCount));
     }
 
     @Override
     public void onEraChanged(List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
-        super.onEraChanged(newUpperRowBuildings, newLowerRowBuildings);
+        Platform.runLater(() -> guiController.handleEraChanged(newUpperRowBuildings, newLowerRowBuildings));
     }
 
     @Override
     public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {
-        super.onPlayerLimitsInitialized(nickname, remainingUpper, remainingLower);
+        Platform.runLater(() -> guiController.handlePlayerLimitsInitialized(nickname, remainingUpper, remainingLower));
     }
 
     @Override
     public void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {
-        super.onPlayerLimitsUpdated(nickname, remainingUpper, remainingLower);
+        Platform.runLater(() -> guiController.handlePlayerLimitsUpdated(nickname, remainingUpper, remainingLower));
     }
 
     @Override
     public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-        super.onPlayerResourceChanged(nickname, resource, newValue);
+        Platform.runLater(() -> guiController.handlePlayerResourceChanged(nickname, resource, newValue));
     }
 
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
-        super.onCardTaken(nickname, cardID, cardType, sourceRow);
+        Platform.runLater(() -> guiController.handleCardTaken(nickname, cardID, cardType, sourceRow));
     }
 
     @Override
     public void onEventResolved(String eventID, String eventName) {
-        super.onEventResolved(eventID, eventName);
+        Platform.runLater(() -> guiController.handleEventResolved(eventID, eventName));
     }
 
     @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-        super.onExtraTurnStarted(nickname, remainingUpper, remainingLower);
+        Platform.runLater(() -> guiController.handleExtraTurnStarted(nickname, remainingUpper, remainingLower));
     }
 
     @Override
     public void onExtraTurnEnded(String nickname) {
-        super.onExtraTurnEnded(nickname);
+        Platform.runLater(() -> guiController.handleExtraTurnEnded(nickname));
     }
 
     @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
-        super.onGameEnded(winners, finalRankings);
+        Platform.runLater(() -> guiController.handleGameEnded(winners, finalRankings));
     }
 
     @Override
     public void onPlayerDisconnected(String nickname) {
-        super.onPlayerDisconnected(nickname);
+        Platform.runLater(() -> guiController.handlePlayerDisconnected(nickname));
     }
 
     @Override
     public void onGameAborted(String lastManStanding) {
-        super.onGameAborted(lastManStanding);
+        Platform.runLater(() -> guiController.handleGameAborted(lastManStanding));
     }
 
     @Override
     public void onGameRecoveryFailed() {
-        super.onGameRecoveryFailed();
+        Platform.runLater(guiController::handleGameRecoveryFailed);
     }
 
     @Override
     public void onPlayerReconnected(String nickname) {
-        super.onPlayerReconnected(nickname);
+        Platform.runLater(() -> guiController.handlePlayerReconnected(nickname));
     }
 
     @Override
     public void onError(String message) {
-        super.onError(message);
+        Platform.runLater(() -> guiController.handleError(message));
     }
 
+    @Override
+    public void onShowAvailableTotems() {
+        Platform.runLater(guiController::handleShowAvailableTotems);
+    }
+
+    @Override
+    public void onConnectionLost() {
+        Platform.runLater(guiController::handleConnectionLost);
+    }
+
+    @Override
+    public void onConnectionRestored() {
+        Platform.runLater(guiController::handleConnectionRestored);
+    }
+
+    @Override
+    public void onReturnToLobby() {
+        Platform.runLater(guiController::handleReturnToLobby);
+    }
 }

@@ -4,6 +4,7 @@ module it.polimi.ingsw.am02 {
     requires com.fasterxml.jackson.databind;
     requires java.rmi;
 
+    exports it.polimi.ingsw.am02.client.view.gui to javafx.graphics;
 
     // Fondamentale: permetti a RMI di vedere le tue interfacce e classi remote
     exports it.polimi.ingsw.am02.common.network.rmi;

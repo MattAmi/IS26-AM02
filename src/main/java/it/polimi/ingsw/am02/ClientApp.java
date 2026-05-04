@@ -5,9 +5,10 @@ import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
 import it.polimi.ingsw.am02.client.view.ClientView;
-import it.polimi.ingsw.am02.client.view.gui.GuiView;
+import it.polimi.ingsw.am02.client.view.gui.MainGUI;
 import it.polimi.ingsw.am02.client.view.tui.TuiView;
 import it.polimi.ingsw.am02.common.enumerations.NetworkType;
+import javafx.application.Application;
 
 import java.util.Scanner;
 
@@ -20,19 +21,10 @@ public class ClientApp {
         Scanner setupScanner = new Scanner(System.in);
         try {
             LobbyModel lobbyModel = new LobbyModel();
-
-            // --- Selezione interfaccia utente ---
             System.out.println("Select UI: 1. TUI | 2. GUI");
             String uiChoice = setupScanner.nextLine().trim();
-            ClientView view;
-            if (uiChoice.equals("2")) {
-                System.out.println("[GUI] Non ancora implementata, avvio TUI come fallback.");
-                view = new TuiView(lobbyModel);
-            } else {
-                view = new TuiView(lobbyModel);
-            }
+            boolean useGui = uiChoice.equals("2");
 
-            // --- Selezione rete ---
             System.out.println("Select Network: 1. RMI | 2. Socket");
             String netChoice = setupScanner.nextLine().trim();
             NetworkType networkType = netChoice.equals("2") ? NetworkType.SOCKET : NetworkType.RMI;
@@ -42,13 +34,25 @@ public class ClientApp {
             String host = setupScanner.nextLine().trim();
             if (host.isEmpty()) host = "127.0.0.1";
 
-            ServerProxy proxy = ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
-            ClientController controller = new ClientController(proxy, lobbyModel, view);
-            proxy.setClientController(controller);
+            if (useGui) {
+                MainGUI.lobbyModel = lobbyModel;
+                MainGUI.networkType = networkType;
+                MainGUI.host = host;
+                MainGUI.port = port;
 
-            System.out.println("Connecting via " + networkType + " to " + host + ":" + port + " ...");
-            proxy.connect();
-            controller.run();
+                Application.launch(MainGUI.class, args);
+
+            } else {
+                ClientView view = new TuiView(lobbyModel);
+                ServerProxy proxy = ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
+
+                ClientController controller = new ClientController(proxy, lobbyModel, view);
+                proxy.setClientController(controller);
+
+                System.out.println("Connecting via " + networkType + " to " + host + ":" + port + " ...");
+                proxy.connect();
+                controller.run();
+            }
 
         } catch (Exception e) {
             e.printStackTrace();

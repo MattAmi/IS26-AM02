@@ -25,7 +25,6 @@ public class ClientApp {
             String uiChoice = setupScanner.nextLine().trim();
             boolean useGui = uiChoice.equals("2");
 
-            // --- Selezione rete ---
             System.out.println("Select Network: 1. RMI | 2. Socket");
             String netChoice = setupScanner.nextLine().trim();
             NetworkType networkType = netChoice.equals("2") ? NetworkType.SOCKET : NetworkType.RMI;

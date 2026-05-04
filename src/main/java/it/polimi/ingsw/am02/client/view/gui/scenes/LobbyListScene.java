@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.view.gui.scenes;
 
+import it.polimi.ingsw.am02.client.view.gui.GuiController;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
@@ -25,10 +26,12 @@ import java.util.List;
 
 public class LobbyListScene {
 
+    private GuiController controller;
     private String customFontFamily = "System";
     private FlowPane lobbyGrid;
 
-    public Scene buildScene() {
+    public Scene buildScene(GuiController controller) {
+        this.controller = controller;
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");
 
@@ -90,7 +93,7 @@ public class LobbyListScene {
         StackPane bottomBar = new StackPane();
         bottomBar.setPadding(new Insets(30, 0, 0, 0));
 
-        Button returnBtn = new Button("RETURN");
+        Button returnBtn = new Button("RECONNECT");
         returnBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 20px; -fx-base: #8B0000; -fx-text-fill: white; -fx-cursor: hand;");
         StackPane.setAlignment(returnBtn, Pos.CENTER_LEFT);
 
@@ -98,10 +101,17 @@ public class LobbyListScene {
         newLobbyBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 24px; -fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;");
         newLobbyBtn.setPrefSize(250, 60);
         StackPane.setAlignment(newLobbyBtn, Pos.CENTER);
+        newLobbyBtn.setOnAction(e -> {
+            controller.showLobbyScene();
+        });
 
         Button quitBtn = new Button("QUIT");
         quitBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 20px; -fx-base: #555555; -fx-text-fill: white; -fx-cursor: hand;");
         StackPane.setAlignment(quitBtn, Pos.CENTER_RIGHT);
+        quitBtn.setOnAction(e -> {
+            if (this.controller != null) this.controller.disconnect();
+            System.exit(0);
+        });
 
         bottomBar.getChildren().addAll(returnBtn, newLobbyBtn, quitBtn);
         mainLayout.setBottom(bottomBar);

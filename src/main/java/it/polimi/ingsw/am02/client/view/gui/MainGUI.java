@@ -17,15 +17,6 @@ public class MainGUI extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            // 1. Fallback per test isolati: se premi "Run" direttamente su MainGUI
-            // senza passare da ClientApp, mettiamo dei valori di base per non crashare.
-            if (lobbyModel == null) {
-                lobbyModel = new LobbyModel();
-                networkType = NetworkType.SOCKET;
-                host = "127.0.0.1";
-                port = 1100;
-                System.out.println("Avvio in modalità Sandbox (parametri di default).");
-            }
 
             GuiController guiController = new GuiController(primaryStage, null);
             GuiView view = new GuiView(guiController, lobbyModel);
@@ -37,15 +28,11 @@ public class MainGUI extends Application {
             // =========================================================
             // GESTIONE GAME SCENE (PRE-CARICAMENTO)
             // =========================================================
-            // Se in futuro noterai che il passaggio alla schermata di gioco
-            // è lento per colpa delle tante immagini delle carte, puoi "pre-costruire"
-            // la GameScene qui in background, mentre l'utente fa il login.
             //
             // GameScene gameScene = new GameScene();
             // guiController.setGameScene(gameScene);
             // =========================================================
 
-            // 7. Apriamo il sipario: fa partire la LoginScene
             guiController.start();
 
         } catch (Exception e) {

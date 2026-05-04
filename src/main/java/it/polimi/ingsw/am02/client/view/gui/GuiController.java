@@ -50,7 +50,12 @@ public class GuiController {
 
     public void showLobbyListScene() {
         lobbyListScene = new LobbyListScene();
-        primaryStage.setScene(lobbyListScene.buildScene());
+        primaryStage.setScene(lobbyListScene.buildScene(this));
+    }
+
+    public void showLobbyScene() {
+        LobbyScene lobbyScene = new LobbyScene();
+        primaryStage.setScene(lobbyScene.buildScene(this));
     }
 
     public void switchToGameScene(String gameId) {

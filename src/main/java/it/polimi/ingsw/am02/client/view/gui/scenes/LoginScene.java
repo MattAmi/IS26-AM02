@@ -18,9 +18,11 @@ import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
 
 public class LoginScene {
+    private Runnable onFinished;
 
     public Scene buildScene(Runnable onFinished) {
 
+        this.onFinished = onFinished;
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");
 
@@ -84,11 +86,13 @@ public class LoginScene {
         uiPanel.getChildren().add(continueLabel);
         root.getChildren().addAll(bgImageView, uiPanel);
 
+        root.setOnMouseClicked(event -> handleContinue());
         return new Scene(root, 1280, 720);
     }
 
     private void handleContinue() {
-        System.out.println("[LoginScene] Schermata cliccata: pronto per passare alla prossima scena!");
-        // Qui in futuro aggiungeremo la logica per cambiare scena (verso la Lobby): TODO
+        if (onFinished != null) {
+            onFinished.run();
+        }
     }
 }

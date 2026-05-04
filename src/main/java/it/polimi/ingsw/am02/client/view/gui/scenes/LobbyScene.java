@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.view.gui.scenes;
 
+import it.polimi.ingsw.am02.client.view.gui.GuiController;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -28,6 +29,7 @@ import java.util.List;
 
 public class LobbyScene {
 
+    private GuiController controller;
     private StackPane root;
     private VBox nicknamePhaseBox;
     private VBox totemPhaseBox;
@@ -47,7 +49,8 @@ public class LobbyScene {
     private Button rightBtn;
     private ScaleTransition pulseTransition;
 
-    public Scene buildScene() {
+    public Scene buildScene(GuiController controller) {
+        this.controller = controller;
         root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");
 
@@ -201,6 +204,9 @@ public class LobbyScene {
         Button selectTotemBtn = new Button("SELECT THIS TOTEM");
         selectTotemBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 24px; -fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;");
         selectTotemBtn.setPrefSize(350, 60);
+        selectTotemBtn.setOnAction(e -> { //[cite: 7]
+            String finalName = nameInput.getText(); //[cite: 7]
+            controller.requestSetUsername(finalName);});
 
         selectTotemBtn.setOnAction(e -> {
             String finalName = nameInput.getText();
@@ -286,11 +292,16 @@ public class LobbyScene {
         returnBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 20px; -fx-base: #8B0000; -fx-text-fill: white; -fx-cursor: hand;");
         AnchorPane.setBottomAnchor(returnBtn, 0.0);
         AnchorPane.setLeftAnchor(returnBtn, 0.0);
+        returnBtn.setOnAction(e -> controller.showLobbyListScene());
 
         Button quitBtn = new Button("QUIT");
         quitBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 20px; -fx-base: #555555; -fx-text-fill: white; -fx-cursor: hand;");
         AnchorPane.setBottomAnchor(quitBtn, 0.0);
         AnchorPane.setRightAnchor(quitBtn, 0.0);
+        quitBtn.setOnAction(e -> {
+            if (controller != null) controller.disconnect();
+            System.exit(0);
+        });
 
         bottomPane.getChildren().addAll(returnBtn, quitBtn);
         bottomPane.setPickOnBounds(false);

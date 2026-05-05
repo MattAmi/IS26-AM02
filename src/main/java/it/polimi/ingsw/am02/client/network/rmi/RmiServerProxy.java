@@ -100,7 +100,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
         if (event instanceof LobbyEvent lobbyEvent) {
             lobbyModel.apply(lobbyEvent);
 
-            // --- CORREZIONE: Crea il GameModel per il setup se siamo in riconnessione ---
+            // Crea il GameModel per il setup se siamo in riconnessione
             if (clientController.getGameModel() == null && activeNickname != null && activeGameId != null) {
                 clientController.onGameModelRequired(activeNickname);
                 clientController.getGameModel().setGameId(activeGameId);

@@ -54,8 +54,7 @@ public abstract class AbstractClientView implements ClientView {
     @Override public void onGameRecoveryFailed() {}
     @Override public void onPlayerReconnected(String nickname) {}
 
-    @Override
-    public void onError(String message) {
+    @Override public void onError(String message) {
         System.err.println("[ERROR] " + message);
     }
     @Override public void setGameModel(GameModel gameModel) {}

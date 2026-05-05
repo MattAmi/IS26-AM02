@@ -14,7 +14,8 @@ import it.polimi.ingsw.am02.common.messages.Message;
         @JsonSubTypes.Type(value = LeaveLobbyCommand.class,    name = "LeaveLobby"),
         @JsonSubTypes.Type(value = PongCommand.class, name = "Pong"),
         @JsonSubTypes.Type(value = MoveTotemCommand.class, name = "MoveTotemCommand"),
-        @JsonSubTypes.Type(value = ResolveActionsCommand.class, name = "ResolveActionsCommand")
+        @JsonSubTypes.Type(value = ResolveActionsCommand.class, name = "ResolveActionsCommand"),
+        @JsonSubTypes.Type(value = ReconnectCommand.class, name = "ReconnectCommand")
 })
 
 public sealed interface Command extends Message permits GameCommand, LobbyCommand, ReconnectCommand {}

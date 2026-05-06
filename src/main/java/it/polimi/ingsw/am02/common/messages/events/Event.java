@@ -2,6 +2,7 @@ package it.polimi.ingsw.am02.common.messages.events;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.Message;
 import it.polimi.ingsw.am02.common.messages.events.error.*;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
@@ -41,4 +42,5 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 })
 public sealed interface Event extends Message
         permits LobbyEvent, GameEvent, ErrorEvent, PingEvent {
+    void apply(VirtualView view);
 }

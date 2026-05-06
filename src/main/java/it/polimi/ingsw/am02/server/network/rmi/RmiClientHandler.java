@@ -1,11 +1,9 @@
 package it.polimi.ingsw.am02.server.network.rmi;
 
-import it.polimi.ingsw.am02.common.enumerations.Totem;
-import it.polimi.ingsw.am02.common.messages.commands.MoveTotemCommand;
-import it.polimi.ingsw.am02.common.messages.commands.ReconnectCommand;
-import it.polimi.ingsw.am02.common.messages.commands.ResolveActionsCommand;
-import it.polimi.ingsw.am02.common.messages.commands.StartGameCommand;
-import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
@@ -13,92 +11,214 @@ import it.polimi.ingsw.am02.server.network.ClientHandler;
 
 import java.rmi.RemoteException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Server-side handler for a single RMI-connected client.
+ *
+ * <p>Inbound RMI calls (client → server) are submitted to a single-thread executor
+ * to avoid blocking the RMI thread pool and to serialize command processing.
+ *
+ * <p>Outbound notifications (server → client) are queued as {@link RmiCall} lambdas
+ * and drained by a dedicated thread, so that {@link it.polimi.ingsw.am02.server.controller.GameController}
+ * never blocks on a slow or dead client while holding its lock.
+ */
 public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
+    /**
+     * Functional interface equivalent to {@code Consumer<RmiClientRemote>} but
+     * declaring {@link RemoteException}, allowing RMI method references in lambdas.
+     */
+    @FunctionalInterface
+    private interface RmiCall {
+        void invoke(RmiClientRemote stub) throws RemoteException;
+    }
+
     private final ControllerManager manager;
-    private final RmiClientRemote clientRemoteStub;
+    private final RmiClientRemote stub;
     private final String clientId;
 
-    // --- ASYNCHRONY COMPONENTS ---
-    // Inbound: Thread pool for incoming client commands (prevents blocking RMI threads)
     private final ExecutorService inboundExecutor = Executors.newSingleThreadExecutor();
-
-    // Outbound: Queue and Worker for outgoing server events (prevents Tactical Freeze)
-    private final BlockingQueue<Event> outboundQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<RmiCall> outboundQueue = new LinkedBlockingQueue<>();
     private final Thread outboundWorker;
 
     private volatile boolean running = true;
     private final AtomicBoolean disconnected = new AtomicBoolean(false);
 
-    public RmiClientHandler(RmiClientRemote clientRemoteStub) {
+    private static final long POLL_TIMEOUT_SECONDS = 2;
+
+    public RmiClientHandler(RmiClientRemote stub) {
         this.manager = ControllerManager.getInstance();
-        this.clientRemoteStub = clientRemoteStub;
-
-        // Register connection and get the unique session ID immediately
+        this.stub = stub;
         this.clientId = manager.handleClientConnected(this);
-
-        // Start the outbound worker thread (The "Postman")
-        this.outboundWorker = new Thread(this::processOutboundQueue);
+        this.outboundWorker = new Thread(this::drainOutboundQueue, "rmi-out-" + clientId);
+        this.outboundWorker.setDaemon(true);
         this.outboundWorker.start();
     }
 
-    // ==========================================================
-    // VIRTUAL VIEW (Called by Server Controller -> Outbound)
-    // ==========================================================
+    // =========================================================
+    // INTERNAL HELPER
+    // =========================================================
 
-    @Override
-    public void notify(Event event) {
-        if (!running) return;
-        // Non-blocking: just queue the event and return instantly to the GameController
-        outboundQueue.offer(event);
+    /**
+     * Adds a call to the outbound queue. Uses {@link BlockingQueue#add} instead of
+     * {@code offer} to avoid the "result ignored" warning; with an unbounded
+     * {@link LinkedBlockingQueue} the queue can never be full, so
+     * {@link IllegalStateException} is unreachable in practice.
+     */
+    private void enqueue(RmiCall call) {
+        outboundQueue.add(call);
     }
 
-    @Override
-    public void disconnect() {
-        if (!disconnected.compareAndSet(false, true))
-            return; // già disconnesso, uscita immediata
-        this.running = false;
-        this.inboundExecutor.shutdownNow();
-        this.outboundWorker.interrupt();
-        manager.handleDisconnection(this.clientId);
-    }
+    // =========================================================
+    // DRAIN LOOP — runs on outboundWorker thread
+    // =========================================================
 
-    private void processOutboundQueue() {
+    private void drainOutboundQueue() {
         while (running) {
             try {
-                // Wait for an event, but wake up every 2 seconds if queue is empty
-                Event event = outboundQueue.poll(2, TimeUnit.SECONDS);
-
-                if (event != null) {
-                    clientRemoteStub.notifyEvent(event);
+                RmiCall call = outboundQueue.poll(POLL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                if (call != null) {
+                    call.invoke(stub);
                 } else {
-                    // 2 seconds passed with no traffic. Ping the client!
-                    clientRemoteStub.ping();
+                    stub.ping();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
-            } catch (RemoteException ex) {
-                System.err.println("[RMI Handler] Client " + clientId + " is DEAD. Disconnecting.");
-                disconnect(); // Instantly removes the player and triggers AutoPlayer logic
+            } catch (RemoteException e) {
+                System.err.println("[RmiClientHandler] Client " + clientId + " unreachable: " + e.getMessage());
+                disconnect();
                 break;
             }
         }
     }
 
+    // =========================================================
+    // VirtualView — called by GameController (under its lock)
+    // Each method enqueues a lambda and returns immediately.
+    // =========================================================
+
     @Override
-    public void ping() throws RemoteException {
-        // Heartbeat dal client: nessuna logica necessaria.
-        // Il fatto che la chiamata arrivi senza RemoteException
-        // è sufficiente a confermare che il server è vivo.
+    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
+        enqueue(s -> s.notifyGameSetupCompleted(turnOrder, initialFood, boardSnapshot));
     }
 
-    // ==========================================================
-    // RMI SERVER REMOTE (Called by Client Proxy -> Inbound)
-    // ==========================================================
+    @Override
+    public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
+        enqueue(s -> s.notifyPhaseChanged(phase, currentPlayer, resolutionOrder));
+    }
+
+    @Override
+    public void notifyCurrentPlayerChanged(String nextPlayer) {
+        enqueue(s -> s.notifyCurrentPlayerChanged(nextPlayer));
+    }
+
+    @Override
+    public void notifyTurnOrderEstablished(List<String> turnOrder) {
+        enqueue(s -> s.notifyTurnOrderEstablished(turnOrder));
+    }
+
+    @Override
+    public void notifyBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, List<String> discardedCards, List<String> movedToLowerRow, int deckRemainingCount) {
+        enqueue(s -> s.notifyBoardUpdated(newUpperRow, newLowerRow, discardedCards, movedToLowerRow, deckRemainingCount));
+    }
+
+    @Override
+    public void notifyEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings, List<String> discardedBuildings) {
+        enqueue(s -> s.notifyEraChanged(newEra, newUpperRowBuildings, newLowerRowBuildings, discardedBuildings));
+    }
+
+    @Override
+    public void notifyTotemPlaced(String nickname, char tileID) {
+        enqueue(s -> s.notifyTotemPlaced(nickname, tileID));
+    }
+
+    @Override
+    public void notifyTotemReturned(String nickname, int turnOrderPosition) {
+        enqueue(s -> s.notifyTotemReturned(nickname, turnOrderPosition));
+    }
+
+    @Override
+    public void notifyCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
+        enqueue(s -> s.notifyCardTaken(nickname, cardID, cardType, sourceRow));
+    }
+
+    @Override
+    public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {
+        enqueue(s -> s.notifyPlayerLimitsInitialized(nickname, remainingUpper, remainingLower));
+    }
+
+    @Override
+    public void notifyPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {
+        enqueue(s -> s.notifyPlayerLimitsUpdated(nickname, remainingUpper, remainingLower));
+    }
+
+    @Override
+    public void notifyPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta) {
+        enqueue(s -> s.notifyPlayerResourceChanged(nickname, resource, newValue, delta));
+    }
+
+    @Override
+    public void notifyEventResolved(String eventID, String eventName) {
+        enqueue(s -> s.notifyEventResolved(eventID, eventName));
+    }
+
+    @Override
+    public void notifyExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+        enqueue(s -> s.notifyExtraTurnStarted(nickname, remainingUpper, remainingLower));
+    }
+
+    @Override
+    public void notifyExtraTurnEnded(String nickname) {
+        enqueue(s -> s.notifyExtraTurnEnded(nickname));
+    }
+
+    @Override
+    public void notifyGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
+        enqueue(s -> s.notifyGameEnded(winners, finalRankings));
+    }
+
+    @Override
+    public void notifyError(String message) {
+        enqueue(s -> s.notifyError(message));
+    }
+
+    @Override
+    public void notifyPlayerDisconnected(String nickname) {
+        enqueue(s -> s.notifyPlayerDisconnected(nickname));
+    }
+
+    @Override
+    public void notifyPlayerReconnected(String nickname) {
+        enqueue(s -> s.notifyPlayerReconnected(nickname));
+    }
+
+    @Override
+    public void notifyAutoPlayerTimerStarted(String nickname) {
+        enqueue(s -> s.notifyAutoPlayerTimerStarted(nickname));
+    }
+
+    @Override
+    public void notifyAutoPlayerInvoked(String nickname) {
+        enqueue(s -> s.notifyAutoPlayerInvoked(nickname));
+    }
+
+    @Override
+    public void notifyGameAborted(String winner) {
+        enqueue(s -> s.notifyGameAborted(winner));
+    }
+
+    @Override
+    public void notifyGameRecoveryFailed() {
+        enqueue(RmiClientRemote::notifyGameRecoveryFailed);
+    }
+
+    // =========================================================
+    // RmiServerRemote — inbound commands from client
+    // =========================================================
 
     @Override
     public void requestSetUsername(String username) throws RemoteException {
@@ -132,8 +252,6 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
     @Override
     public void moveTotem(char tileID) throws RemoteException {
-        // Look closely: We pass 'clientId', not the nickname.
-        // ControllerManager's routeGameCommand internally retrieves the real nickname.
         inboundExecutor.submit(() -> manager.routeGameCommand(clientId, new MoveTotemCommand("", tileID)));
     }
 
@@ -144,10 +262,24 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
     @Override
     public void requestReconnect(String nickname, String gameId) throws RemoteException {
-        // We use the inbound executor to prevent blocking the RMI thread.
-        // We create the ReconnectCommand expected by Matteo's ControllerManager.
-        inboundExecutor.submit(() ->
-                manager.handleReconnectRequest(this.clientId, this, new ReconnectCommand(nickname, gameId))
-        );
+        inboundExecutor.submit(() -> manager.handleReconnectRequest(clientId, this, new ReconnectCommand(nickname, gameId)));
+    }
+
+    @Override
+    public void ping() throws RemoteException {
+        // Heartbeat from client to server: no logic needed.
+    }
+
+    // =========================================================
+    // Lifecycle
+    // =========================================================
+
+    @Override
+    public void disconnect() {
+        if (!disconnected.compareAndSet(false, true)) return;
+        running = false;
+        inboundExecutor.shutdownNow();
+        outboundWorker.interrupt();
+        manager.handleDisconnection(clientId);
     }
 }

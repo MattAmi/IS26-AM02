@@ -2,15 +2,13 @@ package it.polimi.ingsw.am02.client.network.rmi;
 
 import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.client.network.ClientNetworkDispatcher;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.view.ClientView;
-import it.polimi.ingsw.am02.common.enumerations.Totem;
-import it.polimi.ingsw.am02.common.messages.events.Event;
-import it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;
-import it.polimi.ingsw.am02.common.messages.events.game.GameEvent;
-import it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent;
-import it.polimi.ingsw.am02.common.messages.events.lobby.LobbyEvent;
-import it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent;
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
@@ -20,7 +18,11 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * RMI proxy on the client side. Receives calls from server (Inbound) and sends commands (Outbound).
+ */
 public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, RmiClientRemote {
 
     private final String host;
@@ -28,22 +30,20 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     private final LobbyModel lobbyModel;
     private final ClientView clientView;
 
-    // Intervento 2a: volatile garantisce visibilità tra thread al momento della sostituzione
     private volatile RmiServerRemote serverStub;
-
-    // Intervento 3: il controller crea e possiede il GameModel; il proxy non lo tocca
     private ClientController clientController;
+    private ClientNetworkDispatcher dispatcher;
 
     private volatile boolean connected = false;
     private volatile boolean attemptingReconnection = false;
-    private Thread pingThread; // thread che monitora la connessione verso il server
+    private Thread pingThread;
     private static final long PING_INTERVAL_MILLIS = 5000;
 
+    // Cache for automatic reconnection
     private String activeNickname = null;
     private String activeGameId = null;
 
-    public RmiServerProxy(String host, int port, LobbyModel lobbyModel, ClientView clientView)
-            throws RemoteException {
+    public RmiServerProxy(String host, int port, LobbyModel lobbyModel, ClientView clientView) throws RemoteException {
         super();
         this.host = host;
         this.port = port;
@@ -51,23 +51,15 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
         this.clientView = clientView;
     }
 
-    /**
-     * Wires this proxy to the ClientController after construction.
-     * Must be called before {@link #connect()}.
-     *
-     * @param controller the client-side controller that owns the GameModel lifecycle
-     */
+    @Override
     public void setClientController(ClientController controller) {
         this.clientController = controller;
+        this.dispatcher = new ClientNetworkDispatcher(controller, lobbyModel);
     }
 
     @Override
     public void connect() throws Exception {
-        try {
-            java.rmi.server.UnicastRemoteObject.exportObject(this, 0);
-        } catch (java.rmi.RemoteException ignored) {
-            //nothing
-        }
+        try { UnicastRemoteObject.exportObject(this, 0); } catch (RemoteException ignored) {}
         Registry registry = LocateRegistry.getRegistry(host, port);
         RmiServerFactory factory = (RmiServerFactory) registry.lookup("AM02-GameServer");
         this.serverStub = factory.registerClient(this);
@@ -83,171 +75,224 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override public boolean isConnected() { return connected; }
-    @Override public void ping() throws RemoteException { /* Heartbeat dal server */ }
+    @Override public void ping() throws RemoteException { /* Heartbeat */ }
 
-    // --- INBOUND: eventi dal server ---
-
-    @Override
-    public void notifyEvent(Event event) throws RemoteException {
-        // Aggiorna la cache per la riconnessione
-        if (event instanceof UsernameResultEvent e && e.isValid()) {
-            this.activeNickname = e.username();
-        }
-        if (event instanceof GameStartedEvent e) {
-            this.activeGameId = e.gameID();
-        }
-
-        if (event instanceof LobbyEvent lobbyEvent) {
-            lobbyModel.apply(lobbyEvent);
-
-            // Crea il GameModel per il setup se siamo in riconnessione
-            if (clientController.getGameModel() == null && activeNickname != null && activeGameId != null) {
-                clientController.onGameModelRequired(activeNickname);
-                clientController.getGameModel().setGameId(activeGameId);
-            }
-
-            // Passa l'evento al GameModel (fondamentale per GameSetupCompletedEvent!)
-            if (clientController.getGameModel() != null) {
-                clientController.getGameModel().apply(lobbyEvent);
-            }
-            // --------------------------------------------------------------------------
-
-        } else if (event instanceof GameEvent gameEvent) {
-            if (clientController.getGameModel() == null) {
-                if (activeNickname == null) return;
-                clientController.onGameModelRequired(activeNickname);
-                if (activeGameId != null) {
-                    clientController.getGameModel().setGameId(activeGameId);
-                }
-            }
-            clientController.getGameModel().apply(gameEvent);
-
-        } else if (event instanceof ErrorEvent errorEvent) {
-            // Se riceviamo un errore durante un tentativo di riconnessione,
-            // dobbiamo "dimenticare" i dati della partita per evitare falsi positivi dopo.
-            if (clientController.getGameModel() == null) {
-                this.activeGameId = null;
-            }
-
-            if (clientController.getGameModel() != null) {
-                clientController.getGameModel().apply(errorEvent);
-            } else {
-                lobbyModel.apply(errorEvent);
-            }
-        }
-    }
-
-    // --- OUTBOUND: comandi verso il server ---
-
-    private void execute(NetworkAction action) {
-        try {
-            action.run();
-        } catch (RemoteException e) {
-            handleNetworkFailure(e);
-        }
-    }
-
-    @FunctionalInterface
-    interface NetworkAction { void run() throws RemoteException; }
-
-    @Override public void requestSetUsername(String u) { execute(() -> serverStub.requestSetUsername(u)); }
-    @Override public void requestCreateLobby(int n)   { execute(() -> serverStub.requestCreateLobby(n)); }
-    @Override public void requestJoinLobby(String id) { execute(() -> serverStub.requestJoinLobby(id)); }
-    @Override public void requestSelectTotem(Totem t) { execute(() -> serverStub.requestSelectTotem(t)); }
-    @Override public void requestStartGame()           { execute(() -> serverStub.requestStartGame()); }
-    @Override public void requestLeaveLobby()          { execute(() -> serverStub.requestLeaveLobby()); }
-    @Override public void moveTotem(char t)            { execute(() -> serverStub.moveTotem(t)); }
-    @Override public void resolveActions(List<String> ids) { execute(() -> serverStub.resolveActions(ids)); }
+    // INBOUND (From server via RMI)
 
     @Override
-    public void requestReconnect(String nickname, String gameId) {
-        // Salviamo i dati per la sincronizzazione successiva,
-        // MA non creiamo ancora il modello e non cambiamo view.
-        this.activeNickname = nickname;
-        this.activeGameId = gameId;
-
-        execute(() -> serverStub.requestReconnect(nickname, gameId));
+    public void notifyUsernameResult(String u, boolean v, String r) throws RemoteException {
+        if (v) this.activeNickname = u;
+        dispatcher.notifyUsernameResult(u, v, r);
     }
 
-    // --- RICONNESSIONE AUTOMATICA ---
+    @Override
+    public void notifyGameStarted(String id) throws RemoteException {
+        this.activeGameId = id;
+        dispatcher.notifyGameStarted(id);
+    }
+
+    @Override
+    public void notifyAvailableLobbiesUpdated(List<LobbyInfo> l) throws RemoteException {
+        dispatcher.notifyAvailableLobbiesUpdated(l);
+    }
+
+    @Override
+    public void notifyCurrentLobbyUpdated(LobbyInfo l) throws RemoteException {
+        dispatcher.notifyCurrentLobbyUpdated(l);
+    }
+
+    @Override
+    public void notifyLobbyDissolved(String id) throws RemoteException {
+        dispatcher.notifyLobbyDissolved(id);
+    }
+
+    @Override
+    public void notifyGameSetupCompleted(List<String> t, Map<String, Integer> f, BoardSnapshot b) throws RemoteException {
+        dispatcher.notifyGameSetupCompleted(t, f, b);
+    }
+
+    @Override
+    public void notifyPhaseChanged(PhaseType p, String c, List<String> r) throws RemoteException {
+        dispatcher.notifyPhaseChanged(p, c, r);
+    }
+
+    @Override
+    public void notifyCurrentPlayerChanged(String n) throws RemoteException {
+        dispatcher.notifyCurrentPlayerChanged(n);
+    }
+
+    @Override
+    public void notifyTurnOrderEstablished(List<String> t) throws RemoteException {
+        dispatcher.notifyTurnOrderEstablished(t);
+    }
+
+    @Override
+    public void notifyBoardUpdated(List<String> u, List<String> l, List<String> d, List<String> m, int dr) throws RemoteException {
+        dispatcher.notifyBoardUpdated(u, l, d, m, dr);
+    }
+
+    @Override
+    public void notifyEraChanged(Era e, List<String> u, List<String> l, List<String> d) throws RemoteException {
+        dispatcher.notifyEraChanged(e, u, l, d);
+    }
+
+    @Override
+    public void notifyTotemPlaced(String n, char t) throws RemoteException {
+        dispatcher.notifyTotemPlaced(n, t);
+    }
+
+    @Override
+    public void notifyTotemReturned(String n, int p) throws RemoteException {
+        dispatcher.notifyTotemReturned(n, p);
+    }
+
+    @Override
+    public void notifyCardTaken(String n, String c, CardType t, RowPosition s) throws RemoteException {
+        dispatcher.notifyCardTaken(n, c, t, s);
+    }
+
+    @Override
+    public void notifyPlayerLimitsInitialized(String n, int u, int l) throws RemoteException {
+        dispatcher.notifyPlayerLimitsInitialized(n, u, l);
+    }
+
+    @Override
+    public void notifyPlayerLimitsUpdated(String n, int u, int l) throws RemoteException {
+        dispatcher.notifyPlayerLimitsUpdated(n, u, l);
+    }
+
+    @Override
+    public void notifyPlayerResourceChanged(String n, ResourceType r, int v, int d) throws RemoteException {
+        dispatcher.notifyPlayerResourceChanged(n, r, v, d);
+    }
+
+    @Override
+    public void notifyEventResolved(String i, String n) throws RemoteException {
+        dispatcher.notifyEventResolved(i, n);
+    }
+
+    @Override
+    public void notifyExtraTurnStarted(String n, int u, int l) throws RemoteException {
+        dispatcher.notifyExtraTurnStarted(n, u, l);
+    }
+
+    @Override
+    public void notifyExtraTurnEnded(String n) throws RemoteException {
+        dispatcher.notifyExtraTurnEnded(n);
+    }
+
+    @Override
+    public void notifyGameEnded(List<String> w, List<PlayerFinalScore> r) throws RemoteException {
+        dispatcher.notifyGameEnded(w, r);
+    }
+
+    @Override
+    public void notifyError(String m) throws RemoteException {
+        dispatcher.notifyError(m);
+    }
+
+    @Override
+    public void notifyPlayerDisconnected(String n) throws RemoteException {
+        dispatcher.notifyPlayerDisconnected(n);
+    }
+
+    @Override
+    public void notifyPlayerReconnected(String n) throws RemoteException {
+        dispatcher.notifyPlayerReconnected(n);
+    }
+
+    @Override
+    public void notifyAutoPlayerTimerStarted(String n) throws RemoteException {
+        dispatcher.notifyAutoPlayerTimerStarted(n);
+    }
+
+    @Override
+    public void notifyAutoPlayerInvoked(String n) throws RemoteException {
+        dispatcher.notifyAutoPlayerInvoked(n);
+    }
+
+    @Override
+    public void notifyGameAborted(String w) throws RemoteException {
+        dispatcher.notifyGameAborted(w);
+    }
+
+    @Override
+    public void notifyGameRecoveryFailed() throws RemoteException {
+        dispatcher.notifyGameRecoveryFailed();
+    }
+
+
+    // OUTBOUND (From client to server)
+
+    private void execute(RemoteAction action) {
+        try { action.run(); } catch (RemoteException e) { handleNetworkFailure(e); }
+    }
+
+    @FunctionalInterface interface RemoteAction { void run() throws RemoteException; }
+
+    @Override public void requestSetUsername(String u)   { execute(() -> serverStub.requestSetUsername(u)); }
+    @Override public void requestCreateLobby(int n)      { execute(() -> serverStub.requestCreateLobby(n)); }
+    @Override public void requestJoinLobby(String id)    { execute(() -> serverStub.requestJoinLobby(id)); }
+    @Override public void requestSelectTotem(Totem t)    { execute(() -> serverStub.requestSelectTotem(t)); }
+    @Override public void requestStartGame()             { execute(() -> serverStub.requestStartGame()); }
+    @Override public void requestLeaveLobby()            { execute(() -> serverStub.requestLeaveLobby()); }
+    @Override public void moveTotem(char t)              { execute(() -> serverStub.moveTotem(t)); }
+    @Override public void resolveActions(List<String> s) { execute(() -> serverStub.resolveActions(s)); }
+
+    @Override public void requestReconnect(String n, String g) {
+        this.activeNickname = n;
+        this.activeGameId = g;
+        execute(() -> serverStub.requestReconnect(n, g));
+    }
+
+    // --- RECONNECTION AND PING ---
 
     private synchronized void handleNetworkFailure(Exception e) {
         if (attemptingReconnection) return;
-
         this.connected = false;
         this.attemptingReconnection = true;
-
-        // Intervento 2c: callback semanticamente corretto invece di onError
         clientView.onConnectionLost();
 
-        Thread t = new Thread(() -> {
+        new Thread(() -> {
             stopPingThread();
             while (!this.connected) {
                 try {
                     Thread.sleep(5000);
                     connect();
-
                     if (activeNickname != null && activeGameId != null) {
-                        // Inviamo solo la richiesta. Il passaggio alla view di gioco
-                        // avverrà automaticamente quando riceveremo il primo evento (GameStartedEvent).
                         serverStub.requestReconnect(activeNickname, activeGameId);
                     } else {
-                        if (activeNickname != null) {
-                            serverStub.requestSetUsername(activeNickname);
-                        }
+                        if (activeNickname != null) serverStub.requestSetUsername(activeNickname);
                         clientView.onReturnToLobby();
                     }
-
                     clientView.onConnectionRestored();
                     this.attemptingReconnection = false;
-
-                } catch (Exception ex) {
-                    // Continua a provare...
-                }
+                } catch (Exception ignored) {}
             }
-        });
-        t.setDaemon(true);
-        t.start();
+        }).start();
     }
 
-
-    /**
-     * Starts a daemon thread that periodically pings the server.
-     * If the server does not respond, triggers the reconnection logic.
-     * Called automatically by {@link #connect()} after a successful connection.
-     */
     private void startPingThread() {
-        stopPingThread(); // difensivo: evita doppi thread se connect() viene chiamato due volte
+        stopPingThread();
         pingThread = new Thread(() -> {
             while (connected) {
                 try {
                     Thread.sleep(PING_INTERVAL_MILLIS);
-                    if (connected) {
-                        serverStub.ping(); // RemoteException se il server è down
-                    }
+                    if (connected) serverStub.ping();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
                 } catch (RemoteException e) {
-                    if (connected) { // evita di triggerare se disconnect() è già stato chiamato
-                        handleNetworkFailure(e);
-                    }
+                    if (connected) handleNetworkFailure(e);
                     break;
                 }
             }
         });
         pingThread.setDaemon(true);
-        pingThread.setName("RmiProxy-PingThread");
         pingThread.start();
     }
 
-    /**
-     * Stops the ping thread if it is running.
-     */
     private void stopPingThread() {
-        if (pingThread != null) {
-            pingThread.interrupt();
-            pingThread = null;
-        }
+        if (pingThread != null) { pingThread.interrupt(); pingThread = null; }
     }
 }

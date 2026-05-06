@@ -40,12 +40,19 @@ public interface VirtualView {
         @Override public void notifyGameStarted(String gameId) {}
         @Override public void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {}
         @Override public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {}
-        @Override public void notifyLobbyDissolved() {}
+        @Override public void notifyLobbyDissolved(String lobbyID) {}
     }
 
 
     VirtualView NO_OP = new NoOp();
     static VirtualView noOp() { return NO_OP; }
+
+    // Lobby
+    void notifyUsernameResult(String username, boolean isValid, String reason);
+    void notifyGameStarted(String gameId);
+    void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies);
+    void notifyCurrentLobbyUpdated(LobbyInfo lobby);
+    void notifyLobbyDissolved(String lobbyID);
 
     // Lifecycle
     void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot);
@@ -81,11 +88,4 @@ public interface VirtualView {
     void notifyAutoPlayerInvoked(String nickname);
     void notifyGameAborted(String winner);
     void notifyGameRecoveryFailed();
-
-    // Lobby
-    void notifyUsernameResult(String username, boolean isValid, String reason);
-    void notifyGameStarted(String gameId);
-    void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies);
-    void notifyCurrentLobbyUpdated(LobbyInfo lobby);
-    void notifyLobbyDissolved();
 }

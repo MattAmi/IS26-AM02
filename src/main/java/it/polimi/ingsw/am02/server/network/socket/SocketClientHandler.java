@@ -1,12 +1,14 @@
 package it.polimi.ingsw.am02.server.network.socket;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.messages.Message;
 import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
+import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 import it.polimi.ingsw.am02.common.messages.events.error.*;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
@@ -129,8 +131,34 @@ public class SocketClientHandler implements ClientHandler {
         }
     }
 
-    // VirtualView — called by GameController (under its lock)
-    // Each method constructs the Event record, enqueues it, and returns immediately.
+    // VirtualView - Lobby
+
+    @Override
+    public void notifyUsernameResult(String username, boolean isValid, String reason) {
+        eventQueue.add(new UsernameResultEvent(username, isValid, reason));
+    }
+
+    @Override
+    public void notifyGameStarted(String gameId) {
+        eventQueue.add(new GameStartedEvent(gameId));
+    }
+
+    @Override
+    public void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
+        eventQueue.add(new UpdatedLobbiesEvent(lobbies));
+    }
+
+    @Override
+    public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {
+        eventQueue.add(new UpdatedLobbyEvent(lobby));
+    }
+
+    @Override
+    public void notifyLobbyDissolved(String lobbyID) {
+        eventQueue.add(new LobbyDissolvedEvent(lobbyID)); // <-- Corretto
+    }
+
+    // VirtualView - Game
 
     @Override
     public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {

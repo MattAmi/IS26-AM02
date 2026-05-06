@@ -1,6 +1,7 @@
 package it.polimi.ingsw.am02.common.network.rmi;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
 
@@ -15,6 +16,13 @@ import java.util.Map;
  * with the addition of {@link RemoteException} required by RMI.
  */
 public interface RmiClientRemote extends Remote {
+
+    // Lobby
+    void notifyUsernameResult(String username, boolean isValid, String reason) throws RemoteException;
+    void notifyGameStarted(String gameId) throws RemoteException;
+    void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies) throws RemoteException;
+    void notifyCurrentLobbyUpdated(LobbyInfo lobby) throws RemoteException;
+    void notifyLobbyDissolved(String lobbyID) throws RemoteException;
 
     // Lifecycle
     void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) throws RemoteException;

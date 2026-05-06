@@ -1,6 +1,7 @@
 package it.polimi.ingsw.am02.server.network.rmi;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.messages.commands.*;
@@ -96,10 +97,34 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
         }
     }
 
-    // =========================================================
-    // VirtualView — called by GameController (under its lock)
-    // Each method enqueues a lambda and returns immediately.
-    // =========================================================
+    // VirtualView - LOBBY
+
+    @Override
+    public void notifyUsernameResult(String username, boolean isValid, String reason) {
+        enqueue(s -> s.notifyUsernameResult(username, isValid, reason));
+    }
+
+    @Override
+    public void notifyGameStarted(String gameId) {
+        enqueue(s -> s.notifyGameStarted(gameId));
+    }
+
+    @Override
+    public void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
+        enqueue(s -> s.notifyAvailableLobbiesUpdated(lobbies));
+    }
+
+    @Override
+    public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {
+        enqueue(s -> s.notifyCurrentLobbyUpdated(lobby));
+    }
+
+    @Override
+    public void notifyLobbyDissolved(String lobbyID) {
+        enqueue(s -> s.notifyLobbyDissolved(lobbyID)); // <-- Corretto
+    }
+
+    // VirtualView - Game
 
     @Override
     public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {

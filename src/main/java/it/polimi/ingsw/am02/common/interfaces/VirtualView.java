@@ -1,3 +1,5 @@
+package it.polimi.ingsw.am02.common.interfaces;
+
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
@@ -72,5 +74,4 @@ public interface VirtualView {
     void notifyAutoPlayerInvoked(String nickname);
     void notifyGameAborted(String winner);
     void notifyGameRecoveryFailed();
-}
 }

@@ -3,9 +3,6 @@ package it.polimi.ingsw.am02.server.controller;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
-import it.polimi.ingsw.am02.common.messages.events.Event;
-import it.polimi.ingsw.am02.common.messages.events.lobby.*;
-import it.polimi.ingsw.am02.common.messages.events.error.*;
 
 import java.util.*;
 
@@ -22,7 +19,6 @@ public class Lobby {
 
     private boolean started;
 
-
     public Lobby(String lobbyId, int expectedPlayers, ControllerManager controllerManager) {
         this.lobbyId = lobbyId;
         this.expectedPlayers = expectedPlayers;
@@ -36,21 +32,16 @@ public class Lobby {
     }
 
     // Package-private accessors (used by ControllerManager)
-
     boolean isFull() { return clientIds.size() == expectedPlayers; }
-
     boolean hasStarted() { return started; }
-
     VirtualView getView(String clientId) { return views.get(clientId); }
 
     synchronized LobbyInfo toLobbyInfo() {
-
         List<String> nicknameList = clientIds.stream()
                 .map(id -> clientToNickname.getOrDefault(id, ""))
                 .toList();
 
         Map<String, Totem> nicknameToTotem = new LinkedHashMap<>();
-
         for (String id : clientIds) {
             String nick = clientToNickname.get(id);
             Totem totem = chosenTotems.get(id);
@@ -58,7 +49,6 @@ public class Lobby {
                 nicknameToTotem.put(nick, totem);
             }
         }
-
         return new LobbyInfo(lobbyId, expectedPlayers, nicknameList, nicknameToTotem);
     }
 
@@ -68,7 +58,7 @@ public class Lobby {
 
         clientIds.add(clientId);
         views.put(clientId, view);
-        broadcast(new UpdatedLobbyEvent(toLobbyInfo()));
+        broadcastCurrentLobbyUpdated();
     }
 
     public synchronized boolean requestNickname(String clientId, String nickname) {
@@ -76,21 +66,20 @@ public class Lobby {
         if (view == null) return false;
 
         if (nickname == null || nickname.isBlank()) {
-            view.notify(new UsernameResultEvent(nickname, false, "Nickname cannot be empty"));
+            view.notifyUsernameResult(nickname, false, "Nickname cannot be empty");
             return false;
         }
 
         boolean alreadyTaken = clientToNickname.values().stream()
                 .anyMatch(existing -> existing.equals(nickname));
         if (alreadyTaken) {
-            view.notify(new UsernameResultEvent(nickname, false,
-                    "Nickname already taken in this lobby"));
+            view.notifyUsernameResult(nickname, false, "Nickname already taken in this lobby");
             return false;
         }
 
         clientToNickname.put(clientId, nickname);
-        view.notify(new UsernameResultEvent(nickname, true, null));
-        broadcast(new UpdatedLobbyEvent(toLobbyInfo()));
+        view.notifyUsernameResult(nickname, true, null);
+        broadcastCurrentLobbyUpdated();
 
         checkAndStart();
         return true;
@@ -98,31 +87,28 @@ public class Lobby {
 
     public synchronized void selectTotem(String clientId, Totem totem) {
         if (!clientIds.contains(clientId)) return;
+        VirtualView view = views.get(clientId);
 
         if (!clientToNickname.containsKey(clientId)) {
-            views.get(clientId).notify(new ErrorEvent("You must choose a nickname before selecting a totem."));
+            view.notifyError("You must choose a nickname before selecting a totem.");
             return;
         }
 
         if (totem == null) {
-            views.get(clientId).notify(new ErrorEvent("Invalid totem selection"));
+            view.notifyError("Invalid totem selection");
             return;
         }
 
-        // Check if this totem is already taken by someone else.
         for (Map.Entry<String, Totem> entry : chosenTotems.entrySet()) {
             if (entry.getValue() == totem && !entry.getKey().equals(clientId)) {
-                String takenByNickname = clientToNickname.getOrDefault(
-                        entry.getKey(), entry.getKey());
-
-                views.get(clientId).notify(new ErrorEvent("Totem already taken by " + takenByNickname));
-
+                String takenByNickname = clientToNickname.getOrDefault(entry.getKey(), entry.getKey());
+                view.notifyError("Totem already taken by " + takenByNickname);
                 return;
             }
         }
 
         chosenTotems.put(clientId, totem);
-        broadcast(new UpdatedLobbyEvent(toLobbyInfo()));
+        broadcastCurrentLobbyUpdated();
 
         checkAndStart();
     }
@@ -142,14 +128,13 @@ public class Lobby {
         if (clientIds.isEmpty()) {
             controllerManager.removeLobby(lobbyId);
         } else {
-            broadcast(new UpdatedLobbyEvent(toLobbyInfo()));
+            broadcastCurrentLobbyUpdated();
         }
     }
 
     public synchronized void dissolve() {
-        broadcast(new LobbyDissolvedEvent(lobbyId));
+        broadcastLobbyDissolved();
 
-        // Iterate over a copy to avoid ConcurrentModificationException.
         new ArrayList<>(clientIds)
                 .forEach(id -> controllerManager.returnClientToPreLobby(id, views.get(id)));
 
@@ -161,27 +146,22 @@ public class Lobby {
         controllerManager.removeLobby(lobbyId);
     }
 
-
     // Helper methods
-
     private void checkAndStart() {
         if (started || !isReadyToStart()) return;
 
         started = true;
 
-        // Build the ordered parallel lists that ControllerManager expects.
         List<String> orderedClientIds = List.copyOf(clientIds);
         List<String> orderedNicknames = clientIds.stream()
                 .map(clientToNickname::get)
                 .toList();
 
-        // nickname → Totem (keyed by nickname, as GameController expects)
         Map<String, Totem> nicknameToTotem = new LinkedHashMap<>();
         for (String id : clientIds) {
             nicknameToTotem.put(clientToNickname.get(id), chosenTotems.get(id));
         }
 
-        // clientId → VirtualView
         Map<String, VirtualView> viewsCopy = new LinkedHashMap<>(views);
 
         controllerManager.startGame(
@@ -199,8 +179,15 @@ public class Lobby {
                 && chosenTotems.size() == expectedPlayers;
     }
 
-    private void broadcast(Event event) {
-        views.values().forEach(v -> v.notify(event));
+    // --- Metodi di Broadcast granulari ---
+
+    private void broadcastCurrentLobbyUpdated() {
+        LobbyInfo info = toLobbyInfo();
+        views.values().forEach(v -> v.notifyCurrentLobbyUpdated(info));
+    }
+
+    private void broadcastLobbyDissolved() {
+        views.values().forEach(v -> v.notifyLobbyDissolved(lobbyId));
     }
 
     public int getPlayerCount() { return views.size(); }

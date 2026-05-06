@@ -1,9 +1,13 @@
 package it.polimi.ingsw.am02.server.network.socket;
 
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.messages.Message;
 import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
-import it.polimi.ingsw.am02.common.messages.events.game.PingEvent;
+import it.polimi.ingsw.am02.common.messages.events.game.*;
+import it.polimi.ingsw.am02.common.messages.events.error.*;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
 import it.polimi.ingsw.am02.server.network.ClientHandler;
@@ -11,8 +15,25 @@ import it.polimi.ingsw.am02.server.network.ClientHandler;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
+/**
+ * Server-side handler for a single Socket-connected client.
+ *
+ * <p>Inbound: a reader loop deserializes JSON lines into {@link Command} records
+ * and dispatches them to {@link ControllerManager}.
+ *
+ * <p>Outbound: each {@link it.polimi.ingsw.am02.common.interfaces.VirtualView} notification
+ * constructs the corresponding {@link Event} record, enqueues it, and returns immediately.
+ * A dedicated writer thread drains the queue and serializes events to the socket,
+ * so {@link it.polimi.ingsw.am02.server.controller.GameController} never blocks on I/O
+ * while holding its lock.
+ *
+ * <p>Keep-alive is handled via periodic {@link PingEvent} sent by a scheduler;
+ * disconnection is detected when the client stops sending {@link PongCommand} within the timeout.
+ */
 public class SocketClientHandler implements ClientHandler {
 
     private final Socket socket;
@@ -21,9 +42,8 @@ public class SocketClientHandler implements ClientHandler {
     private final PrintWriter out;
     private final BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<>();
     private final ScheduledExecutorService pingScheduler = Executors.newSingleThreadScheduledExecutor();
-    private volatile boolean pongReceived = false;
-    private String clientId;
     private volatile long lastPongReceivedAt = System.currentTimeMillis();
+    private volatile String clientId;
 
     private static final int PING_INTERVAL_SECONDS = 5;
     private static final int PING_TIMEOUT_SECONDS = 10;
@@ -40,31 +60,30 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     public void listen() {
-        // Reads from the queue and writes on the socket
-        Thread writerThread = new Thread(this::writerLoop);
+        Thread writerThread = new Thread(this::writerLoop, "socket-out-" + clientId);
         writerThread.setDaemon(true);
         writerThread.start();
-
         startPingTimer();
-        // Reads from socket
         readerLoop();
     }
 
-    private void startPingTimer() {
-        // Invio periodico del ping
-        pingScheduler.scheduleAtFixedRate(() -> {
-            eventQueue.offer(new PingEvent());
-        }, PING_INTERVAL_SECONDS, PING_INTERVAL_SECONDS, TimeUnit.SECONDS);
+    // PING / PONG
 
-        // Check timeout separato e più lento (non accoppiato all'invio)
+    private void startPingTimer() {
+        pingScheduler.scheduleAtFixedRate(
+                () -> eventQueue.add(new PingEvent()),
+                PING_INTERVAL_SECONDS, PING_INTERVAL_SECONDS, TimeUnit.SECONDS);
+
         pingScheduler.scheduleAtFixedRate(() -> {
             long elapsed = System.currentTimeMillis() - lastPongReceivedAt;
-            if (elapsed > (PING_TIMEOUT_SECONDS + PING_INTERVAL_SECONDS) * 1000L) {
-                System.out.println("[SocketClientHandler] Timeout PING per clientId: " + clientId);
+            if (elapsed > (long) (PING_TIMEOUT_SECONDS + PING_INTERVAL_SECONDS) * 1000) {
+                System.out.println("[SocketClientHandler] Ping timeout for clientId: " + clientId);
                 disconnect();
             }
         }, PING_TIMEOUT_SECONDS, PING_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
+
+    // READER / WRITER LOOPS
 
     private void readerLoop() {
         try (BufferedReader in = new BufferedReader(
@@ -77,7 +96,7 @@ public class SocketClientHandler implements ClientHandler {
                 }
             }
         } catch (IOException e) {
-            System.out.println("[SocketClientHandler] Client Disconnected: " + clientId);
+            System.out.println("[SocketClientHandler] Client disconnected: " + clientId);
         } finally {
             disconnect();
         }
@@ -86,7 +105,7 @@ public class SocketClientHandler implements ClientHandler {
     private void writerLoop() {
         try {
             while (!socket.isClosed()) {
-                Event event = eventQueue.take(); // blocked until further notice
+                Event event = eventQueue.take();
                 out.println(codec.encode(event));
             }
         } catch (InterruptedException e) {
@@ -94,12 +113,10 @@ public class SocketClientHandler implements ClientHandler {
         }
     }
 
+    // COMMAND DISPATCH
     private void dispatch(Command cmd) {
         switch (cmd) {
-            case PongCommand c -> {
-                pongReceived = true;
-                lastPongReceivedAt = System.currentTimeMillis();
-            }
+            case PongCommand c           -> lastPongReceivedAt = System.currentTimeMillis();
             case SetUsernameCommand c    -> manager.requestSetUsernameInLobby(clientId, c.username());
             case CreateLobbyCommand c    -> manager.createLobby(clientId, c.numPlayers());
             case JoinLobbyCommand c      -> manager.joinLobby(clientId, c.lobbyID());
@@ -112,17 +129,130 @@ public class SocketClientHandler implements ClientHandler {
         }
     }
 
+    // VirtualView — called by GameController (under its lock)
+    // Each method constructs the Event record, enqueues it, and returns immediately.
 
     @Override
-    public void notify(Event event) {
-        eventQueue.offer(event);
+    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
+        eventQueue.add(new GameSetupCompletedEvent(turnOrder, initialFood, boardSnapshot));
     }
 
     @Override
+    public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
+        eventQueue.add(new PhaseChangedEvent(phase, currentPlayer, resolutionOrder));
+    }
+
+    @Override
+    public void notifyCurrentPlayerChanged(String nextPlayer) {
+        eventQueue.add(new CurrentPlayerChangedEvent(nextPlayer));
+    }
+
+    @Override
+    public void notifyTurnOrderEstablished(List<String> turnOrder) {
+        eventQueue.add(new TurnOrderEstablishedEvent(turnOrder));
+    }
+
+    @Override
+    public void notifyBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, List<String> discardedCards, List<String> movedToLowerRow, int deckRemainingCount) {
+        eventQueue.add(new BoardUpdatedEvent(newUpperRow, newLowerRow, discardedCards, movedToLowerRow, deckRemainingCount));
+    }
+
+    @Override
+    public void notifyEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings, List<String> discardedBuildings) {
+        eventQueue.add(new EraChangedEvent(newEra, newUpperRowBuildings, newLowerRowBuildings, discardedBuildings));
+    }
+
+    @Override
+    public void notifyTotemPlaced(String nickname, char tileID) {
+        eventQueue.add(new TotemPlacedEvent(nickname, tileID));
+    }
+
+    @Override
+    public void notifyTotemReturned(String nickname, int turnOrderPosition) {
+        eventQueue.add(new TotemReturnedEvent(nickname, turnOrderPosition));
+    }
+
+    @Override
+    public void notifyCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
+        eventQueue.add(new CardTakenEvent(nickname, cardID, cardType, sourceRow));
+    }
+
+    @Override
+    public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {
+        eventQueue.add(new PlayerLimitsInitializedEvent(nickname, remainingUpper, remainingLower));
+    }
+
+    @Override
+    public void notifyPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {
+        eventQueue.add(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower));
+    }
+
+    @Override
+    public void notifyPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta) {
+        eventQueue.add(new PlayerResourceChangedEvent(nickname, resource, newValue, delta));
+    }
+
+    @Override
+    public void notifyEventResolved(String eventID, String eventName) {
+        eventQueue.add(new EventResolvedEvent(eventID, eventName));
+    }
+
+    @Override
+    public void notifyExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+        eventQueue.add(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
+    }
+
+    @Override
+    public void notifyExtraTurnEnded(String nickname) {
+        eventQueue.add(new ExtraTurnEndedEvent(nickname));
+    }
+
+    @Override
+    public void notifyGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
+        eventQueue.add(new GameEndedEvent(winners, finalRankings));
+    }
+
+    @Override
+    public void notifyError(String message) {
+        eventQueue.add(new ErrorEvent(message));
+    }
+
+    @Override
+    public void notifyPlayerDisconnected(String nickname) {
+        eventQueue.add(new PlayerDisconnectedEvent(nickname));
+    }
+
+    @Override
+    public void notifyPlayerReconnected(String nickname) {
+        eventQueue.add(new PlayerReconnectedEvent(nickname));
+    }
+
+    @Override
+    public void notifyAutoPlayerTimerStarted(String nickname) {
+        eventQueue.add(new AutoPlayerTimerStartedEvent(nickname));
+    }
+
+    @Override
+    public void notifyAutoPlayerInvoked(String nickname) {
+        eventQueue.add(new AutoPlayerInvokedEvent(nickname));
+    }
+
+    @Override
+    public void notifyGameAborted(String winner) {
+        eventQueue.add(new GameAbortedEvent(winner));
+    }
+
+    @Override
+    public void notifyGameRecoveryFailed() {
+        eventQueue.add(new GameRecoveryFailedEvent());
+    }
+
+    // Lifecycle
+    @Override
     public synchronized void disconnect() {
-        if (clientId == null) return;  // già disconnesso, esce subito
+        if (clientId == null) return;
         String id = clientId;
-        clientId = null;               // nullifica PRIMA di chiamare il manager
+        clientId = null;
         pingScheduler.shutdownNow();
         try { socket.close(); } catch (IOException ignored) {}
         manager.handleDisconnection(id);

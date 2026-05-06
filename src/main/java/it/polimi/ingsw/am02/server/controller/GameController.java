@@ -4,7 +4,6 @@ import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
-import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.server.controller.persistence.ConnectionStatus;
 import it.polimi.ingsw.am02.server.controller.persistence.GameLogger;
 import it.polimi.ingsw.am02.server.model.listeners.GameObserver;
@@ -14,6 +13,7 @@ import it.polimi.ingsw.am02.common.messages.events.error.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 public class GameController implements GameObserver {
 
@@ -30,8 +30,7 @@ public class GameController implements GameObserver {
     private Runnable gameEndedCallback;
 
     private final Map<String, ConnectionStatus> connectionStatus = new HashMap<>();
-    private final List<Event> globalEventHistory = new CopyOnWriteArrayList<>();
-    private final Map<String, Integer> playerSyncIndex = new ConcurrentHashMap<>();
+    private final List<Consumer<VirtualView>> globalEventHistory = new CopyOnWriteArrayList<>();
     private final Set<String> gracePeriodExpired = ConcurrentHashMap.newKeySet();
 
     // Concurrency infrastructure
@@ -53,9 +52,7 @@ public class GameController implements GameObserver {
     private boolean replayMode = false;
 
 
-    public GameController(String gameId, ModelInterface model,
-                          Map<String, VirtualView> handlers, GameLogger gameLogger) {
-
+    public GameController(String gameId, ModelInterface model, Map<String, VirtualView> handlers, GameLogger gameLogger) {
         this.gameId = gameId;
         this.model = model;
         this.handlers.putAll(handlers);
@@ -64,7 +61,6 @@ public class GameController implements GameObserver {
 
         for (String nickname : handlers.keySet()) {
             connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
-            playerSyncIndex.put(nickname, 0);
         }
 
         this.drainExecutor = Executors.newCachedThreadPool(r -> {
@@ -116,7 +112,7 @@ public class GameController implements GameObserver {
             if (connectionStatus.get(senderNickname) == ConnectionStatus.DISCONNECTED) {
                 log("AutoPlayer rejected for " + senderNickname + ": " + e.getMessage());
             } else {
-                unicastTransient(senderNickname, new ErrorEvent(e.getMessage()));
+                unicastTransient(senderNickname, v -> v.notifyError(e.getMessage()));
             }
         }
         if (success && !replayMode) {
@@ -129,13 +125,14 @@ public class GameController implements GameObserver {
             System.err.println("[GameController:" + gameId + "] Disconnect for unknown player: " + nickname);
             return;
         }
+
         if (connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
             return;
         }
 
         connectionStatus.put(nickname, ConnectionStatus.DISCONNECTED);
         log("Player disconnected: " + nickname);
-        pushGlobalEventTransientOthers(nickname, new PlayerDisconnectedEvent(nickname));
+        pushTransientOthers(nickname, v -> v.notifyPlayerDisconnected(nickname));
 
         // --- NUOVO CALCOLO --- Considera attivi anche i RECONNECTING
         long activeCount = connectionStatus.values().stream()
@@ -146,26 +143,25 @@ public class GameController implements GameObserver {
             log("Mass disconnection: 0 players active. Pausing game and arming global timer.");
             cancelDisconnectedPlayerTimer(currentPlayerNickname);
             startGlobalDisconnectionTimeout();
+
         } else if (nickname.equals(currentPlayerNickname)) {
             startDisconnectedPlayerTimer(nickname);
+
         } else if (activeCount == 1) {
             startGlobalDisconnectionTimeout();
         }
     }
 
     public void handlePlayerReconnected(String nickname, VirtualView newView) {
-        synchronized(this) {
-
+        synchronized (this) {
             if (replayMode) {
                 log("Reconnection rejected for " + nickname + ": server still recovering state.");
-                // Lanciamo un'eccezione che il proxy del client riceverà come errore
-                // e lo costringerà a riprovare tra qualche secondo.
                 throw new IllegalStateException("Server is still recovering. Please retry in a few seconds.");
             }
 
             ConnectionStatus current = connectionStatus.get(nickname);
             if (current == null || current == ConnectionStatus.CONNECTED || current == ConnectionStatus.RECONNECTING) {
-                return; // Stessi check di sicurezza che avevi prima
+                return;
             }
 
             handlers.put(nickname, newView);
@@ -173,7 +169,7 @@ public class GameController implements GameObserver {
             cancelGlobalDisconnectionTimer();
 
             connectionStatus.put(nickname, ConnectionStatus.RECONNECTING);
-            log("Player reconnecting: " + nickname + " from event index " + playerSyncIndex.get(nickname));
+            log("Player reconnecting: " + nickname);
             gracePeriodExpired.remove(nickname);
 
             long activeCount = connectionStatus.values().stream()
@@ -191,58 +187,41 @@ public class GameController implements GameObserver {
                     }
                 }
             }
+
+            pushTransientOthers(nickname, v -> v.notifyPlayerReconnected(nickname));
         }
 
-        // Notifichiamo agli ALTRI che questo player si sta riconnettendo (fuori dalla storia globale)
-        pushGlobalEventTransientOthers(nickname, new PlayerReconnectedEvent(nickname));
-
-        // Lanciamo il thread di catch-up
         drainExecutor.submit(() -> {
             try {
-                int currentIndex;
-                synchronized(this) {
-                    playerSyncIndex.put(nickname, 0);
-                    currentIndex = 0;
-                }
-
-                // FASE 1: Inseguimento (Video accelerato fuori dal lock principale)
+                // FASE 1: Inseguimento fuori dal lock
+                int currentIndex = 0;
                 while (true) {
-                    Event historicalEvent = null;
-                    synchronized(this) {
-                        if (currentIndex < globalEventHistory.size()) {
-                            historicalEvent = globalEventHistory.get(currentIndex);
-                        }
+                    Consumer<VirtualView> historicalCall;
+                    synchronized (this) {
+                        if (currentIndex >= globalEventHistory.size()) break;
+                        historicalCall = globalEventHistory.get(currentIndex);
                     }
-
-                    if (historicalEvent == null) break; // Siamo arrivati alla fine (per ora)
-
-                    newView.notify(historicalEvent);
+                    historicalCall.accept(newView);
                     currentIndex++;
-                    Thread.sleep(DRAIN_DELAY_MILLIS); // delay per evitare di inondare la rete
+                    Thread.sleep(DRAIN_DELAY_MILLIS);
                 }
 
-                // FASE 2: Switch finale (Atomico)
-                synchronized(this) {
-                    // Svuotiamo gli ultimissimi eventi generati durante il nostro Thread.sleep
+                // FASE 2: Switch finale atomico
+                synchronized (this) {
                     while (currentIndex < globalEventHistory.size()) {
-                        newView.notify(globalEventHistory.get(currentIndex));
+                        globalEventHistory.get(currentIndex).accept(newView);
                         currentIndex++;
                     }
-                    // Aggiorniamo l'indice e passiamo a LIVE
-                    playerSyncIndex.put(nickname, currentIndex);
                     connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
                     log("Drain complete for " + nickname + " — now CONNECTED.");
 
                     long pendingCount = connectionStatus.values().stream()
                             .filter(s -> s == ConnectionStatus.PENDING_RECONNECTION)
                             .count();
-
                     long activeCount = connectionStatus.values().stream()
                             .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
                             .count();
 
-                    // Riavvia se ci sono player in recovery (pending > 0)
-                    // OPPURE se ci sono disconnessi normali e tu sei rimasto l'unico attivo
                     if (pendingCount > 0 || (activeCount == 1 && connectionStatus.size() > 1)) {
                         startGlobalDisconnectionTimeout();
                     }
@@ -280,38 +259,35 @@ public class GameController implements GameObserver {
         log("Shutdown complete.");
     }
 
-    // 1. Eventi Globali (vanno nella Storia)
-    private synchronized void pushGlobalEvent(Event event) {
-        globalEventHistory.add(event);
-        int newIndex = globalEventHistory.size();
+    // 1. Globale — entra nella storia
+    private synchronized void pushGlobalCall(Consumer<VirtualView> call) {
+        globalEventHistory.add(call);
 
         for (Map.Entry<String, ConnectionStatus> entry : connectionStatus.entrySet()) {
             String nickname = entry.getKey();
-            // Inviamo solo a chi è pienamente connesso
             if (entry.getValue() == ConnectionStatus.CONNECTED) {
                 try {
-                    handlers.get(nickname).notify(event);
-                    playerSyncIndex.put(nickname, newIndex); // Aggiorniamo l'indice
+                    call.accept(handlers.get(nickname));
                 } catch (RuntimeException e) {
-                    log("Failed to notify " + nickname + " during pushGlobalEvent.");
-                    // La disconnessione verrà gestita dai normali meccanismi di rete
+                    log("Failed to notify " + nickname + " during pushGlobalCall.");
                 }
             }
         }
     }
 
-    // 2. Eventi Transitori Privati (Es. Errori) - NON vanno nella storia
-    private synchronized void unicastTransient(String nickname, Event event) {
+    // 2. Transient privato (errori) — NON entra nella storia
+    private synchronized void unicastTransient(String nickname, Consumer<VirtualView> call) {
         if (connectionStatus.get(nickname) == ConnectionStatus.CONNECTED) {
-            handlers.get(nickname).notify(event);
+            call.accept(handlers.get(nickname));
         }
     }
 
-    // 3. Eventi Transitori per gli Altri (Es. PlayerDisconnected) - NON vanno nella storia
-    private synchronized void pushGlobalEventTransientOthers(String exclude, Event event) {
+    // 3. Transient agli altri (disconnessione, AutoPlayer) — NON entra nella storia
+    private synchronized void pushTransientOthers(String exclude, Consumer<VirtualView> call) {
         for (Map.Entry<String, ConnectionStatus> entry : connectionStatus.entrySet()) {
-            if (!entry.getKey().equals(exclude) && entry.getValue() == ConnectionStatus.CONNECTED) {
-                handlers.get(entry.getKey()).notify(event);
+            if (!entry.getKey().equals(exclude)
+                    && entry.getValue() == ConnectionStatus.CONNECTED) {
+                call.accept(handlers.get(entry.getKey()));
             }
         }
     }
@@ -374,7 +350,7 @@ public class GameController implements GameObserver {
             }
 
             synchronized (this) {
-                pushGlobalEventTransientOthers(nickname, new AutoPlayerInvokedEvent(nickname));
+                pushTransientOthers(nickname, v -> v.notifyAutoPlayerInvoked(nickname));
             }
 
             // Esegue la mossa
@@ -396,7 +372,7 @@ public class GameController implements GameObserver {
                 + " (" + DISCONNECTED_PLAYER_TIMEOUT_SECONDS + "s).");
 
         // Notify connected players that the grace timer has started
-        pushGlobalEventTransientOthers(nickname, new AutoPlayerTimerStartedEvent(nickname));
+        pushTransientOthers(nickname, v -> v.notifyAutoPlayerTimerStarted(nickname));
     }
 
     private void cancelDisconnectedPlayerTimer(String nickname) {
@@ -474,7 +450,7 @@ public class GameController implements GameObserver {
             if (pendingCount > 0) {
                 // Recovery failed: not all players reconnected in time
                 log("Global timer expired — recovery failed, " + pendingCount + " players never reconnected.");
-                pushGlobalEvent(new GameRecoveryFailedEvent());
+                pushGlobalCall(VirtualView::notifyGameRecoveryFailed);
             } else {
                 // Normal flow: one player left, wins by forfeit
                 String winner = connectionStatus.entrySet().stream()
@@ -484,7 +460,7 @@ public class GameController implements GameObserver {
                         .findFirst()
                         .orElseThrow();
                 log("Global timer expired — winner by forfeit: " + winner);
-                pushGlobalEvent(new GameAbortedEvent(winner));
+                pushGlobalCall(v -> v.notifyGameAborted(winner));
             }
 
             gameLogger.logGameEnded();
@@ -502,19 +478,19 @@ public class GameController implements GameObserver {
                                                   Map<String, Integer> initialFood,
                                                   BoardSnapshot boardSnapshot) {
         snapshot.applySetup(boardSnapshot);
-        pushGlobalEvent(new GameSetupCompletedEvent(turnOrder, initialFood, boardSnapshot));
+        pushGlobalCall(v -> v.notifyGameSetupCompleted(turnOrder, initialFood, boardSnapshot));
     }
 
     @Override
     public synchronized void onPhaseChanged(PhaseType phase) {
         snapshot.setPhase(phase, null);
-        pushGlobalEvent(new PhaseChangedEvent(phase, null, null));
+        pushGlobalCall(v -> v.notifyPhaseChanged(phase, null, null));
     }
 
     @Override
     public synchronized void onPhaseChanged(PhaseType phase, String currentPlayer) {
         snapshot.setPhase(phase, currentPlayer);
-        pushGlobalEvent(new PhaseChangedEvent(phase, currentPlayer, null));
+        pushGlobalCall(v -> v.notifyPhaseChanged(phase, currentPlayer, null));
         if (currentPlayer != null)
             handleCurrentPlayerTransition(currentPlayer);
     }
@@ -522,7 +498,7 @@ public class GameController implements GameObserver {
     @Override
     public synchronized void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
         snapshot.setPhase(phase, currentPlayer);
-        pushGlobalEvent(new PhaseChangedEvent(phase, currentPlayer, resolutionOrder));
+        pushGlobalCall(v -> v.notifyPhaseChanged(phase, currentPlayer, resolutionOrder));
         if (currentPlayer != null)
             handleCurrentPlayerTransition(currentPlayer);
     }
@@ -530,13 +506,13 @@ public class GameController implements GameObserver {
     @Override
     public synchronized void onCurrentPlayerChanged(String nextPlayer) {
         snapshot.setCurrentPlayer(nextPlayer);
-        pushGlobalEvent(new CurrentPlayerChangedEvent(nextPlayer));
+        pushGlobalCall(v -> v.notifyCurrentPlayerChanged(nextPlayer));
         handleCurrentPlayerTransition(nextPlayer);
     }
 
     @Override
     public synchronized void onTurnOrderEstablished(List<String> turnOrder) {
-        pushGlobalEvent(new TurnOrderEstablishedEvent(turnOrder));
+        pushGlobalCall(v -> v.notifyTurnOrderEstablished(turnOrder));
     }
 
     @Override
@@ -544,7 +520,7 @@ public class GameController implements GameObserver {
                                           List<String> newUpperRowBuildings,
                                           List<String> newLowerRowBuildings,
                                           List<String> discardedBuildings) {
-        pushGlobalEvent(new EraChangedEvent(newEra, newUpperRowBuildings,
+        pushGlobalCall(v -> v.notifyEraChanged(newEra, newUpperRowBuildings,
                 newLowerRowBuildings, discardedBuildings));
     }
 
@@ -555,45 +531,38 @@ public class GameController implements GameObserver {
                                             List<String> movedToLowerRow,
                                             int deckRemainingCount) {
         snapshot.applyBoardUpdated(newUpperRow, newLowerRow);
-        pushGlobalEvent(new BoardUpdatedEvent(newUpperRow, newLowerRow,
+        pushGlobalCall(v -> v.notifyBoardUpdated(newUpperRow, newLowerRow,
                 discardedCards, movedToLowerRow, deckRemainingCount));
     }
 
     @Override
-    public synchronized void onCardTaken(String nickname,
-                                         String cardID,
-                                         CardType cardType,
-                                         RowPosition sourceRow) {
+    public synchronized void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
         snapshot.applyCardTaken(cardID);
-        pushGlobalEvent(new CardTakenEvent(nickname, cardID, cardType, sourceRow));
+        pushGlobalCall(v -> v.notifyCardTaken(nickname, cardID, cardType, sourceRow));
     }
 
     @Override
     public synchronized void onTotemPlaced(String nickname, char tileID) {
         snapshot.applyTotemPlaced(nickname, tileID);
-        pushGlobalEvent(new TotemPlacedEvent(nickname, tileID));
+        pushGlobalCall(v -> v.notifyTotemPlaced(nickname, tileID));
     }
 
     @Override
     public synchronized void onTotemReturned(String nickname, int turnOrderPosition) {
         snapshot.applyTotemReturned(nickname);
-        pushGlobalEvent(new TotemReturnedEvent(nickname, turnOrderPosition));
+        pushGlobalCall(v -> v.notifyTotemReturned(nickname, turnOrderPosition));
     }
 
     @Override
-    public synchronized void onPlayerLimitsInitialized(String nickname,
-                                                       int remainingUpper,
-                                                       int remainingLower) {
+    public synchronized void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
-        pushGlobalEvent(new PlayerLimitsInitializedEvent(nickname, remainingUpper, remainingLower));
+        pushGlobalCall(v -> v.notifyPlayerLimitsInitialized(nickname, remainingUpper, remainingLower));
     }
 
     @Override
-    public synchronized void onPlayerLimitsUpdated(String nickname,
-                                                   int remainingUpper,
-                                                   int remainingLower) {
+    public synchronized void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
-        pushGlobalEvent(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower));
+        pushGlobalCall(v -> v.notifyPlayerLimitsUpdated(nickname, remainingUpper, remainingLower));
 
         if (nickname.equals(currentPlayerNickname)
                 && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
@@ -602,24 +571,19 @@ public class GameController implements GameObserver {
     }
 
     @Override
-    public synchronized void onPlayerResourceChanged(String nickname,
-                                                     ResourceType resource,
-                                                     int newValue,
-                                                     int delta) {
-        pushGlobalEvent(new PlayerResourceChangedEvent(nickname, resource, newValue, delta));
+    public synchronized void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta) {
+        pushGlobalCall(v -> v.notifyPlayerResourceChanged(nickname, resource, newValue, delta));
     }
 
     @Override
     public synchronized void onEventResolved(String eventID, String eventName) {
-        pushGlobalEvent(new EventResolvedEvent(eventID, eventName));
+        pushGlobalCall(v -> v.notifyEventResolved(eventID, eventName));
     }
 
     @Override
-    public synchronized void onExtraTurnStarted(String nickname,
-                                                int remainingUpper,
-                                                int remainingLower) {
+    public synchronized void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
-        pushGlobalEvent(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));
+        pushGlobalCall(v -> v.notifyExtraTurnStarted(nickname, remainingUpper, remainingLower));
 
         if (nickname.equals(currentPlayerNickname)
                 && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
@@ -629,13 +593,12 @@ public class GameController implements GameObserver {
 
     @Override
     public synchronized void onExtraTurnEnded(String nickname) {
-        pushGlobalEvent(new ExtraTurnEndedEvent(nickname));
+        pushGlobalCall(v -> v.notifyExtraTurnEnded(nickname));
     }
 
     @Override
-    public synchronized void onGameEnded(List<String> winners,
-                                         List<PlayerFinalScore> finalRankings) {
-        pushGlobalEvent(new GameEndedEvent(winners, finalRankings));
+    public synchronized void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
+        pushGlobalCall(v -> v.notifyGameEnded(winners, finalRankings));
         gameLogger.logGameEnded();
         gameLogger.close();
         shutdown();

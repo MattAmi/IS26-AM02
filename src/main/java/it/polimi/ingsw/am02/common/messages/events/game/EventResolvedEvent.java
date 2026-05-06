@@ -1,7 +1,9 @@
 package it.polimi.ingsw.am02.common.messages.events.game;
-import it.polimi.ingsw.am02.client.model.GameModel;
-import it.polimi.ingsw.am02.common.messages.events.Event;
+
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 
 public record EventResolvedEvent(String eventID, String eventName) implements GameEvent {
-    @Override public void applyTo(GameModel model) { model.updateEventResolved(eventID, eventName); }
+    @Override public void apply(VirtualView view) {
+        view.notifyEventResolved(eventID, eventName);
+    }
 }

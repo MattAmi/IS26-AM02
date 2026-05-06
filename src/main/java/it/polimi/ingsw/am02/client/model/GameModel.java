@@ -6,10 +6,6 @@ import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import it.polimi.ingsw.am02.common.enumerations.RowPosition;
-import it.polimi.ingsw.am02.common.messages.events.Event;
-import it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;
-import it.polimi.ingsw.am02.common.messages.events.game.*;
-import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,296 +38,427 @@ public class GameModel {
     private String lastEventResolved;
     private List<TurnOrderSlotInfo> turnOrderSlots = new ArrayList<>();
 
-
     private final List<ClientView> clientViews = new ArrayList<>();
-
 
     public GameModel(String myNickname) {
         this.myNickname = myNickname;
     }
 
-    public void addObserver(ClientView clientView) { clientViews.add(clientView);}
-    public void removeObserver(ClientView clientView) { clientViews.remove(clientView); }
+    // OBSERVERS
 
-    // EVENT DISPATCH
+    public synchronized void addObserver(ClientView clientView) { clientViews.add(clientView); }
+    public synchronized void removeObserver(ClientView clientView) { clientViews.remove(clientView); }
+
+    // DOMAIN UPDATES
 
     /**
-     * Applies a server-originated event: updates internal state and
-     * notifies registered views via the corresponding granular callback.
+     * Applies a game-started event: stores the game ID, resets the ended flag,
+     * and notifies views.
+     *
+     * @param gameID the identifier of the started game
      */
-    public void apply(Event event) {
-        try {
-            switch (event) {
-
-                // --------- Game lifecycle ---------
-                case GameStartedEvent e -> {
-                    this.gameId = e.gameID();
-                    this.gameEnded = false;
-                    clientViews.forEach(o -> o.onGameStarted(e.gameID()));
-                }
-
-                case GameSetupCompletedEvent e -> {
-                    this.turnOrder = new ArrayList<>(e.turnOrder());
-
-                    //Clean
-                    this.upperRow.clear();
-                    this.lowerRow.clear();
-                    this.upperRowBuildings.clear();
-                    this.lowerRowBuildings.clear();
-                    this.foodByPlayer.clear();
-                    this.ppByPlayer.clear();
-                    this.charactersByPlayer.clear();
-                    this.buildingsByPlayer.clear();
-                    this.remainingUpper.clear();
-                    this.remainingLower.clear();
-                    this.turnOrderSlots.clear();
-
-                    this.foodByPlayer.putAll(e.initialFood());
-                    e.initialFood().keySet().forEach(n -> ppByPlayer.put(n, 0));
-                    BoardSnapshot snap = e.boardSnapshot();
-                    if (snap != null) {
-                        this.upperRow = new ArrayList<>(snap.upperRowCards());
-                        this.lowerRow = new ArrayList<>(snap.lowerRowCards());
-                        this.upperRowBuildings = new ArrayList<>(snap.upperRowBuildings());
-                        this.lowerRowBuildings = new ArrayList<>(snap.lowerRowBuildings());
-                        this.offerTiles = new ArrayList<>(snap.offerTiles());
-                        this.deckRemainingCount = snap.tribuDeckSize();
-                        this.turnOrderSlots = new ArrayList<>(snap.turnOrderSlots());
-
-                        // --- AGGIUNTA: Popola i limiti iniziali ---
-                        for (OfferTileInfo tile : snap.offerTiles()) {
-                            if (tile.occupantNickname() != null) {
-                                remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());
-                                remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());
-                            }
-                        }
-                    }
-                    clientViews.forEach(o -> o.onGameSetupCompleted(
-                            e.turnOrder(), e.initialFood(), snap));
-                }
-
-                case PhaseChangedEvent e -> {
-                    this.currentPhase = e.phase();
-                    if (e.currentPlayer() != null) this.currentPlayer = e.currentPlayer();
-                    if (e.resolutionOrder() != null) this.turnOrder = new ArrayList<>(e.resolutionOrder());
-
-                    // --- AGGIUNTA: Sincronizza i limiti all'inizio della risoluzione ---
-                    if (e.phase() == PhaseType.ACTION_RESOLUTION) {
-                        for (OfferTileInfo tile : offerTiles) {
-                            if (tile.occupantNickname() != null) {
-                                remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());
-                                remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());
-                            }
-                        }
-                    }
-
-                    clientViews.forEach(o -> o.onPhaseChanged(
-                            e.phase(), e.currentPlayer(), e.resolutionOrder()));
-                }
-
-                case CurrentPlayerChangedEvent e -> {
-                    this.currentPlayer = e.nextPlayer();
-                    clientViews.forEach(o -> o.onCurrentPlayerChanged(e.nextPlayer()));
-                }
-
-                case TurnOrderEstablishedEvent e -> {
-                    this.turnOrder = new ArrayList<>(e.turnOrder());
-                    clientViews.forEach(o -> o.onTurnOrderEstablished(e.turnOrder()));
-                }
-
-                // --------- Totem & board ---------
-                case TotemPlacedEvent e -> {
-                    totemPositions.put(e.nickname(), e.tileID());
-
-                    for (int i = 0; i < turnOrderSlots.size(); i++) {
-                        TurnOrderSlotInfo slot = turnOrderSlots.get(i);
-                        if (e.nickname().equals(slot.occupantNickname())) {
-                            turnOrderSlots.set(i, new TurnOrderSlotInfo(null, slot.foodBonus(), slot.prestigePointsMalus()));
-                            break;
-                        }
-                    }
-
-                    this.offerTiles = offerTiles.stream()
-                            .map(t -> t.tileID() == e.tileID()
-                                    ? new OfferTileInfo(t.tileID(), t.foodBonus(),
-                                    t.upperChoosable(), t.lowerChoosable(), e.nickname())
-                                    : t)
-                            .collect(Collectors.toCollection(ArrayList::new));
-                    clientViews.forEach(o -> o.onTotemPlaced(e.nickname(), e.tileID()));
-                    clientViews.forEach(o -> o.onOfferTilesUpdated(offerTiles));
-                }
-
-                case TotemReturnedEvent e -> {
-                    totemPositions.remove(e.nickname());
-                    turnOrderPositions.put(e.nickname(), e.turnOrderPosition());
-                    // Aggiorna lo slot nella lista (position è 0-based o 1-based? verifica nel tuo server)
-                    int idx = e.turnOrderPosition(); // adatta se 1-based: idx = e.turnOrderPosition() - 1
-                    if (idx >= 0 && idx < turnOrderSlots.size()) {
-                        TurnOrderSlotInfo old = turnOrderSlots.get(idx);
-                        turnOrderSlots.set(idx, new TurnOrderSlotInfo(e.nickname(), old.foodBonus(), old.prestigePointsMalus()));
-                    }
-
-                    this.offerTiles = offerTiles.stream()
-                            .map(t -> e.nickname().equals(t.occupantNickname())
-                                    ? new OfferTileInfo(t.tileID(), t.foodBonus(),
-                                    t.upperChoosable(), t.lowerChoosable(), null)
-                                    : t)
-                            .collect(Collectors.toCollection(ArrayList::new));
-                    clientViews.forEach(o -> o.onTotemReturned(e.nickname(), e.turnOrderPosition()));
-                    clientViews.forEach(o -> o.onOfferTilesUpdated(offerTiles));
-                }
-
-                case BoardUpdatedEvent e -> {
-                    this.upperRow = new ArrayList<>(e.newUpperRow());
-                    this.lowerRow = new ArrayList<>(e.newLowerRow());
-                    this.deckRemainingCount = e.deckRemainingCount();
-                    clientViews.forEach(o -> o.onBoardUpdated(
-                            e.newUpperRow(), e.newLowerRow(), e.deckRemainingCount()));
-                }
-
-                case EraChangedEvent e -> {
-                    this.upperRowBuildings = new ArrayList<>(e.newUpperRowBuildings());
-                    this.lowerRowBuildings = new ArrayList<>(e.newLowerRowBuildings());
-                    clientViews.forEach(o -> o.onEraChanged(
-                            e.newUpperRowBuildings(), e.newLowerRowBuildings()));
-                }
-
-                // --------- Player state ---------
-                case PlayerLimitsInitializedEvent e -> {
-                    remainingUpper.put(e.nickname(), e.remainingUpper());
-                    remainingLower.put(e.nickname(), e.remainingLower());
-                    clientViews.forEach(o -> o.onPlayerLimitsInitialized(
-                            e.nickname(), e.remainingUpper(), e.remainingLower()));
-                }
-
-                case PlayerLimitsUpdatedEvent e -> {
-                    remainingUpper.put(e.nickname(), e.remainingUpper());
-                    remainingLower.put(e.nickname(), e.remainingLower());
-                    clientViews.forEach(o -> o.onPlayerLimitsUpdated(
-                            e.nickname(), e.remainingUpper(), e.remainingLower()));
-                }
-
-                case PlayerResourceChangedEvent e -> {
-                    if (e.resource() == ResourceType.FOOD) {
-                        foodByPlayer.put(e.nickname(), e.newValue());
-                    } else if (e.resource() == ResourceType.PRESTIGE_POINTS) {
-                        ppByPlayer.put(e.nickname(), e.newValue());
-                    }
-                    clientViews.forEach(o -> o.onPlayerResourceChanged(
-                            e.nickname(), e.resource(), e.newValue()));
-                }
-
-                case CardTakenEvent e -> {
-                    List<String> row = (e.cardType() == CardType.BUILDING)
-                            ? (e.sourceRow() == RowPosition.UPPER ? upperRowBuildings : lowerRowBuildings)
-                            : (e.sourceRow() == RowPosition.UPPER ? upperRow : lowerRow);
-                    row.remove(e.cardID());
-                    Map<String, List<String>> target =
-                            (e.cardType() == CardType.BUILDING) ? buildingsByPlayer : charactersByPlayer;
-                    target.computeIfAbsent(e.nickname(), k -> new ArrayList<>()).add(e.cardID());
-                    clientViews.forEach(o -> o.onCardTaken(
-                            e.nickname(), e.cardID(), e.cardType(), e.sourceRow()));
-                }
-
-                case AutoPlayerTimerStartedEvent e -> {
-                    clientViews.forEach(o -> o.onAutoPlayerTimerStarted(e.nickname()));
-                }
-
-                case AutoPlayerInvokedEvent e -> {
-                    clientViews.forEach(o -> o.onAutoPlayerInvoked(e.nickname()));
-                }
-
-                // --------- Events & extra turns ---------
-                case EventResolvedEvent e -> {
-                    this.lastEventResolved = e.eventName();
-                    clientViews.forEach(v -> v.onEventResolved(e.eventID(), e.eventName()));
-                }
-
-                case ExtraTurnStartedEvent e -> {
-                    remainingUpper.put(e.nickname(), e.remainingUpper());
-                    remainingLower.put(e.nickname(), e.remainingLower());
-                    clientViews.forEach(o -> o.onExtraTurnStarted(
-                            e.nickname(), e.remainingUpper(), e.remainingLower()));
-                }
-
-                case ExtraTurnEndedEvent e -> {
-                    clientViews.forEach(o -> o.onExtraTurnEnded(e.nickname()));
-                }
-
-                // --------- Game end & errors ---------
-                case GameEndedEvent e -> {
-                    this.winners = new ArrayList<>(e.winners());
-                    this.finalRankings = new ArrayList<>(e.finalRankings());
-                    this.gameEnded = true;
-                    clientViews.forEach(o -> o.onGameEnded(e.winners(), e.finalRankings()));
-                }
-
-                case PlayerDisconnectedEvent e -> {
-                    this.lastErrorMessage = "Player disconnected: " + e.nickname();
-                    clientViews.forEach(o -> o.onPlayerDisconnected(e.nickname()));
-                }
-
-                case GameAbortedEvent e -> {
-                    this.gameEnded = true;
-                    clientViews.forEach(o -> o.onGameAborted(e.lastManStanding()));
-                }
-
-                case GameRecoveryFailedEvent e -> {
-                    this.gameEnded = true;
-                    clientViews.forEach(o -> o.onGameRecoveryFailed());
-                }
-
-                case PlayerReconnectedEvent e -> {
-                    clientViews.forEach(o -> o.onPlayerReconnected(e.nickname()));
-                }
-
-                case ErrorEvent e -> {
-                    this.lastErrorMessage = e.errorMessage();
-                    clientViews.forEach(o -> o.onError(e.errorMessage()));
-                }
-
-                default -> {}
-            }
-        } catch (Exception ex) {
-            String msg = "Internal client error on "
-                    + event.getClass().getSimpleName() + ": " + ex.getMessage();
-            this.lastErrorMessage = msg;
-            ex.printStackTrace();
-            clientViews.forEach(o -> o.onError(msg));
-        }
+    public synchronized void updateGameStarted(String gameID) {
+        this.gameId = gameID;
+        this.gameEnded = false;
+        clientViews.forEach(o -> o.onGameStarted(gameID));
     }
 
-    //  GETTERS
-    // (tutti i getter rimangono come nella tua versione attuale: servono al
-    //  ClientController per recuperare contesto, e alle view per leggere stato
-    //  globale che non è strettamente legato all'ultimo evento)
+    /**
+     * Applies the initial game setup: populates all board and player collections
+     * from the server snapshot and notifies views.
+     *
+     * @param turnOrder    the initial player turn order
+     * @param initialFood  the starting food amounts per player
+     * @param boardSnapshot the full initial board state, or {@code null}
+     */
+    public synchronized void updateGameSetupCompleted(List<String> turnOrder,
+                                                      Map<String, Integer> initialFood,
+                                                      BoardSnapshot boardSnapshot) {
+        this.turnOrder = new ArrayList<>(turnOrder);
 
-    public String getMyNickname() { return myNickname; }
-    public String getGameId() { return gameId; }
-    public PhaseType getCurrentPhase() { return currentPhase; }
-    public String getCurrentPlayer() { return currentPlayer; }
-    public List<String> getTurnOrder() { return Collections.unmodifiableList(turnOrder); }
-    public List<String> getUpperRow() { return Collections.unmodifiableList(upperRow); }
-    public List<String> getLowerRow() { return Collections.unmodifiableList(lowerRow); }
-    public List<String> getUpperRowBuildings() { return Collections.unmodifiableList(upperRowBuildings); }
-    public List<String> getLowerRowBuildings() { return Collections.unmodifiableList(lowerRowBuildings); }
-    public List<OfferTileInfo> getOfferTiles() { return Collections.unmodifiableList(offerTiles); }
-    public Map<String, Integer> getFoodByPlayer() { return Collections.unmodifiableMap(foodByPlayer); }
-    public Map<String, Integer> getPpByPlayer() { return Collections.unmodifiableMap(ppByPlayer); }
-    public Map<String, Character> getTotemPositions() { return Collections.unmodifiableMap(totemPositions); }
-    public Map<String, Integer> getTurnOrderPositions() { return Collections.unmodifiableMap(turnOrderPositions); }
-    public Map<String, Integer> getRemainingUpper() { return Collections.unmodifiableMap(remainingUpper); }
-    public Map<String, Integer> getRemainingLower() { return Collections.unmodifiableMap(remainingLower); }
-    public Map<String, List<String>> getCharactersByPlayer() { return Collections.unmodifiableMap(charactersByPlayer); }
-    public Map<String, List<String>> getBuildingsByPlayer() { return Collections.unmodifiableMap(buildingsByPlayer); }
-    public List<String> getWinners() { return Collections.unmodifiableList(winners); }
-    public List<PlayerFinalScore> getFinalRankings() { return Collections.unmodifiableList(finalRankings); }
-    public int getDeckRemainingCount() { return deckRemainingCount; }
-    public boolean isGameEnded() { return gameEnded; }
-    public String getLastEventResolved() { return lastEventResolved; }
-    public String getLastErrorMessage() { return lastErrorMessage; }
-    public boolean isInGame() { return gameId != null && !gameEnded; }
-    public List<TurnOrderSlotInfo> getTurnOrderSlots() { return Collections.unmodifiableList(turnOrderSlots); }
-    public void setGameId(String gameId) { this.gameId = gameId; }
+        this.upperRow.clear();
+        this.lowerRow.clear();
+        this.upperRowBuildings.clear();
+        this.lowerRowBuildings.clear();
+        this.foodByPlayer.clear();
+        this.ppByPlayer.clear();
+        this.charactersByPlayer.clear();
+        this.buildingsByPlayer.clear();
+        this.remainingUpper.clear();
+        this.remainingLower.clear();
+        this.turnOrderSlots.clear();
 
+        this.foodByPlayer.putAll(initialFood);
+        initialFood.keySet().forEach(n -> ppByPlayer.put(n, 0));
+
+        if (boardSnapshot != null) {
+            this.upperRow = new ArrayList<>(boardSnapshot.upperRowCards());
+            this.lowerRow = new ArrayList<>(boardSnapshot.lowerRowCards());
+            this.upperRowBuildings = new ArrayList<>(boardSnapshot.upperRowBuildings());
+            this.lowerRowBuildings = new ArrayList<>(boardSnapshot.lowerRowBuildings());
+            this.offerTiles = new ArrayList<>(boardSnapshot.offerTiles());
+            this.deckRemainingCount = boardSnapshot.tribuDeckSize();
+            this.turnOrderSlots = new ArrayList<>(boardSnapshot.turnOrderSlots());
+
+            for (OfferTileInfo tile : boardSnapshot.offerTiles()) {
+                if (tile.occupantNickname() != null) {
+                    remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());
+                    remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());
+                }
+            }
+        }
+
+        clientViews.forEach(o -> o.onGameSetupCompleted(turnOrder, initialFood, boardSnapshot));
+    }
+
+    /**
+     * Applies a phase change: updates the current phase, optionally the active
+     * player and resolution order, re-syncs pick limits at ACTION_RESOLUTION,
+     * and notifies views.
+     *
+     * @param phase           the new game phase
+     * @param currentPlayer   the active player, or {@code null} if unchanged
+     * @param resolutionOrder the new resolution order, or {@code null} if unchanged
+     */
+    public synchronized void updateCurrentPhase(PhaseType phase, String currentPlayer,
+                                                List<String> resolutionOrder) {
+        this.currentPhase = phase;
+        if (currentPlayer != null) this.currentPlayer = currentPlayer;
+        if (resolutionOrder != null) this.turnOrder = new ArrayList<>(resolutionOrder);
+
+        if (phase == PhaseType.ACTION_RESOLUTION) {
+            for (OfferTileInfo tile : offerTiles) {
+                if (tile.occupantNickname() != null) {
+                    remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());
+                    remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());
+                }
+            }
+        }
+
+        clientViews.forEach(o -> o.onPhaseChanged(phase, currentPlayer, resolutionOrder));
+    }
+
+    /**
+     * Applies a current-player change and notifies views.
+     *
+     * @param nextPlayer the nickname of the next active player
+     */
+    public synchronized void updateCurrentPlayer(String nextPlayer) {
+        this.currentPlayer = nextPlayer;
+        clientViews.forEach(o -> o.onCurrentPlayerChanged(nextPlayer));
+    }
+
+    /**
+     * Applies a turn order establishment and notifies views.
+     *
+     * @param turnOrder the new turn order
+     */
+    public synchronized void updateTurnOrder(List<String> turnOrder) {
+        this.turnOrder = new ArrayList<>(turnOrder);
+        clientViews.forEach(o -> o.onTurnOrderEstablished(turnOrder));
+    }
+
+    /**
+     * Applies a totem placement: updates totem positions, offer tiles, turn
+     * order slots, and notifies views.
+     *
+     * @param nickname the player who placed the totem
+     * @param tileID   the ID of the tile the totem was placed on
+     */
+    public synchronized void updateTotemPlaced(String nickname, char tileID) {
+        totemPositions.put(nickname, tileID);
+
+        for (int i = 0; i < turnOrderSlots.size(); i++) {
+            TurnOrderSlotInfo slot = turnOrderSlots.get(i);
+            if (nickname.equals(slot.occupantNickname())) {
+                turnOrderSlots.set(i, new TurnOrderSlotInfo(null, slot.foodBonus(), slot.prestigePointsMalus()));
+                break;
+            }
+        }
+
+        this.offerTiles = offerTiles.stream()
+                .map(t -> t.tileID() == tileID
+                        ? new OfferTileInfo(t.tileID(), t.foodBonus(),
+                        t.upperChoosable(), t.lowerChoosable(), nickname)
+                        : t)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        clientViews.forEach(o -> o.onTotemPlaced(nickname, tileID));
+        clientViews.forEach(o -> o.onOfferTilesUpdated(offerTiles));
+    }
+
+    /**
+     * Applies a totem return: clears the totem's offer tile position, updates
+     * the turn order slot, and notifies views.
+     *
+     * @param nickname          the player whose totem was returned
+     * @param turnOrderPosition the slot index the totem was returned to
+     */
+    public synchronized void updateTotemReturned(String nickname, int turnOrderPosition) {
+        totemPositions.remove(nickname);
+        turnOrderPositions.put(nickname, turnOrderPosition);
+
+        int idx = turnOrderPosition;
+        if (idx >= 0 && idx < turnOrderSlots.size()) {
+            TurnOrderSlotInfo old = turnOrderSlots.get(idx);
+            turnOrderSlots.set(idx, new TurnOrderSlotInfo(nickname, old.foodBonus(), old.prestigePointsMalus()));
+        }
+
+        this.offerTiles = offerTiles.stream()
+                .map(t -> nickname.equals(t.occupantNickname())
+                        ? new OfferTileInfo(t.tileID(), t.foodBonus(),
+                        t.upperChoosable(), t.lowerChoosable(), null)
+                        : t)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        clientViews.forEach(o -> o.onTotemReturned(nickname, turnOrderPosition));
+        clientViews.forEach(o -> o.onOfferTilesUpdated(offerTiles));
+    }
+
+    /**
+     * Applies a board update: replaces both card rows and the deck count,
+     * then notifies views.
+     *
+     * @param newUpperRow        the new upper row card IDs
+     * @param newLowerRow        the new lower row card IDs
+     * @param deckRemainingCount the updated deck size
+     */
+    public synchronized void updateBoard(List<String> newUpperRow, List<String> newLowerRow,
+                                         int deckRemainingCount) {
+        this.upperRow = new ArrayList<>(newUpperRow);
+        this.lowerRow = new ArrayList<>(newLowerRow);
+        this.deckRemainingCount = deckRemainingCount;
+        clientViews.forEach(o -> o.onBoardUpdated(newUpperRow, newLowerRow, deckRemainingCount));
+    }
+
+    /**
+     * Applies an era change: replaces both building rows and notifies views.
+     *
+     * @param newUpperRowBuildings the new upper row building IDs
+     * @param newLowerRowBuildings the new lower row building IDs
+     */
+    public synchronized void updateEra(List<String> newUpperRowBuildings,
+                                       List<String> newLowerRowBuildings) {
+        this.upperRowBuildings = new ArrayList<>(newUpperRowBuildings);
+        this.lowerRowBuildings = new ArrayList<>(newLowerRowBuildings);
+        clientViews.forEach(o -> o.onEraChanged(newUpperRowBuildings, newLowerRowBuildings));
+    }
+
+    /**
+     * Applies initial pick limits for a player and notifies views.
+     *
+     * @param nickname      the player
+     * @param remainingUpper remaining picks from the upper row
+     * @param remainingLower remaining picks from the lower row
+     */
+    public synchronized void updatePlayerLimitsInitialized(String nickname,
+                                                           int remainingUpper,
+                                                           int remainingLower) {
+        this.remainingUpper.put(nickname, remainingUpper);
+        this.remainingLower.put(nickname, remainingLower);
+        clientViews.forEach(o -> o.onPlayerLimitsInitialized(nickname, remainingUpper, remainingLower));
+    }
+
+    /**
+     * Applies updated pick limits for a player and notifies views.
+     *
+     * @param nickname      the player
+     * @param remainingUpper remaining picks from the upper row
+     * @param remainingLower remaining picks from the lower row
+     */
+    public synchronized void updatePlayerLimits(String nickname,
+                                                int remainingUpper,
+                                                int remainingLower) {
+        this.remainingUpper.put(nickname, remainingUpper);
+        this.remainingLower.put(nickname, remainingLower);
+        clientViews.forEach(o -> o.onPlayerLimitsUpdated(nickname, remainingUpper, remainingLower));
+    }
+
+    /**
+     * Applies a resource change for a player: updates food or PP maps
+     * and notifies views.
+     *
+     * @param nickname the player
+     * @param resource the resource type that changed
+     * @param newValue the updated value
+     */
+    public synchronized void updatePlayerResource(String nickname, ResourceType resource,
+                                                  int newValue) {
+        if (resource == ResourceType.FOOD) {
+            foodByPlayer.put(nickname, newValue);
+        } else if (resource == ResourceType.PRESTIGE_POINTS) {
+            ppByPlayer.put(nickname, newValue);
+        }
+        clientViews.forEach(o -> o.onPlayerResourceChanged(nickname, resource, newValue));
+    }
+
+    /**
+     * Applies a card-taken event: removes the card from the appropriate row,
+     * adds it to the player's collection, and notifies views.
+     *
+     * @param nickname  the player who took the card
+     * @param cardID    the card identifier
+     * @param cardType  whether it is a character or building card
+     * @param sourceRow the row it was taken from
+     */
+    public synchronized void updateCardTaken(String nickname, String cardID,
+                                             CardType cardType, RowPosition sourceRow) {
+        List<String> row = (cardType == CardType.BUILDING)
+                ? (sourceRow == RowPosition.UPPER ? upperRowBuildings : lowerRowBuildings)
+                : (sourceRow == RowPosition.UPPER ? upperRow : lowerRow);
+        row.remove(cardID);
+        Map<String, List<String>> target =
+                (cardType == CardType.BUILDING) ? buildingsByPlayer : charactersByPlayer;
+        target.computeIfAbsent(nickname, k -> new ArrayList<>()).add(cardID);
+        clientViews.forEach(o -> o.onCardTaken(nickname, cardID, cardType, sourceRow));
+    }
+
+    /**
+     * Notifies views that the auto-player timer has started for the given player.
+     *
+     * @param nickname the player whose timer started
+     */
+    public synchronized void updateAutoPlayerTimerStarted(String nickname) {
+        clientViews.forEach(o -> o.onAutoPlayerTimerStarted(nickname));
+    }
+
+    /**
+     * Notifies views that the auto-player was invoked for the given player.
+     *
+     * @param nickname the player replaced by the auto-player
+     */
+    public synchronized void updateAutoPlayerInvoked(String nickname) {
+        clientViews.forEach(o -> o.onAutoPlayerInvoked(nickname));
+    }
+
+    /**
+     * Applies an event resolution: stores the last resolved event name
+     * and notifies views.
+     *
+     * @param eventID   the identifier of the resolved event card
+     * @param eventName the display name of the resolved event
+     */
+    public synchronized void updateEventResolved(String eventID, String eventName) {
+        this.lastEventResolved = eventName;
+        clientViews.forEach(v -> v.onEventResolved(eventID, eventName));
+    }
+
+    /**
+     * Applies an extra-turn start: updates pick limits for the player
+     * and notifies views.
+     *
+     * @param nickname      the player receiving the extra turn
+     * @param remainingUpper remaining upper-row picks for the extra turn
+     * @param remainingLower remaining lower-row picks for the extra turn
+     */
+    public synchronized void updateExtraTurnStarted(String nickname,
+                                                    int remainingUpper,
+                                                    int remainingLower) {
+        this.remainingUpper.put(nickname, remainingUpper);
+        this.remainingLower.put(nickname, remainingLower);
+        clientViews.forEach(o -> o.onExtraTurnStarted(nickname, remainingUpper, remainingLower));
+    }
+
+    /**
+     * Applies an extra-turn end and notifies views.
+     *
+     * @param nickname the player whose extra turn ended
+     */
+    public synchronized void updateExtraTurnEnded(String nickname) {
+        clientViews.forEach(o -> o.onExtraTurnEnded(nickname));
+    }
+
+    /**
+     * Applies a game-ended event: stores winners and final rankings,
+     * marks the game as ended, and notifies views.
+     *
+     * @param winners       the list of winning players
+     * @param finalRankings the final score ranking
+     */
+    public synchronized void updateGameEnded(List<String> winners,
+                                             List<PlayerFinalScore> finalRankings) {
+        this.winners = new ArrayList<>(winners);
+        this.finalRankings = new ArrayList<>(finalRankings);
+        this.gameEnded = true;
+        clientViews.forEach(o -> o.onGameEnded(winners, finalRankings));
+    }
+
+    /**
+     * Applies a player-disconnected event: stores a diagnostic message
+     * and notifies views.
+     *
+     * @param nickname the disconnected player
+     */
+    public synchronized void updatePlayerDisconnected(String nickname) {
+        this.lastErrorMessage = "Player disconnected: " + nickname;
+        clientViews.forEach(o -> o.onPlayerDisconnected(nickname));
+    }
+
+    /**
+     * Applies a game-aborted event: marks the game as ended and notifies views.
+     *
+     * @param lastManStanding the nickname of the remaining player, or {@code null}
+     */
+    public synchronized void updateGameAborted(String lastManStanding) {
+        this.gameEnded = true;
+        clientViews.forEach(o -> o.onGameAborted(lastManStanding));
+    }
+
+    /**
+     * Applies a game-recovery-failed event: marks the game as ended
+     * and notifies views.
+     */
+    public synchronized void updateGameRecoveryFailed() {
+        this.gameEnded = true;
+        clientViews.forEach(o -> o.onGameRecoveryFailed());
+    }
+
+    /**
+     * Applies a player-reconnected event and notifies views.
+     *
+     * @param nickname the reconnected player
+     */
+    public synchronized void updatePlayerReconnected(String nickname) {
+        clientViews.forEach(o -> o.onPlayerReconnected(nickname));
+    }
+
+    /**
+     * Applies an error event: stores the message and notifies views.
+     *
+     * @param errorMessage the error message from the server
+     */
+    public synchronized void updateError(String errorMessage) {
+        this.lastErrorMessage = errorMessage;
+        clientViews.forEach(o -> o.onError(errorMessage));
+    }
+
+    // GETTERS
+
+    public synchronized String getMyNickname() { return myNickname; }
+    public synchronized String getGameId() { return gameId; }
+    public synchronized PhaseType getCurrentPhase() { return currentPhase; }
+    public synchronized String getCurrentPlayer() { return currentPlayer; }
+    public synchronized List<String> getTurnOrder() { return Collections.unmodifiableList(turnOrder); }
+    public synchronized List<String> getUpperRow() { return Collections.unmodifiableList(upperRow); }
+    public synchronized List<String> getLowerRow() { return Collections.unmodifiableList(lowerRow); }
+    public synchronized List<String> getUpperRowBuildings() { return Collections.unmodifiableList(upperRowBuildings); }
+    public synchronized List<String> getLowerRowBuildings() { return Collections.unmodifiableList(lowerRowBuildings); }
+    public synchronized List<OfferTileInfo> getOfferTiles() { return Collections.unmodifiableList(offerTiles); }
+    public synchronized Map<String, Integer> getFoodByPlayer() { return Collections.unmodifiableMap(foodByPlayer); }
+    public synchronized Map<String, Integer> getPpByPlayer() { return Collections.unmodifiableMap(ppByPlayer); }
+    public synchronized Map<String, Character> getTotemPositions() { return Collections.unmodifiableMap(totemPositions); }
+    public synchronized Map<String, Integer> getTurnOrderPositions() { return Collections.unmodifiableMap(turnOrderPositions); }
+    public synchronized Map<String, Integer> getRemainingUpper() { return Collections.unmodifiableMap(remainingUpper); }
+    public synchronized Map<String, Integer> getRemainingLower() { return Collections.unmodifiableMap(remainingLower); }
+    public synchronized Map<String, List<String>> getCharactersByPlayer() { return Collections.unmodifiableMap(charactersByPlayer); }
+    public synchronized Map<String, List<String>> getBuildingsByPlayer() { return Collections.unmodifiableMap(buildingsByPlayer); }
+    public synchronized List<String> getWinners() { return Collections.unmodifiableList(winners); }
+    public synchronized List<PlayerFinalScore> getFinalRankings() { return Collections.unmodifiableList(finalRankings); }
+    public synchronized int getDeckRemainingCount() { return deckRemainingCount; }
+    public synchronized boolean isGameEnded() { return gameEnded; }
+    public synchronized String getLastEventResolved() { return lastEventResolved; }
+    public synchronized String getLastErrorMessage() { return lastErrorMessage; }
+    public synchronized boolean isInGame() { return gameId != null && !gameEnded; }
+    public synchronized List<TurnOrderSlotInfo> getTurnOrderSlots() { return Collections.unmodifiableList(turnOrderSlots); }
+    public synchronized void setGameId(String gameId) { this.gameId = gameId; }
 }

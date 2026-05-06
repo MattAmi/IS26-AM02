@@ -1,6 +1,7 @@
 package it.polimi.ingsw.am02.common.interfaces;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
 
@@ -35,7 +36,13 @@ public interface VirtualView {
         @Override public void notifyAutoPlayerInvoked(String nickname) {}
         @Override public void notifyGameAborted(String winner) {}
         @Override public void notifyGameRecoveryFailed() {}
+        @Override public void notifyUsernameResult(String username, boolean isValid, String reason) {}
+        @Override public void notifyGameStarted(String gameId) {}
+        @Override public void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {}
+        @Override public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {}
+        @Override public void notifyLobbyDissolved() {}
     }
+
 
     VirtualView NO_OP = new NoOp();
     static VirtualView noOp() { return NO_OP; }
@@ -74,4 +81,11 @@ public interface VirtualView {
     void notifyAutoPlayerInvoked(String nickname);
     void notifyGameAborted(String winner);
     void notifyGameRecoveryFailed();
+
+    // Lobby
+    void notifyUsernameResult(String username, boolean isValid, String reason);
+    void notifyGameStarted(String gameId);
+    void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies);
+    void notifyCurrentLobbyUpdated(LobbyInfo lobby);
+    void notifyLobbyDissolved();
 }

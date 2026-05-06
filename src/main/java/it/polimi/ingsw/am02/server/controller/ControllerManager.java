@@ -3,12 +3,7 @@ package it.polimi.ingsw.am02.server.controller;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
-import it.polimi.ingsw.am02.common.messages.*;
 import it.polimi.ingsw.am02.common.messages.commands.*;
-import it.polimi.ingsw.am02.common.messages.events.Event;
-import it.polimi.ingsw.am02.common.messages.events.game.*;
-import it.polimi.ingsw.am02.common.messages.events.lobby.*;
-import it.polimi.ingsw.am02.common.messages.events.error.*;
 import it.polimi.ingsw.am02.server.controller.persistence.*;
 import it.polimi.ingsw.am02.server.model.Game;
 
@@ -24,7 +19,7 @@ public class ControllerManager {
 
     private static final ControllerManager INSTANCE = new ControllerManager();
 
-    // Internal maps  (all keyed by clientId, except gameNicknameToClient)
+    // Internal maps (all keyed by clientId, except gameNicknameToClient)
     private final Map<String, VirtualView> connectedClients;
     private final Map<String, Lobby> lobbies;
     private final Map<String, GameController> controllers;
@@ -37,7 +32,6 @@ public class ControllerManager {
     private final ScheduledExecutorService recoveryScheduler;
 
     private final Map<String, ScheduledFuture<?>> pendingRecoveryTasks = new ConcurrentHashMap<>();
-
 
     private ControllerManager() {
         this.connectedClients = new ConcurrentHashMap<>();
@@ -59,13 +53,16 @@ public class ControllerManager {
         return INSTANCE;
     }
 
+    // =========================================================
     // Connection / disconnection entry points (called by network layer)
+    // =========================================================
 
     public synchronized String handleClientConnected(VirtualView view) {
         String clientId = UUID.randomUUID().toString();
         connectedClients.put(clientId, view);
 
-        view.notify(new UpdatedLobbiesEvent(getLobbyInfoList()));
+        // Chiamata granulare per la view della lobby
+        view.notifyAvailableLobbiesUpdated(getLobbyInfoList());
         System.out.println("[ControllerManager] Client connected: " + clientId);
         return clientId;
     }
@@ -91,20 +88,18 @@ public class ControllerManager {
 
         GameController controller = controllers.get(gameId);
         if (controller == null) {
-            newView.notify(new ErrorEvent("Game not found or already ended: " + gameId));
+            newView.notifyError("Game not found or already ended: " + gameId);
             return;
         }
 
         Map<String, String> nicknameMap = gameNicknameToClient.get(gameId);
         if (nicknameMap == null || !nicknameMap.containsKey(nickname)) {
-            newView.notify(new ErrorEvent("Nickname not registered in this game: " + nickname));
+            newView.notifyError("Nickname not registered in this game: " + nickname);
             return;
         }
 
-        // Ask the controller if this nickname is currently in a "disconnected" state.
-        // A reconnect for an already-active client should be rejected.
         if (!controller.isPlayerDisconnected(nickname)) {
-            newView.notify(new ErrorEvent("Player " + nickname + " is not disconnected"));
+            newView.notifyError("Player " + nickname + " is not disconnected");
             return;
         }
 
@@ -112,11 +107,7 @@ public class ControllerManager {
         controller.handlePlayerReconnected(nickname, newView);
     }
 
-
-    // Atomic rebind of a clientId for a player mid-game.
     private void rebindClient(String oldClientId, String newClientId, String gameId, String nickname) {
-
-        // oldClientId is null when recovering a game from log (no previous clientId).
         if (oldClientId != null) {
             clientToGame.remove(oldClientId);
             clientToNickname.remove(oldClientId);
@@ -131,7 +122,10 @@ public class ControllerManager {
                 + " in game " + gameId + " (clientId: " + newClientId + ")");
     }
 
+    // =========================================================
     // Lobby management (called by network layer or by Lobby callbacks)
+    // =========================================================
+
     public synchronized void createLobby(String clientId, int numPlayers) {
         VirtualView view = connectedClients.get(clientId);
         if (view == null) {
@@ -139,12 +133,10 @@ public class ControllerManager {
             return;
         }
 
-        // --- NUOVO: Validazione dimensione lobby ---
         if (numPlayers < 2 || numPlayers > 5) {
-            view.notify(new ErrorEvent("Lobbies must contain between 2 and 5 players."));
+            view.notifyError("Lobbies must contain between 2 and 5 players.");
             return;
         }
-        // -------------------------------------------
 
         String lobbyId = UUID.randomUUID().toString();
         Lobby lobby = new Lobby(lobbyId, numPlayers, this);
@@ -154,16 +146,9 @@ public class ControllerManager {
         clientToLobby.put(clientId, lobbyId);
 
         lobby.addClient(clientId, view);
-        broadcastToPreLobbyClients(new UpdatedLobbiesEvent(getLobbyInfoList()));
+        broadcastToPreLobbyClients();
     }
 
-    /**
-     * Joins an existing lobby. The client is moved from {@link #connectedClients}
-     * into the lobby; they will pick their nickname next.
-     *
-     * @param clientId the joining client's clientId
-     * @param lobbyId  the target lobby's identifier
-     */
     public synchronized void joinLobby(String clientId, String lobbyId) {
         VirtualView view = connectedClients.get(clientId);
         if (view == null) {
@@ -173,43 +158,42 @@ public class ControllerManager {
 
         Lobby lobby = lobbies.get(lobbyId);
         if (lobby == null) {
-            view.notify(new ErrorEvent("Lobby not found: " + lobbyId));
+            view.notifyError("Lobby not found: " + lobbyId);
             return;
         }
         if (lobby.isFull()) {
-            view.notify(new ErrorEvent("Lobby is full"));
+            view.notifyError("Lobby is full");
             return;
         }
         if (lobby.hasStarted()) {
-            view.notify(new ErrorEvent("Lobby has already started"));
+            view.notifyError("Lobby has already started");
             return;
         }
 
         connectedClients.remove(clientId);
         clientToLobby.put(clientId, lobbyId);
         lobby.addClient(clientId, view);
-        broadcastToPreLobbyClients(new UpdatedLobbiesEvent(getLobbyInfoList()));
+        broadcastToPreLobbyClients();
     }
 
     public synchronized void requestSetUsernameInLobby(String clientId, String nickname) {
         String lobbyId = clientToLobby.get(clientId);
         if (lobbyId == null) {
             VirtualView view = connectedClients.get(clientId);
-            if (view != null) view.notify(new ErrorEvent("You are not in any lobby"));
+            if (view != null) view.notifyError("You are not in any lobby");
             return;
         }
 
         if (nickname == null || nickname.isBlank()) {
             VirtualView view = getViewForClient(clientId);
             if (view != null)
-                view.notify(new UsernameResultEvent(nickname, false, "Nickname cannot be empty"));
+                view.notifyUsernameResult(nickname, false, "Nickname cannot be empty");
             return;
         }
 
         Lobby lobby = lobbies.get(lobbyId);
         if (lobby == null) return;
 
-        // Uniqueness check is delegated to Lobby (it knows its own players).
         boolean accepted = lobby.requestNickname(clientId, nickname);
         if (accepted) {
             clientToNickname.put(clientId, nickname);
@@ -220,7 +204,7 @@ public class ControllerManager {
         String lobbyId = clientToLobby.get(clientId);
         if (lobbyId == null) {
             VirtualView view = connectedClients.get(clientId);
-            if (view != null) view.notify(new ErrorEvent("You are not in any lobby"));
+            if (view != null) view.notifyError("You are not in any lobby");
             return;
         }
         Lobby lobby = lobbies.get(lobbyId);
@@ -232,26 +216,28 @@ public class ControllerManager {
         leaveLobbyInternal(clientId);
     }
 
+    // =========================================================
     // Callbacks from Lobby
+    // =========================================================
+
     public synchronized void startGame(String gameId,
                                        List<String> clientIds,
                                        List<String> nicknames,
                                        Map<String, VirtualView> views,
                                        Map<String, Totem> chosenTotems) {
 
-        views.values().forEach(v -> v.notify(new GameStartedEvent(gameId)));
+        // Avviso i client coinvolti che il gioco è iniziato
+        views.values().forEach(v -> v.notifyGameStarted(gameId));
 
         lobbies.remove(gameId);
         clientIds.forEach(clientToLobby::remove);
 
-        // Build the nickname -> clientId reverse map for this game.
         Map<String, String> nicknameToClient = new HashMap<>();
         for (int i = 0; i < clientIds.size(); i++) {
             nicknameToClient.put(nicknames.get(i), clientIds.get(i));
         }
         gameNicknameToClient.put(gameId, nicknameToClient);
 
-        // nickname -> VirtualView map that GameController expects
         Map<String, VirtualView> nicknameToView = new HashMap<>();
         for (int i = 0; i < clientIds.size(); i++) {
             nicknameToView.put(nicknames.get(i), views.get(clientIds.get(i)));
@@ -277,23 +263,26 @@ public class ControllerManager {
         controller.setGameEndedCallback(() -> removeGameController(gameId));
         controllers.put(gameId, controller);
 
-        broadcastToPreLobbyClients(new UpdatedLobbiesEvent(getLobbyInfoList()));
+        broadcastToPreLobbyClients();
         model.startFSM();
     }
 
     public synchronized void removeLobby(String lobbyId) {
         lobbies.remove(lobbyId);
-        broadcastToPreLobbyClients(new UpdatedLobbiesEvent(getLobbyInfoList()));
+        broadcastToPreLobbyClients();
     }
 
     public synchronized void returnClientToPreLobby(String clientId, VirtualView view) {
         clientToLobby.remove(clientId);
         clientToNickname.remove(clientId);
         connectedClients.put(clientId, view);
-        view.notify(new UpdatedLobbiesEvent(getLobbyInfoList()));
+        view.notifyAvailableLobbiesUpdated(getLobbyInfoList());
     }
 
+    // =========================================================
     // Command routing (called by network layer)
+    // =========================================================
+
     public void routeGameCommand(String clientId, Command cmd) {
         String gameId = clientToGame.get(clientId);
         if (gameId == null) return;
@@ -309,15 +298,20 @@ public class ControllerManager {
         controller.handle(gameCmd, nickname);
     }
 
-
+    // =========================================================
     // Lifecycle
+    // =========================================================
+
     public synchronized void shutdown() {
         controllers.values().forEach(GameController::shutdown);
         controllers.clear();
         recoveryScheduler.shutdownNow();
     }
 
+    // =========================================================
     // Helper methods
+    // =========================================================
+
     private void leaveLobbyInternal(String clientId) {
         String lobbyId = clientToLobby.get(clientId);
         if (lobbyId == null) return;
@@ -331,11 +325,12 @@ public class ControllerManager {
         gameNicknameToClient.remove(gameId);
         clientToGame.entrySet().removeIf(e -> gameId.equals(e.getValue()));
         System.out.println("[ControllerManager] Game removed: " + gameId);
-        broadcastToPreLobbyClients(new UpdatedLobbiesEvent(getLobbyInfoList()));
+        broadcastToPreLobbyClients();
     }
 
-    private void broadcastToPreLobbyClients(Event event) {
-        connectedClients.values().forEach(v -> v.notify(event));
+    private void broadcastToPreLobbyClients() {
+        List<LobbyInfo> currentLobbies = getLobbyInfoList();
+        connectedClients.values().forEach(v -> v.notifyAvailableLobbiesUpdated(currentLobbies));
     }
 
     private List<LobbyInfo> getLobbyInfoList() {
@@ -348,13 +343,16 @@ public class ControllerManager {
     private VirtualView getViewForClient(String clientId) {
         VirtualView v = connectedClients.get(clientId);
         if (v != null) return v;
-        // Client might be in a lobby — ask the lobby.
         String lobbyId = clientToLobby.get(clientId);
         if (lobbyId == null) return null;
         Lobby lobby = lobbies.get(lobbyId);
         if (lobby == null) return null;
         return lobby.getView(clientId);
     }
+
+    // =========================================================
+    // Recovery system
+    // =========================================================
 
     public synchronized void recoverGames(Path logsDirectory) {
         if (!Files.isDirectory(logsDirectory)) {
@@ -428,7 +426,6 @@ public class ControllerManager {
 
         String gameId = init.gameId();
 
-        // Cancel any stale recovery task for this gameId (left over from a previous crash)
         ScheduledFuture<?> stale = pendingRecoveryTasks.remove(gameId);
         if (stale != null) stale.cancel(false);
 

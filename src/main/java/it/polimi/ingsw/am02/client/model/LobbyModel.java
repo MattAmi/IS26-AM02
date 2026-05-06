@@ -19,7 +19,12 @@ public class LobbyModel {
     private final List<ClientView> clientViews = new ArrayList<>();
 
     // OBSERVERS
-    public synchronized void addObserver(ClientView observer) { clientViews.add(observer); }
+    public synchronized void addObserver(ClientView observer) {
+        if (!clientViews.contains(observer)) {
+            clientViews.add(observer);
+        }
+    }
+
     public synchronized void removeObserver(ClientView observer) { clientViews.remove(observer); }
 
     // DOMAIN UPDATES

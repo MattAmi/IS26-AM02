@@ -46,7 +46,12 @@ public class GameModel {
 
     // OBSERVERS
 
-    public synchronized void addObserver(ClientView clientView) { clientViews.add(clientView); }
+    public synchronized void addObserver(ClientView observer) {
+        if (!clientViews.contains(observer)) {
+            clientViews.add(observer);
+        }
+    }
+
     public synchronized void removeObserver(ClientView clientView) { clientViews.remove(clientView); }
 
     // DOMAIN UPDATES

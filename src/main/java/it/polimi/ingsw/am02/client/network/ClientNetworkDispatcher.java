@@ -29,18 +29,29 @@ public class ClientNetworkDispatcher implements VirtualView {
         this.lobbyModel = lobbyModel;
     }
 
-    /**
-     * Ensures that the GameModel exists before applying game updates.
-     */
+    public void updateActiveNickname(String nickname) {
+        this.activeNickname = nickname;
+    }
+
+    public void updateActiveGameId(String gameId) {
+        this.activeGameId = gameId;
+    }
+
+    public void updateInternalState(String nick, String gId) {
+        this.activeNickname = nick;
+        this.activeGameId = gId;
+    }
+
     private void ensureGameModel() {
         if (clientController.getGameModel() == null && activeNickname != null) {
+            // This call performs the observer switch: Lobby -> Game
             clientController.onGameModelRequired(activeNickname);
-            if (activeGameId != null) {
+
+            if (activeGameId != null && clientController.getGameModel() != null) {
                 clientController.getGameModel().setGameId(activeGameId);
             }
         }
     }
-
     // --- LOBBY NOTIFICATIONS ---
 
     @Override

@@ -75,7 +75,6 @@ public class TuiView extends AbstractClientView {
      */
     public TuiView(LobbyModel lobbyModel) {
         this.lobbyModel = lobbyModel;
-        lobbyModel.addObserver(this);
     }
 
     // -----------------------------------------------------------------------
@@ -424,8 +423,6 @@ public class TuiView extends AbstractClientView {
 
         this.notifications.clear();
 
-        lobbyModel.removeObserver(this);
-        lobbyModel.addObserver(this);
         clearScreen();
         printHeader();
         /*System.out.println(GREEN + "You are back in the lobby." + RESET);

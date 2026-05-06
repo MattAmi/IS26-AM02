@@ -239,9 +239,17 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     @Override public void moveTotem(char t)              { execute(() -> serverStub.moveTotem(t)); }
     @Override public void resolveActions(List<String> s) { execute(() -> serverStub.resolveActions(s)); }
 
-    @Override public void requestReconnect(String n, String g) {
+    @Override
+    public void requestReconnect(String n, String g) {
         this.activeNickname = n;
         this.activeGameId = g;
+
+        // Stessa logica: allineiamo il dispatcher locale
+        if (this.dispatcher != null) {
+            this.dispatcher.updateActiveNickname(n);
+            this.dispatcher.updateActiveGameId(g);
+        }
+
         execute(() -> serverStub.requestReconnect(n, g));
     }
 

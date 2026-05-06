@@ -167,6 +167,15 @@ public class SocketServerProxy implements ServerProxy {
     public void requestReconnect(String nickname, String gameId) {
         this.activeNickname = nickname;
         this.activeGameId = gameId;
+
+        // FONDAMENTALE: Dobbiamo dire al dispatcher chi siamo.
+        // Senza questo, il dispatcher riceverà i notify dal server ma
+        // activeNickname sarà null, quindi non creerà mai il GameModel.
+        if (this.dispatcher != null) {
+            this.dispatcher.updateActiveNickname(nickname);
+            this.dispatcher.updateActiveGameId(gameId);
+        }
+
         send(new ReconnectCommand(nickname, gameId));
     }
 

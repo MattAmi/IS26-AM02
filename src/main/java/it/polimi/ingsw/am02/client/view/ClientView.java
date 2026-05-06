@@ -15,17 +15,10 @@ import java.util.Map;
 
 /**
  * Observer interface implemented by all client views (TUI, GUI).
- * The {@link GameModel} pushes
- * granular updates to registered views, one method per event type.
- *
- * <p>Each method corresponds to a server-originated event and carries
- * only the data relevant to that update, so the view can refresh
- * just the affected section without re-reading the whole model.</p>
  */
 public interface ClientView {
 
     // Lobby lifecycle
-
     void onUsernameResult(String username, boolean accepted, String reason);
     void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies);
     void onCurrentLobbyUpdated(LobbyInfo lobby);
@@ -64,12 +57,14 @@ public interface ClientView {
     void onGameRecoveryFailed();
     void onPlayerReconnected(String nickname);
     void onError(String message);
+
+    // Core View-Model binding
     void setGameModel(GameModel gameModel);
+    void onReturnToLobby();
+
+    // Connection
     void onConnectionLost();
     void onConnectionRestored();
     void onAutoPlayerTimerStarted(String nickname);
     void onAutoPlayerInvoked(String nickname);
-
-    void onReturnToLobby();
-
 }

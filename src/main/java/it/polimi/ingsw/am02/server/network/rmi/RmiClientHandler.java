@@ -279,11 +279,6 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void requestStartGame() throws RemoteException {
-        // The game starts automatically when the lobby is full — no action needed.
-    }
-
-    @Override
     public void requestLeaveLobby() throws RemoteException {
         inboundExecutor.submit(() -> manager.requestLeaveLobby(clientId));
     }

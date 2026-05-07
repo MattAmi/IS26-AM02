@@ -78,11 +78,11 @@ public class SocketClientHandler implements ClientHandler {
 
         pingScheduler.scheduleAtFixedRate(() -> {
             long elapsed = System.currentTimeMillis() - lastPongReceivedAt;
-            if (elapsed > (long) (PING_TIMEOUT_SECONDS + PING_INTERVAL_SECONDS) * 1000) {
+            if (elapsed > PING_TIMEOUT_SECONDS * 1000L) {
                 System.out.println("[SocketClientHandler] Ping timeout for clientId: " + clientId);
                 disconnect();
             }
-        }, PING_TIMEOUT_SECONDS, PING_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        }, PING_INTERVAL_SECONDS, PING_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     // READER / WRITER LOOPS

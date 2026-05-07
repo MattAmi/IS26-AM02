@@ -4,6 +4,7 @@ import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.interfaces.VirtualControllerManager;
 import it.polimi.ingsw.am02.common.messages.Message;
 import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
@@ -25,7 +26,10 @@ import java.util.concurrent.*;
  * Server-side handler for a single Socket-connected client.
  *
  * <p>Inbound: a reader loop deserializes JSON lines into {@link Command} records
- * and dispatches them to {@link ControllerManager}.
+ * and dispatches them via {@link Command#apply(VirtualControllerManager, String)},
+ * implementing the Inversion of Control pattern symmetrically to
+ * {@link Event#apply} on the client side. {@link Command} records are used solely
+ * as the deserialization target; they are never passed downstream.
  *
  * <p>Outbound: each {@link it.polimi.ingsw.am02.common.interfaces.VirtualView} notification
  * constructs the corresponding {@link Event} record, enqueues it, and returns immediately.
@@ -40,7 +44,7 @@ public class SocketClientHandler implements ClientHandler {
 
     private final Socket socket;
     private final JsonMessageCodec codec;
-    private final ControllerManager manager;
+    private final VirtualControllerManager manager;
     private final PrintWriter out;
     private final BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<>();
     private final ScheduledExecutorService pingScheduler = Executors.newSingleThreadScheduledExecutor();
@@ -69,7 +73,9 @@ public class SocketClientHandler implements ClientHandler {
         readerLoop();
     }
 
+    // =========================================================
     // PING / PONG
+    // =========================================================
 
     private void startPingTimer() {
         pingScheduler.scheduleAtFixedRate(
@@ -85,7 +91,9 @@ public class SocketClientHandler implements ClientHandler {
         }, PING_INTERVAL_SECONDS, PING_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
+    // =========================================================
     // READER / WRITER LOOPS
+    // =========================================================
 
     private void readerLoop() {
         try (BufferedReader in = new BufferedReader(
@@ -115,23 +123,25 @@ public class SocketClientHandler implements ClientHandler {
         }
     }
 
-    // COMMAND DISPATCH
+    // =========================================================
+    // COMMAND DISPATCH — IoC: each Command knows what to do
+    // =========================================================
+
     private void dispatch(Command cmd) {
-        switch (cmd) {
-            case PongCommand c           -> lastPongReceivedAt = System.currentTimeMillis();
-            case SetUsernameCommand c    -> manager.requestSetUsernameInLobby(clientId, c.username());
-            case CreateLobbyCommand c    -> manager.createLobby(clientId, c.numPlayers());
-            case JoinLobbyCommand c      -> manager.joinLobby(clientId, c.lobbyID());
-            case SelectTotemCommand c    -> manager.selectTotem(clientId, c.color());
-            case StartGameCommand c      -> manager.routeGameCommand(clientId, c);
-            case LeaveLobbyCommand c     -> manager.leaveLobby(clientId);
-            case MoveTotemCommand c      -> manager.routeGameCommand(clientId, c);
-            case ResolveActionsCommand c -> manager.routeGameCommand(clientId, c);
-            case ReconnectCommand c      -> manager.handleReconnectRequest(clientId, this, c);
+        if (cmd instanceof PongCommand) {
+            lastPongReceivedAt = System.currentTimeMillis();
+            return;
         }
+        if (cmd instanceof ReconnectCommand rc) {
+            rc.apply(manager, clientId, this);
+            return;
+        }
+        cmd.apply(manager, clientId);
     }
 
-    // VirtualView - Lobby
+    // =========================================================
+    // VirtualView — outbound notifications (server → client)
+    // =========================================================
 
     @Override
     public void notifyUsernameResult(String username, boolean isValid, String reason) {
@@ -155,18 +165,18 @@ public class SocketClientHandler implements ClientHandler {
 
     @Override
     public void notifyLobbyDissolved(String lobbyID) {
-        eventQueue.add(new LobbyDissolvedEvent(lobbyID)); // <-- Corretto
+        eventQueue.add(new LobbyDissolvedEvent(lobbyID));
     }
 
-    // VirtualView - Game
-
     @Override
-    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
+    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood,
+                                         BoardSnapshot boardSnapshot) {
         eventQueue.add(new GameSetupCompletedEvent(turnOrder, initialFood, boardSnapshot));
     }
 
     @Override
-    public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
+    public void notifyPhaseChanged(PhaseType phase, String currentPlayer,
+                                   List<String> resolutionOrder) {
         eventQueue.add(new PhaseChangedEvent(phase, currentPlayer, resolutionOrder));
     }
 
@@ -181,13 +191,19 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void notifyBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, List<String> discardedCards, List<String> movedToLowerRow, int deckRemainingCount) {
-        eventQueue.add(new BoardUpdatedEvent(newUpperRow, newLowerRow, discardedCards, movedToLowerRow, deckRemainingCount));
+    public void notifyBoardUpdated(List<String> newUpperRow, List<String> newLowerRow,
+                                   List<String> discardedCards, List<String> movedToLowerRow,
+                                   int deckRemainingCount) {
+        eventQueue.add(new BoardUpdatedEvent(newUpperRow, newLowerRow, discardedCards,
+                movedToLowerRow, deckRemainingCount));
     }
 
     @Override
-    public void notifyEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings, List<String> discardedBuildings) {
-        eventQueue.add(new EraChangedEvent(newEra, newUpperRowBuildings, newLowerRowBuildings, discardedBuildings));
+    public void notifyEraChanged(Era newEra, List<String> newUpperRowBuildings,
+                                 List<String> newLowerRowBuildings,
+                                 List<String> discardedBuildings) {
+        eventQueue.add(new EraChangedEvent(newEra, newUpperRowBuildings,
+                newLowerRowBuildings, discardedBuildings));
     }
 
     @Override
@@ -201,12 +217,14 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void notifyCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
+    public void notifyCardTaken(String nickname, String cardID, CardType cardType,
+                                RowPosition sourceRow) {
         eventQueue.add(new CardTakenEvent(nickname, cardID, cardType, sourceRow));
     }
 
     @Override
-    public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {
+    public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper,
+                                              int remainingLower) {
         eventQueue.add(new PlayerLimitsInitializedEvent(nickname, remainingUpper, remainingLower));
     }
 
@@ -216,7 +234,8 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void notifyPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta) {
+    public void notifyPlayerResourceChanged(String nickname, ResourceType resource,
+                                            int newValue, int delta) {
         eventQueue.add(new PlayerResourceChangedEvent(nickname, resource, newValue, delta));
     }
 
@@ -275,7 +294,10 @@ public class SocketClientHandler implements ClientHandler {
         eventQueue.add(new GameRecoveryFailedEvent());
     }
 
+    // =========================================================
     // Lifecycle
+    // =========================================================
+
     @Override
     public synchronized void disconnect() {
         if (clientId == null) return;

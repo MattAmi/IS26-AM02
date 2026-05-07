@@ -234,7 +234,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     @Override public void requestCreateLobby(int n)      { execute(() -> serverStub.requestCreateLobby(n)); }
     @Override public void requestJoinLobby(String id)    { execute(() -> serverStub.requestJoinLobby(id)); }
     @Override public void requestSelectTotem(Totem t)    { execute(() -> serverStub.requestSelectTotem(t)); }
-    @Override public void requestStartGame()             { execute(() -> serverStub.requestStartGame()); }
+
     @Override public void requestLeaveLobby()            { execute(() -> serverStub.requestLeaveLobby()); }
     @Override public void moveTotem(char t)              { execute(() -> serverStub.moveTotem(t)); }
     @Override public void resolveActions(List<String> s) { execute(() -> serverStub.resolveActions(s)); }

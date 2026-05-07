@@ -4,7 +4,7 @@ import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
-import it.polimi.ingsw.am02.common.messages.commands.*;
+import it.polimi.ingsw.am02.common.interfaces.VirtualControllerManager;
 import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
@@ -23,8 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * to avoid blocking the RMI thread pool and to serialize command processing.
  *
  * <p>Outbound notifications (server → client) are queued as {@link RmiCall} lambdas
- * and drained by a dedicated thread, so that {@link it.polimi.ingsw.am02.server.controller.GameController}
- * never blocks on a slow or dead client while holding its lock.
+ * and drained by a dedicated thread, so that
+ * {@link it.polimi.ingsw.am02.server.controller.GameController} never blocks on a
+ * slow or dead client while holding its lock.
  */
 public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
@@ -37,7 +38,7 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
         void invoke(RmiClientRemote stub) throws RemoteException;
     }
 
-    private final ControllerManager manager;
+    private final VirtualControllerManager manager;
     private final RmiClientRemote stub;
     private final String clientId;
 
@@ -90,14 +91,17 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
                 Thread.currentThread().interrupt();
                 break;
             } catch (RemoteException e) {
-                System.err.println("[RmiClientHandler] Client " + clientId + " unreachable: " + e.getMessage());
+                System.err.println("[RmiClientHandler] Client " + clientId
+                        + " unreachable: " + e.getMessage());
                 disconnect();
                 break;
             }
         }
     }
 
-    // VirtualView - LOBBY
+    // =========================================================
+    // VirtualView — outbound notifications (server → client)
+    // =========================================================
 
     @Override
     public void notifyUsernameResult(String username, boolean isValid, String reason) {
@@ -121,18 +125,18 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
     @Override
     public void notifyLobbyDissolved(String lobbyID) {
-        enqueue(s -> s.notifyLobbyDissolved(lobbyID)); // <-- Corretto
+        enqueue(s -> s.notifyLobbyDissolved(lobbyID));
     }
 
-    // VirtualView - Game
-
     @Override
-    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
+    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood,
+                                         BoardSnapshot boardSnapshot) {
         enqueue(s -> s.notifyGameSetupCompleted(turnOrder, initialFood, boardSnapshot));
     }
 
     @Override
-    public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
+    public void notifyPhaseChanged(PhaseType phase, String currentPlayer,
+                                   List<String> resolutionOrder) {
         enqueue(s -> s.notifyPhaseChanged(phase, currentPlayer, resolutionOrder));
     }
 
@@ -147,13 +151,19 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void notifyBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, List<String> discardedCards, List<String> movedToLowerRow, int deckRemainingCount) {
-        enqueue(s -> s.notifyBoardUpdated(newUpperRow, newLowerRow, discardedCards, movedToLowerRow, deckRemainingCount));
+    public void notifyBoardUpdated(List<String> newUpperRow, List<String> newLowerRow,
+                                   List<String> discardedCards, List<String> movedToLowerRow,
+                                   int deckRemainingCount) {
+        enqueue(s -> s.notifyBoardUpdated(newUpperRow, newLowerRow, discardedCards,
+                movedToLowerRow, deckRemainingCount));
     }
 
     @Override
-    public void notifyEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings, List<String> discardedBuildings) {
-        enqueue(s -> s.notifyEraChanged(newEra, newUpperRowBuildings, newLowerRowBuildings, discardedBuildings));
+    public void notifyEraChanged(Era newEra, List<String> newUpperRowBuildings,
+                                 List<String> newLowerRowBuildings,
+                                 List<String> discardedBuildings) {
+        enqueue(s -> s.notifyEraChanged(newEra, newUpperRowBuildings,
+                newLowerRowBuildings, discardedBuildings));
     }
 
     @Override
@@ -167,12 +177,14 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void notifyCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
+    public void notifyCardTaken(String nickname, String cardID, CardType cardType,
+                                RowPosition sourceRow) {
         enqueue(s -> s.notifyCardTaken(nickname, cardID, cardType, sourceRow));
     }
 
     @Override
-    public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {
+    public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper,
+                                              int remainingLower) {
         enqueue(s -> s.notifyPlayerLimitsInitialized(nickname, remainingUpper, remainingLower));
     }
 
@@ -182,7 +194,8 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void notifyPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta) {
+    public void notifyPlayerResourceChanged(String nickname, ResourceType resource,
+                                            int newValue, int delta) {
         enqueue(s -> s.notifyPlayerResourceChanged(nickname, resource, newValue, delta));
     }
 
@@ -242,52 +255,52 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     // =========================================================
-    // RmiServerRemote — inbound commands from client
+    // RmiServerRemote — inbound calls (client → server)
     // =========================================================
 
     @Override
     public void requestSetUsername(String username) throws RemoteException {
-        inboundExecutor.submit(() -> manager.requestSetUsernameInLobby(clientId, username));
+        inboundExecutor.submit(() -> manager.requestSetUsername(clientId, username));
     }
 
     @Override
     public void requestCreateLobby(int numPlayers) throws RemoteException {
-        inboundExecutor.submit(() -> manager.createLobby(clientId, numPlayers));
+        inboundExecutor.submit(() -> manager.requestCreateLobby(clientId, numPlayers));
     }
 
     @Override
     public void requestJoinLobby(String lobbyID) throws RemoteException {
-        inboundExecutor.submit(() -> manager.joinLobby(clientId, lobbyID));
+        inboundExecutor.submit(() -> manager.requestJoinLobby(clientId, lobbyID));
     }
 
     @Override
     public void requestSelectTotem(Totem color) throws RemoteException {
-        inboundExecutor.submit(() -> manager.selectTotem(clientId, color));
+        inboundExecutor.submit(() -> manager.requestSelectTotem(clientId, color));
     }
 
     @Override
     public void requestStartGame() throws RemoteException {
-        inboundExecutor.submit(() -> manager.routeGameCommand(clientId, new StartGameCommand()));
+        // The game starts automatically when the lobby is full — no action needed.
     }
 
     @Override
     public void requestLeaveLobby() throws RemoteException {
-        inboundExecutor.submit(() -> manager.leaveLobby(clientId));
-    }
-
-    @Override
-    public void moveTotem(char tileID) throws RemoteException {
-        inboundExecutor.submit(() -> manager.routeGameCommand(clientId, new MoveTotemCommand("", tileID)));
-    }
-
-    @Override
-    public void resolveActions(List<String> selectedIDs) throws RemoteException {
-        inboundExecutor.submit(() -> manager.routeGameCommand(clientId, new ResolveActionsCommand("", selectedIDs)));
+        inboundExecutor.submit(() -> manager.requestLeaveLobby(clientId));
     }
 
     @Override
     public void requestReconnect(String nickname, String gameId) throws RemoteException {
-        inboundExecutor.submit(() -> manager.handleReconnectRequest(clientId, this, new ReconnectCommand(nickname, gameId)));
+        inboundExecutor.submit(() -> manager.requestReconnect(clientId, this, nickname, gameId));
+    }
+
+    @Override
+    public void moveTotem(char tileID) throws RemoteException {
+        inboundExecutor.submit(() -> manager.requestMoveTotem(clientId, tileID));
+    }
+
+    @Override
+    public void resolveActions(List<String> selectedIDs) throws RemoteException {
+        inboundExecutor.submit(() -> manager.requestResolveActions(clientId, selectedIDs));
     }
 
     @Override

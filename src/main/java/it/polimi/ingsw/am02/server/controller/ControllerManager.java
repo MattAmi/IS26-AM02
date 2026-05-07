@@ -103,8 +103,14 @@ public class ControllerManager {
             return;
         }
 
+        try {
+            controller.handlePlayerReconnected(nickname, newView);
+        } catch (IllegalStateException e) {
+            newView.notifyError(e.getMessage()); // "Server is still recovering..."
+            return;
+        }
+
         rebindClient(nicknameMap.get(nickname), newClientId, gameId, nickname);
-        controller.handlePlayerReconnected(nickname, newView);
     }
 
     private void rebindClient(String oldClientId, String newClientId, String gameId, String nickname) {

@@ -35,7 +35,7 @@ public abstract class ClientController {
     // CONTEXT MANAGEMENT
     // -------------------------------------------------------------------------
 
-    public void onGameModelRequired(String nickname) {
+    public synchronized void onGameModelRequired(String nickname) {
         if (this.gameModel != null) return;
         this.gameModel = new GameModel(nickname);
         this.lobbyModel.removeObserver(this.view);
@@ -245,6 +245,6 @@ public abstract class ClientController {
                 gameModel.getMyNickname().equals(gameModel.getCurrentPlayer());
     }
 
-    public GameModel getGameModel() { return gameModel; }
+    public synchronized GameModel getGameModel() { return gameModel; }
     public LobbyModel getLobbyModel() { return lobbyModel; }
 }

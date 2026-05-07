@@ -20,13 +20,20 @@ public class ClientNetworkDispatcher implements VirtualView {
     private final ClientController clientController;
     private final LobbyModel lobbyModel;
 
+    private java.util.function.Consumer<String> onGameStarted = id -> {};
+
     // Cache to handle automatic transition and reconnection
     private String activeNickname;
     private String activeGameId;
 
+
     public ClientNetworkDispatcher(ClientController clientController, LobbyModel lobbyModel) {
         this.clientController = clientController;
         this.lobbyModel = lobbyModel;
+    }
+
+    public void setOnGameStarted(java.util.function.Consumer<String> callback) {
+        this.onGameStarted = callback;
     }
 
     public void updateActiveNickname(String nickname) {
@@ -63,6 +70,7 @@ public class ClientNetworkDispatcher implements VirtualView {
     @Override
     public void notifyGameStarted(String gameId) {
         this.activeGameId = gameId;
+        onGameStarted.accept(gameId);  // notifica il proxy se registrato
         ensureGameModel();
         if (clientController.getGameModel() != null) {
             clientController.getGameModel().updateGameStarted(gameId);

@@ -57,8 +57,8 @@ public class SocketServerProxy implements ServerProxy {
     @Override
     public void setClientController(ClientController controller) {
         this.clientController = controller;
-        // Initialize the dispatcher that decouples network from models
         this.dispatcher = new ClientNetworkDispatcher(controller, lobbyModel);
+        this.dispatcher.setOnGameStarted(id -> this.activeGameId = id);
     }
 
     @Override
@@ -115,12 +115,28 @@ public class SocketServerProxy implements ServerProxy {
         }
     }
 
-    private void handleConnectionLost() {
+    private synchronized void handleConnectionLost() {
         if (!connected) return;
         connected = false;
         stopPingThread();
         view.onConnectionLost();
-        try { if (socket != null) socket.close(); } catch (IOException ignored) {}
+
+        new Thread(() -> {
+            while (!connected) {
+                try {
+                    Thread.sleep(5_000);
+                    try { if (socket != null) socket.close(); } catch (IOException ignored) {}
+                    connect();
+                    if (activeNickname != null && activeGameId != null) {
+                        requestReconnect(activeNickname, activeGameId);
+                    } else if (activeNickname != null) {
+                        requestSetUsername(activeNickname);
+                        view.onReturnToLobby();
+                    }
+                    view.onConnectionRestored();
+                } catch (Exception ignored) {}
+            }
+        }, "SocketProxy-ReconnectThread").start();
     }
 
     private void send(Command command) {

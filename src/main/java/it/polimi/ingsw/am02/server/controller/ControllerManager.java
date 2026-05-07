@@ -63,7 +63,7 @@ public class ControllerManager implements VirtualControllerManager {
         String clientId = UUID.randomUUID().toString();
         connectedClients.put(clientId, view);
         view.notifyAvailableLobbiesUpdated(getLobbyInfoList());
-        System.out.println("[ControllerManager] Client connected: " + clientId);
+        log("Client connected: " + clientId);
         return clientId;
     }
 
@@ -124,8 +124,7 @@ public class ControllerManager implements VirtualControllerManager {
         clientToGame.put(newClientId, gameId);
         clientToNickname.put(newClientId, nickname);
 
-        System.out.println("[ControllerManager] Rebound " + nickname
-                + " in game " + gameId + " (clientId: " + newClientId + ")");
+        log("Rebound " + nickname + " in game " + gameId + " (clientId: " + newClientId + ")");
     }
 
     // =========================================================
@@ -136,7 +135,7 @@ public class ControllerManager implements VirtualControllerManager {
     public synchronized void requestCreateLobby(String clientId, int numPlayers) {
         VirtualView view = connectedClients.get(clientId);
         if (view == null) {
-            System.err.println("[ControllerManager] requestCreateLobby: unknown clientId " + clientId);
+            log("requestCreateLobby: unknown clientId " + clientId);
             return;
         }
 
@@ -160,7 +159,7 @@ public class ControllerManager implements VirtualControllerManager {
     public synchronized void requestJoinLobby(String clientId, String lobbyId) {
         VirtualView view = connectedClients.get(clientId);
         if (view == null) {
-            System.err.println("[ControllerManager] requestJoinLobby: unknown clientId " + clientId);
+            log("requestJoinLobby: unknown clientId " + clientId);
             return;
         }
 
@@ -228,7 +227,7 @@ public class ControllerManager implements VirtualControllerManager {
     }
 
     // =========================================================
-    // In-game actions — TODO: Step 2 (logging + granular GameController methods)
+    // In-game actions
     // =========================================================
 
     @Override
@@ -241,6 +240,7 @@ public class ControllerManager implements VirtualControllerManager {
         if (controller == null) return;
 
         gameLogger(gameId).logCommand(new MoveTotemCommand(nickname, tileId), nickname);
+        log("Logged MoveTotem for " + nickname + " (tileId=" + tileId + ")");
         controller.executeMoveTotem(nickname, tileId);
     }
 
@@ -254,6 +254,7 @@ public class ControllerManager implements VirtualControllerManager {
         if (controller == null) return;
 
         gameLogger(gameId).logCommand(new ResolveActionsCommand(nickname, selectedIds), nickname);
+        log("Logged ResolveActions for " + nickname + " (selectedIds=" + selectedIds + ")");
         controller.executeResolveActions(nickname, selectedIds);
     }
 
@@ -345,7 +346,7 @@ public class ControllerManager implements VirtualControllerManager {
         if (controllers.remove(gameId) == null) return;
         gameNicknameToClient.remove(gameId);
         clientToGame.entrySet().removeIf(e -> gameId.equals(e.getValue()));
-        System.out.println("[ControllerManager] Game removed: " + gameId);
+        log("Game removed: " + gameId);
         broadcastToPreLobbyClients();
     }
 
@@ -377,7 +378,7 @@ public class ControllerManager implements VirtualControllerManager {
 
     public synchronized void recoverGames(Path logsDirectory) {
         if (!Files.isDirectory(logsDirectory)) {
-            System.out.println("[Recovery] No logs directory — starting fresh.");
+            logRecovery("No logs directory — starting fresh.");
             return;
         }
 
@@ -388,17 +389,17 @@ public class ControllerManager implements VirtualControllerManager {
                     .filter(this::isInterrupted)
                     .toList();
         } catch (IOException e) {
-            System.err.println("[Recovery] Cannot list logs: " + e.getMessage());
+            System.err.println("[ControllerManager:Recovery] Cannot list logs: " + e.getMessage());
             return;
         }
 
-        System.out.println("[Recovery] " + candidates.size() + " game(s) to recover.");
+        logRecovery(candidates.size() + " game(s) to recover.");
         for (Path logFile : candidates) {
             try {
                 recoverSingleGame(logFile);
-                System.out.println("[Recovery] Recovered: " + logFile.getFileName());
+                logRecovery("Recovered: " + logFile.getFileName());
             } catch (Exception e) {
-                System.err.println("[Recovery] Failed: " + logFile.getFileName()
+                System.err.println("[ControllerManager:Recovery] Failed: " + logFile.getFileName()
                         + " — " + e.getMessage());
                 quarantine(logFile, logsDirectory);
             }
@@ -455,8 +456,7 @@ public class ControllerManager implements VirtualControllerManager {
                 pendingRecoveryTasks.remove(gameId);
                 GameController c = controllers.get(gameId);
                 if (c != null && c.areAllPlayersPendingReconnection()) {
-                    System.out.println("[Recovery] No players reconnected for game "
-                            + gameId + " — removing.");
+                    logRecovery("No players reconnected for game " + gameId + " — removing.");
                     removeGameController(gameId);
                 }
             }
@@ -472,7 +472,7 @@ public class ControllerManager implements VirtualControllerManager {
             Files.move(logFile, dest.resolve(logFile.getFileName()),
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            System.err.println("[Recovery] Cannot quarantine "
+            System.err.println("[ControllerManager:Recovery] Cannot quarantine "
                     + logFile.getFileName() + ": " + e.getMessage());
         }
     }
@@ -480,5 +480,13 @@ public class ControllerManager implements VirtualControllerManager {
     private GameLogger gameLogger(String gameId) {
         GameController c = controllers.get(gameId);
         return c != null ? c.getLogger() : new NoOpCommandLogger();
+    }
+
+    private void log(String msg) {
+        System.out.println("[ControllerManager] " + msg);
+    }
+
+    private void logRecovery(String msg) {
+        System.out.println("[ControllerManager:Recovery] " + msg);
     }
 }

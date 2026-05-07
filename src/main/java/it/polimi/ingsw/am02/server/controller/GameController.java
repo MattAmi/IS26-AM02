@@ -135,7 +135,7 @@ public class GameController implements GameObserver {
 
     /**
      * Routes a {@link GameCommand} to the appropriate execution method.
-     * Package-private: only used by {@link ControllerManager recoverSingleGame} during replay.
+     * Package-private: only used during replay in {@link ControllerManager}.
      * Logging is intentionally omitted here — commands are already logged in the NDJSON file
      * being replayed.
      *

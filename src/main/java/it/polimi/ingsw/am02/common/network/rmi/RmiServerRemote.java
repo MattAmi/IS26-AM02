@@ -13,7 +13,6 @@ public interface RmiServerRemote extends Remote {
     void requestCreateLobby(int numPlayers) throws RemoteException;
     void requestJoinLobby(String lobbyID) throws RemoteException;
     void requestSelectTotem(Totem color) throws RemoteException;
-    void requestStartGame() throws RemoteException;
     void requestLeaveLobby() throws RemoteException;
 
     // Reconnection

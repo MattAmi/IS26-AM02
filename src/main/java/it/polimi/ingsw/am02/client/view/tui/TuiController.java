@@ -92,7 +92,7 @@ public class TuiController extends ClientController {
                 handleResolveActions(ids);
             }
 
-            // --- NO MORE INSTANCEOF! ---
+            // --- NO MORE INSTANCEOF ---
             case "info" -> {
                 if (arg1.isEmpty()) view.onError("Usage: info <cardID>");
                 else tuiView.onShowCardInfo(arg1.toUpperCase());
@@ -113,7 +113,7 @@ public class TuiController extends ClientController {
             }
 
             default -> {
-                if (gameModel != null && isMyTurn()) handleResolveActions(List.of(cmd.toUpperCase()));
+                if (gameModel != null) handleResolveActions(List.of(cmd.toUpperCase()));
                 else view.onError("Unknown command: '" + cmd + "'. Type 'help' for assistance.");
             }
         }

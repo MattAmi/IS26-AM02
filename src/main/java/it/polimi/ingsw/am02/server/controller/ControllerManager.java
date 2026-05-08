@@ -2,6 +2,7 @@ package it.polimi.ingsw.am02.server.controller;
 
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.common.interfaces.VirtualControllerManager;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.server.controller.persistence.*;
@@ -15,7 +16,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-public class ControllerManager {
+public class ControllerManager implements VirtualControllerManager {
 
     private static final ControllerManager INSTANCE = new ControllerManager();
 
@@ -57,16 +58,16 @@ public class ControllerManager {
     // Connection / disconnection entry points (called by network layer)
     // =========================================================
 
+    @Override
     public synchronized String handleClientConnected(VirtualView view) {
         String clientId = UUID.randomUUID().toString();
         connectedClients.put(clientId, view);
-
-        // Chiamata granulare per la view della lobby
         view.notifyAvailableLobbiesUpdated(getLobbyInfoList());
-        System.out.println("[ControllerManager] Client connected: " + clientId);
+        log("Client connected: " + clientId);
         return clientId;
     }
 
+    @Override
     public synchronized void handleDisconnection(String clientId) {
         if (clientToGame.containsKey(clientId)) {
             String gameId = clientToGame.get(clientId);
@@ -82,10 +83,9 @@ public class ControllerManager {
         }
     }
 
-    public synchronized void handleReconnectRequest(String newClientId, VirtualView newView, ReconnectCommand command) {
-        String gameId = command.gameId();
-        String nickname = command.nickname();
-
+    @Override
+    public synchronized void requestReconnect(String clientId, VirtualView newView,
+                                              String nickname, String gameId) {
         GameController controller = controllers.get(gameId);
         if (controller == null) {
             newView.notifyError("Game not found or already ended: " + gameId);
@@ -106,11 +106,11 @@ public class ControllerManager {
         try {
             controller.handlePlayerReconnected(nickname, newView);
         } catch (IllegalStateException e) {
-            newView.notifyError(e.getMessage()); // "Server is still recovering..."
+            newView.notifyError(e.getMessage());
             return;
         }
 
-        rebindClient(nicknameMap.get(nickname), newClientId, gameId, nickname);
+        rebindClient(nicknameMap.get(nickname), clientId, gameId, nickname);
     }
 
     private void rebindClient(String oldClientId, String newClientId, String gameId, String nickname) {
@@ -124,18 +124,18 @@ public class ControllerManager {
         clientToGame.put(newClientId, gameId);
         clientToNickname.put(newClientId, nickname);
 
-        System.out.println("[ControllerManager] Rebound " + nickname
-                + " in game " + gameId + " (clientId: " + newClientId + ")");
+        log("Rebound " + nickname + " in game " + gameId + " (clientId: " + newClientId + ")");
     }
 
     // =========================================================
-    // Lobby management (called by network layer or by Lobby callbacks)
+    // Lobby management
     // =========================================================
 
-    public synchronized void createLobby(String clientId, int numPlayers) {
+    @Override
+    public synchronized void requestCreateLobby(String clientId, int numPlayers) {
         VirtualView view = connectedClients.get(clientId);
         if (view == null) {
-            System.err.println("[ControllerManager] createLobby: unknown clientId " + clientId);
+            log("requestCreateLobby: unknown clientId " + clientId);
             return;
         }
 
@@ -155,10 +155,11 @@ public class ControllerManager {
         broadcastToPreLobbyClients();
     }
 
-    public synchronized void joinLobby(String clientId, String lobbyId) {
+    @Override
+    public synchronized void requestJoinLobby(String clientId, String lobbyId) {
         VirtualView view = connectedClients.get(clientId);
         if (view == null) {
-            System.err.println("[ControllerManager] joinLobby: unknown clientId " + clientId);
+            log("requestJoinLobby: unknown clientId " + clientId);
             return;
         }
 
@@ -182,7 +183,8 @@ public class ControllerManager {
         broadcastToPreLobbyClients();
     }
 
-    public synchronized void requestSetUsernameInLobby(String clientId, String nickname) {
+    @Override
+    public synchronized void requestSetUsername(String clientId, String nickname) {
         String lobbyId = clientToLobby.get(clientId);
         if (lobbyId == null) {
             VirtualView view = connectedClients.get(clientId);
@@ -206,7 +208,8 @@ public class ControllerManager {
         }
     }
 
-    public synchronized void selectTotem(String clientId, Totem totem) {
+    @Override
+    public synchronized void requestSelectTotem(String clientId, Totem totem) {
         String lobbyId = clientToLobby.get(clientId);
         if (lobbyId == null) {
             VirtualView view = connectedClients.get(clientId);
@@ -218,8 +221,41 @@ public class ControllerManager {
         lobby.selectTotem(clientId, totem);
     }
 
-    public synchronized void leaveLobby(String clientId) {
+    @Override
+    public synchronized void requestLeaveLobby(String clientId) {
         leaveLobbyInternal(clientId);
+    }
+
+    // =========================================================
+    // In-game actions
+    // =========================================================
+
+    @Override
+    public void requestMoveTotem(String clientId, char tileId) {
+        String nickname = clientToNickname.get(clientId);
+        String gameId = clientToGame.get(clientId);
+        if (nickname == null || gameId == null) return;
+
+        GameController controller = controllers.get(gameId);
+        if (controller == null) return;
+
+        gameLogger(gameId).logCommand(new MoveTotemCommand(nickname, tileId), nickname);
+        log("Logged MoveTotem for " + nickname + " (tileId=" + tileId + ")");
+        controller.executeMoveTotem(nickname, tileId);
+    }
+
+    @Override
+    public void requestResolveActions(String clientId, List<String> selectedIds) {
+        String nickname = clientToNickname.get(clientId);
+        String gameId = clientToGame.get(clientId);
+        if (nickname == null || gameId == null) return;
+
+        GameController controller = controllers.get(gameId);
+        if (controller == null) return;
+
+        gameLogger(gameId).logCommand(new ResolveActionsCommand(nickname, selectedIds), nickname);
+        log("Logged ResolveActions for " + nickname + " (selectedIds=" + selectedIds + ")");
+        controller.executeResolveActions(nickname, selectedIds);
     }
 
     // =========================================================
@@ -232,7 +268,6 @@ public class ControllerManager {
                                        Map<String, VirtualView> views,
                                        Map<String, Totem> chosenTotems) {
 
-        // Avviso i client coinvolti che il gioco è iniziato
         views.values().forEach(v -> v.notifyGameStarted(gameId));
 
         lobbies.remove(gameId);
@@ -286,25 +321,6 @@ public class ControllerManager {
     }
 
     // =========================================================
-    // Command routing (called by network layer)
-    // =========================================================
-
-    public void routeGameCommand(String clientId, Command cmd) {
-        String gameId = clientToGame.get(clientId);
-        if (gameId == null) return;
-
-        GameController controller = controllers.get(gameId);
-        if (controller == null) return;
-
-        if (!(cmd instanceof GameCommand gameCmd)) return;
-
-        String nickname = clientToNickname.get(clientId);
-        if (nickname == null) return;
-
-        controller.handle(gameCmd, nickname);
-    }
-
-    // =========================================================
     // Lifecycle
     // =========================================================
 
@@ -330,7 +346,7 @@ public class ControllerManager {
         if (controllers.remove(gameId) == null) return;
         gameNicknameToClient.remove(gameId);
         clientToGame.entrySet().removeIf(e -> gameId.equals(e.getValue()));
-        System.out.println("[ControllerManager] Game removed: " + gameId);
+        log("Game removed: " + gameId);
         broadcastToPreLobbyClients();
     }
 
@@ -362,7 +378,7 @@ public class ControllerManager {
 
     public synchronized void recoverGames(Path logsDirectory) {
         if (!Files.isDirectory(logsDirectory)) {
-            System.out.println("[Recovery] No logs directory — starting fresh.");
+            logRecovery("No logs directory — starting fresh.");
             return;
         }
 
@@ -373,17 +389,17 @@ public class ControllerManager {
                     .filter(this::isInterrupted)
                     .toList();
         } catch (IOException e) {
-            System.err.println("[Recovery] Cannot list logs: " + e.getMessage());
+            System.err.println("[ControllerManager:Recovery] Cannot list logs: " + e.getMessage());
             return;
         }
 
-        System.out.println("[Recovery] " + candidates.size() + " game(s) to recover.");
+        logRecovery(candidates.size() + " game(s) to recover.");
         for (Path logFile : candidates) {
             try {
                 recoverSingleGame(logFile);
-                System.out.println("[Recovery] Recovered: " + logFile.getFileName());
+                logRecovery("Recovered: " + logFile.getFileName());
             } catch (Exception e) {
-                System.err.println("[Recovery] Failed: " + logFile.getFileName()
+                System.err.println("[ControllerManager:Recovery] Failed: " + logFile.getFileName()
                         + " — " + e.getMessage());
                 quarantine(logFile, logsDirectory);
             }
@@ -440,8 +456,7 @@ public class ControllerManager {
                 pendingRecoveryTasks.remove(gameId);
                 GameController c = controllers.get(gameId);
                 if (c != null && c.areAllPlayersPendingReconnection()) {
-                    System.out.println("[Recovery] No players reconnected for game "
-                            + gameId + " — removing.");
+                    logRecovery("No players reconnected for game " + gameId + " — removing.");
                     removeGameController(gameId);
                 }
             }
@@ -457,8 +472,21 @@ public class ControllerManager {
             Files.move(logFile, dest.resolve(logFile.getFileName()),
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            System.err.println("[Recovery] Cannot quarantine "
+            System.err.println("[ControllerManager:Recovery] Cannot quarantine "
                     + logFile.getFileName() + ": " + e.getMessage());
         }
+    }
+
+    private GameLogger gameLogger(String gameId) {
+        GameController c = controllers.get(gameId);
+        return c != null ? c.getLogger() : new NoOpCommandLogger();
+    }
+
+    private void log(String msg) {
+        System.out.println("[ControllerManager] " + msg);
+    }
+
+    private void logRecovery(String msg) {
+        System.out.println("[ControllerManager:Recovery] " + msg);
     }
 }

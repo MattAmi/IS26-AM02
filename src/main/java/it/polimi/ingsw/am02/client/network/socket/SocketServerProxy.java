@@ -170,11 +170,6 @@ public class SocketServerProxy implements ServerProxy {
     }
 
     @Override
-    public void requestStartGame() {
-        send(new StartGameCommand());
-    }
-
-    @Override
     public void requestLeaveLobby() {
         send(new LeaveLobbyCommand(activeNickname != null ? activeNickname : ""));
     }

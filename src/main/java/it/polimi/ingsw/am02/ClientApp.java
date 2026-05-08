@@ -42,8 +42,11 @@ public class ClientApp {
 
             if (useGui) {
                 // Pass configuration to the JavaFX application
-                //MainGUI.prepareLaunch(lobbyModel, networkType, host, port);
-                //Application.launch(MainGUI.class, args);
+                MainGUI.lobbyModel = lobbyModel;
+                MainGUI.networkType = networkType;
+                MainGUI.host = host;
+                MainGUI.port = port;
+                Application.launch(MainGUI.class, args);
             } else {
                 // --- TUI SETUP ---
                 ClientView view = new TuiView(lobbyModel);

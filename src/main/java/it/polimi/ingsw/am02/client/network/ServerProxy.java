@@ -8,5 +8,4 @@ public interface ServerProxy extends VirtualServer {
     void disconnect();
     boolean isConnected();
     void setClientController(ClientController controller); // ← aggiungi
-
 }

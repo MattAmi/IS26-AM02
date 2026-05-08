@@ -3,6 +3,7 @@ module it.polimi.ingsw.am02 {
     requires javafx.fxml;
     requires com.fasterxml.jackson.databind;
     requires java.rmi;
+    requires java.management;
 
     exports it.polimi.ingsw.am02.client.view.gui to javafx.graphics;
 

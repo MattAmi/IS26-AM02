@@ -14,34 +14,46 @@ public class ServerApp {
     private static final int RMI_PORT    = 1099;
     private static final int SOCKET_PORT = 1100;
 
-    public static void main(String[] args) throws InterruptedException {
-        System.out.println("=== SERVER IN ASCOLTO ===");
-        System.setProperty("java.rmi.server.hostname", "127.0.0.1");
+    public static void main(String[] args) {
+        System.out.println("========================================");
+        System.out.println("      MESOS SERVER - INITIALIZING       ");
+        System.out.println("========================================");
 
-        // 1. Inizializzazione Dominio
-        GameRegistry.getInstance();
-        ControllerManager manager = ControllerManager.getInstance();
+        try {
+            // 1. Init Domain and Registry (authoritative source of truth)
+            GameRegistry.getInstance();
+            ControllerManager manager = ControllerManager.getInstance();
 
-        // 2. RECUPERO PERSISTENZA
-        Path logsDir = Paths.get("logs");
-        manager.recoverGames(logsDir);
+            // 2. Recovery System: Reload active games from persistent storage
+            Path logsDir = Paths.get("logs");
+            manager.recoverGames(logsDir);
+            System.out.println("[INFO] Persistence check completed.");
 
-        // 3. Avvio RMI Server sul proprio thread (start() è bloccante)
-        NetworkServer rmiServer = NetworkServerFactory.create(NetworkType.RMI);
-        Thread rmiThread = new Thread(() -> rmiServer.start(RMI_PORT), "RmiServer-Thread");
-        rmiThread.setDaemon(true);
-        rmiThread.start();
+            // 3. Start RMI Server
+            NetworkServer rmiServer = NetworkServerFactory.create(NetworkType.RMI);
+            Thread rmiThread = new Thread(() -> rmiServer.start(RMI_PORT), "NetworkServer-RMI");
+            rmiThread.setDaemon(true);
+            rmiThread.start();
 
-        // 4. Avvio Socket Server sul proprio thread (start() è bloccante)
-        NetworkServer socketServer = NetworkServerFactory.create(NetworkType.SOCKET);
-        Thread socketThread = new Thread(() -> socketServer.start(SOCKET_PORT), "SocketServer-Thread");
-        socketThread.setDaemon(true);
-        socketThread.start();
+            // 4. Start Socket Server
+            NetworkServer socketServer = NetworkServerFactory.create(NetworkType.SOCKET);
+            Thread socketThread = new Thread(() -> socketServer.start(SOCKET_PORT), "NetworkServer-Socket");
+            socketThread.setDaemon(true);
+            socketThread.start();
 
-        System.out.println("RMI    server avviato sulla porta " + RMI_PORT);
-        System.out.println("Socket server avviato sulla porta " + SOCKET_PORT);
+            System.out.println("[READY] RMI Server listening on port " + RMI_PORT);
+            System.out.println("[READY] Socket Server listening on port " + SOCKET_PORT);
+            System.out.println("----------------------------------------");
 
-        // Tieni vivo il processo principale
-        Thread.currentThread().join();
+            // Keep the main thread alive to sustain daemon threads
+            Thread.currentThread().join();
+
+        } catch (InterruptedException e) {
+            System.err.println("[INFO] Server is shutting down...");
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            System.err.println("[FATAL] Server startup failed: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

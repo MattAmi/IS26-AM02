@@ -1,5 +1,7 @@
 package it.polimi.ingsw.am02.common.messages.events.game;
 
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
+
 /**
  * Broadcast to all players (except the disconnected one) immediately
  * before AutoPlayer executes each individual command on behalf of a
@@ -7,4 +9,8 @@ package it.polimi.ingsw.am02.common.messages.events.game;
  *
  * @param nickname the disconnected player being substituted
  */
-public record AutoPlayerInvokedEvent(String nickname) implements GameEvent {}
+public record AutoPlayerInvokedEvent(String nickname) implements GameEvent {
+    @Override public void apply(VirtualView view) {
+        view.notifyAutoPlayerInvoked(nickname);
+    }
+}

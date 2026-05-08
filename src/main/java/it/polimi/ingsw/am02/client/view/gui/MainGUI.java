@@ -17,32 +17,30 @@ public class MainGUI extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-
-            GuiController guiController = new GuiController(primaryStage, null);
-            GuiView view = new GuiView(guiController, lobbyModel);
+            // 1. Create the View first (with null controller for now)
+            GuiView view = new GuiView(null, lobbyModel);
+            
+            // 2. Create the Controller with the actual View
+            GuiController guiController = new GuiController(primaryStage, null, lobbyModel, view);
+            
+            // 3. Link the controller back to the view
+            view.setGuiController(guiController);
+            
+            // 4. Create and link the Proxy
             ServerProxy proxy = ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
             guiController.setServerProxy(proxy);
-            System.out.println("GUI: Connecting via " + networkType + " to " + host + ":" + port + " ...");
+            proxy.setClientController(guiController);
+            
+            System.out.println("GUI: Bootstrap completed. Connecting...");
             proxy.connect();
-
-            // =========================================================
-            // GESTIONE GAME SCENE (PRE-CARICAMENTO)
-            // =========================================================
-            //
-            // GameScene gameScene = new GameScene();
-            // guiController.setGameScene(gameScene);
-            // =========================================================
 
             guiController.start();
 
         } catch (Exception e) {
-            System.err.println("Errore critico durante l'avvio della GUI:");
+            System.err.println("Critical error during GUI startup:");
             e.printStackTrace();
         }
     }
-
-
-      // Modalità Sandbox
 
     public static void main(String[] args) {
         launch(args);

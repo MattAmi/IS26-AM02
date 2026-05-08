@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public abstract class ClientController {
 
-    protected final ServerProxy proxy;
+    protected ServerProxy proxy;
     protected final LobbyModel lobbyModel;
     protected final ClientView view;
     protected GameModel gameModel;
@@ -32,6 +32,9 @@ public abstract class ClientController {
         this.view = view;
         this.lobbyModel.addObserver(view);
     }
+
+    public void setServerProxy(ServerProxy proxy) { this.proxy = proxy; }
+    public void setGameModel(GameModel gameModel) { this.gameModel = gameModel; }
 
     // -------------------------------------------------------------------------
     // CONTEXT MANAGEMENT

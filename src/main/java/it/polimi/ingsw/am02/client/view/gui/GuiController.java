@@ -1,266 +1,173 @@
 package it.polimi.ingsw.am02.client.view.gui;
 
+import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.model.GameModel;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.client.view.gui.scenes.*;
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
-import it.polimi.ingsw.am02.common.enumerations.CardType;
-import it.polimi.ingsw.am02.common.enumerations.PhaseType;
-import it.polimi.ingsw.am02.common.enumerations.ResourceType;
-import it.polimi.ingsw.am02.common.enumerations.RowPosition;
-import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.common.enumerations.*;
+import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 
 import java.util.List;
 import java.util.Map;
 
-public class GuiController {
+public class GuiController extends ClientController {
 
     private final Stage primaryStage;
-    private ServerProxy proxy;
-
-    private GameModel gameModel; // Null until game starts
-
     private LobbyListScene lobbyListScene;
-    // private GameScene gameScene;
+    private LobbyScene lobbyScene;
+    private GameScene gameScene;
 
-    public GuiController(Stage primaryStage, ServerProxy proxy) {
+    public GuiController(Stage primaryStage, ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
+        super(proxy, lobbyModel, view);
         this.primaryStage = primaryStage;
-        this.proxy = proxy;
     }
-
-    // GESTIONE CAMBI SCENA
 
     public void start() {
         LoginScene loginScene = new LoginScene();
-        primaryStage.setScene(loginScene.buildScene(this::showIntroScene));
         primaryStage.setTitle("Mesos");
-        primaryStage.setResizable(false);
+        primaryStage.setResizable(true);
+        primaryStage.setScene(loginScene.buildScene(this::showIntroScene));
         primaryStage.show();
     }
 
     public void showIntroScene() {
-        IntroScene introScene = new IntroScene();
-        primaryStage.setScene(introScene.buildScene(this::showLobbyListScene));
+        Platform.runLater(() -> {
+            IntroScene introScene = new IntroScene();
+            primaryStage.setScene(introScene.buildScene(this::showLobbyListScene));
+        });
     }
 
     public void showLobbyListScene() {
-        lobbyListScene = new LobbyListScene();
-        primaryStage.setScene(lobbyListScene.buildScene(this));
+        Platform.runLater(() -> {
+            this.lobbyScene = null;
+            this.lobbyListScene = new LobbyListScene();
+            primaryStage.setScene(lobbyListScene.buildScene(this));
+            handleAvailableLobbiesUpdated(lobbyModel.getAvailableLobbies());
+        });
     }
 
     public void showLobbyScene() {
-        LobbyScene lobbyScene = new LobbyScene();
-        primaryStage.setScene(lobbyScene.buildScene(this));
+        Platform.runLater(() -> {
+            this.lobbyScene = new LobbyScene();
+            primaryStage.setScene(lobbyScene.buildScene(this));
+            if (lobbyModel.getCurrentLobby() != null) {
+                lobbyScene.updateLobbyState(lobbyModel.getCurrentLobby());
+            }
+        });
     }
 
     public void switchToGameScene(String gameId) {
-        // gameScene = new GameScene();
-        // primaryStage.setScene(gameScene.buildScene());
+        Platform.runLater(() -> {
+            this.gameScene = new GameScene();
+            primaryStage.setScene(gameScene.buildScene(this));
+        });
     }
 
-    public void requestSetUsername(String nickname) {
-        proxy.requestSetUsername(nickname);
-    }
+    // ACTIONS CALLED BY SCENES (Delegates to ClientController base methods)
 
-    public void requestCreateLobby(int size) {
-        proxy.requestCreateLobby(size);
-    }
-
-    public void requestJoinLobby(String lobbyId) {
-        proxy.requestJoinLobby(lobbyId);
-    }
-
-    public void requestReconnect(String nickname, String gameId) {
-        proxy.requestReconnect(nickname, gameId);
-    }
-
-    public void requestSelectTotem(Totem selected) {
-        proxy.requestSelectTotem(selected);
-    }
-
-    public void requestLeaveLobby() {
-        proxy.requestLeaveLobby();
-    }
-
-    public void moveTotem(char tile) {
-        proxy.moveTotem(tile);
-    }
-
-    public void resolveActions(List<String> ids) {
-        proxy.resolveActions(ids);
-    }
-
-    public void disconnect() {
-        proxy.disconnect();
-    }
-
-    public void returnToMainMenu() {
-        if (gameModel != null) {
-            if (!gameModel.isGameEnded()) {
-                handleError("You cannot return to lobby while a game is in progress.");
-            } else {
-                try {
-                    proxy.disconnect();
-                    proxy.connect();
-                    this.gameModel = null;
-                    handleReturnToLobby();
-                } catch (Exception e) {
-                    handleError("Return to lobby failed: Server is unreachable.");
-                }
+    public void requestSetUsername(String nickname) { handleSetNickname(nickname); }
+    public void requestCreateLobby(int size) { handleCreateLobby(size); }
+    public void requestJoinLobby(String lobbyId) { 
+        List<LobbyInfo> lobbies = lobbyModel.getAvailableLobbies();
+        for(int i=0; i<lobbies.size(); i++) {
+            if(lobbies.get(i).lobbyId().equals(lobbyId)) {
+                handleJoinLobby(i);
+                return;
             }
-        } else {
-            // Se eravamo in una lobby, la abbandoniamo. Altrimenti cambiamo solo scena.
-            proxy.requestLeaveLobby();
-            handleReturnToLobby();
         }
     }
+    public void requestReconnect(String nick, String gId) { handleReconnect(nick, gId); }
+    public void requestSelectTotem(Totem t) { handleSelectTotem(t); }
+    public void requestLeaveLobby() { proxy.requestLeaveLobby(); handleReturnToLobby(); }
+    public void moveTotem(char t) { handleMoveTotem(t); }
+    public void resolveActions(List<String> ids) { handleResolveActions(ids); }
 
-    // GESTIONE EVENTI: DA SERVER A GUI
+    // NOTIFICATIONS FROM MODEL (Called by GuiView)
 
     public void refreshFullGameScene(GameModel gameModel) {
-        this.gameModel = gameModel;
-        // if (gameScene != null) gameScene.refreshAll(gameModel);
+        if (gameScene != null) gameScene.refreshAll(gameModel);
     }
 
     public void handleUsernameResult(String username, boolean accepted, String reason) {
-        if (!accepted) {
-            showAlert("Login Failed", reason, Alert.AlertType.ERROR);
-        } else {
-            showIntroScene(); // Passaggio automatico se accettato
-        }
+        Platform.runLater(() -> {
+            if (!accepted) {
+                showAlert("Nickname Rejected", reason, Alert.AlertType.WARNING);
+                if (lobbyScene != null) lobbyScene.onNicknameRejected();
+            } else {
+                if (lobbyScene != null) {
+                    lobbyScene.onNicknameAccepted(username);
+                } else {
+                    showIntroScene();
+                }
+            }
+        });
     }
 
     public void handleAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
-        if (lobbyListScene != null) {
-            lobbyListScene.onAvailableLobbiesUpdated(lobbies);
-        }
+        Platform.runLater(() -> {
+            if (lobbyListScene != null) {
+                lobbyListScene.onAvailableLobbiesUpdated(lobbies);
+            }
+        });
     }
 
     public void handleCurrentLobbyUpdated(LobbyInfo lobby) {
-        // if (lobbyListScene != null) lobbyListScene.updateCurrentLobby(lobby);
+        Platform.runLater(() -> {
+            if (lobbyScene != null) {
+                lobbyScene.updateLobbyState(lobby);
+            }
+        });
     }
 
     public void handleLobbyDissolved() {
-        showAlert("Lobby Dissolved", "The lobby has been dissolved.", Alert.AlertType.INFORMATION);
-        showLobbyListScene();
+        Platform.runLater(() -> {
+            showAlert("Lobby Closed", "The lobby has been dissolved.", Alert.AlertType.INFORMATION);
+            showLobbyListScene();
+        });
     }
 
-    public void handleGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot board) {
-        // if (gameScene != null) gameScene.setupInitialBoard(turnOrder, initialFood, board);
-    }
-
-    public void handlePhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
-        // if (gameScene != null) gameScene.updatePhase(phase, currentPlayer, resolutionOrder);
-    }
-
-    public void handleCurrentPlayerChanged(String nextPlayer) {
-        // if (gameScene != null) gameScene.highlightCurrentPlayer(nextPlayer);
-    }
-
-    public void handleTurnOrderEstablished(List<String> turnOrder) {
-        // if (gameScene != null) gameScene.updateTurnOrder(turnOrder);
-    }
-
-    public void handleTotemPlaced(String nickname, char tileID) {
-        // if (gameScene != null) gameScene.animateTotemPlacement(nickname, tileID);
-    }
-
-    public void handleTotemReturned(String nickname, int turnOrderPosition) {
-        // if (gameScene != null) gameScene.animateTotemReturn(nickname, turnOrderPosition);
-    }
-
-    public void handleOfferTilesUpdated(List<OfferTileInfo> offerTiles) {
-        // if (gameScene != null) gameScene.updateOfferTiles(offerTiles);
-    }
-
-    public void handleBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, int deckRemainingCount) {
-        // if (gameScene != null) gameScene.updateBoardCards(newUpperRow, newLowerRow, deckRemainingCount);
-    }
-
-    public void handleEraChanged(List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
-        // if (gameScene != null) gameScene.showNewEraAnimation(newUpperRowBuildings, newLowerRowBuildings);
-    }
-
-    public void handlePlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {
-        // if (gameScene != null) gameScene.updatePlayerLimits(nickname, remainingUpper, remainingLower);
-    }
-
-    public void handlePlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {
-        // if (gameScene != null) gameScene.updatePlayerLimits(nickname, remainingUpper, remainingLower);
-    }
-
-    public void handlePlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-        // if (gameScene != null) gameScene.updatePlayerResource(nickname, resource, newValue);
-    }
-
-    public void handleCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
-        // if (gameScene != null) gameScene.animateCardTaken(nickname, cardID, cardType, sourceRow);
-    }
-
-    public void handleEventResolved(String eventID, String eventName) {
-        // if (gameScene != null) gameScene.showEventResolved(eventID, eventName);
-    }
-
-    public void handleExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-        // if (gameScene != null) gameScene.showExtraTurnAlert(nickname, remainingUpper, remainingLower);
-    }
-
-    public void handleExtraTurnEnded(String nickname) {
-        // if (gameScene != null) gameScene.endExtraTurn(nickname);
-    }
-
-    public void handleGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
-        // showGameOverScene(winners, finalRankings);
-    }
-
-    public void handlePlayerDisconnected(String nickname) {
-        // if (gameScene != null) gameScene.setPlayerOffline(nickname);
-    }
-
-    public void handleGameAborted(String lastManStanding) {
-        showAlert("Game Aborted", "Game ended. Last man standing: " + lastManStanding, Alert.AlertType.INFORMATION);
-        handleReturnToLobby();
-    }
-
-    public void handleGameRecoveryFailed() {
-        showAlert("Recovery Failed", "Could not recover the game state.", Alert.AlertType.ERROR);
-        handleReturnToLobby();
-    }
-
-    public void handlePlayerReconnected(String nickname) {
-        // if (gameScene != null) gameScene.setPlayerOnline(nickname);
-    }
-
-    public void handleError(String message) {
-        showAlert("Error", message, Alert.AlertType.ERROR);
-    }
-
-    public void handleShowAvailableTotems() {
-        // if (lobbyListScene != null) lobbyListScene.showTotemSelectionPopup();
-    }
-
-    public void handleConnectionLost() {
-        showAlert("Connection Lost", "Attempting to reconnect...", Alert.AlertType.WARNING);
-    }
-
-    public void handleConnectionRestored() {
-        showAlert("Connection Restored", "Successfully reconnected to the server.", Alert.AlertType.INFORMATION);
-    }
+    public void handleGameSetupCompleted(List<String> t, Map<String, Integer> f, BoardSnapshot b) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handlePhaseChanged(PhaseType p, String c, List<String> r) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleCurrentPlayerChanged(String n) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleTurnOrderEstablished(List<String> t) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleTotemPlaced(String n, char t) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleTotemReturned(String n, int p) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleOfferTilesUpdated(List<OfferTileInfo> o) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleBoardUpdated(List<String> u, List<String> l, int d) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleEraChanged(List<String> u, List<String> l) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handlePlayerLimitsInitialized(String n, int u, int l) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handlePlayerLimitsUpdated(String n, int u, int l) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handlePlayerResourceChanged(String n, ResourceType r, int v) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleCardTaken(String n, String c, CardType t, RowPosition s) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleShowAvailableTotems() { }
+    public void handleEventResolved(String i, String n) { }
+    public void handleExtraTurnStarted(String n, int u, int l) { }
+    public void handleExtraTurnEnded(String n) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showAlert("Game Over", "Winners: " + w, Alert.AlertType.INFORMATION); }
+    public void handlePlayerDisconnected(String n) { if (gameScene != null) gameScene.setPlayerOffline(n); }
+    public void handleGameAborted(String l) { showAlert("Aborted", "Last man standing: " + l, Alert.AlertType.INFORMATION); handleReturnToLobby(); }
+    public void handleGameRecoveryFailed() { showAlert("Error", "Recovery failed", Alert.AlertType.ERROR); handleReturnToLobby(); }
+    public void handlePlayerReconnected(String n) { if (gameScene != null) gameScene.setPlayerOnline(n); }
+    public void handleError(String message) { Platform.runLater(() -> showAlert("Error", message, Alert.AlertType.ERROR)); }
+    public void handleConnectionLost() { Platform.runLater(() -> showAlert("Connection Lost", "Server unreachable", Alert.AlertType.ERROR)); }
+    public void handleConnectionRestored() { Platform.runLater(() -> showAlert("Connected", "Back online", Alert.AlertType.INFORMATION)); }
 
     public void handleReturnToLobby() {
-        this.gameModel = null;
-        // gameScene = null;
-        showLobbyListScene();
+        Platform.runLater(() -> {
+            performReturnToLobby();
+            this.gameScene = null;
+            this.lobbyScene = null;
+            showLobbyListScene();
+        });
     }
-
-    // =======================================================================
-    // UTILITY LOGICHE
-    // =======================================================================
 
     private void showAlert(String title, String content, Alert.AlertType type) {
         Alert alert = new Alert(type);
@@ -269,9 +176,4 @@ public class GuiController {
         alert.setContentText(content);
         alert.showAndWait();
     }
-
-    public void setServerProxy(ServerProxy proxy) {
-        this.proxy = proxy;
-    }
-
 }

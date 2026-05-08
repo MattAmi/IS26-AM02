@@ -1,6 +1,5 @@
 package it.polimi.ingsw.am02;
 
-import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
@@ -29,39 +28,30 @@ public class ClientApp {
             String uiChoice = setupScanner.nextLine().trim();
             boolean useGui = uiChoice.equals("2");
 
-            // 2. Network Choice
-            System.out.println("Select Protocol: [1] RMI | [2] Socket");
-            String netChoice = setupScanner.nextLine().trim();
-            NetworkType networkType = netChoice.equals("2") ? NetworkType.SOCKET : NetworkType.RMI;
-            int port = (networkType == NetworkType.SOCKET) ? SOCKET_PORT : RMI_PORT;
-
-            // 3. Server Address
-            System.out.print("Server IP Address [default: 127.0.0.1]: ");
-            String host = setupScanner.nextLine().trim();
-            if (host.isEmpty()) host = "127.0.0.1";
-
             if (useGui) {
-                // Pass configuration to the JavaFX application
+                // --- GUI SETUP ---
                 MainGUI.lobbyModel = lobbyModel;
-                MainGUI.networkType = networkType;
-                MainGUI.host = host;
-                MainGUI.port = port;
                 Application.launch(MainGUI.class, args);
+
             } else {
                 // --- TUI SETUP ---
+                System.out.println("Select Protocol: [1] RMI | [2] Socket");
+                String netChoice = setupScanner.nextLine().trim();
+                NetworkType networkType = netChoice.equals("2") ? NetworkType.SOCKET : NetworkType.RMI;
+                int port = (networkType == NetworkType.SOCKET) ? SOCKET_PORT : RMI_PORT;
+
+                System.out.print("Server IP Address [default: 127.0.0.1]: ");
+                String host = setupScanner.nextLine().trim();
+                if (host.isEmpty()) host = "127.0.0.1";
+
                 ClientView view = new TuiView(lobbyModel);
                 ServerProxy proxy = ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
 
-                // Initialize the specific controller for TUI
                 TuiController controller = new TuiController(proxy, lobbyModel, view);
-
-                // Vital step: link the controller to the proxy for network callbacks
                 proxy.setClientController(controller);
 
                 System.out.println("\nConnecting to server via " + networkType + "...");
                 proxy.connect();
-
-                // Start the terminal input loop
                 controller.run();
             }
 

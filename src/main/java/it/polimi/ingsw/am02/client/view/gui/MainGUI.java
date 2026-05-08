@@ -3,6 +3,7 @@ package it.polimi.ingsw.am02.client.view.gui;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
+import it.polimi.ingsw.am02.client.view.gui.scenes.NetworkPopup;
 import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -17,6 +18,13 @@ public class MainGUI extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
+
+            if (networkType == null) {
+                networkType = NetworkPopup.displayAndChoose();
+
+                host = "127.0.0.1"; // Oppure puoi inserire un TextField nel popup per chiederlo!
+                port = (networkType == NetworkType.SOCKET) ? 1100 : 1099;
+            }
             // 1. Create the View first (with null controller for now)
             GuiView view = new GuiView(null, lobbyModel);
             

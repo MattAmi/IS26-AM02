@@ -32,7 +32,7 @@ public class SummaryCardOverlay {
         cardView.setFitHeight(520);
 
         // Bottone flip
-        Button flipBtn = new Button("↩ Gira carta");
+        Button flipBtn = new Button("↩ Rotate card");
         flipBtn.setStyle(
                 "-fx-background-color: #5C6B32; -fx-text-fill: white;" +
                         "-fx-font-size: 13; -fx-padding: 8 20; -fx-background-radius: 6;"
@@ -40,11 +40,11 @@ public class SummaryCardOverlay {
         flipBtn.setOnAction(e -> {
             showingFront = !showingFront;
             cardView.setImage(showingFront ? frontImage : backImage);
-            flipBtn.setText(showingFront ? "↩ Gira carta" : "↩ Gira carta");
+            flipBtn.setText(showingFront ? "↩ Rotate card" : "↩ Rotate card");
         });
 
         // Bottone chiudi
-        Button closeBtn = new Button("✕ Chiudi");
+        Button closeBtn = new Button("✕ close");
         closeBtn.setStyle(
                 "-fx-background-color: #6B2A2A; -fx-text-fill: white;" +
                         "-fx-font-size: 13; -fx-padding: 8 20; -fx-background-radius: 6;"

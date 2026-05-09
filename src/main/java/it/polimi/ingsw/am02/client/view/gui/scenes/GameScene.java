@@ -71,7 +71,7 @@ public class GameScene {
         Button endTurn = new Button("END PLAYER TURN (MOVE T)");
         endTurn.setOnAction(e -> controller.moveTotem('T'));
 
-        Button summaryBtn = new Button("📋 Riepilogo");
+        Button summaryBtn = new Button("📋 Summary card");
         summaryBtn.setStyle(
                 "-fx-background-color: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;"
         );

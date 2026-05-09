@@ -178,7 +178,14 @@ public class GuiController extends ClientController {
     }
 
     public void handleAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
-        Platform.runLater(() -> { if (lobbyListScene != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies); });
+        Platform.runLater(() -> {
+            if (this.lobbyScene != null) {
+                showGameMenuScene();
+            }
+            if (this.lobbyListScene != null) {
+                lobbyListScene.onAvailableLobbiesUpdated(lobbies);
+            }
+        });
     }
 
     /**

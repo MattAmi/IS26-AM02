@@ -1,48 +1,34 @@
 package it.polimi.ingsw.am02.client.view.gui;
 
 import it.polimi.ingsw.am02.client.model.LobbyModel;
-import it.polimi.ingsw.am02.client.network.ServerProxy;
-import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
-import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
 public class MainGUI extends Application {
 
     public static LobbyModel lobbyModel;
-    public static NetworkType networkType;
-    public static String host;
-    public static int port;
 
     @Override
     public void start(Stage primaryStage) {
         try {
+            // 1. Creiamo la View (inizialmente senza controller)
+            GuiView view = new GuiView(null, lobbyModel);
 
-            GuiController guiController = new GuiController(primaryStage, null);
-            GuiView view = new GuiView(guiController, lobbyModel);
-            ServerProxy proxy = ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
-            guiController.setServerProxy(proxy);
-            System.out.println("GUI: Connecting via " + networkType + " to " + host + ":" + port + " ...");
-            proxy.connect();
+            // 2. Creiamo il Controller (Il Proxy verrà creato dopo, quando l'utente sceglie la rete)
+            GuiController guiController = new GuiController(primaryStage, null, lobbyModel, view);
 
-            // =========================================================
-            // GESTIONE GAME SCENE (PRE-CARICAMENTO)
-            // =========================================================
-            //
-            // GameScene gameScene = new GameScene();
-            // guiController.setGameScene(gameScene);
-            // =========================================================
+            // 3. Leghiamo la View al Controller
+            view.setGuiController(guiController);
 
+            // 4. Avviamo la SPA!
             guiController.start();
 
         } catch (Exception e) {
-            System.err.println("Errore critico durante l'avvio della GUI:");
+            System.err.println("[FATAL] Critical error during GUI startup:");
             e.printStackTrace();
+            System.exit(1);
         }
     }
-
-
-      // Modalità Sandbox
 
     public static void main(String[] args) {
         launch(args);

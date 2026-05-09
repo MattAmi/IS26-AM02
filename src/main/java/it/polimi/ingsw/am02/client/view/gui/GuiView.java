@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class GuiView extends AbstractClientView {
 
-    private final GuiController guiController;
+    private GuiController guiController;
     private final LobbyModel lobbyModel;
     private GameModel gameModel;
 
@@ -26,6 +26,10 @@ public class GuiView extends AbstractClientView {
         this.guiController = guiController;
         this.lobbyModel = lobbyModel;
         this.lobbyModel.addObserver(this);
+    }
+
+    public void setGuiController(GuiController guiController) {
+        this.guiController = guiController;
     }
 
     @Override

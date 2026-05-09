@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -16,11 +17,11 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
-
+import javafx.scene.layout.Region;
 public class LoginScene {
     private Runnable onFinished;
 
-    public Scene buildScene(Runnable onFinished) {
+    public Region buildNode(Runnable onFinished) {
 
         this.onFinished = onFinished;
         StackPane root = new StackPane();
@@ -87,7 +88,7 @@ public class LoginScene {
         root.getChildren().addAll(bgImageView, uiPanel);
 
         root.setOnMouseClicked(event -> handleContinue());
-        return new Scene(root, 1280, 720);
+        return root;
     }
 
     private void handleContinue() {

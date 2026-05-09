@@ -6,46 +6,76 @@ import it.polimi.ingsw.am02.server.model.GameRegistry;
 import it.polimi.ingsw.am02.server.network.NetworkServer;
 import it.polimi.ingsw.am02.server.network.NetworkServerFactory;
 
+import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Scanner;
 
 public class ServerApp {
-
-    private static final int RMI_PORT    = 1099;
-    private static final int SOCKET_PORT = 1100;
 
     public static void main(String[] args) {
         System.out.println("========================================");
         System.out.println("      MESOS SERVER - INITIALIZING       ");
         System.out.println("========================================");
 
+        Scanner scanner = new Scanner(System.in);
+
         try {
-            // 1. Init Domain and Registry (authoritative source of truth)
+            // --- NETWORK CONFIGURATION ---
+            String localIp = InetAddress.getLocalHost().getHostAddress();
+            System.out.print("Enter Server IP for RMI [default: " + localIp + "]: ");
+            String rmiHost = scanner.nextLine().trim();
+            if (rmiHost.isEmpty()) rmiHost = localIp;
+
+            // Critical for LAN multiplayer in RMI
+            System.setProperty("java.rmi.server.hostname", rmiHost);
+
+            System.out.print("Enter RMI Port [default: 1099]: ");
+            String rmiPortStr = scanner.nextLine().trim();
+            int rmiPort = rmiPortStr.isEmpty() ? 1099 : Integer.parseInt(rmiPortStr);
+
+            System.out.print("Enter Socket Port [default: 1100]: ");
+            String socketPortStr = scanner.nextLine().trim();
+            int socketPort = socketPortStr.isEmpty() ? 1100 : Integer.parseInt(socketPortStr);
+
+            System.out.println("\n[INFO] Starting server on " + rmiHost + "...");
+
+            // --- BOOTSTRAP ---
             GameRegistry.getInstance();
             ControllerManager manager = ControllerManager.getInstance();
 
-            // 2. Recovery System: Reload active games from persistent storage
             Path logsDir = Paths.get("logs");
             manager.recoverGames(logsDir);
             System.out.println("[INFO] Persistence check completed.");
 
-            // 3. Start RMI Server
+            // --- START RMI ---
             NetworkServer rmiServer = NetworkServerFactory.create(NetworkType.RMI);
-            Thread rmiThread = new Thread(() -> rmiServer.start(RMI_PORT), "NetworkServer-RMI");
+            Thread rmiThread = new Thread(() -> {
+                try {
+                    rmiServer.start(rmiPort);
+                } catch (Exception e) {
+                    System.err.println("[RMI FATAL] Failed to start RMI on port " + rmiPort);
+                }
+            }, "NetworkServer-RMI");
             rmiThread.setDaemon(true);
             rmiThread.start();
 
-            // 4. Start Socket Server
+            // --- START SOCKET ---
             NetworkServer socketServer = NetworkServerFactory.create(NetworkType.SOCKET);
-            Thread socketThread = new Thread(() -> socketServer.start(SOCKET_PORT), "NetworkServer-Socket");
+            Thread socketThread = new Thread(() -> {
+                try {
+                    socketServer.start(socketPort);
+                } catch (Exception e) {
+                    System.err.println("[SOCKET FATAL] Failed to start Socket on port " + socketPort);
+                }
+            }, "NetworkServer-Socket");
             socketThread.setDaemon(true);
             socketThread.start();
 
-            System.out.println("[READY] RMI Server listening on port " + RMI_PORT);
-            System.out.println("[READY] Socket Server listening on port " + SOCKET_PORT);
+            System.out.println("[READY] RMI Server listening on port " + rmiPort);
+            System.out.println("[READY] Socket Server listening on port " + socketPort);
             System.out.println("----------------------------------------");
 
-            // Keep the main thread alive to sustain daemon threads
             Thread.currentThread().join();
 
         } catch (InterruptedException e) {

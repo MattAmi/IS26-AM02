@@ -2,167 +2,96 @@ package it.polimi.ingsw.am02.client.view.gui.scenes;
 
 import it.polimi.ingsw.am02.client.view.gui.GuiController;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
-import javafx.animation.ScaleTransition;
-import javafx.animation.TranslateTransition;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
-import javafx.util.Duration;
+import javafx.scene.text.FontWeight;
 
 import java.util.List;
 
+/**
+ * Scene dedicated exclusively to browsing and joining existing lobbies.
+ */
 public class LobbyListScene {
 
     private GuiController controller;
-    private String customFontFamily = "System";
-    private FlowPane lobbyGrid;
+    private VBox listContainer;
 
-    public Scene buildScene(GuiController controller) {
+    public Region buildNode(GuiController controller) {
         this.controller = controller;
-        StackPane root = new StackPane();
-        root.setStyle("-fx-background-color: #000000;");
 
-        Rectangle clip = new Rectangle();
-        clip.widthProperty().bind(root.widthProperty());
-        clip.heightProperty().bind(root.heightProperty());
-        root.setClip(clip);
+        BorderPane root = new BorderPane();
+        root.setStyle("-fx-background-color: #1a1a1a;");
+        root.setPadding(new Insets(30));
 
-        ImageView bgImageView = new ImageView();
-        Image bgImage = new Image(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/mesos_lobby.png"));
-        bgImageView.setImage(bgImage);
-        bgImageView.setPreserveRatio(true);
-        bgImageView.fitWidthProperty().bind(root.widthProperty().add(100));
+        // Top: Header & Back Button
+        HBox topBar = new HBox(20);
+        topBar.setAlignment(Pos.CENTER_LEFT);
 
-        TranslateTransition move = new TranslateTransition(Duration.seconds(15), bgImageView);
-        move.setFromX(-20);
-        move.setToX(20);
-        move.setFromY(-30);
-        move.setToY(30);
-        move.setAutoReverse(true);
-        move.setCycleCount(TranslateTransition.INDEFINITE);
-        move.play();
+        Button backBtn = new Button("← BACK TO MENU");
+        backBtn.setStyle("-fx-base: #444; -fx-text-fill: white; -fx-cursor: hand;");
+        backBtn.setOnAction(e -> controller.showGameMenuScene());
 
-        ScaleTransition zoom = new ScaleTransition(Duration.seconds(20), bgImageView);
-        zoom.setFromX(1.0);
-        zoom.setFromY(1.0);
-        zoom.setToX(1.05);
-        zoom.setToY(1.05);
-        zoom.setAutoReverse(true);
-        zoom.setCycleCount(ScaleTransition.INDEFINITE);
-        zoom.play();
+        Label header = new Label("AVAILABLE LOBBIES");
+        header.setTextFill(Color.web("#F2D5A3"));
+        header.setFont(Font.font("System", FontWeight.BOLD, 28));
 
-        String fontUrl = getClass().getResource("/it.polimi.ingsw.am02.fonts/tribal.ttf").toExternalForm();
-        Font baseFont = Font.loadFont(fontUrl, 10);
-        if (baseFont != null) {
-            customFontFamily = baseFont.getFamily();
-        }
+        topBar.getChildren().addAll(backBtn, header);
+        root.setTop(topBar);
 
-        BorderPane mainLayout = new BorderPane();
-        mainLayout.setPadding(new Insets(30));
+        // Center: Lobby List
+        listContainer = new VBox(15);
+        listContainer.setAlignment(Pos.TOP_CENTER);
+        listContainer.setPadding(new Insets(20));
 
-        Label titleLabel = new Label("AVAILABLE LOBBIES");
-        titleLabel.setFont(Font.font(customFontFamily, 50));
-        titleLabel.setTextFill(Color.web("#F2D5A3"));
-        BorderPane.setAlignment(titleLabel, Pos.CENTER);
-        BorderPane.setMargin(titleLabel, new Insets(0, 0, 30, 0));
-        mainLayout.setTop(titleLabel);
-
-        lobbyGrid = new FlowPane();
-        lobbyGrid.setHgap(30);
-        lobbyGrid.setVgap(30);
-        lobbyGrid.setAlignment(Pos.CENTER);
-
-        ScrollPane scrollPane = new ScrollPane(lobbyGrid);
+        ScrollPane scrollPane = new ScrollPane(listContainer);
         scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-control-inner-background: transparent;");
-        mainLayout.setCenter(scrollPane);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        root.setCenter(scrollPane);
 
-        StackPane bottomBar = new StackPane();
-        bottomBar.setPadding(new Insets(30, 0, 0, 0));
-
-        Button returnBtn = new Button("RECONNECT");
-        returnBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 20px; -fx-base: #8B0000; -fx-text-fill: white; -fx-cursor: hand;");
-        StackPane.setAlignment(returnBtn, Pos.CENTER_LEFT);
-
-        Button newLobbyBtn = new Button("NEW LOBBY");
-        newLobbyBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 24px; -fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;");
-        newLobbyBtn.setPrefSize(250, 60);
-        StackPane.setAlignment(newLobbyBtn, Pos.CENTER);
-        newLobbyBtn.setOnAction(e -> {
-            controller.showLobbyScene();
-        });
-
-        Button quitBtn = new Button("QUIT");
-        quitBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 20px; -fx-base: #555555; -fx-text-fill: white; -fx-cursor: hand;");
-        StackPane.setAlignment(quitBtn, Pos.CENTER_RIGHT);
-        quitBtn.setOnAction(e -> {
-            if (this.controller != null) this.controller.disconnect();
-            System.exit(0);
-        });
-
-        bottomBar.getChildren().addAll(returnBtn, newLobbyBtn, quitBtn);
-        mainLayout.setBottom(bottomBar);
-
-        root.getChildren().addAll(bgImageView, mainLayout);
-
-        return new Scene(root, 1280, 720);
+        return root;
     }
 
     public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
-        Platform.runLater(() -> {
-            lobbyGrid.getChildren().clear();
+        listContainer.getChildren().clear();
 
-            for (LobbyInfo lobby : lobbies) {
-                VBox card = createLobbyCard(lobby);
-                lobbyGrid.getChildren().add(card);
-            }
-        });
-    }
-
-    private VBox createLobbyCard(LobbyInfo info) {
-        VBox card = new VBox(15);
-        card.setAlignment(Pos.CENTER);
-        card.setPadding(new Insets(20));
-        card.setPrefSize(280, 180);
-        card.setStyle("-fx-background-color: rgba(43, 29, 20, 0.85); -fx-border-color: #F2D5A3; -fx-border-width: 3px; -fx-background-radius: 15px; -fx-border-radius: 15px;");
-
-        Label nameLabel = new Label(info.lobbyId());
-        nameLabel.setFont(Font.font(customFontFamily, 28));
-        nameLabel.setTextFill(Color.web("#F2D5A3"));
-
-        int currentPlayers = info.currentPlayers().size();
-        int maxPlayers = info.expectedPlayers();
-
-        Label playersLabel = new Label("PLAYERS: " + currentPlayers + " / " + maxPlayers);
-        playersLabel.setFont(Font.font(customFontFamily, 20));
-        playersLabel.setTextFill(Color.web("#A9A9A9"));
-
-        Button joinBtn = new Button("JOIN LOBBY");
-        joinBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 18px; -fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;");
-
-        if (currentPlayers >= maxPlayers) {
-            joinBtn.setDisable(true);
-            joinBtn.setText("LOBBY FULL");
-            joinBtn.setStyle("-fx-font-family: '" + customFontFamily + "'; -fx-font-size: 18px; -fx-base: #8B0000; -fx-text-fill: white;");
+        if (lobbies == null || lobbies.isEmpty()) {
+            Label emptyLbl = new Label("No active lobbies found. Go back and create one!");
+            emptyLbl.setTextFill(Color.GRAY);
+            emptyLbl.setFont(Font.font("System", 16));
+            listContainer.getChildren().add(emptyLbl);
+            return;
         }
 
-        joinBtn.setOnAction(e -> {
-        });
+        for (LobbyInfo lobby : lobbies) {
+            HBox row = new HBox(20);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setPadding(new Insets(15));
+            row.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 1; -fx-border-radius: 5;");
 
-        card.getChildren().addAll(nameLabel, playersLabel, joinBtn);
-        return card;
+            Label idLbl = new Label("Lobby ID: " + lobby.lobbyId());
+            idLbl.setTextFill(Color.WHITE);
+            idLbl.setPrefWidth(200);
+
+            Label playersLbl = new Label("Players: " + lobby.currentPlayers().size() + " / " + lobby.expectedPlayers());
+            playersLbl.setTextFill(Color.LIGHTGRAY);
+            playersLbl.setPrefWidth(150);
+
+            Button joinBtn = new Button("JOIN");
+            joinBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;");
+            joinBtn.setDisable(lobby.currentPlayers().size() >= lobby.expectedPlayers());
+            joinBtn.setOnAction(e -> controller.requestJoinLobby(lobby.lobbyId()));
+
+            row.getChildren().addAll(idLbl, playersLbl, joinBtn);
+            listContainer.getChildren().add(row);
+        }
     }
 }

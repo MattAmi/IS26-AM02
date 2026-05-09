@@ -1,277 +1,331 @@
 package it.polimi.ingsw.am02.client.view.gui;
 
+import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.model.GameModel;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
+import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.client.view.gui.scenes.*;
-import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
-import it.polimi.ingsw.am02.common.dto.LobbyInfo;
-import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
-import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
-import it.polimi.ingsw.am02.common.enumerations.CardType;
-import it.polimi.ingsw.am02.common.enumerations.PhaseType;
-import it.polimi.ingsw.am02.common.enumerations.ResourceType;
-import it.polimi.ingsw.am02.common.enumerations.RowPosition;
-import it.polimi.ingsw.am02.common.enumerations.Totem;
-import javafx.scene.control.Alert;
+import it.polimi.ingsw.am02.common.dto.*;
+import it.polimi.ingsw.am02.common.enumerations.*;
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.util.List;
 import java.util.Map;
 
-public class GuiController {
+/**
+ * Main Controller for the GUI. Handles SPA navigation, network events,
+ * and synchronization between the Model and the View layers.
+ */
+public class GuiController extends ClientController {
 
     private final Stage primaryStage;
-    private ServerProxy proxy;
+    private final ClientView clientView;
 
-    private GameModel gameModel; // Null until game starts
+    // --- SPA ARCHITECTURE LAYERS ---
+    private StackPane rootContainer;
+    private StackPane baseLayer;    // Background: Current active scene (Menu, Lobby, Game)
+    private StackPane modalLayer;   // Middle: Blocking overlays (Popups, Network Form)
+    private VBox toastLayer;        // Top: Non-blocking notifications
 
+    // Scene references to manage updates
     private LobbyListScene lobbyListScene;
-    // private GameScene gameScene;
+    private LobbyScene lobbyScene;
+    private GameScene gameScene;
 
-    public GuiController(Stage primaryStage, ServerProxy proxy) {
+    public GuiController(Stage primaryStage, ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
+        super(proxy, lobbyModel, view);
         this.primaryStage = primaryStage;
-        this.proxy = proxy;
+        this.clientView = view;
+        initWindowArchitecture();
     }
 
-    // GESTIONE CAMBI SCENA
+    /**
+     * Initializes the "Layered Sandwich" root container and sets the primary Scene.
+     */
+    private void initWindowArchitecture() {
+        baseLayer = new StackPane();
+        baseLayer.setStyle("-fx-background-color: #1a1a1a;");
+
+        modalLayer = new StackPane();
+        modalLayer.setStyle("-fx-background-color: rgba(0, 0, 0, 0.75);");
+        modalLayer.setVisible(false);
+        modalLayer.setAlignment(Pos.CENTER);
+
+        toastLayer = new VBox(10);
+        toastLayer.setAlignment(Pos.TOP_RIGHT);
+        toastLayer.setPadding(new Insets(20));
+        toastLayer.setPickOnBounds(false); // Allows clicks to pass through to layers below
+
+        rootContainer = new StackPane(baseLayer, modalLayer, toastLayer);
+        Scene mainScene = new Scene(rootContainer, 1280, 800);
+
+        primaryStage.setTitle("Mesos - Board Game");
+        primaryStage.setScene(mainScene);
+        primaryStage.setResizable(true);
+    }
 
     public void start() {
-        LoginScene loginScene = new LoginScene();
-        primaryStage.setScene(loginScene.buildScene(this::showIntroScene));
-        primaryStage.setTitle("Mesos");
-        primaryStage.setResizable(false);
         primaryStage.show();
+        // Entry point: Trigger network connection form inside the modal layer
+        promptConnectionAndRetry();
+    }
+
+    // --- SPA NAVIGATION METHODS ---
+
+    private void switchView(Region newView) {
+        Platform.runLater(() -> baseLayer.getChildren().setAll(newView));
     }
 
     public void showIntroScene() {
-        IntroScene introScene = new IntroScene();
-        primaryStage.setScene(introScene.buildScene(this::showLobbyListScene));
+        Platform.runLater(() -> switchView(new IntroScene().buildNode(this::showGameMenuScene)));
+    }
+
+    public void showGameMenuScene() {
+        Platform.runLater(() -> {
+            this.lobbyScene = null;
+            this.lobbyListScene = null;
+            switchView(new GameMenuScene().buildNode(this));
+        });
     }
 
     public void showLobbyListScene() {
-        lobbyListScene = new LobbyListScene();
-        primaryStage.setScene(lobbyListScene.buildScene(this));
+        Platform.runLater(() -> {
+            this.lobbyScene = null;
+            this.lobbyListScene = new LobbyListScene();
+            switchView(lobbyListScene.buildNode(this));
+            handleAvailableLobbiesUpdated(lobbyModel.getAvailableLobbies());
+        });
     }
 
     public void showLobbyScene() {
-        LobbyScene lobbyScene = new LobbyScene();
-        primaryStage.setScene(lobbyScene.buildScene(this));
+        Platform.runLater(() -> {
+            this.lobbyScene = new LobbyScene();
+            switchView(lobbyScene.buildNode(this));
+            if (lobbyModel.getCurrentLobby() != null) {
+                lobbyScene.updateLobbyState(lobbyModel.getCurrentLobby());
+            }
+        });
     }
 
     public void switchToGameScene(String gameId) {
-        // gameScene = new GameScene();
-        // primaryStage.setScene(gameScene.buildScene());
+        Platform.runLater(() -> {
+            this.gameScene = new GameScene();
+            switchView(gameScene.buildNode(this));
+        });
     }
 
-    public void requestSetUsername(String nickname) {
-        proxy.requestSetUsername(nickname);
-    }
+    // --- ACTIONS CALLED BY SCENES (UI -> Controller -> Proxy) ---
+
+    public void requestSetUsername(String nickname) { handleSetNickname(nickname); }
 
     public void requestCreateLobby(int size) {
-        proxy.requestCreateLobby(size);
+        showToast("Processing", "Creating your lobby...", Alert.AlertType.INFORMATION);
+        handleCreateLobby(size);
     }
 
     public void requestJoinLobby(String lobbyId) {
-        proxy.requestJoinLobby(lobbyId);
-    }
-
-    public void requestReconnect(String nickname, String gameId) {
-        proxy.requestReconnect(nickname, gameId);
-    }
-
-    public void requestSelectTotem(Totem selected) {
-        proxy.requestSelectTotem(selected);
-    }
-
-    public void requestLeaveLobby() {
-        proxy.requestLeaveLobby();
-    }
-
-    public void moveTotem(char tile) {
-        proxy.moveTotem(tile);
-    }
-
-    public void resolveActions(List<String> ids) {
-        proxy.resolveActions(ids);
-    }
-
-    public void disconnect() {
-        proxy.disconnect();
-    }
-
-    public void returnToMainMenu() {
-        if (gameModel != null) {
-            if (!gameModel.isGameEnded()) {
-                handleError("You cannot return to lobby while a game is in progress.");
-            } else {
-                try {
-                    proxy.disconnect();
-                    proxy.connect();
-                    this.gameModel = null;
-                    handleReturnToLobby();
-                } catch (Exception e) {
-                    handleError("Return to lobby failed: Server is unreachable.");
-                }
+        List<LobbyInfo> lobbies = lobbyModel.getAvailableLobbies();
+        for (LobbyInfo l : lobbies) {
+            if (l.lobbyId().equals(lobbyId)) {
+                handleJoinLobby(lobbies.indexOf(l));
+                return;
             }
-        } else {
-            // Se eravamo in una lobby, la abbandoniamo. Altrimenti cambiamo solo scena.
-            proxy.requestLeaveLobby();
-            handleReturnToLobby();
         }
     }
 
-    // GESTIONE EVENTI: DA SERVER A GUI
+    public void requestReconnect(String nick, String gId) { handleReconnect(nick, gId); }
+    public void requestSelectTotem(Totem t) { handleSelectTotem(t); }
+    public void requestLeaveLobby() { proxy.requestLeaveLobby(); handleReturnToLobby(); }
+    public void moveTotem(char t) { handleMoveTotem(t); }
+    public void resolveActions(List<String> ids) { handleResolveActions(ids); }
+
+    // --- MODEL NOTIFICATION HANDLERS (Model -> Controller -> UI) ---
 
     public void refreshFullGameScene(GameModel gameModel) {
-        this.gameModel = gameModel;
-        // if (gameScene != null) gameScene.refreshAll(gameModel);
+        if (gameScene != null) gameScene.refreshAll(gameModel);
     }
 
     public void handleUsernameResult(String username, boolean accepted, String reason) {
-        if (!accepted) {
-            showAlert("Login Failed", reason, Alert.AlertType.ERROR);
-        } else {
-            showIntroScene(); // Passaggio automatico se accettato
-        }
+        Platform.runLater(() -> {
+            if (!accepted) {
+                showToast("Nickname Rejected", reason, Alert.AlertType.WARNING);
+                if (lobbyScene != null) lobbyScene.onNicknameRejected();
+            } else {
+                if (lobbyScene != null) lobbyScene.onNicknameAccepted(username);
+                else showIntroScene();
+            }
+        });
     }
 
     public void handleAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
-        if (lobbyListScene != null) {
-            lobbyListScene.onAvailableLobbiesUpdated(lobbies);
-        }
+        Platform.runLater(() -> { if (lobbyListScene != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies); });
     }
 
+    /**
+     * CRITICAL FIX: Transitions to LobbyScene automatically when joined/created.
+     */
     public void handleCurrentLobbyUpdated(LobbyInfo lobby) {
-        // if (lobbyListScene != null) lobbyListScene.updateCurrentLobby(lobby);
+        Platform.runLater(() -> {
+            if (this.lobbyScene == null) {
+                showLobbyScene();
+            } else {
+                lobbyScene.updateLobbyState(lobby);
+            }
+        });
     }
 
     public void handleLobbyDissolved() {
-        showAlert("Lobby Dissolved", "The lobby has been dissolved.", Alert.AlertType.INFORMATION);
-        showLobbyListScene();
+        showBlockingAlert("Lobby Closed", "The lobby has been dissolved.", Alert.AlertType.INFORMATION);
+        showGameMenuScene();
     }
 
-    public void handleGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot board) {
-        // if (gameScene != null) gameScene.setupInitialBoard(turnOrder, initialFood, board);
-    }
+    // Standard Game Handlers
+    public void handleCurrentPlayerChanged(String n) { refreshFullGameScene(getGameModel()); }
+    public void handleTurnOrderEstablished(List<String> t) { refreshFullGameScene(getGameModel()); }
+    public void handleTotemPlaced(String n, char t) { refreshFullGameScene(getGameModel()); }
+    public void handleTotemReturned(String n, int p) { refreshFullGameScene(getGameModel()); }
+    public void handleOfferTilesUpdated(List<OfferTileInfo> o) { refreshFullGameScene(getGameModel()); }
+    public void handleBoardUpdated(List<String> u, List<String> l, int d) { refreshFullGameScene(getGameModel()); }
+    public void handleEraChanged(List<String> u, List<String> l) { refreshFullGameScene(getGameModel()); }
+    public void handlePlayerLimitsUpdated(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
+    public void handlePlayerResourceChanged(String n, ResourceType r, int v) { refreshFullGameScene(getGameModel()); }
+    public void handleCardTaken(String n, String c, CardType t, RowPosition s) { refreshFullGameScene(getGameModel()); }
+    public void handleExtraTurnStarted(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
+    public void handleEventResolved(String id, String n) { refreshFullGameScene(getGameModel()); }
+    public void handleShowAvailableTotems() { }
+    public void handleExtraTurnEnded(String n) { refreshFullGameScene(getGameModel()); }
 
-    public void handlePhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
-        // if (gameScene != null) gameScene.updatePhase(phase, currentPlayer, resolutionOrder);
-    }
+    // Game Recovery & Termination
+    public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showBlockingAlert("Game Over", "Winners: " + w, Alert.AlertType.INFORMATION); }
+    public void handlePlayerDisconnected(String n) { if (gameScene != null) gameScene.setPlayerOffline(n); }
+    public void handleGameAborted(String l) { showBlockingAlert("Aborted", "Game ended. Last standing: " + l, Alert.AlertType.INFORMATION); handleReturnToLobby(); }
+    public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); handleReturnToLobby(); }
+    public void handlePlayerReconnected(String n) { if (gameScene != null) gameScene.setPlayerOnline(n); }
 
-    public void handleCurrentPlayerChanged(String nextPlayer) {
-        // if (gameScene != null) gameScene.highlightCurrentPlayer(nextPlayer);
-    }
-
-    public void handleTurnOrderEstablished(List<String> turnOrder) {
-        // if (gameScene != null) gameScene.updateTurnOrder(turnOrder);
-    }
-
-    public void handleTotemPlaced(String nickname, char tileID) {
-        // if (gameScene != null) gameScene.animateTotemPlacement(nickname, tileID);
-    }
-
-    public void handleTotemReturned(String nickname, int turnOrderPosition) {
-        // if (gameScene != null) gameScene.animateTotemReturn(nickname, turnOrderPosition);
-    }
-
-    public void handleOfferTilesUpdated(List<OfferTileInfo> offerTiles) {
-        // if (gameScene != null) gameScene.updateOfferTiles(offerTiles);
-    }
-
-    public void handleBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, int deckRemainingCount) {
-        // if (gameScene != null) gameScene.updateBoardCards(newUpperRow, newLowerRow, deckRemainingCount);
-    }
-
-    public void handleEraChanged(List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
-        // if (gameScene != null) gameScene.showNewEraAnimation(newUpperRowBuildings, newLowerRowBuildings);
-    }
-
-    public void handlePlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {
-        // if (gameScene != null) gameScene.updatePlayerLimits(nickname, remainingUpper, remainingLower);
-    }
-
-    public void handlePlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {
-        // if (gameScene != null) gameScene.updatePlayerLimits(nickname, remainingUpper, remainingLower);
-    }
-
-    public void handlePlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-        // if (gameScene != null) gameScene.updatePlayerResource(nickname, resource, newValue);
-    }
-
-    public void handleCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
-        // if (gameScene != null) gameScene.animateCardTaken(nickname, cardID, cardType, sourceRow);
-    }
-
-    public void handleEventResolved(String eventID, String eventName) {
-        // if (gameScene != null) gameScene.showEventResolved(eventID, eventName);
-    }
-
-    public void handleExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-        // if (gameScene != null) gameScene.showExtraTurnAlert(nickname, remainingUpper, remainingLower);
-    }
-
-    public void handleExtraTurnEnded(String nickname) {
-        // if (gameScene != null) gameScene.endExtraTurn(nickname);
-    }
-
-    public void handleGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
-        // showGameOverScene(winners, finalRankings);
-    }
-
-    public void handlePlayerDisconnected(String nickname) {
-        // if (gameScene != null) gameScene.setPlayerOffline(nickname);
-    }
-
-    public void handleGameAborted(String lastManStanding) {
-        showAlert("Game Aborted", "Game ended. Last man standing: " + lastManStanding, Alert.AlertType.INFORMATION);
-        handleReturnToLobby();
-    }
-
-    public void handleGameRecoveryFailed() {
-        showAlert("Recovery Failed", "Could not recover the game state.", Alert.AlertType.ERROR);
-        handleReturnToLobby();
-    }
-
-    public void handlePlayerReconnected(String nickname) {
-        // if (gameScene != null) gameScene.setPlayerOnline(nickname);
-    }
-
-    public void handleError(String message) {
-        showAlert("Error", message, Alert.AlertType.ERROR);
-    }
-
-    public void handleShowAvailableTotems() {
-        // if (lobbyListScene != null) lobbyListScene.showTotemSelectionPopup();
-    }
-
-    public void handleConnectionLost() {
-        showAlert("Connection Lost", "Attempting to reconnect...", Alert.AlertType.WARNING);
-    }
-
-    public void handleConnectionRestored() {
-        showAlert("Connection Restored", "Successfully reconnected to the server.", Alert.AlertType.INFORMATION);
-    }
+    public void handleError(String message) { showToast("Error", message, Alert.AlertType.WARNING); }
+    public void handleConnectionLost() { showToast("Connection Lost", "Server unreachable. Reconnecting...", Alert.AlertType.ERROR); }
+    public void handleConnectionRestored() { showToast("Connected", "Back online!", Alert.AlertType.INFORMATION); }
 
     public void handleReturnToLobby() {
-        this.gameModel = null;
-        // gameScene = null;
-        showLobbyListScene();
+        Platform.runLater(() -> {
+            performReturnToLobby();
+            this.gameScene = null;
+            this.lobbyScene = null;
+            showGameMenuScene();
+        });
     }
 
-    // =======================================================================
-    // UTILITY LOGICHE
-    // =======================================================================
+    // --- NATIVE SPA UI COMPONENTS (TOASTS & MODALS) ---
 
-    private void showAlert(String title, String content, Alert.AlertType type) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
+    private void showToast(String title, String content, Alert.AlertType type) {
+        Platform.runLater(() -> {
+            VBox toast = new VBox(5);
+            String borderColor = type == Alert.AlertType.ERROR ? "#ff4444" : (type == Alert.AlertType.WARNING ? "#ffbb33" : "#00C851");
+            toast.setStyle("-fx-background-color: #2b2b2b; -fx-border-color: " + borderColor + "; -fx-border-width: 0 0 0 4; -fx-padding: 15;");
+
+            Label tL = new Label(title); tL.setStyle("-fx-font-weight: bold; -fx-text-fill: white;");
+            Label cL = new Label(content); cL.setStyle("-fx-text-fill: lightgray;"); cL.setWrapText(true);
+
+            toast.getChildren().addAll(tL, cL);
+            toastLayer.getChildren().add(toast);
+
+            PauseTransition delay = new PauseTransition(Duration.seconds(3));
+            delay.setOnFinished(e -> toastLayer.getChildren().remove(toast));
+            delay.play();
+        });
     }
 
-    public void setServerProxy(ServerProxy proxy) {
-        this.proxy = proxy;
+    private void showBlockingAlert(String title, String content, Alert.AlertType type) {
+        Platform.runLater(() -> {
+            VBox alertBox = new VBox(20);
+            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(400, 200);
+            alertBox.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;");
+
+            Label tL = new Label(title); tL.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
+            Label cL = new Label(content); cL.setStyle("-fx-text-fill: white;"); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);
+
+            Button okBtn = new Button("OK"); okBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white;");
+            okBtn.setOnAction(e -> modalLayer.setVisible(false));
+
+            alertBox.getChildren().addAll(tL, cL, okBtn);
+            modalLayer.getChildren().setAll(alertBox);
+            modalLayer.setVisible(true);
+        });
     }
 
+    /**
+     * Triggers the internal connection form and handles the proxy initialization.
+     */
+    public void promptConnectionAndRetry() {
+        Platform.runLater(() -> {
+            VBox connectionForm = NetworkPopup.buildNode((config, onError) -> {
+                Thread connectionThread = new Thread(() -> {
+                    try {
+                        ServerProxy newProxy = ServerProxyFactory.create(
+                                config.type(), config.host(), config.port(), lobbyModel, clientView);
+
+                        this.setServerProxy(newProxy);
+                        newProxy.setClientController(this);
+                        newProxy.connect();
+
+                        Platform.runLater(() -> {
+                            modalLayer.setVisible(false);
+                            showToast("Connected", "Successfully connected via " + config.type(), Alert.AlertType.INFORMATION);
+                            showIntroScene();
+                        });
+                    } catch (Exception ex) {
+                        onError.accept(ex.getMessage());
+                    }
+                });
+                connectionThread.setDaemon(true);
+                connectionThread.start();
+            });
+
+            modalLayer.getChildren().setAll(connectionForm);
+            modalLayer.setVisible(true);
+        });
+    }
+
+    /**
+     * Sincronizza il passaggio alla scena di gioco se non ci siamo ancora.
+     */
+    private void ensureInGameScene() {
+        Platform.runLater(() -> {
+            if (this.gameScene == null) {
+                // Se siamo qui, significa che siamo appena rientrati (reconnect)
+                // o la partita è appena iniziata.
+                modalLayer.setVisible(false); // Chiudiamo eventuali form rimasti aperti
+                switchToGameScene(getGameModel().getGameId());
+            }
+        });
+    }
+
+    // --- MODIFICA QUESTI HANDLER ---
+
+    public void handleGameSetupCompleted(List<String> t, Map<String, Integer> f, BoardSnapshot b) {
+        ensureInGameScene(); // Assicurati di cambiare scena prima di refreshare
+        refreshFullGameScene(getGameModel());
+    }
+
+    public void handlePlayerLimitsInitialized(String n, int u, int l) {
+        // Spesso è il primo evento di sync che arriva dopo la riconnessione
+        ensureInGameScene();
+        refreshFullGameScene(getGameModel());
+    }
+
+    public void handlePhaseChanged(PhaseType p, String c, List<String> r) {
+        ensureInGameScene();
+        refreshFullGameScene(getGameModel());
+    }
 }

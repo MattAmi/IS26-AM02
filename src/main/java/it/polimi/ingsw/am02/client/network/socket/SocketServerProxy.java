@@ -39,6 +39,7 @@ public class SocketServerProxy implements ServerProxy {
     private Socket socket;
     private PrintWriter out;
     private volatile boolean connected = false;
+    private volatile boolean attemptingReconnection = false;
 
     private Thread pingThread;
     private volatile long lastPongReceivedAt = 0;
@@ -106,19 +107,19 @@ public class SocketServerProxy implements ServerProxy {
                     event.apply(dispatcher);
                 }
             }
-        } catch (IOException e) {
-            if (connected) {
-                handleConnectionLost();
-            }
+        } catch (IOException ignored) {
         } finally {
-            connected = false;
+            handleConnectionLost();
         }
     }
 
     private synchronized void handleConnectionLost() {
-        if (!connected) return;
+        if (attemptingReconnection || !connected) return;
         connected = false;
+        attemptingReconnection = true;
+
         stopPingThread();
+        try { if (socket != null) socket.close(); } catch (IOException ignored) {}
         view.onConnectionLost();
 
         new Thread(() -> {
@@ -134,6 +135,7 @@ public class SocketServerProxy implements ServerProxy {
                         view.onReturnToLobby();
                     }
                     view.onConnectionRestored();
+                    attemptingReconnection = false;
                 } catch (Exception ignored) {}
             }
         }, "SocketProxy-ReconnectThread").start();

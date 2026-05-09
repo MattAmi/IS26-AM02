@@ -4,6 +4,7 @@ import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
 import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.client.view.gui.scenes.*;
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
@@ -11,9 +12,11 @@ import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +24,8 @@ import java.util.Map;
 public class GuiController extends ClientController {
 
     private final Stage primaryStage;
+    private final ClientView clientView; // Kept locally to avoid access scope issues with superclass
+
     private LobbyListScene lobbyListScene;
     private LobbyScene lobbyScene;
     private GameScene gameScene;
@@ -28,11 +33,12 @@ public class GuiController extends ClientController {
     public GuiController(Stage primaryStage, ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
         super(proxy, lobbyModel, view);
         this.primaryStage = primaryStage;
+        this.clientView = view;
     }
 
     public void start() {
         LoginScene loginScene = new LoginScene();
-        primaryStage.setTitle("Mesos");
+        primaryStage.setTitle("Mesos - Board Game");
         primaryStage.setResizable(true);
         primaryStage.setScene(loginScene.buildScene(this::showIntroScene));
         primaryStage.show();
@@ -71,11 +77,11 @@ public class GuiController extends ClientController {
         });
     }
 
-    // ACTIONS CALLED BY SCENES (Delegates to ClientController base methods)
+    // --- ACTIONS CALLED BY SCENES (Delegates to Network Proxy) ---
 
     public void requestSetUsername(String nickname) { handleSetNickname(nickname); }
     public void requestCreateLobby(int size) { handleCreateLobby(size); }
-    public void requestJoinLobby(String lobbyId) { 
+    public void requestJoinLobby(String lobbyId) {
         List<LobbyInfo> lobbies = lobbyModel.getAvailableLobbies();
         for(int i=0; i<lobbies.size(); i++) {
             if(lobbies.get(i).lobbyId().equals(lobbyId)) {
@@ -90,7 +96,7 @@ public class GuiController extends ClientController {
     public void moveTotem(char t) { handleMoveTotem(t); }
     public void resolveActions(List<String> ids) { handleResolveActions(ids); }
 
-    // NOTIFICATIONS FROM MODEL (Called by GuiView)
+    // --- NOTIFICATIONS FROM MODEL (Called by GuiView) ---
 
     public void refreshFullGameScene(GameModel gameModel) {
         if (gameScene != null) gameScene.refreshAll(gameModel);
@@ -99,7 +105,7 @@ public class GuiController extends ClientController {
     public void handleUsernameResult(String username, boolean accepted, String reason) {
         Platform.runLater(() -> {
             if (!accepted) {
-                showAlert("Nickname Rejected", reason, Alert.AlertType.WARNING);
+                showToast("Nickname Rejected", reason, Alert.AlertType.WARNING);
                 if (lobbyScene != null) lobbyScene.onNicknameRejected();
             } else {
                 if (lobbyScene != null) {
@@ -113,23 +119,19 @@ public class GuiController extends ClientController {
 
     public void handleAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
         Platform.runLater(() -> {
-            if (lobbyListScene != null) {
-                lobbyListScene.onAvailableLobbiesUpdated(lobbies);
-            }
+            if (lobbyListScene != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies);
         });
     }
 
     public void handleCurrentLobbyUpdated(LobbyInfo lobby) {
         Platform.runLater(() -> {
-            if (lobbyScene != null) {
-                lobbyScene.updateLobbyState(lobby);
-            }
+            if (lobbyScene != null) lobbyScene.updateLobbyState(lobby);
         });
     }
 
     public void handleLobbyDissolved() {
         Platform.runLater(() -> {
-            showAlert("Lobby Closed", "The lobby has been dissolved.", Alert.AlertType.INFORMATION);
+            showBlockingAlert("Lobby Closed", "The lobby has been dissolved.", Alert.AlertType.INFORMATION);
             showLobbyListScene();
         });
     }
@@ -147,18 +149,22 @@ public class GuiController extends ClientController {
     public void handlePlayerLimitsUpdated(String n, int u, int l) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
     public void handlePlayerResourceChanged(String n, ResourceType r, int v) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
     public void handleCardTaken(String n, String c, CardType t, RowPosition s) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+
+    // Additional Handlers
+    public void handleExtraTurnStarted(String n, int u, int l) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleEventResolved(String id, String n) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
     public void handleShowAvailableTotems() { }
-    public void handleEventResolved(String i, String n) { }
-    public void handleExtraTurnStarted(String n, int u, int l) { }
     public void handleExtraTurnEnded(String n) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showAlert("Game Over", "Winners: " + w, Alert.AlertType.INFORMATION); }
+
+    public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showBlockingAlert("Game Over", "Winners: " + w, Alert.AlertType.INFORMATION); }
     public void handlePlayerDisconnected(String n) { if (gameScene != null) gameScene.setPlayerOffline(n); }
-    public void handleGameAborted(String l) { showAlert("Aborted", "Last man standing: " + l, Alert.AlertType.INFORMATION); handleReturnToLobby(); }
-    public void handleGameRecoveryFailed() { showAlert("Error", "Recovery failed", Alert.AlertType.ERROR); handleReturnToLobby(); }
+    public void handleGameAborted(String l) { showBlockingAlert("Aborted", "Last man standing: " + l, Alert.AlertType.INFORMATION); handleReturnToLobby(); }
+    public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); handleReturnToLobby(); }
     public void handlePlayerReconnected(String n) { if (gameScene != null) gameScene.setPlayerOnline(n); }
-    public void handleError(String message) { Platform.runLater(() -> showAlert("Error", message, Alert.AlertType.ERROR)); }
-    public void handleConnectionLost() { Platform.runLater(() -> showAlert("Connection Lost", "Server unreachable", Alert.AlertType.ERROR)); }
-    public void handleConnectionRestored() { Platform.runLater(() -> showAlert("Connected", "Back online", Alert.AlertType.INFORMATION)); }
+
+    public void handleError(String message) { Platform.runLater(() -> showToast("Error", message, Alert.AlertType.WARNING)); }
+    public void handleConnectionLost() { Platform.runLater(() -> showToast("Connection Lost", "Server unreachable, attempting recovery...", Alert.AlertType.ERROR)); }
+    public void handleConnectionRestored() { Platform.runLater(() -> showToast("Connected", "Back online!", Alert.AlertType.INFORMATION)); }
 
     public void handleReturnToLobby() {
         Platform.runLater(() -> {
@@ -169,11 +175,86 @@ public class GuiController extends ClientController {
         });
     }
 
-    private void showAlert(String title, String content, Alert.AlertType type) {
+    // --- UI UTILITIES & NETWORK RECOVERY ---
+
+    /**
+     * Non-blocking toast notification. Does not freeze the game.
+     */
+    private void showToast(String title, String content, Alert.AlertType type) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(type);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(content);
+            alert.show();
+
+            PauseTransition delay = new PauseTransition(Duration.seconds(2.5));
+            delay.setOnFinished(e -> alert.close());
+            delay.play();
+        });
+    }
+
+    /**
+     * Blocking alert used only for critical stops (like Game Over).
+     */
+    private void showBlockingAlert(String title, String content, Alert.AlertType type) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    /**
+     * Opens the Network Popup to retry connection when the server is unreachable.
+     */
+    public void promptConnectionAndRetry() {
+        Platform.runLater(() -> {
+            // 1. Show blocking error
+            showBlockingAlert("Connection Failed",
+                    "Unable to reach the server. Please verify the IP, Port, and ensure the ServerApp is running.",
+                    Alert.AlertType.ERROR);
+
+            // 2. Open the Network Configuration Popup
+            NetworkPopup.ConnectionConfig newConfig = NetworkPopup.displayAndChoose();
+
+            if (newConfig != null) {
+                try {
+                    // 3. Recreate the Proxy with new parameters
+                    ServerProxy newProxy = ServerProxyFactory.create(
+                            newConfig.type(),
+                            newConfig.host(),
+                            newConfig.port(),
+                            lobbyModel,
+                            clientView // Safe local reference
+                    );
+
+                    // 4. Update References
+                    this.setServerProxy(newProxy);
+                    newProxy.setClientController(this);
+
+                    // 5. Retry Connection in Background
+                    Thread retryThread = new Thread(() -> {
+                        try {
+                            newProxy.connect();
+                            System.out.println("[GUI] Connection successfully established on retry.");
+                            Platform.runLater(() -> showToast("Connected", "Connection successfully established!", Alert.AlertType.INFORMATION));
+                        } catch (Exception e) {
+                            System.err.println("[GUI] Reconnection failed: " + e.getMessage());
+                            // Recursive call to prompt again if it fails
+                            promptConnectionAndRetry();
+                        }
+                    });
+                    retryThread.setDaemon(true);
+                    retryThread.start();
+
+                } catch (Exception ex) {
+                    showBlockingAlert("System Error", "Unable to create the network proxy.", Alert.AlertType.ERROR);
+                }
+            } else {
+                // Exit game if user closes the popup
+                System.exit(0);
+            }
+        });
     }
 }

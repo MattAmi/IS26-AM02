@@ -14,16 +14,13 @@ import java.util.Scanner;
 
 public class ClientApp {
 
-    private static final int RMI_PORT    = 1099;
-    private static final int SOCKET_PORT = 1100;
-
     public static void main(String[] args) {
         Scanner setupScanner = new Scanner(System.in);
 
         try {
             LobbyModel lobbyModel = new LobbyModel();
 
-            // 1. UI Choice
+            // 1. Scelta dell'interfaccia (TUI o GUI)
             System.out.println("Select Interface: [1] TUI | [2] GUI");
             String uiChoice = setupScanner.nextLine().trim();
             boolean useGui = uiChoice.equals("2");
@@ -38,21 +35,28 @@ public class ClientApp {
                 System.out.println("Select Protocol: [1] RMI | [2] Socket");
                 String netChoice = setupScanner.nextLine().trim();
                 NetworkType networkType = netChoice.equals("2") ? NetworkType.SOCKET : NetworkType.RMI;
-                int port = (networkType == NetworkType.SOCKET) ? SOCKET_PORT : RMI_PORT;
 
+                // Richiesta IP dinamica
                 System.out.print("Server IP Address [default: 127.0.0.1]: ");
                 String host = setupScanner.nextLine().trim();
                 if (host.isEmpty()) host = "127.0.0.1";
 
+                // Richiesta Porta dinamica con auto-rilevamento del default in base al protocollo
+                int defaultPort = (networkType == NetworkType.SOCKET) ? 1100 : 1099;
+                System.out.print("Server Port [default: " + defaultPort + "]: ");
+                String portStr = setupScanner.nextLine().trim();
+                int port = portStr.isEmpty() ? defaultPort : Integer.parseInt(portStr);
+
+                // Creazione dell'ecosistema MVC per la TUI
                 ClientView view = new TuiView(lobbyModel);
                 ServerProxy proxy = ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
 
                 TuiController controller = new TuiController(proxy, lobbyModel, view);
                 proxy.setClientController(controller);
 
-                System.out.println("\nConnecting to server via " + networkType + "...");
+                System.out.println("\nConnecting to server via " + networkType + " on " + host + ":" + port + "...");
                 proxy.connect();
-                controller.run();
+                controller.run(); // Loop bloccante per leggere i comandi da terminale
             }
 
         } catch (Exception e) {

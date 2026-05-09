@@ -4,8 +4,7 @@ import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -16,30 +15,21 @@ import javafx.stage.StageStyle;
 
 public class NetworkPopup {
 
-    public static NetworkType displayAndChoose() {
-        Stage popupStage = new Stage();
+    /**
+     * Data record to hold the connection parameters.
+     */
+    public record ConnectionConfig(NetworkType type, String host, int port) {}
 
+    public static ConnectionConfig displayAndChoose() {
+        Stage popupStage = new Stage();
         popupStage.initModality(Modality.APPLICATION_MODAL);
         popupStage.initStyle(StageStyle.UNDECORATED);
 
-        NetworkType[] selectedType = new NetworkType[1];
-        selectedType[0] = NetworkType.SOCKET;
+        ConnectionConfig[] result = new ConnectionConfig[1];
 
-        Font tribalFontTitle;
-        Font tribalFontButtons;
-        try {
-            String fontUrl = NetworkPopup.class.getResource("/it.polimi.ingsw.am02.fonts/intro.ttf").toExternalForm();
-            tribalFontTitle = Font.loadFont(fontUrl, 28);
-            tribalFontButtons = Font.loadFont(fontUrl, 20);
-        } catch (Exception e) {
-            tribalFontTitle = Font.font("System", 28);
-            tribalFontButtons = Font.font("System", 20);
-        }
-
-        VBox root = new VBox(25);
+        VBox root = new VBox(20);
         root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(40));
-
+        root.setPadding(new Insets(30));
         root.setStyle(
                 "-fx-background-color: rgba(43, 29, 20, 0.95); " +
                         "-fx-border-color: #F2D5A3; " +
@@ -48,41 +38,70 @@ public class NetworkPopup {
                         "-fx-border-radius: 15px;"
         );
 
-        Label title = new Label("CHOOSE CONNECTION");
+        Label title = new Label("SERVER CONNECTION");
         title.setTextFill(Color.web("#F2D5A3"));
-        if (tribalFontTitle != null) title.setFont(tribalFontTitle);
+        title.setFont(Font.font("System", javafx.scene.text.FontWeight.BOLD, 22));
 
-        HBox buttonsBox = new HBox(30);
-        buttonsBox.setAlignment(Pos.CENTER);
+        // Network Type Toggle
+        HBox typeBox = new HBox(15);
+        typeBox.setAlignment(Pos.CENTER);
+        ToggleGroup group = new ToggleGroup();
+        RadioButton rmiBtn = new RadioButton("RMI");
+        rmiBtn.setTextFill(Color.WHITE);
+        rmiBtn.setToggleGroup(group);
+        rmiBtn.setSelected(true); // Default
 
-        Button socketBtn = new Button("SOCKET");
-        if (tribalFontButtons != null) socketBtn.setFont(tribalFontButtons);
-        socketBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;");
-        socketBtn.setPrefSize(140, 50);
-        socketBtn.setOnAction(e -> {
-            selectedType[0] = NetworkType.SOCKET;
+        RadioButton socketBtn = new RadioButton("SOCKET");
+        socketBtn.setTextFill(Color.WHITE);
+        socketBtn.setToggleGroup(group);
+        typeBox.getChildren().addAll(rmiBtn, socketBtn);
+
+        // Inputs
+        TextField ipField = new TextField("127.0.0.1");
+        ipField.setPromptText("Server IP");
+        ipField.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
+        ipField.setMaxWidth(200);
+
+        TextField portField = new TextField("1099");
+        portField.setPromptText("Server Port");
+        portField.setStyle("-fx-background-color: #444; -fx-text-fill: white;");
+        portField.setMaxWidth(200);
+
+        // Auto-update default port based on radio button selection
+        group.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == rmiBtn) portField.setText("1099");
+            else portField.setText("1100");
+        });
+
+        // Connect Button
+        Button connectBtn = new Button("CONNECT");
+        connectBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;");
+        connectBtn.setPrefSize(140, 40);
+        connectBtn.setOnAction(e -> {
+            NetworkType type = rmiBtn.isSelected() ? NetworkType.RMI : NetworkType.SOCKET;
+            String ip = ipField.getText().trim();
+            int port;
+            try {
+                port = Integer.parseInt(portField.getText().trim());
+            } catch (NumberFormatException ex) {
+                port = type == NetworkType.RMI ? 1099 : 1100; // fallback
+            }
+            result[0] = new ConnectionConfig(type, ip, port);
             popupStage.close();
         });
 
-        Button rmiBtn = new Button("RMI");
-        if (tribalFontButtons != null) rmiBtn.setFont(tribalFontButtons);
-        rmiBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;");
-        rmiBtn.setPrefSize(140, 50);
-        rmiBtn.setOnAction(e -> {
-            selectedType[0] = NetworkType.RMI;
-            popupStage.close();
-        });
-
-        buttonsBox.getChildren().addAll(socketBtn, rmiBtn);
-        root.getChildren().addAll(title, buttonsBox);
+        root.getChildren().addAll(title, typeBox, ipField, portField, connectBtn);
 
         Scene scene = new Scene(root);
         scene.setFill(Color.TRANSPARENT);
         popupStage.setScene(scene);
-
         popupStage.centerOnScreen();
         popupStage.showAndWait();
 
-        return selectedType[0];
+        // Fallback if the user somehow closes the window
+        if (result[0] == null) {
+            result[0] = new ConnectionConfig(NetworkType.RMI, "127.0.0.1", 1099);
+        }
+        return result[0];
     }
 }

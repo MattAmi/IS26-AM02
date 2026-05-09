@@ -18,25 +18,28 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Main Controller for the GUI. Handles SPA navigation, network events,
+ * and synchronization between the Model and the View layers.
+ */
 public class GuiController extends ClientController {
 
     private final Stage primaryStage;
     private final ClientView clientView;
 
-    // --- ARCHITETTURA SPA ---
+    // --- SPA ARCHITECTURE LAYERS ---
     private StackPane rootContainer;
-    private StackPane baseLayer;    // Contiene il gioco/lobby
-    private StackPane modalLayer;   // Overlay per i popup (es. Errore o Rete)
-    private VBox toastLayer;        // Contenitore per notifiche non bloccanti
+    private StackPane baseLayer;    // Background: Current active scene (Menu, Lobby, Game)
+    private StackPane modalLayer;   // Middle: Blocking overlays (Popups, Network Form)
+    private VBox toastLayer;        // Top: Non-blocking notifications
 
-    // Riferimenti alle scene correnti
+    // Scene references to manage updates
     private LobbyListScene lobbyListScene;
     private LobbyScene lobbyScene;
     private GameScene gameScene;
@@ -50,6 +53,9 @@ public class GuiController extends ClientController {
         initWindowArchitecture();
     }
 
+    /**
+     * Initializes the "Layered Sandwich" root container and sets the primary Scene.
+     */
     private void initWindowArchitecture() {
         baseLayer = new StackPane();
         baseLayer.setStyle("-fx-background-color: #1a1a1a;");
@@ -62,7 +68,7 @@ public class GuiController extends ClientController {
         toastLayer = new VBox(10);
         toastLayer.setAlignment(Pos.TOP_RIGHT);
         toastLayer.setPadding(new Insets(20));
-        toastLayer.setPickOnBounds(false);
+        toastLayer.setPickOnBounds(false); // Allows clicks to pass through to layers below
 
         rootContainer = new StackPane(baseLayer, modalLayer, toastLayer);
         Scene mainScene = new Scene(rootContainer, 1280, 800);
@@ -74,25 +80,26 @@ public class GuiController extends ClientController {
 
     public void start() {
         primaryStage.show();
-        // Appena si apre la finestra, chiediamo i dati di rete!
+        // Entry point: Trigger network connection form inside the modal layer
         promptConnectionAndRetry();
     }
 
-    // --- NAVIGAZIONE SPA ---
+    // --- SPA NAVIGATION METHODS ---
 
     private void switchView(Region newView) {
-        Platform.runLater(() -> {
-            baseLayer.getChildren().setAll(newView);
-        });
-    }
-
-    public void showLoginScene() {
-        // NOTA: le tue scene ora devono restituire un Region (es. BorderPane), non più una Scene!
-        Platform.runLater(() -> switchView(new LoginScene().buildNode(this::showIntroScene)));
+        Platform.runLater(() -> baseLayer.getChildren().setAll(newView));
     }
 
     public void showIntroScene() {
-        Platform.runLater(() -> switchView(new IntroScene().buildNode(this::showLobbyListScene)));
+        Platform.runLater(() -> switchView(new IntroScene().buildNode(this::showGameMenuScene)));
+    }
+
+    public void showGameMenuScene() {
+        Platform.runLater(() -> {
+            this.lobbyScene = null;
+            this.lobbyListScene = null;
+            switchView(new GameMenuScene().buildNode(this));
+        });
     }
 
     public void showLobbyListScene() {
@@ -121,13 +128,22 @@ public class GuiController extends ClientController {
         });
     }
 
-    // --- AZIONI CHIAMATE DALLE SCENE ---
-    public void requestSetUsername(String nickname) { proxy.requestSetUsername(nickname); }
-    public void requestCreateLobby(int size) { proxy.requestCreateLobby(size); }
+    // --- ACTIONS CALLED BY SCENES (UI -> Controller -> Proxy) ---
+
+    public void requestSetUsername(String nickname) { handleSetNickname(nickname); }
+
+    public void requestCreateLobby(int size) {
+        showToast("Processing", "Creating your lobby...", Alert.AlertType.INFORMATION);
+        handleCreateLobby(size);
+    }
+
     public void requestJoinLobby(String lobbyId) {
         List<LobbyInfo> lobbies = lobbyModel.getAvailableLobbies();
-        for(int i=0; i<lobbies.size(); i++) {
-            if(lobbies.get(i).lobbyId().equals(lobbyId)) { proxy.requestJoinLobby(lobbyId); return; }
+        for (LobbyInfo l : lobbies) {
+            if (l.lobbyId().equals(lobbyId)) {
+                handleJoinLobby(lobbies.indexOf(l));
+                return;
+            }
         }
     }
     public void requestReconnect(String nick, String gId) { proxy.requestReconnect(nick, gId); }
@@ -135,8 +151,6 @@ public class GuiController extends ClientController {
     public void requestLeaveLobby() {
         if (lobbyModel.getCurrentLobby() != null) {
             proxy.requestLeaveLobby();
-            // handleReturnToLobby() verrà chiamato quando il server
-            // risponde con onAvailableLobbiesUpdated
         } else {
             handleReturnToLobby();
         }
@@ -144,22 +158,48 @@ public class GuiController extends ClientController {
     public void moveTotem(char t) { proxy.moveTotem(t); }
     public void resolveActions(List<String> ids) { proxy.resolveActions(ids); }
 
-    // --- NOTIFICHE DAL MODELLO ---
-    public void refreshFullGameScene(GameModel gameModel) { if (gameScene != null) gameScene.refreshAll(gameModel); }
+
+    // --- MODEL NOTIFICATION HANDLERS (Model -> Controller -> UI) ---
+
+    public void refreshFullGameScene(GameModel gameModel) {
+        if (gameScene != null) gameScene.refreshAll(gameModel);
+    }
 
     public void handleUsernameResult(String username, boolean accepted, String reason) {
         Platform.runLater(() -> {
-            if (!accepted) { showToast("Nickname Rifiutato", reason, Alert.AlertType.WARNING); if (lobbyScene != null) lobbyScene.onNicknameRejected(); }
-            else { if (lobbyScene != null) lobbyScene.onNicknameAccepted(username); else showIntroScene(); }
+            if (!accepted) {
+                showToast("Nickname Rejected", reason, Alert.AlertType.WARNING);
+                if (lobbyScene != null) lobbyScene.onNicknameRejected();
+            } else {
+                if (lobbyScene != null) lobbyScene.onNicknameAccepted(username);
+                else showIntroScene();
+            }
         });
     }
 
-    public void handleAvailableLobbiesUpdated(List<LobbyInfo> lobbies) { Platform.runLater(() -> { if (lobbyListScene != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies); }); }
-    public void handleCurrentLobbyUpdated(LobbyInfo lobby) { Platform.runLater(() -> { if (lobbyScene != null) lobbyScene.updateLobbyState(lobby); }); }
-    public void handleLobbyDissolved() { showBlockingAlert("Lobby Chiusa", "La lobby è stata chiusa.", Alert.AlertType.INFORMATION); showLobbyListScene(); }
+    public void handleAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
+        Platform.runLater(() -> { if (lobbyListScene != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies); });
+    }
 
-    public void handleGameSetupCompleted(List<String> t, Map<String, Integer> f, BoardSnapshot b) { refreshFullGameScene(getGameModel()); }
-    public void handlePhaseChanged(PhaseType p, String c, List<String> r) { refreshFullGameScene(getGameModel()); }
+    /**
+     * CRITICAL FIX: Transitions to LobbyScene automatically when joined/created.
+     */
+    public void handleCurrentLobbyUpdated(LobbyInfo lobby) {
+        Platform.runLater(() -> {
+            if (this.lobbyScene == null) {
+                showLobbyScene();
+            } else {
+                lobbyScene.updateLobbyState(lobby);
+            }
+        });
+    }
+
+    public void handleLobbyDissolved() {
+        showBlockingAlert("Lobby Closed", "The lobby has been dissolved.", Alert.AlertType.INFORMATION);
+        showGameMenuScene();
+    }
+
+    // Standard Game Handlers
     public void handleCurrentPlayerChanged(String n) { refreshFullGameScene(getGameModel()); }
     public void handleTurnOrderEstablished(List<String> t) { refreshFullGameScene(getGameModel()); }
     public void handleTotemPlaced(String n, char t) { refreshFullGameScene(getGameModel()); }
@@ -167,7 +207,6 @@ public class GuiController extends ClientController {
     public void handleOfferTilesUpdated(List<OfferTileInfo> o) { refreshFullGameScene(getGameModel()); }
     public void handleBoardUpdated(List<String> u, List<String> l, int d) { refreshFullGameScene(getGameModel()); }
     public void handleEraChanged(List<String> u, List<String> l) { refreshFullGameScene(getGameModel()); }
-    public void handlePlayerLimitsInitialized(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
     public void handlePlayerLimitsUpdated(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
     public void handlePlayerResourceChanged(String n, ResourceType r, int v) { refreshFullGameScene(getGameModel()); }
     public void handleCardTaken(String n, String c, CardType t, RowPosition s) { refreshFullGameScene(getGameModel()); }
@@ -176,10 +215,11 @@ public class GuiController extends ClientController {
     public void handleShowAvailableTotems() { }
     public void handleExtraTurnEnded(String n) { refreshFullGameScene(getGameModel()); }
 
-    public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showBlockingAlert("Game Over", "Vincitori: " + w, Alert.AlertType.INFORMATION); }
+    // Game Recovery & Termination
+    public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showBlockingAlert("Game Over", "Winners: " + w, Alert.AlertType.INFORMATION); }
     public void handlePlayerDisconnected(String n) { if (gameScene != null) gameScene.setPlayerOffline(n); }
-    public void handleGameAborted(String l) { showBlockingAlert("Partita Annullata", "Vincitore per abbandono: " + l, Alert.AlertType.INFORMATION); handleReturnToLobby(); }
-    public void handleGameRecoveryFailed() { showBlockingAlert("Errore", "Recupero partita fallito", Alert.AlertType.ERROR); handleReturnToLobby(); }
+    public void handleGameAborted(String l) { showBlockingAlert("Aborted", "Game ended. Last standing: " + l, Alert.AlertType.INFORMATION); handleReturnToLobby(); }
+    public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); handleReturnToLobby(); }
     public void handlePlayerReconnected(String n) { if (gameScene != null) gameScene.setPlayerOnline(n); }
 
     public void handleError(String message) { showToast("Errore", message, Alert.AlertType.WARNING); }
@@ -228,19 +268,21 @@ public class GuiController extends ClientController {
             performReturnToLobby();
             this.gameScene = null;
             this.lobbyScene = null;
-            showLobbyListScene();
+            showGameMenuScene();
         });
     }
 
-    // --- UI SPA (TOAST E MODAL NATIVI) ---
+    // --- NATIVE SPA UI COMPONENTS (TOASTS & MODALS) ---
 
     private void showToast(String title, String content, Alert.AlertType type) {
         Platform.runLater(() -> {
             VBox toast = new VBox(5);
             String borderColor = type == Alert.AlertType.ERROR ? "#ff4444" : (type == Alert.AlertType.WARNING ? "#ffbb33" : "#00C851");
             toast.setStyle("-fx-background-color: #2b2b2b; -fx-border-color: " + borderColor + "; -fx-border-width: 0 0 0 4; -fx-padding: 15;");
+
             Label tL = new Label(title); tL.setStyle("-fx-font-weight: bold; -fx-text-fill: white;");
             Label cL = new Label(content); cL.setStyle("-fx-text-fill: lightgray;"); cL.setWrapText(true);
+
             toast.getChildren().addAll(tL, cL);
             toastLayer.getChildren().add(toast);
 
@@ -258,6 +300,7 @@ public class GuiController extends ClientController {
 
             Label tL = new Label(title); tL.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
             Label cL = new Label(content); cL.setStyle("-fx-text-fill: white;"); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);
+
             Button okBtn = new Button("OK"); okBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white;");
             okBtn.setOnAction(e -> modalLayer.setVisible(false));
 
@@ -281,9 +324,7 @@ public class GuiController extends ClientController {
 
     public void promptConnectionAndRetry() {
         Platform.runLater(() -> {
-            // Generiamo il form passando i dati config e la funzione onError
             VBox connectionForm = NetworkPopup.buildNode((config, onError) -> {
-
                 Thread connectionThread = new Thread(() -> {
                     try {
                         ServerProxy newProxy = ServerProxyFactory.create(
@@ -293,15 +334,12 @@ public class GuiController extends ClientController {
                         newProxy.setClientController(this);
                         newProxy.connect();
 
-                        // Connessione OK!
                         Platform.runLater(() -> {
                             modalLayer.setVisible(false);
-                            showToast("Connected", "Connessione stabilita via " + config.type(), Alert.AlertType.INFORMATION);
-                            showIntroScene(); // Andiamo dritti all'Intro!
+                            showToast("Connected", "Successfully connected via " + config.type(), Alert.AlertType.INFORMATION);
+                            showIntroScene();
                         });
                     } catch (Exception ex) {
-                        // Connessione FALLITA!
-                        // Invece di distruggere il form con showBlockingAlert, diciamo al form di mostrare l'errore.
                         onError.accept(ex.getMessage());
                     }
                 });
@@ -309,9 +347,40 @@ public class GuiController extends ClientController {
                 connectionThread.start();
             });
 
-            // Mostriamo il form
             modalLayer.getChildren().setAll(connectionForm);
             modalLayer.setVisible(true);
         });
+    }
+
+    /**
+     * Sincronizza il passaggio alla scena di gioco se non ci siamo ancora.
+     */
+    private void ensureInGameScene() {
+        Platform.runLater(() -> {
+            if (this.gameScene == null) {
+                // Se siamo qui, significa che siamo appena rientrati (reconnect)
+                // o la partita è appena iniziata.
+                modalLayer.setVisible(false); // Chiudiamo eventuali form rimasti aperti
+                switchToGameScene(getGameModel().getGameId());
+            }
+        });
+    }
+
+    // --- MODIFICA QUESTI HANDLER ---
+
+    public void handleGameSetupCompleted(List<String> t, Map<String, Integer> f, BoardSnapshot b) {
+        ensureInGameScene(); // Assicurati di cambiare scena prima di refreshare
+        refreshFullGameScene(getGameModel());
+    }
+
+    public void handlePlayerLimitsInitialized(String n, int u, int l) {
+        // Spesso è il primo evento di sync che arriva dopo la riconnessione
+        ensureInGameScene();
+        refreshFullGameScene(getGameModel());
+    }
+
+    public void handlePhaseChanged(PhaseType p, String c, List<String> r) {
+        ensureInGameScene();
+        refreshFullGameScene(getGameModel());
     }
 }

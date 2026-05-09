@@ -2,127 +2,96 @@ package it.polimi.ingsw.am02.client.view.gui.scenes;
 
 import it.polimi.ingsw.am02.client.view.gui.GuiController;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import javafx.scene.layout.Region;
+
+/**
+ * Scene dedicated exclusively to browsing and joining existing lobbies.
+ */
 public class LobbyListScene {
 
     private GuiController controller;
-    private FlowPane lobbyGrid;
+    private VBox listContainer;
 
     public Region buildNode(GuiController controller) {
         this.controller = controller;
+
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #2b1d14;");
+        root.setStyle("-fx-background-color: #1a1a1a;");
+        root.setPadding(new Insets(30));
 
-        Label title = new Label("MESOS - LOBBY SELECTION");
-        title.setTextFill(Color.web("#F2D5A3"));
-        title.setFont(Font.font("System", FontWeight.BOLD, 36));
-        BorderPane.setAlignment(title, Pos.CENTER);
-        BorderPane.setMargin(title, new Insets(20));
-        root.setTop(title);
+        // Top: Header & Back Button
+        HBox topBar = new HBox(20);
+        topBar.setAlignment(Pos.CENTER_LEFT);
 
-        lobbyGrid = new FlowPane(20, 20);
-        lobbyGrid.setPadding(new Insets(20));
-        lobbyGrid.setAlignment(Pos.CENTER);
-        
-        ScrollPane scroll = new ScrollPane(lobbyGrid);
-        scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        root.setCenter(scroll);
+        Button backBtn = new Button("← BACK TO MENU");
+        backBtn.setStyle("-fx-base: #444; -fx-text-fill: white; -fx-cursor: hand;");
+        backBtn.setOnAction(e -> controller.showGameMenuScene());
 
-        HBox bottomBar = new HBox(20);
-        bottomBar.setPadding(new Insets(20));
-        bottomBar.setAlignment(Pos.CENTER);
-        
-        Button newLobbyBtn = new Button("CREATE NEW LOBBY");
-        newLobbyBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-size: 18;");
-        newLobbyBtn.setOnAction(e -> handleCreateLobby());
+        Label header = new Label("AVAILABLE LOBBIES");
+        header.setTextFill(Color.web("#F2D5A3"));
+        header.setFont(Font.font("System", FontWeight.BOLD, 28));
 
-        Button reconnectBtn = new Button("RECONNECT");
-        reconnectBtn.setStyle("-fx-base: #2B547E; -fx-text-fill: white; -fx-font-size: 18;");
-        reconnectBtn.setOnAction(e -> handleReconnect());
+        topBar.getChildren().addAll(backBtn, header);
+        root.setTop(topBar);
 
-        Button quitBtn = new Button("QUIT");
-        quitBtn.setStyle("-fx-base: #8B0000; -fx-text-fill: white; -fx-font-size: 18;");
-        quitBtn.setOnAction(e -> System.exit(0));
+        // Center: Lobby List
+        listContainer = new VBox(15);
+        listContainer.setAlignment(Pos.TOP_CENTER);
+        listContainer.setPadding(new Insets(20));
 
-        bottomBar.getChildren().addAll(newLobbyBtn, reconnectBtn, quitBtn);
-        root.setBottom(bottomBar);
+        ScrollPane scrollPane = new ScrollPane(listContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        root.setCenter(scrollPane);
 
         return root;
     }
 
-    private void handleReconnect() {
-        TextInputDialog nickDialog = new TextInputDialog();
-        nickDialog.setTitle("Reconnect");
-        nickDialog.setHeaderText("Enter your nickname used in the game:");
-        nickDialog.showAndWait().ifPresent(nick -> {
-            TextInputDialog idDialog = new TextInputDialog();
-            idDialog.setTitle("Reconnect");
-            idDialog.setHeaderText("Enter the Game ID:");
-            idDialog.showAndWait().ifPresent(gameId -> {
-                controller.requestReconnect(nick, gameId);
-                controller.switchToGameScene(gameId);
-            });
-        });
-    }
-
-    private void handleCreateLobby() {
-        List<Integer> choices = Arrays.asList(2, 3, 4, 5);
-        ChoiceDialog<Integer> dialog = new ChoiceDialog<>(2, choices);
-        dialog.setTitle("New Lobby");
-        dialog.setHeaderText("Create a new game lobby");
-        dialog.setContentText("Choose number of players:");
-
-        Optional<Integer> result = dialog.showAndWait();
-        result.ifPresent(size -> {
-            controller.requestCreateLobby(size);
-            controller.showLobbyScene();
-        });
-    }
-
     public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
-        Platform.runLater(() -> {
-            lobbyGrid.getChildren().clear();
-            for (LobbyInfo info : lobbies) {
-                lobbyGrid.getChildren().add(createLobbyCard(info));
-            }
-        });
-    }
+        listContainer.getChildren().clear();
 
-    private VBox createLobbyCard(LobbyInfo info) {
-        VBox card = new VBox(10);
-        card.setPadding(new Insets(15));
-        card.setStyle("-fx-background-color: #3e2a1d; -fx-border-color: #F2D5A3; -fx-border-radius: 10; -fx-background-radius: 10;");
-        card.setPrefSize(200, 150);
-        card.setAlignment(Pos.CENTER);
+        if (lobbies == null || lobbies.isEmpty()) {
+            Label emptyLbl = new Label("No active lobbies found. Go back and create one!");
+            emptyLbl.setTextFill(Color.GRAY);
+            emptyLbl.setFont(Font.font("System", 16));
+            listContainer.getChildren().add(emptyLbl);
+            return;
+        }
 
-        Label idLabel = new Label("Lobby ID: " + info.lobbyId().substring(0, 8));
-        idLabel.setTextFill(Color.WHITE);
-        
-        Label playersLabel = new Label("Players: " + info.currentPlayers().size() + " / " + info.expectedPlayers());
-        playersLabel.setTextFill(Color.LIGHTGRAY);
+        for (LobbyInfo lobby : lobbies) {
+            HBox row = new HBox(20);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setPadding(new Insets(15));
+            row.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 1; -fx-border-radius: 5;");
 
-        Button joinBtn = new Button("JOIN");
-        joinBtn.setDisable(info.currentPlayers().size() >= info.expectedPlayers());
-        joinBtn.setOnAction(e -> {
-            controller.requestJoinLobby(info.lobbyId());
-            controller.showLobbyScene();
-        });
+            Label idLbl = new Label("Lobby ID: " + lobby.lobbyId());
+            idLbl.setTextFill(Color.WHITE);
+            idLbl.setPrefWidth(200);
 
-        card.getChildren().addAll(idLabel, playersLabel, joinBtn);
-        return card;
+            Label playersLbl = new Label("Players: " + lobby.currentPlayers().size() + " / " + lobby.expectedPlayers());
+            playersLbl.setTextFill(Color.LIGHTGRAY);
+            playersLbl.setPrefWidth(150);
+
+            Button joinBtn = new Button("JOIN");
+            joinBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;");
+            joinBtn.setDisable(lobby.currentPlayers().size() >= lobby.expectedPlayers());
+            joinBtn.setOnAction(e -> controller.requestJoinLobby(lobby.lobbyId()));
+
+            row.getChildren().addAll(idLbl, playersLbl, joinBtn);
+            listContainer.getChildren().add(row);
+        }
     }
 }

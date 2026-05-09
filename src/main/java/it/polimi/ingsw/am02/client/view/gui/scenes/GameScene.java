@@ -29,6 +29,7 @@ public class GameScene {
     private VBox cardsArea;
     private HBox trackArea;
     private VBox statusArea;
+    private VBox statsPanel;
     
     private final List<String> selected = new ArrayList<>();
 
@@ -37,11 +38,28 @@ public class GameScene {
         root = new BorderPane();
         root.setStyle("-fx-background-color: #1a1a1a;");
 
-        // Top: Stats
+        // Top: TopBar with Stats and Burger Menu
+        HBox topBar = new HBox();
+        topBar.setPadding(new Insets(10));
+        topBar.setAlignment(Pos.CENTER_LEFT);
+        topBar.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 0 0 2 0;");
+
         statusArea = new VBox(5);
-        statusArea.setPadding(new Insets(10));
-        statusArea.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 0 0 2 0;");
-        root.setTop(statusArea);
+        HBox.setHgrow(statusArea, Priority.ALWAYS);
+
+        Button burgerMenuBtn = new Button("☰");
+        burgerMenuBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #F2D5A3; -fx-font-size: 24px; -fx-cursor: hand;");
+        burgerMenuBtn.setOnAction(e -> controller.showInGameMenu());
+
+        topBar.getChildren().addAll(statusArea, burgerMenuBtn);
+        root.setTop(topBar);
+
+        // Right: Player Stats Panel
+        statsPanel = new VBox(15);
+        statsPanel.setPadding(new Insets(10));
+        statsPanel.setPrefWidth(220);
+        statsPanel.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 0 0 0 2;");
+        root.setRight(statsPanel);
 
         // Center: Cards
         cardsArea = new VBox(20);
@@ -98,6 +116,37 @@ public class GameScene {
             Label l2 = new Label("ACTIVE PLAYER: " + model.getCurrentPlayer() + " | MY NICK: " + model.getMyNickname());
             l2.setTextFill(Color.WHITE);
             statusArea.getChildren().addAll(l1, l2);
+
+            // Stats Panel (Right)
+            statsPanel.getChildren().clear();
+            Label statsHeader = new Label("PLAYER STATS");
+            statsHeader.setTextFill(Color.web("#F2D5A3"));
+            statsHeader.setFont(Font.font("System", FontWeight.BOLD, 14));
+            statsPanel.getChildren().add(statsHeader);
+
+            for (String nick : model.getTurnOrder()) {
+                VBox pBox = new VBox(2);
+                pBox.setPadding(new Insets(8));
+                boolean isMe = nick.equals(model.getMyNickname());
+                pBox.setStyle("-fx-border-color: " + (isMe ? "LIME" : "#444") + "; -fx-border-radius: 5; -fx-background-color: #3e2a1d;");
+
+                Label nameL = new Label(nick + (isMe ? " (YOU)" : ""));
+                nameL.setTextFill(isMe ? Color.LIME : Color.WHITE);
+                nameL.setFont(Font.font("System", FontWeight.BOLD, 12));
+
+                int food = model.getFoodByPlayer().getOrDefault(nick, 0);
+                int pp = model.getPpByPlayer().getOrDefault(nick, 0);
+                int up = model.getRemainingUpper().getOrDefault(nick, 0);
+                int lw = model.getRemainingLower().getOrDefault(nick, 0);
+
+                Label foodL = new Label("🍖 Food: " + food); foodL.setTextFill(Color.LIGHTGRAY);
+                Label ppL = new Label("🏆 PP: " + pp); ppL.setTextFill(Color.LIGHTGRAY);
+                Label picksL = new Label("⛏ Picks: " + up + "/" + lw); picksL.setTextFill(Color.CYAN);
+                picksL.setFont(Font.font("System", 11));
+
+                pBox.getChildren().addAll(nameL, foodL, ppL, picksL);
+                statsPanel.getChildren().add(pBox);
+            }
 
             // Cards
             cardsArea.getChildren().clear();

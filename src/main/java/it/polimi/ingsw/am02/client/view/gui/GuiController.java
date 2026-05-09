@@ -96,6 +96,7 @@ public class GuiController extends ClientController {
 
     public void showGameMenuScene() {
         Platform.runLater(() -> {
+            this.gameScene = null;
             this.lobbyScene = null;
             this.lobbyListScene = null;
             switchView(new GameMenuScene().buildNode(this));
@@ -104,6 +105,7 @@ public class GuiController extends ClientController {
 
     public void showLobbyListScene() {
         Platform.runLater(() -> {
+            this.gameScene = null;
             this.lobbyScene = null;
             this.lobbyListScene = new LobbyListScene();
             switchView(lobbyListScene.buildNode(this));
@@ -113,6 +115,8 @@ public class GuiController extends ClientController {
 
     public void showLobbyScene() {
         Platform.runLater(() -> {
+            this.gameScene = null;
+            this.lobbyListScene = null;
             this.lobbyScene = new LobbyScene();
             switchView(lobbyScene.buildNode(this));
             if (lobbyModel.getCurrentLobby() != null) {
@@ -123,6 +127,8 @@ public class GuiController extends ClientController {
 
     public void switchToGameScene(String gameId) {
         Platform.runLater(() -> {
+            this.lobbyScene = null;
+            this.lobbyListScene = null;
             this.gameScene = new GameScene();
             switchView(gameScene.buildNode(this));
         });
@@ -179,7 +185,7 @@ public class GuiController extends ClientController {
 
     public void handleAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
         Platform.runLater(() -> {
-            if (this.lobbyScene != null) {
+            if (this.lobbyScene != null || this.gameScene != null) {
                 showGameMenuScene();
             }
             if (this.lobbyListScene != null) {
@@ -225,8 +231,8 @@ public class GuiController extends ClientController {
     // Game Recovery & Termination
     public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showBlockingAlert("Game Over", "Winners: " + w, Alert.AlertType.INFORMATION); }
     public void handlePlayerDisconnected(String n) { if (gameScene != null) gameScene.setPlayerOffline(n); }
-    public void handleGameAborted(String l) { showBlockingAlert("Aborted", "Game ended. Last standing: " + l, Alert.AlertType.INFORMATION); handleReturnToLobby(); }
-    public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); handleReturnToLobby(); }
+    public void handleGameAborted(String l) { showBlockingAlert("Aborted", "Game ended. Last standing: " + l, Alert.AlertType.INFORMATION); requestReturnToLobby(); }
+    public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); requestReturnToLobby(); }
     public void handlePlayerReconnected(String n) { if (gameScene != null) gameScene.setPlayerOnline(n); }
 
     public void handleError(String message) { showToast("Errore", message, Alert.AlertType.WARNING); }
@@ -270,11 +276,24 @@ public class GuiController extends ClientController {
             showToast("Connected", "You're back online!", Alert.AlertType.INFORMATION);
         });
     }
+
+    /**
+     * Initiates the return to lobby sequence by cleaning up state and proxy.
+     * This acts like the TUI "lobby" command.
+     */
+    public void requestReturnToLobby() {
+        performReturnToLobby();
+    }
+
+    /**
+     * Handles the UI transition after state cleanup.
+     * This acts like the TUI onReturnToLobby implementation.
+     */
     public void handleReturnToLobby() {
         Platform.runLater(() -> {
-            performReturnToLobby();
             this.gameScene = null;
             this.lobbyScene = null;
+            this.lobbyListScene = null;
             showGameMenuScene();
         });
     }
@@ -321,6 +340,18 @@ public class GuiController extends ClientController {
         Platform.runLater(() -> {
             SummaryCardOverlay overlay = new SummaryCardOverlay();
             VBox node = overlay.buildNode(() -> {
+                modalLayer.setVisible(false);
+                modalLayer.getChildren().clear();
+            });
+            modalLayer.getChildren().setAll(node);
+            modalLayer.setVisible(true);
+        });
+    }
+
+    public void showInGameMenu() {
+        Platform.runLater(() -> {
+            InGameMenuOverlay overlay = new InGameMenuOverlay();
+            VBox node = overlay.buildNode(this, () -> {
                 modalLayer.setVisible(false);
                 modalLayer.getChildren().clear();
             });

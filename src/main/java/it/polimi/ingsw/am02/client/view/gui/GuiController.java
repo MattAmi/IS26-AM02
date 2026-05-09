@@ -7,14 +7,17 @@ import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
 import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.client.view.gui.scenes.*;
-import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
-import it.polimi.ingsw.am02.common.dto.LobbyInfo;
-import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
-import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.*;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -24,8 +27,15 @@ import java.util.Map;
 public class GuiController extends ClientController {
 
     private final Stage primaryStage;
-    private final ClientView clientView; // Kept locally to avoid access scope issues with superclass
+    private final ClientView clientView;
 
+    // --- ARCHITETTURA SPA ---
+    private StackPane rootContainer;
+    private StackPane baseLayer;    // Contiene il gioco/lobby
+    private StackPane modalLayer;   // Overlay per i popup (es. Errore o Rete)
+    private VBox toastLayer;        // Contenitore per notifiche non bloccanti
+
+    // Riferimenti alle scene correnti
     private LobbyListScene lobbyListScene;
     private LobbyScene lobbyScene;
     private GameScene gameScene;
@@ -34,28 +44,59 @@ public class GuiController extends ClientController {
         super(proxy, lobbyModel, view);
         this.primaryStage = primaryStage;
         this.clientView = view;
+        initWindowArchitecture();
+    }
+
+    private void initWindowArchitecture() {
+        baseLayer = new StackPane();
+        baseLayer.setStyle("-fx-background-color: #1a1a1a;");
+
+        modalLayer = new StackPane();
+        modalLayer.setStyle("-fx-background-color: rgba(0, 0, 0, 0.75);");
+        modalLayer.setVisible(false);
+        modalLayer.setAlignment(Pos.CENTER);
+
+        toastLayer = new VBox(10);
+        toastLayer.setAlignment(Pos.TOP_RIGHT);
+        toastLayer.setPadding(new Insets(20));
+        toastLayer.setPickOnBounds(false);
+
+        rootContainer = new StackPane(baseLayer, modalLayer, toastLayer);
+        Scene mainScene = new Scene(rootContainer, 1280, 800);
+
+        primaryStage.setTitle("Mesos - Board Game");
+        primaryStage.setScene(mainScene);
+        primaryStage.setResizable(true);
     }
 
     public void start() {
-        LoginScene loginScene = new LoginScene();
-        primaryStage.setTitle("Mesos - Board Game");
-        primaryStage.setResizable(true);
-        primaryStage.setScene(loginScene.buildScene(this::showIntroScene));
         primaryStage.show();
+        // Appena si apre la finestra, chiediamo i dati di rete!
+        promptConnectionAndRetry();
+    }
+
+    // --- NAVIGAZIONE SPA ---
+
+    private void switchView(Region newView) {
+        Platform.runLater(() -> {
+            baseLayer.getChildren().setAll(newView);
+        });
+    }
+
+    public void showLoginScene() {
+        // NOTA: le tue scene ora devono restituire un Region (es. BorderPane), non più una Scene!
+        Platform.runLater(() -> switchView(new LoginScene().buildNode(this::showIntroScene)));
     }
 
     public void showIntroScene() {
-        Platform.runLater(() -> {
-            IntroScene introScene = new IntroScene();
-            primaryStage.setScene(introScene.buildScene(this::showLobbyListScene));
-        });
+        Platform.runLater(() -> switchView(new IntroScene().buildNode(this::showLobbyListScene)));
     }
 
     public void showLobbyListScene() {
         Platform.runLater(() -> {
             this.lobbyScene = null;
             this.lobbyListScene = new LobbyListScene();
-            primaryStage.setScene(lobbyListScene.buildScene(this));
+            switchView(lobbyListScene.buildNode(this));
             handleAvailableLobbiesUpdated(lobbyModel.getAvailableLobbies());
         });
     }
@@ -63,7 +104,7 @@ public class GuiController extends ClientController {
     public void showLobbyScene() {
         Platform.runLater(() -> {
             this.lobbyScene = new LobbyScene();
-            primaryStage.setScene(lobbyScene.buildScene(this));
+            switchView(lobbyScene.buildNode(this));
             if (lobbyModel.getCurrentLobby() != null) {
                 lobbyScene.updateLobbyState(lobbyModel.getCurrentLobby());
             }
@@ -73,98 +114,66 @@ public class GuiController extends ClientController {
     public void switchToGameScene(String gameId) {
         Platform.runLater(() -> {
             this.gameScene = new GameScene();
-            primaryStage.setScene(gameScene.buildScene(this));
+            switchView(gameScene.buildNode(this));
         });
     }
 
-    // --- ACTIONS CALLED BY SCENES (Delegates to Network Proxy) ---
-
-    public void requestSetUsername(String nickname) { handleSetNickname(nickname); }
-    public void requestCreateLobby(int size) { handleCreateLobby(size); }
+    // --- AZIONI CHIAMATE DALLE SCENE ---
+    public void requestSetUsername(String nickname) { proxy.requestSetUsername(nickname); }
+    public void requestCreateLobby(int size) { proxy.requestCreateLobby(size); }
     public void requestJoinLobby(String lobbyId) {
         List<LobbyInfo> lobbies = lobbyModel.getAvailableLobbies();
         for(int i=0; i<lobbies.size(); i++) {
-            if(lobbies.get(i).lobbyId().equals(lobbyId)) {
-                handleJoinLobby(i);
-                return;
-            }
+            if(lobbies.get(i).lobbyId().equals(lobbyId)) { proxy.requestJoinLobby(lobbyId); return; }
         }
     }
-    public void requestReconnect(String nick, String gId) { handleReconnect(nick, gId); }
-    public void requestSelectTotem(Totem t) { handleSelectTotem(t); }
+    public void requestReconnect(String nick, String gId) { proxy.requestReconnect(nick, gId); }
+    public void requestSelectTotem(Totem t) { proxy.requestSelectTotem(t); }
     public void requestLeaveLobby() { proxy.requestLeaveLobby(); handleReturnToLobby(); }
-    public void moveTotem(char t) { handleMoveTotem(t); }
-    public void resolveActions(List<String> ids) { handleResolveActions(ids); }
+    public void moveTotem(char t) { proxy.moveTotem(t); }
+    public void resolveActions(List<String> ids) { proxy.resolveActions(ids); }
 
-    // --- NOTIFICATIONS FROM MODEL (Called by GuiView) ---
-
-    public void refreshFullGameScene(GameModel gameModel) {
-        if (gameScene != null) gameScene.refreshAll(gameModel);
-    }
+    // --- NOTIFICHE DAL MODELLO ---
+    public void refreshFullGameScene(GameModel gameModel) { if (gameScene != null) gameScene.refreshAll(gameModel); }
 
     public void handleUsernameResult(String username, boolean accepted, String reason) {
         Platform.runLater(() -> {
-            if (!accepted) {
-                showToast("Nickname Rejected", reason, Alert.AlertType.WARNING);
-                if (lobbyScene != null) lobbyScene.onNicknameRejected();
-            } else {
-                if (lobbyScene != null) {
-                    lobbyScene.onNicknameAccepted(username);
-                } else {
-                    showIntroScene();
-                }
-            }
+            if (!accepted) { showToast("Nickname Rifiutato", reason, Alert.AlertType.WARNING); if (lobbyScene != null) lobbyScene.onNicknameRejected(); }
+            else { if (lobbyScene != null) lobbyScene.onNicknameAccepted(username); else showIntroScene(); }
         });
     }
 
-    public void handleAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
-        Platform.runLater(() -> {
-            if (lobbyListScene != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies);
-        });
-    }
+    public void handleAvailableLobbiesUpdated(List<LobbyInfo> lobbies) { Platform.runLater(() -> { if (lobbyListScene != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies); }); }
+    public void handleCurrentLobbyUpdated(LobbyInfo lobby) { Platform.runLater(() -> { if (lobbyScene != null) lobbyScene.updateLobbyState(lobby); }); }
+    public void handleLobbyDissolved() { showBlockingAlert("Lobby Chiusa", "La lobby è stata chiusa.", Alert.AlertType.INFORMATION); showLobbyListScene(); }
 
-    public void handleCurrentLobbyUpdated(LobbyInfo lobby) {
-        Platform.runLater(() -> {
-            if (lobbyScene != null) lobbyScene.updateLobbyState(lobby);
-        });
-    }
-
-    public void handleLobbyDissolved() {
-        Platform.runLater(() -> {
-            showBlockingAlert("Lobby Closed", "The lobby has been dissolved.", Alert.AlertType.INFORMATION);
-            showLobbyListScene();
-        });
-    }
-
-    public void handleGameSetupCompleted(List<String> t, Map<String, Integer> f, BoardSnapshot b) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handlePhaseChanged(PhaseType p, String c, List<String> r) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleCurrentPlayerChanged(String n) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleTurnOrderEstablished(List<String> t) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleTotemPlaced(String n, char t) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleTotemReturned(String n, int p) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleOfferTilesUpdated(List<OfferTileInfo> o) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleBoardUpdated(List<String> u, List<String> l, int d) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleEraChanged(List<String> u, List<String> l) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handlePlayerLimitsInitialized(String n, int u, int l) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handlePlayerLimitsUpdated(String n, int u, int l) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handlePlayerResourceChanged(String n, ResourceType r, int v) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleCardTaken(String n, String c, CardType t, RowPosition s) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-
-    // Additional Handlers
-    public void handleExtraTurnStarted(String n, int u, int l) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
-    public void handleEventResolved(String id, String n) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleGameSetupCompleted(List<String> t, Map<String, Integer> f, BoardSnapshot b) { refreshFullGameScene(getGameModel()); }
+    public void handlePhaseChanged(PhaseType p, String c, List<String> r) { refreshFullGameScene(getGameModel()); }
+    public void handleCurrentPlayerChanged(String n) { refreshFullGameScene(getGameModel()); }
+    public void handleTurnOrderEstablished(List<String> t) { refreshFullGameScene(getGameModel()); }
+    public void handleTotemPlaced(String n, char t) { refreshFullGameScene(getGameModel()); }
+    public void handleTotemReturned(String n, int p) { refreshFullGameScene(getGameModel()); }
+    public void handleOfferTilesUpdated(List<OfferTileInfo> o) { refreshFullGameScene(getGameModel()); }
+    public void handleBoardUpdated(List<String> u, List<String> l, int d) { refreshFullGameScene(getGameModel()); }
+    public void handleEraChanged(List<String> u, List<String> l) { refreshFullGameScene(getGameModel()); }
+    public void handlePlayerLimitsInitialized(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
+    public void handlePlayerLimitsUpdated(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
+    public void handlePlayerResourceChanged(String n, ResourceType r, int v) { refreshFullGameScene(getGameModel()); }
+    public void handleCardTaken(String n, String c, CardType t, RowPosition s) { refreshFullGameScene(getGameModel()); }
+    public void handleExtraTurnStarted(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
+    public void handleEventResolved(String id, String n) { refreshFullGameScene(getGameModel()); }
     public void handleShowAvailableTotems() { }
-    public void handleExtraTurnEnded(String n) { if (gameScene != null) gameScene.refreshAll(getGameModel()); }
+    public void handleExtraTurnEnded(String n) { refreshFullGameScene(getGameModel()); }
 
-    public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showBlockingAlert("Game Over", "Winners: " + w, Alert.AlertType.INFORMATION); }
+    public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showBlockingAlert("Game Over", "Vincitori: " + w, Alert.AlertType.INFORMATION); }
     public void handlePlayerDisconnected(String n) { if (gameScene != null) gameScene.setPlayerOffline(n); }
-    public void handleGameAborted(String l) { showBlockingAlert("Aborted", "Last man standing: " + l, Alert.AlertType.INFORMATION); handleReturnToLobby(); }
-    public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); handleReturnToLobby(); }
+    public void handleGameAborted(String l) { showBlockingAlert("Partita Annullata", "Vincitore per abbandono: " + l, Alert.AlertType.INFORMATION); handleReturnToLobby(); }
+    public void handleGameRecoveryFailed() { showBlockingAlert("Errore", "Recupero partita fallito", Alert.AlertType.ERROR); handleReturnToLobby(); }
     public void handlePlayerReconnected(String n) { if (gameScene != null) gameScene.setPlayerOnline(n); }
 
-    public void handleError(String message) { Platform.runLater(() -> showToast("Error", message, Alert.AlertType.WARNING)); }
-    public void handleConnectionLost() { Platform.runLater(() -> showToast("Connection Lost", "Server unreachable, attempting recovery...", Alert.AlertType.ERROR)); }
-    public void handleConnectionRestored() { Platform.runLater(() -> showToast("Connected", "Back online!", Alert.AlertType.INFORMATION)); }
+    public void handleError(String message) { showToast("Errore", message, Alert.AlertType.WARNING); }
+    public void handleConnectionLost() { showToast("Connessione Persa", "Server irraggiungibile. Riconnessione...", Alert.AlertType.ERROR); }
+    public void handleConnectionRestored() { showToast("Connesso", "Sei tornato online!", Alert.AlertType.INFORMATION); }
 
     public void handleReturnToLobby() {
         Platform.runLater(() -> {
@@ -175,86 +184,74 @@ public class GuiController extends ClientController {
         });
     }
 
-    // --- UI UTILITIES & NETWORK RECOVERY ---
+    // --- UI SPA (TOAST E MODAL NATIVI) ---
 
-    /**
-     * Non-blocking toast notification. Does not freeze the game.
-     */
     private void showToast(String title, String content, Alert.AlertType type) {
         Platform.runLater(() -> {
-            Alert alert = new Alert(type);
-            alert.setTitle(title);
-            alert.setHeaderText(null);
-            alert.setContentText(content);
-            alert.show();
+            VBox toast = new VBox(5);
+            String borderColor = type == Alert.AlertType.ERROR ? "#ff4444" : (type == Alert.AlertType.WARNING ? "#ffbb33" : "#00C851");
+            toast.setStyle("-fx-background-color: #2b2b2b; -fx-border-color: " + borderColor + "; -fx-border-width: 0 0 0 4; -fx-padding: 15;");
+            Label tL = new Label(title); tL.setStyle("-fx-font-weight: bold; -fx-text-fill: white;");
+            Label cL = new Label(content); cL.setStyle("-fx-text-fill: lightgray;"); cL.setWrapText(true);
+            toast.getChildren().addAll(tL, cL);
+            toastLayer.getChildren().add(toast);
 
-            PauseTransition delay = new PauseTransition(Duration.seconds(2.5));
-            delay.setOnFinished(e -> alert.close());
+            PauseTransition delay = new PauseTransition(Duration.seconds(3));
+            delay.setOnFinished(e -> toastLayer.getChildren().remove(toast));
             delay.play();
         });
     }
 
-    /**
-     * Blocking alert used only for critical stops (like Game Over).
-     */
     private void showBlockingAlert(String title, String content, Alert.AlertType type) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
+        Platform.runLater(() -> {
+            VBox alertBox = new VBox(20);
+            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(400, 200);
+            alertBox.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;");
+
+            Label tL = new Label(title); tL.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
+            Label cL = new Label(content); cL.setStyle("-fx-text-fill: white;"); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);
+            Button okBtn = new Button("OK"); okBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white;");
+            okBtn.setOnAction(e -> modalLayer.setVisible(false));
+
+            alertBox.getChildren().addAll(tL, cL, okBtn);
+            modalLayer.getChildren().setAll(alertBox);
+            modalLayer.setVisible(true);
+        });
     }
 
-    /**
-     * Opens the Network Popup to retry connection when the server is unreachable.
-     */
     public void promptConnectionAndRetry() {
         Platform.runLater(() -> {
-            // 1. Show blocking error
-            showBlockingAlert("Connection Failed",
-                    "Unable to reach the server. Please verify the IP, Port, and ensure the ServerApp is running.",
-                    Alert.AlertType.ERROR);
+            // Generiamo il form passando i dati config e la funzione onError
+            VBox connectionForm = NetworkPopup.buildNode((config, onError) -> {
 
-            // 2. Open the Network Configuration Popup
-            NetworkPopup.ConnectionConfig newConfig = NetworkPopup.displayAndChoose();
+                Thread connectionThread = new Thread(() -> {
+                    try {
+                        ServerProxy newProxy = ServerProxyFactory.create(
+                                config.type(), config.host(), config.port(), lobbyModel, clientView);
 
-            if (newConfig != null) {
-                try {
-                    // 3. Recreate the Proxy with new parameters
-                    ServerProxy newProxy = ServerProxyFactory.create(
-                            newConfig.type(),
-                            newConfig.host(),
-                            newConfig.port(),
-                            lobbyModel,
-                            clientView // Safe local reference
-                    );
+                        this.setServerProxy(newProxy);
+                        newProxy.setClientController(this);
+                        newProxy.connect();
 
-                    // 4. Update References
-                    this.setServerProxy(newProxy);
-                    newProxy.setClientController(this);
+                        // Connessione OK!
+                        Platform.runLater(() -> {
+                            modalLayer.setVisible(false);
+                            showToast("Connected", "Connessione stabilita via " + config.type(), Alert.AlertType.INFORMATION);
+                            showIntroScene(); // Andiamo dritti all'Intro!
+                        });
+                    } catch (Exception ex) {
+                        // Connessione FALLITA!
+                        // Invece di distruggere il form con showBlockingAlert, diciamo al form di mostrare l'errore.
+                        onError.accept(ex.getMessage());
+                    }
+                });
+                connectionThread.setDaemon(true);
+                connectionThread.start();
+            });
 
-                    // 5. Retry Connection in Background
-                    Thread retryThread = new Thread(() -> {
-                        try {
-                            newProxy.connect();
-                            System.out.println("[GUI] Connection successfully established on retry.");
-                            Platform.runLater(() -> showToast("Connected", "Connection successfully established!", Alert.AlertType.INFORMATION));
-                        } catch (Exception e) {
-                            System.err.println("[GUI] Reconnection failed: " + e.getMessage());
-                            // Recursive call to prompt again if it fails
-                            promptConnectionAndRetry();
-                        }
-                    });
-                    retryThread.setDaemon(true);
-                    retryThread.start();
-
-                } catch (Exception ex) {
-                    showBlockingAlert("System Error", "Unable to create the network proxy.", Alert.AlertType.ERROR);
-                }
-            } else {
-                // Exit game if user closes the popup
-                System.exit(0);
-            }
+            // Mostriamo il form
+            modalLayer.getChildren().setAll(connectionForm);
+            modalLayer.setVisible(true);
         });
     }
 }

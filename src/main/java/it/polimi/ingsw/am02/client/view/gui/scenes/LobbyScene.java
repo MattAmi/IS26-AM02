@@ -6,7 +6,6 @@ import it.polimi.ingsw.am02.common.enumerations.Totem;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -26,7 +25,8 @@ public class LobbyScene {
     private final Map<Totem, Button> totemButtons = new HashMap<>();
     private String myNickname;
 
-    public Scene buildScene(GuiController controller) {
+    // FIX 1: Rinominato da buildScene a buildNode
+    public Region buildNode(GuiController controller) {
         this.controller = controller;
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: #1a1a1a;");
@@ -38,7 +38,7 @@ public class LobbyScene {
         root.setTop(header);
 
         StackPane centerStack = new StackPane();
-        
+
         // Phase 1: Nickname
         nicknameBox = new VBox(15);
         nicknameBox.setAlignment(Pos.CENTER);
@@ -50,24 +50,26 @@ public class LobbyScene {
         confirmNick.setOnAction(e -> {
             if(!nickField.getText().isBlank()) {
                 nickField.setEditable(false);
-                controller.handleSetNickname(nickField.getText());
+                // FIX 2: Usiamo requestSetUsername invece di handleSetNickname
+                controller.requestSetUsername(nickField.getText());
             }
         });
         nicknameBox.getChildren().addAll(nickLabel, nickField, confirmNick);
-        
+
         // Phase 2: Totem
         totemBox = new VBox(15);
         totemBox.setAlignment(Pos.CENTER);
         totemBox.setVisible(false);
         Label totemLabel = new Label("Select your tribe totem:");
         totemLabel.setTextFill(Color.WHITE);
-        
+
         FlowPane totemsPane = new FlowPane(10, 10);
         totemsPane.setAlignment(Pos.CENTER);
         for(Totem t : Totem.values()) {
             Button tBtn = new Button(t.name());
             tBtn.setPrefSize(100, 50);
-            tBtn.setOnAction(e -> controller.handleSelectTotem(t));
+            // FIX 3: Usiamo requestSelectTotem invece di handleSelectTotem
+            tBtn.setOnAction(e -> controller.requestSelectTotem(t));
             totemButtons.put(t, tBtn);
             totemsPane.getChildren().add(tBtn);
         }
@@ -93,7 +95,7 @@ public class LobbyScene {
         root.setBottom(leaveBtn);
         BorderPane.setMargin(leaveBtn, new Insets(20));
 
-        return new Scene(root, 1024, 768);
+        return root;
     }
 
     public void onNicknameAccepted(String nickname) {
@@ -116,7 +118,7 @@ public class LobbyScene {
             // Update Player List
             playerList.getChildren().clear();
             Map<String, Totem> chosen = lobby.chosenTotems();
-            
+
             for (String nick : lobby.currentPlayers()) {
                 Totem t = chosen.get(nick);
                 String info = (t != null) ? " [" + t + "]" : " (picking...)";

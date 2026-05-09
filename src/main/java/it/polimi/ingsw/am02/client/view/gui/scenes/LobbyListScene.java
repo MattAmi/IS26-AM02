@@ -15,13 +15,13 @@ import javafx.scene.text.FontWeight;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-
+import javafx.scene.layout.Region;
 public class LobbyListScene {
 
     private GuiController controller;
     private FlowPane lobbyGrid;
 
-    public Scene buildScene(GuiController controller) {
+    public Region buildNode(GuiController controller) {
         this.controller = controller;
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: #2b1d14;");
@@ -61,7 +61,7 @@ public class LobbyListScene {
         bottomBar.getChildren().addAll(newLobbyBtn, reconnectBtn, quitBtn);
         root.setBottom(bottomBar);
 
-        return new Scene(root, 1024, 768);
+        return root;
     }
 
     private void handleReconnect() {

@@ -6,17 +6,19 @@ import javafx.animation.SequentialTransition;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
+import javafx.scene.layout.Region;
 
 public class IntroScene {
 
     private String customFontFamily = "System";
 
-    public Scene buildScene(Runnable onFinished) {
+    public Region buildNode(Runnable onFinished) {
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");
 
@@ -68,6 +70,6 @@ public class IntroScene {
 
         sequence.play();
 
-        return new Scene(root, 1280, 720);
+        return root;
     }
 }

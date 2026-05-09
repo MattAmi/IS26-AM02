@@ -14,6 +14,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.layout.Region;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ public class GameScene {
     
     private final List<String> selected = new ArrayList<>();
 
-    public Scene buildScene(GuiController controller) {
+    public Region buildNode(GuiController controller) {
         this.controller = controller;
         root = new BorderPane();
         root.setStyle("-fx-background-color: #1a1a1a;");
@@ -72,7 +73,7 @@ public class GameScene {
         bottom.getChildren().addAll(trackArea, actions);
         root.setBottom(bottom);
 
-        return new Scene(root, 1024, 768);
+        return root;
     }
 
     public void refreshAll(GameModel model) {

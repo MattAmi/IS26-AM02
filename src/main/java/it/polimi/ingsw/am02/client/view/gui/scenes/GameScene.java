@@ -55,29 +55,32 @@ public class GameScene {
         VBox bottom = new VBox(10);
         bottom.setPadding(new Insets(10));
         bottom.setStyle("-fx-background-color: #2b1d14;");
-        
+
         trackArea = new HBox(15);
         trackArea.setAlignment(Pos.CENTER);
-        
+
         HBox actions = new HBox(10);
         actions.setAlignment(Pos.CENTER);
+
         Button confirm = new Button("CONFIRM PICK");
         confirm.setOnAction(e -> {
             controller.resolveActions(new ArrayList<>(selected));
             selected.clear();
         });
+
         Button endTurn = new Button("END PLAYER TURN (MOVE T)");
         endTurn.setOnAction(e -> controller.moveTotem('T'));
-        actions.getChildren().addAll(confirm, endTurn);
-        
-        bottom.getChildren().addAll(trackArea, actions);
+
         Button summaryBtn = new Button("📋 Riepilogo");
         summaryBtn.setStyle(
                 "-fx-background-color: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;"
         );
         summaryBtn.setOnAction(e -> controller.showSummaryCard());
 
+        // AGGIUNTA CORRETTA: Tutti e tre i bottoni aggiunti una volta sola!
         actions.getChildren().addAll(confirm, endTurn, summaryBtn);
+
+        bottom.getChildren().addAll(trackArea, actions);
         root.setBottom(bottom);
 
         return root;

@@ -109,6 +109,7 @@ public class LobbyScene {
     public void onNicknameRejected() {
         Platform.runLater(() -> {
             nickField.setEditable(true);
+            nickField.setDisable(false);
             nickField.setText("");
         });
     }

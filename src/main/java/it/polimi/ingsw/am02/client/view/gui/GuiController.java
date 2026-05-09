@@ -235,7 +235,14 @@ public class GuiController extends ClientController {
     public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); requestReturnToLobby(); }
     public void handlePlayerReconnected(String n) { if (gameScene != null) gameScene.setPlayerOnline(n); }
 
-    public void handleError(String message) { showToast("Errore", message, Alert.AlertType.WARNING); }
+    public void handleError(String message) {
+        showToast("Errore", message, Alert.AlertType.WARNING);
+        Platform.runLater(() -> {
+            if (this.lobbyScene != null) {
+                this.lobbyScene.onNicknameRejected();
+            }
+        });
+    }
     public void handleConnectionLost() {
         Platform.runLater(() -> {
             VBox alertBox = new VBox(16);

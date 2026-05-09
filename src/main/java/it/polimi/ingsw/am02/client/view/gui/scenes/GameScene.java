@@ -71,6 +71,13 @@ public class GameScene {
         actions.getChildren().addAll(confirm, endTurn);
         
         bottom.getChildren().addAll(trackArea, actions);
+        Button summaryBtn = new Button("📋 Riepilogo");
+        summaryBtn.setStyle(
+                "-fx-background-color: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;"
+        );
+        summaryBtn.setOnAction(e -> controller.showSummaryCard());
+
+        actions.getChildren().addAll(confirm, endTurn, summaryBtn);
         root.setBottom(bottom);
 
         return root;

@@ -9,6 +9,7 @@ import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.client.view.gui.scenes.*;
 import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -42,11 +43,13 @@ public class GuiController extends ClientController {
     private LobbyListScene lobbyListScene;
     private LobbyScene lobbyScene;
     private GameScene gameScene;
+    private LobbyModel lobbyModel;
 
     public GuiController(Stage primaryStage, ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
         super(proxy, lobbyModel, view);
         this.primaryStage = primaryStage;
         this.clientView = view;
+        this.lobbyModel = lobbyModel;
         initWindowArchitecture();
     }
 
@@ -143,12 +146,18 @@ public class GuiController extends ClientController {
             }
         }
     }
+    public void requestReconnect(String nick, String gId) { proxy.requestReconnect(nick, gId); }
+    public void requestSelectTotem(Totem t) { proxy.requestSelectTotem(t); }
+    public void requestLeaveLobby() {
+        if (lobbyModel.getCurrentLobby() != null) {
+            proxy.requestLeaveLobby();
+        } else {
+            handleReturnToLobby();
+        }
+    }
+    public void moveTotem(char t) { proxy.moveTotem(t); }
+    public void resolveActions(List<String> ids) { proxy.resolveActions(ids); }
 
-    public void requestReconnect(String nick, String gId) { handleReconnect(nick, gId); }
-    public void requestSelectTotem(Totem t) { handleSelectTotem(t); }
-    public void requestLeaveLobby() { proxy.requestLeaveLobby(); handleReturnToLobby(); }
-    public void moveTotem(char t) { handleMoveTotem(t); }
-    public void resolveActions(List<String> ids) { handleResolveActions(ids); }
 
     // --- MODEL NOTIFICATION HANDLERS (Model -> Controller -> UI) ---
 
@@ -213,10 +222,47 @@ public class GuiController extends ClientController {
     public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); handleReturnToLobby(); }
     public void handlePlayerReconnected(String n) { if (gameScene != null) gameScene.setPlayerOnline(n); }
 
-    public void handleError(String message) { showToast("Error", message, Alert.AlertType.WARNING); }
-    public void handleConnectionLost() { showToast("Connection Lost", "Server unreachable. Reconnecting...", Alert.AlertType.ERROR); }
-    public void handleConnectionRestored() { showToast("Connected", "Back online!", Alert.AlertType.INFORMATION); }
+    public void handleError(String message) { showToast("Errore", message, Alert.AlertType.WARNING); }
+    public void handleConnectionLost() {
+        Platform.runLater(() -> {
+            VBox alertBox = new VBox(16);
+            alertBox.setAlignment(Pos.CENTER);
+            alertBox.setPadding(new Insets(32));
+            alertBox.setMaxSize(400, 250);
+            alertBox.setStyle(
+                    "-fx-background-color: #1C1C1C;" +
+                            "-fx-border-color: #C0392B;" +
+                            "-fx-border-width: 2;" +
+                            "-fx-border-radius: 12;" +
+                            "-fx-background-radius: 12;"
+            );
 
+            Label icon = new Label("⚠");
+            icon.setStyle("-fx-font-size: 36; -fx-text-fill: #C0392B;");
+
+            Label title = new Label("Connection to the server has been lost");
+            title.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;");
+
+            Label subtitle = new Label("Attempting to automatically reconnect...");
+            subtitle.setStyle("-fx-font-size: 12; -fx-text-fill: #AAAAAA;");
+            subtitle.setWrapText(true);
+
+            javafx.scene.control.ProgressIndicator spinner = new javafx.scene.control.ProgressIndicator();
+            spinner.setMaxSize(40, 40);
+            spinner.setStyle("-fx-accent: #E67E22;");
+
+            alertBox.getChildren().addAll(icon, title, subtitle, spinner);
+            modalLayer.getChildren().setAll(alertBox);
+            modalLayer.setVisible(true);
+        });
+    }
+
+    public void handleConnectionRestored() {
+        Platform.runLater(() -> {
+            modalLayer.setVisible(false);
+            showToast("Connected", "You're back online!", Alert.AlertType.INFORMATION);
+        });
+    }
     public void handleReturnToLobby() {
         Platform.runLater(() -> {
             performReturnToLobby();
@@ -264,9 +310,18 @@ public class GuiController extends ClientController {
         });
     }
 
-    /**
-     * Triggers the internal connection form and handles the proxy initialization.
-     */
+    public void showSummaryCard() {
+        Platform.runLater(() -> {
+            SummaryCardOverlay overlay = new SummaryCardOverlay();
+            VBox node = overlay.buildNode(() -> {
+                modalLayer.setVisible(false);
+                modalLayer.getChildren().clear();
+            });
+            modalLayer.getChildren().setAll(node);
+            modalLayer.setVisible(true);
+        });
+    }
+
     public void promptConnectionAndRetry() {
         Platform.runLater(() -> {
             VBox connectionForm = NetworkPopup.buildNode((config, onError) -> {

@@ -267,6 +267,18 @@ public class GuiController extends ClientController {
         });
     }
 
+    public void showSummaryCard() {
+        Platform.runLater(() -> {
+            SummaryCardOverlay overlay = new SummaryCardOverlay();
+            VBox node = overlay.buildNode(() -> {
+                modalLayer.setVisible(false);
+                modalLayer.getChildren().clear();
+            });
+            modalLayer.getChildren().setAll(node);
+            modalLayer.setVisible(true);
+        });
+    }
+
     public void promptConnectionAndRetry() {
         Platform.runLater(() -> {
             // Generiamo il form passando i dati config e la funzione onError

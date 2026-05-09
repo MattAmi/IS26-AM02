@@ -111,11 +111,27 @@ public class GameScene {
             
             // Stats
             statusArea.getChildren().clear();
+            
+            HBox gameIdBox = new HBox(10);
+            gameIdBox.setAlignment(Pos.CENTER_LEFT);
             Label l1 = new Label("GAME: " + model.getGameId() + " | PHASE: " + model.getCurrentPhase());
             l1.setTextFill(Color.web("#F2D5A3"));
+            
+            Button copyBtn = new Button("📋 Copy ID");
+            copyBtn.setStyle("-fx-font-size: 9px; -fx-padding: 2 5; -fx-base: #3e2a1d; -fx-text-fill: #F2D5A3;");
+            copyBtn.setOnAction(e -> {
+                final javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+                final javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+                content.putString(model.getGameId());
+                clipboard.setContent(content);
+                controller.handleError("Game ID copied to clipboard!"); // Reusing toast logic via handleError
+            });
+            
+            gameIdBox.getChildren().addAll(l1, copyBtn);
+
             Label l2 = new Label("ACTIVE PLAYER: " + model.getCurrentPlayer() + " | MY NICK: " + model.getMyNickname());
             l2.setTextFill(Color.WHITE);
-            statusArea.getChildren().addAll(l1, l2);
+            statusArea.getChildren().addAll(gameIdBox, l2);
 
             // Stats Panel (Right)
             statsPanel.getChildren().clear();

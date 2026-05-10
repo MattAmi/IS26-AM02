@@ -59,7 +59,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     @Override
     public void connect() throws Exception {
-        try { UnicastRemoteObject.exportObject(this, 0); } catch (RemoteException ignored) {}
+        try { UnicastRemoteObject.exportObject(this, 1099); } catch (RemoteException ignored) {}
         Registry registry = LocateRegistry.getRegistry(host, port);
         RmiServerFactory factory = (RmiServerFactory) registry.lookup("AM02-GameServer");
         this.serverStub = factory.registerClient(this);

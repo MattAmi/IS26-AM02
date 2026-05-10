@@ -31,11 +31,11 @@ public class RmiServer implements NetworkServer {
                 @Override
                 public RmiServerRemote registerClient(RmiClientRemote clientCallback) throws RemoteException {
                     RmiClientHandler handler = new RmiClientHandler(clientCallback);
-                    return (RmiServerRemote) UnicastRemoteObject.exportObject(handler, 0);
+                    return (RmiServerRemote) UnicastRemoteObject.exportObject(handler, 1099);
                 }
             };
 
-            RmiServerFactory stub = (RmiServerFactory) UnicastRemoteObject.exportObject(factory, 0);
+            RmiServerFactory stub = (RmiServerFactory) UnicastRemoteObject.exportObject(factory, 1099);
             registry.rebind("AM02-GameServer", stub);
 
             System.out.println("RMI Server started on port " + port);

@@ -12,6 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -59,11 +60,10 @@ public class LobbyListScene {
         try {
             Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/mesos_lobby.png")));
             backgroundView.setImage(img);
-
             double iw = img.getWidth();
             double ih = img.getHeight();
-            double vw = iw * 0.8;
-            double vh = ih * 0.8;
+            double vw = iw * 0.6;
+            double vh = ih * 0.6;
             double vx = (iw - vw) / 2;
             double vy = (ih - vh) / 2;
             backgroundView.setViewport(new Rectangle2D(vx, vy, vw, vh));
@@ -73,7 +73,8 @@ public class LobbyListScene {
         backgroundView.fitHeightProperty().bind(bgContainer.heightProperty());
         backgroundView.setPreserveRatio(false);
 
-        backgroundView.setOpacity(0);
+        backgroundView.setEffect(new GaussianBlur(12));
+
         FadeTransition fadeIn = new FadeTransition(Duration.seconds(2.0), backgroundView);
         fadeIn.setFromValue(0.0);
         fadeIn.setToValue(1.0);
@@ -89,6 +90,11 @@ public class LobbyListScene {
         st.play();
 
         bgContainer.getChildren().add(backgroundView);
+        Region overlay = new Region();
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.45);");
+        overlay.setMouseTransparent(true);
+        overlay.prefWidthProperty().bind(rootNode.widthProperty());
+        overlay.prefHeightProperty().bind(rootNode.heightProperty());
 
         BorderPane uiLayer = new BorderPane();
         uiLayer.setPadding(new Insets(30));
@@ -105,9 +111,7 @@ public class LobbyListScene {
 
         Label title = new Label("AVAILABLE LOBBIES");
         title.setTextFill(Color.web("#F2D5A3"));
-        if (tribalLarge != null) {
-            title.setFont(tribalLarge);
-        }
+        if (tribalLarge != null) title.setFont(tribalLarge);
         StackPane.setAlignment(title, Pos.CENTER);
 
         topBar.getChildren().addAll(title, backBtn);
@@ -123,7 +127,7 @@ public class LobbyListScene {
 
         uiLayer.setCenter(scroll);
 
-        rootNode.getChildren().addAll(bgContainer, uiLayer);
+        rootNode.getChildren().addAll(bgContainer, overlay, uiLayer);
 
         return rootNode;
     }
@@ -135,9 +139,7 @@ public class LobbyListScene {
             if (lobbies == null || lobbies.isEmpty()) {
                 Label emptyLbl = new Label("No active lobbies found. Go back and create one!");
                 emptyLbl.setTextFill(Color.WHITE);
-                if (tribalMedium != null) {
-                    emptyLbl.setFont(tribalMedium);
-                }
+                if (tribalMedium != null) emptyLbl.setFont(tribalMedium);
                 listContainer.getChildren().add(emptyLbl);
                 return;
             }
@@ -152,21 +154,14 @@ public class LobbyListScene {
                 idField.setEditable(false);
                 idField.setFocusTraversable(false);
                 idField.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-padding: 0; -fx-cursor: text;");
-                if (introFont != null) {
-                    idField.setFont(introFont);
-                }
-
-                // Forza la visibilità totale dell'ID
+                if (introFont != null) idField.setFont(introFont);
                 idField.setMinWidth(Region.USE_PREF_SIZE);
                 HBox.setHgrow(idField, Priority.NEVER);
 
                 Label players = new Label("Players: " + lobby.currentPlayers().size() + " / " + lobby.expectedPlayers());
                 players.setTextFill(Color.LIGHTGRAY);
-                if (introFont != null) {
-                    players.setFont(introFont);
-                }
+                if (introFont != null) players.setFont(introFont);
                 players.setMinWidth(Region.USE_PREF_SIZE);
-                HBox.setHgrow(players, Priority.NEVER);
 
                 Region spacer = new Region();
                 HBox.setHgrow(spacer, Priority.ALWAYS);

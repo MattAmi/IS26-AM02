@@ -266,16 +266,28 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
             while (!this.connected) {
                 try {
                     Thread.sleep(5000);
+
+                    clientView.onConnectionRestored();
+
                     connect();
+
+                    // 3. Ripristino logico della sessione
                     if (activeNickname != null && activeGameId != null) {
+                        if (this.dispatcher != null) {
+                            this.dispatcher.updateActiveNickname(activeNickname);
+                            this.dispatcher.updateActiveGameId(activeGameId);
+                        }
                         serverStub.requestReconnect(activeNickname, activeGameId);
                     } else {
-                        if (activeNickname != null) serverStub.requestSetUsername(activeNickname);
-                        clientView.onReturnToLobby();
+                        if (activeNickname != null) {
+                            serverStub.requestSetUsername(activeNickname);
+                        }
                     }
-                    clientView.onConnectionRestored();
+
                     this.attemptingReconnection = false;
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    // Ignorato: la connessione è fallita, si riprova al prossimo giro
+                }
             }
         }).start();
     }

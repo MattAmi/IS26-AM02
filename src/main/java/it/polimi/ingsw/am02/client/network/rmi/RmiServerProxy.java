@@ -268,12 +268,12 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
                     Thread.sleep(5000);
                     connect();
                     if (activeNickname != null && activeGameId != null) {
-                        clientView.onConnectionRestored();
                         serverStub.requestReconnect(activeNickname, activeGameId);
                     } else {
+                        if (activeNickname != null) serverStub.requestSetUsername(activeNickname);
                         clientView.onReturnToLobby();
-                        // il server manderà notifyAvailableLobbiesUpdated da solo
                     }
+                    clientView.onConnectionRestored();
                     this.attemptingReconnection = false;
                 } catch (Exception ignored) {}
             }

@@ -660,6 +660,7 @@ public class TuiView extends AbstractClientView {
             System.out.println("  resolve <id...>       - Take specific cards (e.g., resolve C_001 E_002)");
             System.out.println("  move T                - Return totem and END YOUR TURN");
             System.out.println("  info <cardID>         - Read full card details (e.g., info B_004)");
+            System.out.println("  lobby                 - Leave the game and return to lobby");  // ← aggiunto
         }
         System.out.println("  quit                  - Close the application");
 
@@ -696,27 +697,28 @@ public class TuiView extends AbstractClientView {
 
         if (!myNick.equals(currentP)) {
             System.out.println("  Waiting for " + BOLD + currentP + RESET + " to finish their turn...");
-            return;
-        }
-
-        switch (phase) {
-            case TOTEM_PLACEMENT -> {
-                System.out.println("  move <tileID>     — Place your totem on a free offer tile  (e.g., move B)");
-                System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)"); // Added
-            }
-
-            case ACTION_RESOLUTION -> {
-                System.out.println("  resolve <id...>   — Pick card IDs from the board  (e.g., resolve C_001 E_002)");
-                System.out.println("  move T            — Return your totem and END YOUR TURN");
-                System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)"); // Added
-                System.out.println(YELLOW + "  (You MUST type 'move T' after resolving actions.)" + RESET);
-            }
-
-            default -> {
-                System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)"); // Added
-                System.out.println("  (Waiting for the current phase to complete...)");
+        } else {
+            switch (phase) {
+                case TOTEM_PLACEMENT -> {
+                    System.out.println("  move <tileID>     — Place your totem on a free offer tile  (e.g., move B)");
+                    System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
+                }
+                case ACTION_RESOLUTION -> {
+                    System.out.println("  resolve <id...>   — Pick card IDs from the board  (e.g., resolve C_001 E_002)");
+                    System.out.println("  move T            — Return your totem and END YOUR TURN");
+                    System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
+                    System.out.println(YELLOW + "  (You MUST type 'move T' after resolving actions.)" + RESET);
+                }
+                default -> {
+                    System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
+                    System.out.println("  (Waiting for the current phase to complete...)");
+                }
             }
         }
+
+        // Always visible
+        System.out.println("  lobby             — Leave the game and return to lobby");
+        System.out.println("  quit              — Close the application");
     }
 
     // -----------------------------------------------------------------------

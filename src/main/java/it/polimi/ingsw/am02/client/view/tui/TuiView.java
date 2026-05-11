@@ -420,30 +420,14 @@ public class TuiView extends AbstractClientView {
     public void onReturnToLobby() {
         this.currentGameId = null;
         this.gameModel = null;
+
         this.notifications.clear();
 
         clearScreen();
         printHeader();
-
-        // Se siamo loggati, mostriamo il nome
-        if (lobbyModel.getMyNickname() != null) {
-            System.out.println(YELLOW + "Logged in as: " + BOLD + lobbyModel.getMyNickname() + RESET);
-        }
-
-        // Recuperiamo le lobby salvate nel modello per non aspettare il prossimo evento dal server
-        List<LobbyInfo> currentLobbies = lobbyModel.getAvailableLobbies();
-
-        if (currentLobbies != null && !currentLobbies.isEmpty()) {
-            // Chiamiamo il metodo che già sa come stampare la lista e i comandi
-            onAvailableLobbiesUpdated(currentLobbies);
-        } else {
-            // Se non ci sono lobby, stampiamo almeno i comandi base
-            System.out.println(GREEN + "Successfully back in the lobby area." + RESET);
-            System.out.println("\n" + PURPLE + BOLD + "--- AVAILABLE LOBBIES ---" + RESET);
-            System.out.println("  No active lobbies found. Use 'create <size>' to start one.");
-            System.out.println("\nCommands: create <2-5> | join <index> | reconnect <nick> <id> | quit");
-            System.out.print("\n" + CYAN + "> " + RESET);
-        }
+        /*System.out.println(GREEN + "You are back in the lobby." + RESET);
+        System.out.println("\nCommands: create <size> | join <index> | quit");
+        System.out.print("\n" + CYAN + "> " + RESET);*/
     }
 
     // -----------------------------------------------------------------------

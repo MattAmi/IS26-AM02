@@ -84,6 +84,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     private synchronized void handleNetworkFailure(Exception e) {
+        // Se stavamo già provando a riconnetterci, o se siamo usciti noi volontariamente, fermati
         if (attemptingReconnection || intentionalDisconnect) return;
 
         this.connected = false;
@@ -91,40 +92,38 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
         clientView.onConnectionLost();
 
         new Thread(() -> {
-            try {
-                stopPingThread();
-                while (!this.connected && !intentionalDisconnect) {
-                    try {
-                        Thread.sleep(5000);
-                        connect();
+            stopPingThread();
+            while (!this.connected && !intentionalDisconnect) {
+                try {
+                    Thread.sleep(5000);
 
-                        // Se arriviamo qui, siamo connessi.
-                        // Se NON abbiamo un nick, il server ci ha già mandato le lobby durante connect()
-                        // Evitiamo di piallare lo schermo col banner se non serve
-                        if (activeNickname != null) {
-                            clientView.onConnectionRestored();
-                            Thread.sleep(1000);
+                    // 1. TENTATIVO FISICO
+                    // Se il server è giù, lancia eccezione QUI e salta direttamente al catch.
+                    // NON spamma più nulla alla UI!
+                    connect();
 
-                            if (activeGameId != null) {
-                                if (this.dispatcher != null) {
-                                    this.dispatcher.updateActiveNickname(activeNickname);
-                                    this.dispatcher.updateActiveGameId(activeGameId);
-                                }
-                                serverStub.requestReconnect(activeNickname, activeGameId);
-                            } else {
-                                serverStub.requestSetUsername(activeNickname);
-                            }
-                        } else {
-                            // CASO GUEST (null): Non facciamo nulla,
-                            // aspettiamo che la TUI finisca di disegnare quello che ha mandato il server
-                            this.connected = true;
+                    // 2. SE SIAMO QUI, LA CONNESSIONE HA AVUTO SUCCESSO!
+                    // Ora è il momento giusto per dire alla UI che siamo tornati online
+                    clientView.onConnectionRestored();
+
+                    // 3. RIPRISTINO LOGICO DELLA SESSIONE
+                    if (activeNickname != null && activeGameId != null) {
+                        if (this.dispatcher != null) {
+                            this.dispatcher.updateActiveNickname(activeNickname);
+                            this.dispatcher.updateActiveGameId(activeGameId);
                         }
+                        serverStub.requestReconnect(activeNickname, activeGameId);
+                    } else {
+                        // Siamo nel pre-partita.
+                        if (activeNickname != null) {
+                            serverStub.requestSetUsername(activeNickname);
+                        }
+                    }
 
-                        this.attemptingReconnection = false;
-                    } catch (Exception ignored) {}
+                    this.attemptingReconnection = false;
+                } catch (Exception ignored) {
+                    // Server ancora offline. Si riprova in silenzio al prossimo giro.
                 }
-            } finally {
-                this.attemptingReconnection = false;
             }
         }, "RmiProxy-ReconnectThread").start();
     }

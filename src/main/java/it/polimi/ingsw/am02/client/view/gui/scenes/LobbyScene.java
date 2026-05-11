@@ -46,6 +46,11 @@ public class LobbyScene {
     private int currentCarouselIndex = 0;
     private Label selectedTotemLabel;
     private Button confirmTotemBtn;
+
+    private Button prevBtn;
+    private Button nextBtn;
+    private boolean totemLocked = false;
+
     private Map<String, Totem> currentChosenTotems = new HashMap<>();
 
     public Region buildNode(GuiController controller) {
@@ -87,7 +92,7 @@ public class LobbyScene {
         backgroundView.fitWidthProperty().bind(bgContainer.widthProperty());
         backgroundView.fitHeightProperty().bind(bgContainer.heightProperty());
         backgroundView.setPreserveRatio(false);
-        backgroundView.setEffect(new GaussianBlur(15));
+        backgroundView.setEffect(new GaussianBlur(10));
 
         ScaleTransition stBg = new ScaleTransition(Duration.seconds(20), backgroundView);
         stBg.setFromX(1.0); stBg.setFromY(1.0); stBg.setToX(1.25); stBg.setToY(1.25);
@@ -160,12 +165,12 @@ public class LobbyScene {
         HBox carouselControls = new HBox(10);
         carouselControls.setAlignment(Pos.CENTER);
 
-        Button prevBtn = new Button("<");
+        prevBtn = new Button("<");
         prevBtn.setStyle("-fx-base: #3e2a1d; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-background-radius: 50;");
         if (tribalLarge != null) prevBtn.setFont(tribalLarge);
         prevBtn.setOnAction(e -> rotateCarousel(-1));
 
-        Button nextBtn = new Button(">");
+        nextBtn = new Button(">");
         nextBtn.setStyle("-fx-base: #3e2a1d; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-background-radius: 50;");
         if (tribalLarge != null) nextBtn.setFont(tribalLarge);
         nextBtn.setOnAction(e -> rotateCarousel(1));
@@ -180,7 +185,11 @@ public class LobbyScene {
         confirmTotemBtn.setPrefSize(250, 50);
         confirmTotemBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3;");
         if (tribalSmall != null) confirmTotemBtn.setFont(tribalSmall);
-        confirmTotemBtn.setOnAction(e -> controller.requestSelectTotem(totems[currentCarouselIndex]));
+
+        confirmTotemBtn.setOnAction(e -> {
+            controller.requestSelectTotem(totems[currentCarouselIndex]);
+            lockCarouselUI(); // Blocca l'interfaccia non appena clicchi
+        });
 
         totemBox.getChildren().addAll(carouselControls, selectedTotemLabel, confirmTotemBtn);
 
@@ -217,15 +226,20 @@ public class LobbyScene {
     }
 
     private String getTotemColorName(Totem t) {
-        int index = -1;
-        for(int i = 0; i < totems.length; i++) {
-            if(totems[i] == t) { index = i; break; }
-        }
-        String[] colors = {"teal", "orange", "purple", "white", "yellow"};
-        return colors[index % colors.length];
+        return t.name().toLowerCase();
+    }
+
+    private void lockCarouselUI() {
+        totemLocked = true;
+        prevBtn.setDisable(true);
+        nextBtn.setDisable(true);
+        confirmTotemBtn.setDisable(true);
+        confirmTotemBtn.setText("WAITING FOR OTHERS...");
+        confirmTotemBtn.setStyle("-fx-base: #2a2a2a; -fx-text-fill: #F2D5A3; -fx-border-color: #F2D5A3;");
     }
 
     private void rotateCarousel(int dir) {
+        if (totemLocked) return; // Sicurezza aggiuntiva per impedire la rotazione
         currentCarouselIndex = (currentCarouselIndex + dir + totems.length) % totems.length;
         updateCarouselVisuals();
     }
@@ -285,7 +299,7 @@ public class LobbyScene {
 
             if (offset == 0) {
                 view.toFront();
-                selectedTotemLabel.setText(getTotemColorName(t).toUpperCase());
+                selectedTotemLabel.setText(t.name().toUpperCase());
 
                 final int capturedIndex = currentCarouselIndex;
                 st.setOnFinished(e -> {
@@ -306,6 +320,8 @@ public class LobbyScene {
     }
 
     private void updateConfirmButton() {
+        if (totemLocked) return; // Se è bloccato, non aggiorniamo più il bottone
+
         Totem selected = totems[currentCarouselIndex];
         String owner = null;
         for(Map.Entry<String, Totem> entry : currentChosenTotems.entrySet()) {
@@ -314,7 +330,7 @@ public class LobbyScene {
 
         if (owner != null) {
             confirmTotemBtn.setDisable(true);
-            confirmTotemBtn.setText(owner.equals(myNickname) ? "SELECTED" : "TAKEN BY " + owner);
+            confirmTotemBtn.setText("TAKEN BY " + owner);
             confirmTotemBtn.setStyle("-fx-base: #444; -fx-text-fill: #888;");
         } else {
             confirmTotemBtn.setDisable(false);
@@ -343,9 +359,21 @@ public class LobbyScene {
         Platform.runLater(() -> {
             currentChosenTotems = lobby.chosenTotems();
             playerList.getChildren().clear();
+
+            if (currentChosenTotems.containsKey(myNickname) && !totemLocked) {
+                lockCarouselUI();
+                Totem myTotem = currentChosenTotems.get(myNickname);
+                for (int i = 0; i < totems.length; i++) {
+                    if (totems[i] == myTotem && currentCarouselIndex != i) {
+                        currentCarouselIndex = i; // Ruota per mostrare il mio totem al centro
+                        break;
+                    }
+                }
+            }
+
             for (String nick : lobby.currentPlayers()) {
                 Totem t = currentChosenTotems.get(nick);
-                String colorSuffix = (t != null) ? " [" + getTotemColorName(t).toUpperCase() + "]" : " (picking...)";
+                String colorSuffix = (t != null) ? " [" + t.name().toUpperCase() + "]" : " (picking...)";
                 Label l = new Label("• " + nick + colorSuffix);
                 if (introFont != null) l.setFont(introFont);
                 l.setTextFill(nick.equals(myNickname) ? Color.LIME : Color.WHITE);

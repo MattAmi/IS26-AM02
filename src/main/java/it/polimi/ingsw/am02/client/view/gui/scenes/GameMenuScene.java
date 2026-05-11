@@ -79,7 +79,7 @@ public class GameMenuScene {
         backgroundView.fitWidthProperty().bind(bgContainer.widthProperty());
         backgroundView.fitHeightProperty().bind(bgContainer.heightProperty());
         backgroundView.setPreserveRatio(false);
-        backgroundView.setEffect(new GaussianBlur(15));
+        backgroundView.setEffect(new GaussianBlur(10));
 
         ScaleTransition st = new ScaleTransition(Duration.seconds(20), backgroundView);
         st.setFromX(1.0); st.setFromY(1.0); st.setToX(1.25); st.setToY(1.25);

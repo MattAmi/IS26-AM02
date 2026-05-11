@@ -11,6 +11,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.effect.GaussianBlur;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -43,6 +44,7 @@ public class NetworkPopup {
             if (imageUrl != null) {
                 Image img = new Image(imageUrl.toExternalForm());
                 background.setImage(img);
+                background.setEffect(new GaussianBlur(10));
 
                 double zoom = 0.5;
                 double vw = img.getWidth() * zoom;

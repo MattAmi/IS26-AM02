@@ -56,26 +56,29 @@ public class GuiController extends ClientController {
     /**
      * Initializes the "Layered Sandwich" root container and sets the primary Scene.
      */
-    private void initWindowArchitecture() {
+
+    public void initWindowArchitecture() {
         baseLayer = new StackPane();
         baseLayer.setStyle("-fx-background-color: #1a1a1a;");
 
         modalLayer = new StackPane();
-        modalLayer.setStyle("-fx-background-color: rgba(0, 0, 0, 0.75);");
+        modalLayer.setStyle("-fx-background-color: transparent;");
+        modalLayer.setPickOnBounds(false);
         modalLayer.setVisible(false);
         modalLayer.setAlignment(Pos.CENTER);
 
         toastLayer = new VBox(10);
         toastLayer.setAlignment(Pos.TOP_RIGHT);
         toastLayer.setPadding(new Insets(20));
-        toastLayer.setPickOnBounds(false); // Allows clicks to pass through to layers below
+        toastLayer.setPickOnBounds(false);
 
         rootContainer = new StackPane(baseLayer, modalLayer, toastLayer);
-        Scene mainScene = new Scene(rootContainer, 1280, 800);
+        Scene mainScene = new Scene(rootContainer, 400, 450);
 
         primaryStage.setTitle("Mesos - Board Game");
         primaryStage.setScene(mainScene);
-        primaryStage.setResizable(true);
+        primaryStage.setResizable(false);
+        primaryStage.show();
     }
 
     public void start() {
@@ -91,6 +94,10 @@ public class GuiController extends ClientController {
     }
 
     public void showIntroScene() {
+        primaryStage.setResizable(true);
+        primaryStage.setWidth(1280);
+        primaryStage.setHeight(800);
+        primaryStage.centerOnScreen();
         Platform.runLater(() -> switchView(new IntroScene().buildNode(this::showGameMenuScene)));
     }
 
@@ -361,7 +368,7 @@ public class GuiController extends ClientController {
             VBox node = overlay.buildNode(this, () -> {
                 modalLayer.setVisible(false);
                 modalLayer.getChildren().clear();
-            });
+            }, modalLayer);
             modalLayer.getChildren().setAll(node);
             modalLayer.setVisible(true);
         });
@@ -369,7 +376,7 @@ public class GuiController extends ClientController {
 
     public void promptConnectionAndRetry() {
         Platform.runLater(() -> {
-            VBox connectionForm = NetworkPopup.buildNode((config, onError) -> {
+            StackPane connectionForm = NetworkPopup.buildNode((config, onError) -> {
                 Thread connectionThread = new Thread(() -> {
                     try {
                         ServerProxy newProxy = ServerProxyFactory.create(

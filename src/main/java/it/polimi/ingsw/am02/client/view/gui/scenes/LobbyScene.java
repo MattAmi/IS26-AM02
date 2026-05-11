@@ -221,7 +221,7 @@ public class LobbyScene {
         for(int i = 0; i < totems.length; i++) {
             if(totems[i] == t) { index = i; break; }
         }
-        String[] colors = {"teal", "orange", "purple", "white", "yellow"};
+        String[] colors = {"blue", "red", "purple", "white", "yellow"};
         return colors[index % colors.length];
     }
 

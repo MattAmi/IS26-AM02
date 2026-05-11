@@ -85,7 +85,12 @@ public class NetworkPopup {
 
         TextField portField = new TextField("1099");
         portField.setStyle("-fx-background-color: rgba(26, 26, 26, 0.7); -fx-text-fill: white; -fx-border-color: #F2D5A3;");
-        portField.setMaxWidth(200); portField.setFont(introFontSmall);
+        portField.setMaxWidth(200);
+        portField.setFont(introFontSmall);
+
+        // AGGIUNGI QUESTE DUE RIGHE:
+        rmiBtn.setOnAction(e -> portField.setText("1099"));
+        socketBtn.setOnAction(e -> portField.setText("1100"));
 
         Button connectBtn = new Button("CONNECT");
         connectBtn.setPrefSize(160, 45);

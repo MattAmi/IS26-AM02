@@ -35,7 +35,7 @@ public class GameMenuScene {
     private int currentPage = 0;
     private Font tribalSmall;
     private Font tribalLarge;
-    private Font introFont; // Aggiunto per il font Intro
+    private Font introFont;
 
     public Region buildNode(GuiController controller) {
         this.controller = controller;
@@ -133,11 +133,11 @@ public class GameMenuScene {
 
         VBox content = new VBox(20);
         content.setAlignment(Pos.CENTER);
-        content.setMaxWidth(1200); // Ingrandito
+        content.setMaxWidth(1200);
 
         rulesImageView = new ImageView();
         rulesImageView.setPreserveRatio(true);
-        rulesImageView.setFitHeight(850); // Ingrandito
+        rulesImageView.setFitHeight(850);
         if (!rulesPages.isEmpty()) rulesImageView.setImage(rulesPages.get(0));
 
         HBox navigationBar = new HBox();
@@ -202,6 +202,9 @@ public class GameMenuScene {
         sizeField.setMaxWidth(100);
         sizeField.setAlignment(Pos.CENTER);
         sizeField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;");
+        if (tribalSmall != null) {
+            sizeField.setFont(tribalSmall);
+        }
 
         createLobbyBox.getChildren().addAll(lbl, sizeField,
                 createMenuButton("CONFIRM", e -> {
@@ -222,23 +225,23 @@ public class GameMenuScene {
 
         Label lblNick = new Label("Nickname:");
         lblNick.setTextFill(Color.WHITE);
-        if (introFont != null) lblNick.setFont(introFont); // Font Intro
+        if (introFont != null) lblNick.setFont(introFont);
 
         TextField nickField = new TextField();
         nickField.setPromptText("Enter Nickname");
         nickField.setMaxWidth(220);
         nickField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;");
-        if (introFont != null) nickField.setFont(introFont); // Font Intro
+        if (introFont != null) nickField.setFont(introFont);
 
         Label lblId = new Label("Game ID:");
         lblId.setTextFill(Color.WHITE);
-        if (introFont != null) lblId.setFont(introFont); // Font Intro
+        if (introFont != null) lblId.setFont(introFont);
 
         TextField gameIdField = new TextField();
         gameIdField.setPromptText("Enter Game ID");
         gameIdField.setMaxWidth(220);
         gameIdField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;");
-        if (introFont != null) gameIdField.setFont(introFont); // Font Intro
+        if (introFont != null) gameIdField.setFont(introFont);
 
         reconnectBox.getChildren().addAll(lblNick, nickField, lblId, gameIdField,
                 createMenuButton("RECONNECT", e -> {

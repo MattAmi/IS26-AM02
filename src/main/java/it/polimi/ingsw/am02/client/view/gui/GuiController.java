@@ -237,7 +237,46 @@ public class GuiController extends ClientController {
 
     // Game Recovery & Termination
     public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showBlockingAlert("Game Over", "Winners: " + w, Alert.AlertType.INFORMATION); }
-    public void handlePlayerDisconnected(String n) { if (gameScene != null) gameScene.setPlayerOffline(n); }
+    public void handlePlayerDisconnected(String n) {
+        if (gameScene != null) gameScene.setPlayerOffline(n);
+
+        Platform.runLater(() -> {
+            VBox alertBox = new VBox(20);
+            alertBox.setAlignment(Pos.CENTER);
+            alertBox.setPadding(new Insets(30));
+            alertBox.setMaxSize(420, 220);
+            alertBox.setStyle(
+                    "-fx-background-color: #1C1C1C;" +
+                            "-fx-border-color: #E67E22;" +
+                            "-fx-border-width: 2;" +
+                            "-fx-border-radius: 12;" +
+                            "-fx-background-radius: 12;"
+            );
+
+            Label icon = new Label("📡");
+            icon.setStyle("-fx-font-size: 32;");
+
+            Label title = new Label("Player Disconnected");
+            title.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #E67E22;");
+
+            Label body = new Label("\"" + n + "\" has disconnected from the game.\nThe game will continue with an auto-player.");
+            body.setStyle("-fx-text-fill: white; -fx-font-size: 13;");
+            body.setWrapText(true);
+            body.setAlignment(Pos.CENTER);
+
+            Button okBtn = new Button("OK");
+            okBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;");
+            okBtn.setPrefSize(100, 36);
+            okBtn.setOnAction(e -> {
+                modalLayer.setVisible(false);
+                modalLayer.getChildren().clear();
+            });
+
+            alertBox.getChildren().addAll(icon, title, body, okBtn);
+            modalLayer.getChildren().setAll(alertBox);
+            modalLayer.setVisible(true);
+        });
+    }
     public void handleGameAborted(String l) { showBlockingAlert("Aborted", "Game ended. Last standing: " + l, Alert.AlertType.INFORMATION); requestReturnToLobby(); }
     public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); requestReturnToLobby(); }
     public void handlePlayerReconnected(String n) { if (gameScene != null) gameScene.setPlayerOnline(n); }

@@ -237,9 +237,8 @@ public class GuiController extends ClientController {
 
     // Game Recovery & Termination
     public void handleGameEnded(List<String> w, List<PlayerFinalScore> r) { showBlockingAlert("Game Over", "Winners: " + w, Alert.AlertType.INFORMATION); }
-    public void handlePlayerDisconnected(String n) {
-        if (gameScene != null) gameScene.setPlayerOffline(n);
 
+    private void showPlayerDisconnectedPopup(String n){
         Platform.runLater(() -> {
             VBox alertBox = new VBox(20);
             alertBox.setAlignment(Pos.CENTER);
@@ -276,6 +275,12 @@ public class GuiController extends ClientController {
             modalLayer.getChildren().setAll(alertBox);
             modalLayer.setVisible(true);
         });
+    }
+
+    public void handlePlayerDisconnected(String n) {
+        if (gameScene != null) gameScene.setPlayerOffline(n);
+        // Popup in lobby/game if a client disconnects
+        showPlayerDisconnectedPopup(n);
     }
     public void handleGameAborted(String l) { showBlockingAlert("Aborted", "Game ended. Last standing: " + l, Alert.AlertType.INFORMATION); requestReturnToLobby(); }
     public void handleGameRecoveryFailed() { showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR); requestReturnToLobby(); }

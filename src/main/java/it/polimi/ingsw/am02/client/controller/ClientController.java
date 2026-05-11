@@ -53,22 +53,38 @@ public abstract class ClientController {
     /**
      * Tears down the game context and attempts to reconnect to the lobby.
      * Handles network failures gracefully by notifying the view.
+     * Provides instant UI feedback before executing network operations in the background.
      */
     protected void performReturnToLobby() {
-        try {
-            if (gameModel != null) {
-                gameModel.removeObserver(view);
-                gameModel = null;
-            }
-            proxy.disconnect();
-            proxy.connect();
-            lobbyModel.addObserver(view);
-            view.onReturnToLobby();
-        } catch (Exception e) {
-            view.onError("Return to lobby failed: The server is unreachable. " +
-                    "Please check your connection and try again.");
-            System.err.println("[ClientController] Error during return to lobby: " + e.getMessage());
+
+        if (gameModel != null) {
+            gameModel.removeObserver(view);
+            gameModel = null;
         }
+        view.onReturnToLobby();
+        new Thread(() -> {
+            try {
+                proxy.disconnect();
+                boolean isConnected = false;
+                int attempts = 0;
+                while (!isConnected && attempts < 5) {
+                    try {
+                        Thread.sleep(1000); // Give the socket time to breathe
+                        proxy.connect();
+                        isConnected = true;
+                    } catch (Exception e) {
+                        attempts++;
+                        System.err.println("[Network] Reconnect attempt " + attempts + " failed: " + e.getMessage());
+                        if (attempts >= 5) throw e; // Give up after 5 failures
+                    }
+                }
+                lobbyModel.addObserver(view);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                view.onError("Return to lobby failed: The server is unreachable. Please check your connection.");
+            }
+        }, "ReturnToLobby-Worker").start();
     }
 
     // -------------------------------------------------------------------------

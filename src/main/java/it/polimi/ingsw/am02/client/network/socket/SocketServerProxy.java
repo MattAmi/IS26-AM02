@@ -34,17 +34,19 @@ public class SocketServerProxy implements ServerProxy {
     private final JsonMessageCodec codec = new JsonMessageCodecImpl();
 
     private ClientController clientController;
-    private ClientNetworkDispatcher dispatcher; // Unified event receiver
+    private ClientNetworkDispatcher dispatcher;
 
     private Socket socket;
     private PrintWriter out;
     private volatile boolean connected = false;
     private volatile boolean attemptingReconnection = false;
 
+    // FIX: Bandiera per distinguere il crash dalla disconnessione volontaria
+    private volatile boolean intentionalDisconnect = false;
+
     private Thread pingThread;
     private volatile long lastPongReceivedAt = 0;
 
-    // Data stored to support reconnection logic
     private String activeNickname;
     private String activeGameId;
 
@@ -64,6 +66,7 @@ public class SocketServerProxy implements ServerProxy {
 
     @Override
     public void connect() throws Exception {
+        intentionalDisconnect = false; // Resettiamo la bandiera quando ci colleghiamo
         socket = new Socket(host, port);
         out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
         connected = true;
@@ -78,7 +81,10 @@ public class SocketServerProxy implements ServerProxy {
 
     @Override
     public void disconnect() {
+        intentionalDisconnect = true; // Segnaliamo che stiamo staccando la spina di proposito
         connected = false;
+        activeGameId = null; // FONDAMENTALE: Dimentichiamo la partita per non farci ributtare dentro
+
         stopPingThread();
         try { if (socket != null) socket.close(); } catch (IOException ignored) {}
     }
@@ -86,35 +92,36 @@ public class SocketServerProxy implements ServerProxy {
     @Override
     public boolean isConnected() { return connected; }
 
-    /**
-     * Read loop: receives JSON strings, decodes them and delegates execution.
-     */
     private void listenForEvents() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             while ((line = in.readLine()) != null) {
+                if (intentionalDisconnect) break; // Se siamo usciti, interrompiamo subito la lettura
+
                 lastPongReceivedAt = System.currentTimeMillis();
                 Message msg = codec.decode(line);
 
-                // Heartbeat handling (protocol level)
                 if (msg instanceof PingEvent) {
                     send(new PongCommand());
                     continue;
                 }
 
-                // Inversion of Control: the event knows which dispatcher method to call
                 if (msg instanceof Event event) {
                     event.apply(dispatcher);
                 }
             }
         } catch (IOException ignored) {
+            // Socket closed
         } finally {
-            handleConnectionLost();
+            // FIX: Avviamo il recupero d'emergenza SOLO se la disconnessione NON è stata intenzionale
+            if (!intentionalDisconnect) {
+                handleConnectionLost();
+            }
         }
     }
 
     private synchronized void handleConnectionLost() {
-        if (attemptingReconnection || !connected) return;
+        if (attemptingReconnection || intentionalDisconnect) return;
         connected = false;
         attemptingReconnection = true;
 
@@ -123,11 +130,13 @@ public class SocketServerProxy implements ServerProxy {
         view.onConnectionLost();
 
         new Thread(() -> {
-            while (!connected) {
+            while (!connected && !intentionalDisconnect) {
                 try {
                     Thread.sleep(5_000);
                     try { if (socket != null) socket.close(); } catch (IOException ignored) {}
+
                     connect();
+
                     if (activeNickname != null && activeGameId != null) {
                         requestReconnect(activeNickname, activeGameId);
                     } else if (activeNickname != null) {
@@ -142,13 +151,11 @@ public class SocketServerProxy implements ServerProxy {
     }
 
     private void send(Command command) {
-        if (out != null) {
+        if (out != null && !intentionalDisconnect) {
             out.println(codec.encode(command));
             out.flush();
         }
     }
-
-    // --- VirtualServer command implementation ---
 
     @Override
     public void requestSetUsername(String username) {
@@ -181,9 +188,6 @@ public class SocketServerProxy implements ServerProxy {
         this.activeNickname = nickname;
         this.activeGameId = gameId;
 
-        // FONDAMENTALE: Dobbiamo dire al dispatcher chi siamo.
-        // Senza questo, il dispatcher riceverà i notify dal server ma
-        // activeNickname sarà null, quindi non creerà mai il GameModel.
         if (this.dispatcher != null) {
             this.dispatcher.updateActiveNickname(nickname);
             this.dispatcher.updateActiveGameId(gameId);
@@ -202,15 +206,13 @@ public class SocketServerProxy implements ServerProxy {
         send(new ResolveActionsCommand("", ids));
     }
 
-    // --- Heartbeat logic ---
-
     private void startPingThread() {
         stopPingThread();
         pingThread = new Thread(() -> {
-            while (connected) {
+            while (connected && !intentionalDisconnect) {
                 try {
                     Thread.sleep(PING_INTERVAL_MILLIS);
-                    if (!connected) break;
+                    if (!connected || intentionalDisconnect) break;
                     long elapsed = System.currentTimeMillis() - lastPongReceivedAt;
                     if (elapsed > PING_TIMEOUT_MILLIS) {
                         handleConnectionLost();

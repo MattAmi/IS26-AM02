@@ -38,7 +38,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     private volatile boolean attemptingReconnection = false;
     private Thread pingThread;
     private static final long PING_INTERVAL_MILLIS = 5000;
-
+    private volatile boolean intentionalDisconnect = false;
     // Cache for automatic reconnection
     private String activeNickname = null;
     private String activeGameId = null;
@@ -59,9 +59,15 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     @Override
     public void connect() throws Exception {
-        try { UnicastRemoteObject.exportObject(this, 1099); } catch (RemoteException ignored) {}
-        Registry registry = LocateRegistry.getRegistry(host, port);
-        RmiServerFactory factory = (RmiServerFactory) registry.lookup("AM02-GameServer");
+        intentionalDisconnect = false; // Resettiamo la bandiera quando ci colleghiamo
+
+        // Il client deve ascoltare su una porta anonima (0) per RMI
+        try { UnicastRemoteObject.exportObject(this, 0); } catch (java.rmi.RemoteException ignored) {}
+
+        java.rmi.registry.Registry registry = java.rmi.registry.LocateRegistry.getRegistry(host, port);
+        it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory factory =
+                (it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory) registry.lookup("AM02-GameServer");
+
         this.serverStub = factory.registerClient(this);
         this.connected = true;
         startPingThread();
@@ -69,9 +75,57 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     @Override
     public void disconnect() {
+        intentionalDisconnect = true; // Segnaliamo che stiamo staccando la spina di proposito
         this.connected = false;
+        this.activeGameId = null; // FONDAMENTALE: Dimentichiamo la partita
+
         stopPingThread();
         try { UnicastRemoteObject.unexportObject(this, true); } catch (Exception ignored) {}
+    }
+
+    private synchronized void handleNetworkFailure(Exception e) {
+        // Se stavamo già provando a riconnetterci, o se siamo usciti noi volontariamente, fermati
+        if (attemptingReconnection || intentionalDisconnect) return;
+
+        this.connected = false;
+        this.attemptingReconnection = true;
+        clientView.onConnectionLost();
+
+        new Thread(() -> {
+            stopPingThread();
+            while (!this.connected && !intentionalDisconnect) {
+                try {
+                    Thread.sleep(5000);
+
+                    // 1. TENTATIVO FISICO
+                    // Se il server è giù, lancia eccezione QUI e salta direttamente al catch.
+                    // NON spamma più nulla alla UI!
+                    connect();
+
+                    // 2. SE SIAMO QUI, LA CONNESSIONE HA AVUTO SUCCESSO!
+                    // Ora è il momento giusto per dire alla UI che siamo tornati online
+                    clientView.onConnectionRestored();
+
+                    // 3. RIPRISTINO LOGICO DELLA SESSIONE
+                    if (activeNickname != null && activeGameId != null) {
+                        if (this.dispatcher != null) {
+                            this.dispatcher.updateActiveNickname(activeNickname);
+                            this.dispatcher.updateActiveGameId(activeGameId);
+                        }
+                        serverStub.requestReconnect(activeNickname, activeGameId);
+                    } else {
+                        // Siamo nel pre-partita.
+                        if (activeNickname != null) {
+                            serverStub.requestSetUsername(activeNickname);
+                        }
+                    }
+
+                    this.attemptingReconnection = false;
+                } catch (Exception ignored) {
+                    // Server ancora offline. Si riprova in silenzio al prossimo giro.
+                }
+            }
+        }, "RmiProxy-ReconnectThread").start();
     }
 
     @Override public boolean isConnected() { return connected; }
@@ -251,45 +305,6 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
         }
 
         execute(() -> serverStub.requestReconnect(n, g));
-    }
-
-    // --- RECONNECTION AND PING ---
-
-    private synchronized void handleNetworkFailure(Exception e) {
-        if (attemptingReconnection) return;
-        this.connected = false;
-        this.attemptingReconnection = true;
-        clientView.onConnectionLost();
-
-        new Thread(() -> {
-            stopPingThread();
-            while (!this.connected) {
-                try {
-                    Thread.sleep(5000);
-
-                    clientView.onConnectionRestored();
-
-                    connect();
-
-                    // 3. Ripristino logico della sessione
-                    if (activeNickname != null && activeGameId != null) {
-                        if (this.dispatcher != null) {
-                            this.dispatcher.updateActiveNickname(activeNickname);
-                            this.dispatcher.updateActiveGameId(activeGameId);
-                        }
-                        serverStub.requestReconnect(activeNickname, activeGameId);
-                    } else {
-                        if (activeNickname != null) {
-                            serverStub.requestSetUsername(activeNickname);
-                        }
-                    }
-
-                    this.attemptingReconnection = false;
-                } catch (Exception ignored) {
-                    // Ignorato: la connessione è fallita, si riprova al prossimo giro
-                }
-            }
-        }).start();
     }
 
     private void startPingThread() {

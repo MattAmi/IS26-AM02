@@ -159,7 +159,7 @@ public class LobbyScene {
             ImageView view = new ImageView();
             String colorName = getTotemColorName(totems[i]);
             try {
-                Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/totem_" + colorName + ".png")));
+                Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/totems/totem_" + colorName + ".png")));
                 view.setImage(img);
             } catch (Exception ignored) {
             }

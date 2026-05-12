@@ -49,7 +49,6 @@ public class LobbyScene {
 
     private Button prevBtn;
     private Button nextBtn;
-    private boolean totemLocked = false;
 
     private Map<String, Totem> currentChosenTotems = new HashMap<>();
 
@@ -61,7 +60,8 @@ public class LobbyScene {
             tribalMedium = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 24);
             tribalLarge = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 48);
             introFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 18);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");
@@ -87,7 +87,8 @@ public class LobbyScene {
             double vx = (iw - vw) / 2;
             double vy = (ih - vh) / 2;
             backgroundView.setViewport(new Rectangle2D(vx, vy, vw, vh));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         backgroundView.fitWidthProperty().bind(bgContainer.widthProperty());
         backgroundView.fitHeightProperty().bind(bgContainer.heightProperty());
@@ -95,8 +96,13 @@ public class LobbyScene {
         backgroundView.setEffect(new GaussianBlur(10));
 
         ScaleTransition stBg = new ScaleTransition(Duration.seconds(20), backgroundView);
-        stBg.setFromX(1.0); stBg.setFromY(1.0); stBg.setToX(1.25); stBg.setToY(1.25);
-        stBg.setCycleCount(Animation.INDEFINITE); stBg.setAutoReverse(true); stBg.play();
+        stBg.setFromX(1.0);
+        stBg.setFromY(1.0);
+        stBg.setToX(1.25);
+        stBg.setToY(1.25);
+        stBg.setCycleCount(Animation.INDEFINITE);
+        stBg.setAutoReverse(true);
+        stBg.play();
         bgContainer.getChildren().add(backgroundView);
 
         Region overlay = new Region();
@@ -135,14 +141,14 @@ public class LobbyScene {
         confirmNick.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3;");
         if (tribalSmall != null) confirmNick.setFont(tribalSmall);
         confirmNick.setOnAction(e -> {
-            if(!nickField.getText().isBlank()) {
+            if (!nickField.getText().isBlank()) {
                 nickField.setEditable(false);
                 controller.requestSetUsername(nickField.getText());
             }
         });
         nicknameBox.getChildren().addAll(nickLabel, nickField, confirmNick);
 
-        totemBox = new VBox(30);
+        totemBox = new VBox(20);
         totemBox.setAlignment(Pos.CENTER);
         totemBox.setVisible(false);
 
@@ -155,7 +161,8 @@ public class LobbyScene {
             try {
                 Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/totem_" + colorName + ".png")));
                 view.setImage(img);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             view.setFitHeight(220);
             view.setPreserveRatio(true);
             totemViews.put(totems[i], view);
@@ -187,11 +194,24 @@ public class LobbyScene {
         if (tribalSmall != null) confirmTotemBtn.setFont(tribalSmall);
 
         confirmTotemBtn.setOnAction(e -> {
-            controller.requestSelectTotem(totems[currentCarouselIndex]);
-            lockCarouselUI(); // Blocca l'interfaccia non appena clicchi
+            Totem selected = totems[currentCarouselIndex];
+            controller.requestSelectTotem(selected);
+
         });
 
-        totemBox.getChildren().addAll(carouselControls, selectedTotemLabel, confirmTotemBtn);
+        Button backBtn = new Button("BACK");
+        backBtn.setPrefSize(250, 40);
+        backBtn.setStyle("-fx-base: #555555; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #888888;"); // Gray style
+        if (tribalSmall != null) backBtn.setFont(tribalSmall);
+        backBtn.setOnAction(e -> {
+            myNickname = null;
+            nickField.setEditable(true);
+            totemBox.setVisible(false);
+            nicknameBox.setVisible(true);
+            updateCarouselVisuals();
+        });
+
+        totemBox.getChildren().addAll(carouselControls, selectedTotemLabel, confirmTotemBtn, backBtn);
 
         centerStack.getChildren().addAll(nicknameBox, totemBox);
         uiLayer.setCenter(centerStack);
@@ -229,17 +249,7 @@ public class LobbyScene {
         return t.name().toLowerCase();
     }
 
-    private void lockCarouselUI() {
-        totemLocked = true;
-        prevBtn.setDisable(true);
-        nextBtn.setDisable(true);
-        confirmTotemBtn.setDisable(true);
-        confirmTotemBtn.setText("WAITING FOR OTHERS...");
-        confirmTotemBtn.setStyle("-fx-base: #2a2a2a; -fx-text-fill: #F2D5A3; -fx-border-color: #F2D5A3;");
-    }
-
     private void rotateCarousel(int dir) {
-        if (totemLocked) return; // Sicurezza aggiuntiva per impedire la rotazione
         currentCarouselIndex = (currentCarouselIndex + dir + totems.length) % totems.length;
         updateCarouselVisuals();
     }
@@ -268,8 +278,11 @@ public class LobbyScene {
             double opacity = 0.35 + (0.65 * depthFactor);
 
             String owner = null;
-            for(Map.Entry<String, Totem> entry : currentChosenTotems.entrySet()) {
-                if(entry.getValue() == t) { owner = entry.getKey(); break; }
+            for (Map.Entry<String, Totem> entry : currentChosenTotems.entrySet()) {
+                if (entry.getValue() == t) {
+                    owner = entry.getKey();
+                    break;
+                }
             }
 
             if (owner != null && !owner.equals(myNickname)) {
@@ -283,12 +296,14 @@ public class LobbyScene {
             }
 
             TranslateTransition tt = new TranslateTransition(Duration.millis(350), view);
-            tt.setToX(tx); tt.setToY(ty);
+            tt.setToX(tx);
+            tt.setToY(ty);
             runningTransitions.add(tt);
             tt.play();
 
             ScaleTransition st = new ScaleTransition(Duration.millis(350), view);
-            st.setToX(targetScale); st.setToY(targetScale);
+            st.setToX(targetScale);
+            st.setToY(targetScale);
             runningTransitions.add(st);
             st.play();
 
@@ -305,9 +320,12 @@ public class LobbyScene {
                 st.setOnFinished(e -> {
                     if (currentCarouselIndex == capturedIndex) {
                         ScaleTransition pulse = new ScaleTransition(Duration.millis(800), view);
-                        pulse.setFromX(targetScale); pulse.setFromY(targetScale);
-                        pulse.setToX(targetScale * 1.15); pulse.setToY(targetScale * 1.15);
-                        pulse.setAutoReverse(true); pulse.setCycleCount(Animation.INDEFINITE);
+                        pulse.setFromX(targetScale);
+                        pulse.setFromY(targetScale);
+                        pulse.setToX(targetScale * 1.15);
+                        pulse.setToY(targetScale * 1.15);
+                        pulse.setAutoReverse(true);
+                        pulse.setCycleCount(Animation.INDEFINITE);
                         runningTransitions.add(pulse);
                         pulse.play();
                     }
@@ -320,18 +338,23 @@ public class LobbyScene {
     }
 
     private void updateConfirmButton() {
-        if (totemLocked) return; // Se è bloccato, non aggiorniamo più il bottone
-
         Totem selected = totems[currentCarouselIndex];
         String owner = null;
-        for(Map.Entry<String, Totem> entry : currentChosenTotems.entrySet()) {
-            if(entry.getValue() == selected) { owner = entry.getKey(); break; }
+        for (Map.Entry<String, Totem> entry : currentChosenTotems.entrySet()) {
+            if (entry.getValue() == selected) {
+                owner = entry.getKey();
+                break;
+            }
         }
 
-        if (owner != null) {
+        if (owner != null && !owner.equals(myNickname)) {
             confirmTotemBtn.setDisable(true);
             confirmTotemBtn.setText("TAKEN BY " + owner);
             confirmTotemBtn.setStyle("-fx-base: #444; -fx-text-fill: #888;");
+        } else if (owner != null && owner.equals(myNickname)) {
+            confirmTotemBtn.setDisable(true); // Disable because they already have it
+            confirmTotemBtn.setText("THIS IS YOUR TOTEM");
+            confirmTotemBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: #F2D5A3; -fx-border-color: #F2D5A3;"); // Slightly different style to indicate ownership
         } else {
             confirmTotemBtn.setDisable(false);
             confirmTotemBtn.setText("CONFIRM TOTEM");
@@ -359,17 +382,6 @@ public class LobbyScene {
         Platform.runLater(() -> {
             currentChosenTotems = lobby.chosenTotems();
             playerList.getChildren().clear();
-
-            if (currentChosenTotems.containsKey(myNickname) && !totemLocked) {
-                lockCarouselUI();
-                Totem myTotem = currentChosenTotems.get(myNickname);
-                for (int i = 0; i < totems.length; i++) {
-                    if (totems[i] == myTotem && currentCarouselIndex != i) {
-                        currentCarouselIndex = i; // Ruota per mostrare il mio totem al centro
-                        break;
-                    }
-                }
-            }
 
             for (String nick : lobby.currentPlayers()) {
                 Totem t = currentChosenTotems.get(nick);

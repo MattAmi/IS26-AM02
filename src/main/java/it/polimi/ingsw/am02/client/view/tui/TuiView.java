@@ -100,6 +100,8 @@ public class TuiView extends AbstractClientView {
         }
     }
 
+    private String pendingSummary = null;
+
     // -----------------------------------------------------------------------
     // Notification helper
     // -----------------------------------------------------------------------
@@ -619,11 +621,17 @@ public class TuiView extends AbstractClientView {
      * Renders the last {@value #MAX_NOTIFICATIONS} log entries.
      */
     private void renderNotifications() {
-        System.out.println(WHITE + BOLD + "--- RECENT LOGS ---" + RESET);
-        if (notifications.isEmpty()) {
-            System.out.println("  No recent activity.");
+        if (pendingSummary != null) {
+            System.out.println(WHITE + BOLD + "--- SUMMARY CARD ---" + RESET);
+            System.out.println(CYAN + pendingSummary + RESET);
+            pendingSummary = null;
         } else {
-            notifications.forEach(n -> System.out.println("  " + n));
+            System.out.println(WHITE + BOLD + "--- RECENT LOGS ---" + RESET);
+            if (notifications.isEmpty()) {
+                System.out.println("  No recent activity.");
+            } else {
+                notifications.forEach(n -> System.out.println("  " + n));
+            }
         }
     }
 
@@ -644,6 +652,15 @@ public class TuiView extends AbstractClientView {
         }
     }
 
+    /**
+     * Displays the summary card in the notification bar.
+     * TuiController already guards against calling this outside a game.
+     */
+    public void onShowSummaryCard() {
+        this.pendingSummary = CardCatalog.getInstance().getSummaryCardText();
+        renderFullGame();
+    }
+
     public void onShowHelp(boolean inPreLobby, boolean inLobby, boolean inGame) {
         System.out.println("\n" + CYAN + BOLD + "--- COMMAND CHEATSHEET ---" + RESET);
         if (inPreLobby) {
@@ -660,7 +677,8 @@ public class TuiView extends AbstractClientView {
             System.out.println("  resolve <id...>       - Take specific cards (e.g., resolve C_001 E_002)");
             System.out.println("  move T                - Return totem and END YOUR TURN");
             System.out.println("  info <cardID>         - Read full card details (e.g., info B_004)");
-            System.out.println("  lobby                 - Leave the game and return to lobby");  // ← aggiunto
+            System.out.println("  summary               - Show the summary card (quick-reference rules)");
+            System.out.println("  lobby                 - Leave the game and return to lobby");
         }
         System.out.println("  quit                  - Close the application");
 
@@ -702,16 +720,19 @@ public class TuiView extends AbstractClientView {
                 case TOTEM_PLACEMENT -> {
                     System.out.println("  move <tileID>     — Place your totem on a free offer tile  (e.g., move B)");
                     System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
+                    System.out.println("  summary           — Show the summary card (quick-reference rules)");
                 }
                 case ACTION_RESOLUTION -> {
                     System.out.println("  resolve <id...>   — Pick card IDs from the board  (e.g., resolve C_001 E_002)");
                     System.out.println("  move T            — Return your totem and END YOUR TURN");
                     System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
                     System.out.println(YELLOW + "  (You MUST type 'move T' after resolving actions.)" + RESET);
+                    System.out.println("  summary           — Show the summary card (quick-reference rules)");
                 }
                 default -> {
                     System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
                     System.out.println("  (Waiting for the current phase to complete...)");
+                    System.out.println("  summary           — Show the summary card (quick-reference rules)");
                 }
             }
         }

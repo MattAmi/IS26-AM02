@@ -92,6 +92,15 @@ public class TuiController extends ClientController {
                 handleResolveActions(ids);
             }
 
+            case "summary" -> {
+                boolean inGame = (gameModel != null && !gameModel.isGameEnded());
+                if (!inGame) {
+                    view.onError("The 'summary' command is only available during a game.");
+                } else {
+                    tuiView.onShowSummaryCard();
+                }
+            }
+
             // --- NO MORE INSTANCEOF ---
             case "info" -> {
                 if (arg1.isEmpty()) view.onError("Usage: info <cardID>");

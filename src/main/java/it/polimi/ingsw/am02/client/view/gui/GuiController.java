@@ -9,7 +9,6 @@ import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.client.view.gui.scenes.*;
 import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.*;
-import it.polimi.ingsw.am02.client.model.LobbyModel;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -27,6 +26,7 @@ import java.util.Map;
 /**
  * Main Controller for the GUI. Handles SPA navigation, network events,
  * and synchronization between the Model and the View layers.
+ * * Aggiornato per essere funzionalmente identico al TuiController.
  */
 public class GuiController extends ClientController {
 
@@ -56,7 +56,6 @@ public class GuiController extends ClientController {
     /**
      * Initializes the "Layered Sandwich" root container and sets the primary Scene.
      */
-
     public void initWindowArchitecture() {
         baseLayer = new StackPane();
         baseLayer.setStyle("-fx-background-color: #1a1a1a;");
@@ -83,22 +82,28 @@ public class GuiController extends ClientController {
 
     public void start() {
         primaryStage.show();
-        // Entry point: Trigger network connection form inside the modal layer
         promptConnectionAndRetry();
     }
 
     // --- SPA NAVIGATION METHODS ---
 
     private void switchView(Region newView) {
-        Platform.runLater(() -> baseLayer.getChildren().setAll(newView));
+        // Esegue immediatamente se siamo sul thread FX, altrimenti lo accoda
+        if (Platform.isFxApplicationThread()) {
+            baseLayer.getChildren().setAll(newView);
+        } else {
+            Platform.runLater(() -> baseLayer.getChildren().setAll(newView));
+        }
     }
 
     public void showIntroScene() {
-        primaryStage.setResizable(true);
-        primaryStage.setWidth(1280);
-        primaryStage.setHeight(800);
-        primaryStage.centerOnScreen();
-        Platform.runLater(() -> switchView(new IntroScene().buildNode(this::showGameMenuScene)));
+        Platform.runLater(() -> {
+            primaryStage.setResizable(true);
+            primaryStage.setWidth(1280);
+            primaryStage.setHeight(800);
+            primaryStage.centerOnScreen();
+            switchView(new IntroScene().buildNode(this::showGameMenuScene));
+        });
     }
 
     public void showGameMenuScene() {
@@ -137,11 +142,26 @@ public class GuiController extends ClientController {
             this.lobbyScene = null;
             this.lobbyListScene = null;
             this.gameScene = new GameScene();
-            switchView(gameScene.buildNode(this));
+
+            primaryStage.setWidth(1280);
+            primaryStage.setHeight(800);
+            primaryStage.setResizable(true);
+            primaryStage.centerOnScreen();
+
+            // Monta il nodo della GameScene
+            switchView(this.gameScene.buildNode(this));
+
+            // Esegue il refresh dopo che la gerarchia dei nodi è stata creata
+            if (getGameModel() != null) {
+                this.gameScene.refreshAll(getGameModel());
+            } else {
+                System.err.println("Errore: GameModel nullo durante lo switch!");
+            }
         });
     }
 
-    // --- ACTIONS CALLED BY SCENES (UI -> Controller -> Proxy) ---
+    // --- ACTIONS CALLED BY SCENES (UI -> ClientController logic) ---
+    // Mappatura identica al TuiController
 
     public void requestSetUsername(String nickname) { handleSetNickname(nickname); }
 
@@ -159,8 +179,11 @@ public class GuiController extends ClientController {
             }
         }
     }
-    public void requestReconnect(String nick, String gId) { proxy.requestReconnect(nick, gId); }
-    public void requestSelectTotem(Totem t) { proxy.requestSelectTotem(t); }
+
+    public void requestReconnect(String nick, String gId) { handleReconnect(nick, gId); }
+
+    public void requestSelectTotem(Totem t) { handleSelectTotem(t); }
+
     public void requestLeaveLobby() {
         if (lobbyModel.getCurrentLobby() != null) {
             proxy.requestLeaveLobby();
@@ -168,11 +191,14 @@ public class GuiController extends ClientController {
             handleReturnToLobby();
         }
     }
-    public void moveTotem(char t) { proxy.moveTotem(t); }
-    public void resolveActions(List<String> ids) { proxy.resolveActions(ids); }
 
+    public void moveTotem(char t) { handleMoveTotem(t); }
 
-    // --- MODEL NOTIFICATION HANDLERS (Model -> Controller -> UI) ---
+    public void resolveActions(List<String> ids) { handleResolveActions(ids); }
+
+    public void requestReturnToLobby() { performReturnToLobby(); }
+
+    // --- MODEL NOTIFICATION HANDLERS ---
 
     public void refreshFullGameScene(GameModel gameModel) {
         if (gameScene != null) gameScene.refreshAll(gameModel);
@@ -201,9 +227,6 @@ public class GuiController extends ClientController {
         });
     }
 
-    /**
-     * CRITICAL FIX: Transitions to LobbyScene automatically when joined/created.
-     */
     public void handleCurrentLobbyUpdated(LobbyInfo lobby) {
         Platform.runLater(() -> {
             if (this.lobbyScene == null) {
@@ -229,7 +252,13 @@ public class GuiController extends ClientController {
     public void handleEraChanged(List<String> u, List<String> l) { refreshFullGameScene(getGameModel()); }
     public void handlePlayerLimitsUpdated(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
     public void handlePlayerResourceChanged(String n, ResourceType r, int v) { refreshFullGameScene(getGameModel()); }
-    public void handleCardTaken(String n, String c, CardType t, RowPosition s) { refreshFullGameScene(getGameModel()); }
+    public void handleCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
+        Platform.runLater(() -> {
+            if (gameScene != null) {
+                gameScene.animateCardTaken(nickname, cardID, cardType, sourceRow);
+            }
+        });
+    }
     public void handleExtraTurnStarted(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
     public void handleEventResolved(String id, String n) { refreshFullGameScene(getGameModel()); }
     public void handleShowAvailableTotems() { }
@@ -294,19 +323,14 @@ public class GuiController extends ClientController {
             }
         });
     }
+
     public void handleConnectionLost() {
         Platform.runLater(() -> {
             VBox alertBox = new VBox(16);
             alertBox.setAlignment(Pos.CENTER);
             alertBox.setPadding(new Insets(32));
             alertBox.setMaxSize(400, 250);
-            alertBox.setStyle(
-                    "-fx-background-color: #1C1C1C;" +
-                            "-fx-border-color: #C0392B;" +
-                            "-fx-border-width: 2;" +
-                            "-fx-border-radius: 12;" +
-                            "-fx-background-radius: 12;"
-            );
+            alertBox.setStyle("-fx-background-color: #1C1C1C; -fx-border-color: #C0392B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
 
             Label icon = new Label("⚠");
             icon.setStyle("-fx-font-size: 36; -fx-text-fill: #C0392B;");
@@ -318,7 +342,7 @@ public class GuiController extends ClientController {
             subtitle.setStyle("-fx-font-size: 12; -fx-text-fill: #AAAAAA;");
             subtitle.setWrapText(true);
 
-            javafx.scene.control.ProgressIndicator spinner = new javafx.scene.control.ProgressIndicator();
+            ProgressIndicator spinner = new ProgressIndicator();
             spinner.setMaxSize(40, 40);
             spinner.setStyle("-fx-accent: #E67E22;");
 
@@ -335,18 +359,6 @@ public class GuiController extends ClientController {
         });
     }
 
-    /**
-     * Initiates the return to lobby sequence by cleaning up state and proxy.
-     * This acts like the TUI "lobby" command.
-     */
-    public void requestReturnToLobby() {
-        performReturnToLobby();
-    }
-
-    /**
-     * Handles the UI transition after state cleanup.
-     * This acts like the TUI onReturnToLobby implementation.
-     */
     public void handleReturnToLobby() {
         Platform.runLater(() -> {
             this.gameScene = null;
@@ -356,7 +368,7 @@ public class GuiController extends ClientController {
         });
     }
 
-    // --- NATIVE SPA UI COMPONENTS (TOASTS & MODALS) ---
+    // --- NATIVE SPA UI COMPONENTS ---
 
     private void showToast(String title, String content, Alert.AlertType type) {
         Platform.runLater(() -> {
@@ -449,34 +461,28 @@ public class GuiController extends ClientController {
     }
 
     /**
-     * Sincronizza il passaggio alla scena di gioco se non ci siamo ancora.
+     * Sincronizza il passaggio alla scena di gioco e assicura il refresh.
      */
     private void ensureInGameScene() {
         Platform.runLater(() -> {
             if (this.gameScene == null) {
-                // Se siamo qui, significa che siamo appena rientrati (reconnect)
-                // o la partita è appena iniziata.
-                modalLayer.setVisible(false); // Chiudiamo eventuali form rimasti aperti
+                modalLayer.setVisible(false);
                 switchToGameScene(getGameModel().getGameId());
+            } else {
+                refreshFullGameScene(getGameModel());
             }
         });
     }
 
-    // --- MODIFICA QUESTI HANDLER ---
-
     public void handleGameSetupCompleted(List<String> t, Map<String, Integer> f, BoardSnapshot b) {
-        ensureInGameScene(); // Assicurati di cambiare scena prima di refreshare
-        refreshFullGameScene(getGameModel());
+        ensureInGameScene();
     }
 
     public void handlePlayerLimitsInitialized(String n, int u, int l) {
-        // Spesso è il primo evento di sync che arriva dopo la riconnessione
         ensureInGameScene();
-        refreshFullGameScene(getGameModel());
     }
 
     public void handlePhaseChanged(PhaseType p, String c, List<String> r) {
         ensureInGameScene();
-        refreshFullGameScene(getGameModel());
     }
 }

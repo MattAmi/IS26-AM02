@@ -173,24 +173,40 @@ public class GameScene {
             updateMainBoard();
             updateHandDisplay();
 
-            Platform.runLater(() -> {
-                if (!pendingDeals.isEmpty()) {
-                    for (DealTask task : pendingDeals) {
-                        animateDeal(task.id, task.target);
-                    }
-                    pendingDeals.clear();
+            root.applyCss();
+            root.layout();
+
+            if (!pendingDeals.isEmpty()) {
+                for (DealTask task : pendingDeals) {
+                    animateDeal(task.id, task.target);
                 }
-            });
+                pendingDeals.clear();
+            }
         });
     }
 
     private void updateStatusBanner() {
         statusFlow.getChildren().clear();
-        String activePlayer = model.getCurrentPlayer() != null ? model.getCurrentPlayer() : "...";
-        Text t1 = new Text("PLAYER "); t1.setFill(Color.WHITE); t1.setFont(Font.font(tribalFont.getFamily(), 18));
-        Text t2 = new Text(activePlayer.toUpperCase()); t2.setFill(Color.GOLD); t2.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 22));
-        Text t3 = new Text(" IS PLAYING"); t3.setFill(Color.WHITE); t3.setFont(Font.font(tribalFont.getFamily(), 18));
-        statusFlow.getChildren().addAll(t1, t2, t3);
+        String activePlayer = model.getCurrentPlayer() != null ? model.getCurrentPlayer().toUpperCase() : "...";
+        String currentPhase = model.getCurrentPhase() != null ? model.getCurrentPhase().toString().replace("_", " ") : "WAITING";
+
+        Text eraTxt = new Text("ERA " + currentEra + "  |  ");
+        eraTxt.setFill(Color.WHITE);
+        eraTxt.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));
+
+        Text phaseTxt = new Text(currentPhase + "  |  ");
+        phaseTxt.setFill(Color.LIGHTGRAY);
+        phaseTxt.setFont(Font.font(tribalFont.getFamily(), 16));
+
+        Text p1 = new Text("PLAYER ");
+        p1.setFill(Color.WHITE);
+        p1.setFont(Font.font(tribalFont.getFamily(), 16));
+
+        Text p2 = new Text(activePlayer);
+        p2.setFill(Color.GOLD);
+        p2.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 22));
+
+        statusFlow.getChildren().addAll(eraTxt, phaseTxt, p1, p2);
     }
 
     private void updateSidebar() {
@@ -239,12 +255,22 @@ public class GameScene {
 
     private void updateMainBoard() {
         mainBoardArea.getChildren().clear();
-        mainBoardArea.getChildren().addAll(createCardGroup(model.getUpperRow()), createTrackArea(), createCardGroup(model.getLowerRow()));
+
+        HBox upperBand = new HBox(40);
+        upperBand.setAlignment(Pos.CENTER);
+        upperBand.getChildren().addAll(createCardGroup(model.getUpperRowBuildings()), createCardGroup(model.getUpperRow()));
+
+        HBox lowerBand = new HBox(40);
+        lowerBand.setAlignment(Pos.CENTER);
+        lowerBand.getChildren().addAll(createCardGroup(model.getLowerRowBuildings()), createCardGroup(model.getLowerRow()));
+
+        mainBoardArea.getChildren().addAll(upperBand, createTrackArea(), lowerBand);
     }
 
     private HBox createTrackArea() {
         HBox track = new HBox(25); track.setAlignment(Pos.CENTER);
-        String eraPath = "/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + currentEra + ".png";
+        int displayEra = Math.min(currentEra, 3);
+        String eraPath = "/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png";
         currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
         currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
 
@@ -300,7 +326,6 @@ public class GameScene {
             tooltip.setWrapText(true);
             tooltip.setPrefWidth(250);
             tooltip.setShowDelay(Duration.seconds(1));
-            tooltip.setShowDuration(Duration.seconds(10));
             Tooltip.install(b, tooltip);
         } catch (Exception ignored) { }
 
@@ -341,11 +366,10 @@ public class GameScene {
             target.setOpacity(1.0);
             return;
         }
-
         javafx.geometry.Point2D start = currentDeckView.localToScene(0, 0);
         javafx.geometry.Point2D end = target.localToScene(0, 0);
-
-        ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + currentEra + ".png"));
+        int displayEra = Math.min(currentEra, 3);
+        ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png"));
         fly.setFitHeight(170); fly.setPreserveRatio(true); fly.setManaged(false);
         fly.relocate(start.getX(), start.getY());
         baseStack.getChildren().add(fly);
@@ -385,7 +409,7 @@ public class GameScene {
 
     public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }
     public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
-    public void showNewEraAnimation(List<String> u, List<String> l) { currentEra++; refreshAll(model); }
+    public void showNewEraAnimation(List<String> u, List<String> l) { if (currentEra < 3) currentEra++; refreshAll(model); }
     public void setupInitialBoard(List<String> t, Map<String, Integer> f, BoardSnapshot b) { refreshAll(model); }
     public void updatePhase(PhaseType p, String c, List<String> r) { refreshAll(model); }
     public void highlightCurrentPlayer(String n) { refreshAll(model); }

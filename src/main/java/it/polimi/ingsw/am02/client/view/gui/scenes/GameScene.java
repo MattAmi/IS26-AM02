@@ -36,10 +36,24 @@ public class GameScene {
     private Label handTitle;
     private String viewedPlayerHand;
     private Font tribalFont;
+    private StackPane centerLayout;
+    private ImageView currentDeckView;
 
     private final List<String> selected = new ArrayList<>();
     private final List<String> offlinePlayers = new ArrayList<>();
     private final List<String> knownCardsOnBoard = new ArrayList<>();
+    private final List<DealTask> pendingDeals = new ArrayList<>();
+
+    private int currentEra = 1;
+
+    private static class DealTask {
+        String id;
+        ImageView target;
+        DealTask(String id, ImageView target) {
+            this.id = id;
+            this.target = target;
+        }
+    }
 
     public Region buildNode(GuiController controller) {
         this.controller = controller;
@@ -49,12 +63,7 @@ public class GameScene {
         baseStack = new StackPane();
         baseStack.setMinWidth(1280);
         baseStack.setMinHeight(800);
-
-        ImageView background = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/mesos_box.png"));
-        background.setPreserveRatio(false);
-        background.fitWidthProperty().bind(baseStack.widthProperty());
-        background.fitHeightProperty().bind(baseStack.heightProperty());
-        background.setOpacity(0.4);
+        baseStack.setStyle("-fx-background-color: #0a0a0a;");
 
         root = new BorderPane();
 
@@ -70,28 +79,39 @@ public class GameScene {
 
         rightSidebar = new VBox(15);
         rightSidebar.setPadding(new Insets(20));
-        rightSidebar.setPrefWidth(240);
-
+        rightSidebar.setPrefWidth(260);
         rightSidebar.setStyle(
-                "-fx-background-color: linear-gradient(to bottom right, #f4e3c5, #e6c894, #d6b170); " +
-                        "-fx-effect: innershadow(three-pass-box, rgba(92,58,33,0.6), 25, 0, 0, 0); " +
+                "-fx-background-color: #1a0f07; " +
                         "-fx-border-color: #3e2a1d; " +
-                        "-fx-border-width: 0 0 0 5;"
+                        "-fx-border-width: 0 0 0 4;"
         );
         root.setRight(rightSidebar);
 
-        mainBoardArea = new VBox(25);
-        mainBoardArea.setPadding(new Insets(20));
+        centerLayout = new StackPane();
+        String bgPath = getClass().getResource("/it.polimi.ingsw.am02.images/mesos_box.png").toExternalForm();
+        centerLayout.setStyle(
+                "-fx-background-image: url('" + bgPath + "'); " +
+                        "-fx-background-size: 115%; " +
+                        "-fx-background-position: center;"
+        );
+
+        Region darkOverlay = new Region();
+        darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.55);");
+
+        mainBoardArea = new VBox(30);
+        mainBoardArea.setPadding(new Insets(20, 20, 250, 20));
         mainBoardArea.setAlignment(Pos.CENTER);
         ScrollPane scrollPane = new ScrollPane(mainBoardArea);
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        root.setCenter(scrollPane);
 
         VBox bottomLayout = new VBox(0);
+        bottomLayout.setMaxHeight(Region.USE_PREF_SIZE);
+        bottomLayout.setAlignment(Pos.BOTTOM_CENTER);
+
         VBox handArea = new VBox(5);
         handArea.setPadding(new Insets(10));
-        handArea.setStyle("-fx-background-color: rgba(0,0,0,0.6); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;");
+        handArea.setStyle("-fx-background-color: rgba(26, 15, 7, 0.4); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;");
 
         handTitle = new Label("TRIBE");
         handTitle.setTextFill(Color.web("#F2D5A3"));
@@ -108,31 +128,37 @@ public class GameScene {
         handScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         handArea.getChildren().addAll(handTitle, handScroll);
 
-        HBox bottomButtons = new HBox(20);
+        HBox bottomButtons = new HBox(25);
         bottomButtons.setPadding(new Insets(15));
         bottomButtons.setAlignment(Pos.CENTER);
-        bottomButtons.setStyle("-fx-background-color: #1a1a1a;");
+        bottomButtons.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
+
+        String buttonStyle = "-fx-base: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + tribalFont.getFamily() + "\"; -fx-font-weight: bold; -fx-border-color: #4A3B32; -fx-border-radius: 3;";
 
         Button confirmBtn = new Button("CONFIRM PICK");
         confirmBtn.setFont(Font.font(tribalFont.getFamily(), 16));
-        confirmBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;");
+        confirmBtn.setStyle(buttonStyle);
         confirmBtn.setOnAction(e -> { controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
 
         Button endTurnBtn = new Button("END TURN");
         endTurnBtn.setFont(Font.font(tribalFont.getFamily(), 16));
-        endTurnBtn.setStyle("-fx-base: #8B2635; -fx-text-fill: white; -fx-cursor: hand;");
+        endTurnBtn.setStyle(buttonStyle);
         endTurnBtn.setOnAction(e -> controller.moveTotem('T'));
 
         Button summaryBtn = new Button("SUMMARY");
         summaryBtn.setFont(Font.font(tribalFont.getFamily(), 16));
-        summaryBtn.setStyle("-fx-base: #3e2a1d; -fx-text-fill: #F2D5A3; -fx-cursor: hand;");
+        summaryBtn.setStyle(buttonStyle);
         summaryBtn.setOnAction(e -> controller.showSummaryCard());
 
         bottomButtons.getChildren().addAll(confirmBtn, endTurnBtn, summaryBtn);
         bottomLayout.getChildren().addAll(handArea, bottomButtons);
-        root.setBottom(bottomLayout);
 
-        baseStack.getChildren().addAll(background, root);
+        StackPane.setAlignment(bottomLayout, Pos.BOTTOM_CENTER);
+        centerLayout.getChildren().addAll(darkOverlay, scrollPane, bottomLayout);
+
+        root.setCenter(centerLayout);
+
+        baseStack.getChildren().add(root);
         return baseStack;
     }
 
@@ -146,97 +172,90 @@ public class GameScene {
             updateSidebar();
             updateMainBoard();
             updateHandDisplay();
+
+            Platform.runLater(() -> {
+                if (!pendingDeals.isEmpty()) {
+                    for (DealTask task : pendingDeals) {
+                        animateDeal(task.id, task.target);
+                    }
+                    pendingDeals.clear();
+                }
+            });
         });
     }
 
     private void updateStatusBanner() {
         statusFlow.getChildren().clear();
         String activePlayer = model.getCurrentPlayer() != null ? model.getCurrentPlayer() : "...";
-
         Text t1 = new Text("PLAYER "); t1.setFill(Color.WHITE); t1.setFont(Font.font(tribalFont.getFamily(), 18));
         Text t2 = new Text(activePlayer.toUpperCase()); t2.setFill(Color.GOLD); t2.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 22));
         Text t3 = new Text(" IS PLAYING"); t3.setFill(Color.WHITE); t3.setFont(Font.font(tribalFont.getFamily(), 18));
-
         statusFlow.getChildren().addAll(t1, t2, t3);
     }
 
     private void updateSidebar() {
         rightSidebar.getChildren().clear();
-
         Label sidebarTitle = new Label("PLAYERS");
-        sidebarTitle.setTextFill(Color.web("#3e2a1d"));
+        sidebarTitle.setTextFill(Color.WHITE);
         sidebarTitle.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));
         sidebarTitle.setMaxWidth(Double.MAX_VALUE);
         sidebarTitle.setAlignment(Pos.CENTER);
         rightSidebar.getChildren().add(sidebarTitle);
 
         List<String> players = model.getTurnOrder();
-        if (players == null || players.isEmpty() || (players.size() > 0 && players.get(0).matches("\\d+"))) {
-            if (model.getFoodByPlayer() != null) {
-                players = new ArrayList<>(model.getFoodByPlayer().keySet());
-            }
+        if (players == null || players.isEmpty() || (!players.isEmpty() && players.get(0).matches("\\d+"))) {
+            if (model.getFoodByPlayer() != null) players = new ArrayList<>(model.getFoodByPlayer().keySet());
         }
 
-        for (String nick : players) {
-            VBox pBox = new VBox(5);
-            pBox.setPadding(new Insets(10));
-            pBox.setCursor(Cursor.HAND);
-            boolean isActive = nick.equals(model.getCurrentPlayer());
-            boolean isOffline = offlinePlayers.contains(nick);
+        if (players != null) {
+            for (String nick : players) {
+                VBox pBox = new VBox(5);
+                pBox.setPadding(new Insets(10));
+                pBox.setCursor(Cursor.HAND);
+                boolean isActive = nick.equals(model.getCurrentPlayer());
+                boolean isOffline = offlinePlayers.contains(nick);
+                String borderColor = nick.equals(viewedPlayerHand) ? "#F2D5A3" : "transparent";
 
-            String bgColor = isActive ? "rgba(139, 38, 53, 0.15)" : "transparent";
-            String borderColor = nick.equals(viewedPlayerHand) ? "#5C6B32" : "transparent";
+                pBox.setStyle("-fx-background-color: " + (isActive ? "rgba(163, 29, 29, 0.3)" : "rgba(255,255,255,0.05)") +
+                        "; -fx-border-color: " + borderColor + "; -fx-border-radius: 5; -fx-border-width: 2;");
+                pBox.setOpacity(isOffline ? 0.5 : 1.0);
 
-            pBox.setStyle("-fx-background-color: " + bgColor +
-                    "; -fx-border-color: " + borderColor +
-                    "; -fx-border-radius: 5; -fx-border-width: 2;");
-            pBox.setOpacity(isOffline ? 0.5 : 1.0);
+                Label nameL = new Label(nick.toUpperCase() + (nick.equals(model.getMyNickname()) ? " (YOU)" : ""));
+                nameL.setTextFill(isActive ? Color.GOLD : Color.WHITE);
+                nameL.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));
 
-            Label nameL = new Label(nick.toUpperCase() + (nick.equals(model.getMyNickname()) ? " (YOU)" : "") + (isOffline ? " (OFFLINE)" : ""));
-            nameL.setTextFill(isActive ? Color.web("#8B2635") : (isOffline ? Color.GRAY : Color.web("#3e2a1d")));
-            nameL.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));
+                int food = model.getFoodByPlayer().getOrDefault(nick, 0);
+                int pp = model.getPpByPlayer().getOrDefault(nick, 0);
+                Label statsL = new Label("Food: " + food + " | PP: " + pp);
+                statsL.setTextFill(Color.LIGHTGRAY);
+                statsL.setFont(Font.font(tribalFont.getFamily(), 12));
 
-            int food = model.getFoodByPlayer() != null ? model.getFoodByPlayer().getOrDefault(nick, 0) : 0;
-            int pp = model.getPpByPlayer() != null ? model.getPpByPlayer().getOrDefault(nick, 0) : 0;
-            int pUp = model.getRemainingUpper() != null ? model.getRemainingUpper().getOrDefault(nick, 0) : 0;
-            int pLow = model.getRemainingLower() != null ? model.getRemainingLower().getOrDefault(nick, 0) : 0;
-
-            Label statsL = new Label("Food: " + food + " | PP: " + pp + "\nPicks: " + pUp + " Up / " + pLow + " Low");
-            statsL.setTextFill(Color.web("#5C3A21"));
-            statsL.setFont(Font.font(tribalFont.getFamily(), 12));
-
-            pBox.getChildren().addAll(nameL, statsL);
-            pBox.setOnMouseClicked(e -> { viewedPlayerHand = nick; refreshAll(model); });
-            rightSidebar.getChildren().add(pBox);
+                pBox.getChildren().addAll(nameL, statsL);
+                pBox.setOnMouseClicked(e -> { viewedPlayerHand = nick; refreshAll(model); });
+                rightSidebar.getChildren().add(pBox);
+            }
         }
     }
 
     private void updateMainBoard() {
         mainBoardArea.getChildren().clear();
-        mainBoardArea.getChildren().addAll(
-                createCardGroup(model.getUpperRow(), true),
-                createTrackArea(),
-                createCardGroup(model.getLowerRow(), false)
-        );
+        mainBoardArea.getChildren().addAll(createCardGroup(model.getUpperRow()), createTrackArea(), createCardGroup(model.getLowerRow()));
     }
 
     private HBox createTrackArea() {
-        HBox track = new HBox(25);
-        track.setAlignment(Pos.CENTER);
-
-        int currentEra = 1;
+        HBox track = new HBox(25); track.setAlignment(Pos.CENTER);
         String eraPath = "/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + currentEra + ".png";
-        ImageView currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
-        currentDeckView.setFitHeight(150);
-        currentDeckView.setPreserveRatio(true);
+        currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
+        currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
 
-        int numPlayers = model.getTurnOrder().size();
+        int numPlayers = model.getTurnOrder() != null ? model.getTurnOrder().size() : 2;
         ImageView turnTile = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/turn_order_tiles/tile_turn_" + numPlayers + "p.png"));
         turnTile.setFitHeight(150); turnTile.setPreserveRatio(true);
 
         HBox offerTiles = new HBox(5);
-        for (OfferTileInfo t : model.getOfferTiles()) offerTiles.getChildren().add(createTileView(t));
-
+        if (model.getOfferTiles() != null) {
+            for (OfferTileInfo t : model.getOfferTiles()) offerTiles.getChildren().add(createTileView(t));
+        }
         track.getChildren().addAll(currentDeckView, turnTile, offerTiles);
         return track;
     }
@@ -244,41 +263,36 @@ public class GameScene {
     private void updateHandDisplay() {
         handCardsBox.getChildren().clear();
         handTitle.setText("TRIBE OF: " + viewedPlayerHand.toUpperCase());
-
         List<String> chars = model.getCharactersByPlayer().getOrDefault(viewedPlayerHand, List.of());
         List<String> buildings = model.getBuildingsByPlayer().getOrDefault(viewedPlayerHand, List.of());
         List<String> allCards = Stream.concat(chars.stream(), buildings.stream()).collect(Collectors.toList());
-
         for (String id : allCards) {
-            VBox cardBox = createCardBox(id, false, false);
+            VBox cardBox = createCardBox(id);
             ((ImageView) cardBox.getChildren().get(0)).setFitHeight(160);
             handCardsBox.getChildren().add(cardBox);
         }
     }
 
-    private HBox createCardGroup(List<String> ids, boolean isUpper) {
+    private HBox createCardGroup(List<String> ids) {
         HBox hb = new HBox(12); hb.setAlignment(Pos.CENTER);
         if (ids != null) {
             for (String id : ids) {
                 boolean isNew = !knownCardsOnBoard.contains(id);
                 if (isNew) knownCardsOnBoard.add(id);
-                hb.getChildren().add(createCardBox(id, isNew, isUpper));
+                VBox box = createCardBox(id);
+                ImageView iv = (ImageView) box.getChildren().get(0);
+                if (isNew) { iv.setOpacity(0.0); pendingDeals.add(new DealTask(id, iv)); }
+                hb.getChildren().add(box);
             }
         }
         return hb;
     }
 
-    private VBox createCardBox(String id, boolean isNew, boolean isUpper) {
-        VBox b = new VBox();
-        b.setCursor(Cursor.HAND);
-
-        ImageView iv = new ImageView();
-        iv.setFitHeight(170);
-        iv.setPreserveRatio(true);
-
-        if (selected.contains(id)) {
-            iv.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);");
-        }
+    private VBox createCardBox(String id) {
+        VBox b = new VBox(); b.setCursor(Cursor.HAND);
+        ImageView iv = new ImageView(ImageLoader.getImage(getCardPath(id)));
+        iv.setFitHeight(170); iv.setPreserveRatio(true);
+        if (selected.contains(id)) iv.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);");
         b.getChildren().add(iv);
 
         try {
@@ -291,61 +305,14 @@ public class GameScene {
         } catch (Exception ignored) { }
 
         b.setOnMouseEntered(e -> {
-            iv.setTranslateY(-10);
-            iv.setScaleX(1.08);
-            iv.setScaleY(1.08);
-            if (!selected.contains(id)) {
-                iv.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(255,255,255,0.7), 15, 0.4, 0, 0);");
-            }
+            iv.setTranslateY(-10); iv.setScaleX(1.1); iv.setScaleY(1.1);
+            if (!selected.contains(id)) iv.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(255,255,255,0.7), 15, 0.4, 0, 0);");
         });
-
         b.setOnMouseExited(e -> {
-            iv.setTranslateY(0);
-            iv.setScaleX(1.0);
-            iv.setScaleY(1.0);
-            if (!selected.contains(id)) {
-                iv.setStyle("");
-            } else {
-                iv.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);");
-            }
+            iv.setTranslateY(0); iv.setScaleX(1.0); iv.setScaleY(1.0);
+            iv.setStyle(selected.contains(id) ? "-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);" : "");
         });
-
-        b.setOnMouseClicked(e -> {
-            if(selected.contains(id)) selected.remove(id); else selected.add(id);
-            refreshAll(model);
-        });
-
-        if (isNew) {
-            int currentEra = 1;
-            iv.setImage(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + currentEra + ".png"));
-
-            double startX = -400;
-            double startY = isUpper ? 250 : -250;
-
-            TranslateTransition move = new TranslateTransition(Duration.millis(600), iv);
-            move.setFromX(startX); move.setFromY(startY);
-            move.setToX(0); move.setToY(0);
-
-            ScaleTransition scaleOut = new ScaleTransition(Duration.millis(300), iv);
-            scaleOut.setFromX(1.0);
-            scaleOut.setToX(0.0);
-
-            scaleOut.setOnFinished(e -> {
-                iv.setImage(ImageLoader.getImage(getCardPath(id)));
-                ScaleTransition scaleIn = new ScaleTransition(Duration.millis(300), iv);
-                scaleIn.setFromX(0.0);
-                scaleIn.setToX(1.0);
-                scaleIn.play();
-            });
-
-            ParallelTransition pt = new ParallelTransition(move, scaleOut);
-            pt.setDelay(Duration.millis(Math.random() * 400));
-            pt.play();
-
-        } else {
-            iv.setImage(ImageLoader.getImage(getCardPath(id)));
-        }
-
+        b.setOnMouseClicked(e -> { if(selected.contains(id)) selected.remove(id); else selected.add(id); refreshAll(model); });
         return b;
     }
 
@@ -359,58 +326,66 @@ public class GameScene {
         ImageView iv = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/offer_tiles/tile_offer_" + t.tileID() + ".png"));
         iv.setFitHeight(150); iv.setPreserveRatio(true);
         st.getChildren().add(iv);
-
         if (t.occupantNickname() != null) {
             Label nick = new Label(t.occupantNickname().substring(0, Math.min(3, t.occupantNickname().length())).toUpperCase());
             nick.setStyle("-fx-background-color: rgba(255,255,255,0.9); -fx-text-fill: black; -fx-font-weight: bold; -fx-padding: 2 5 2 5; -fx-background-radius: 3;");
             StackPane.setAlignment(nick, Pos.TOP_CENTER); StackPane.setMargin(nick, new Insets(10, 0, 0, 0));
             st.getChildren().add(nick);
         }
-
-        st.setOnMouseEntered(e -> { st.setScaleX(1.05); st.setScaleY(1.05); });
-        st.setOnMouseExited(e -> { st.setScaleX(1.0); st.setScaleY(1.0); });
-
         st.setOnMouseClicked(e -> controller.moveTotem(t.tileID()));
         return st;
     }
 
-    public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }
-    public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
+    private void animateDeal(String id, ImageView target) {
+        if (currentDeckView == null || currentDeckView.getScene() == null || target.getScene() == null) {
+            target.setOpacity(1.0);
+            return;
+        }
+
+        javafx.geometry.Point2D start = currentDeckView.localToScene(0, 0);
+        javafx.geometry.Point2D end = target.localToScene(0, 0);
+
+        ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + currentEra + ".png"));
+        fly.setFitHeight(170); fly.setPreserveRatio(true); fly.setManaged(false);
+        fly.relocate(start.getX(), start.getY());
+        baseStack.getChildren().add(fly);
+
+        TranslateTransition tt = new TranslateTransition(Duration.millis(700), fly);
+        tt.setToX(end.getX() - start.getX()); tt.setToY(end.getY() - start.getY());
+
+        ScaleTransition st1 = new ScaleTransition(Duration.millis(350), fly);
+        st1.setToX(0);
+        st1.setOnFinished(e -> {
+            fly.setImage(ImageLoader.getImage(getCardPath(id)));
+            ScaleTransition st2 = new ScaleTransition(Duration.millis(350), fly);
+            st2.setToX(1.0); st2.play();
+        });
+
+        ParallelTransition pt = new ParallelTransition(tt, st1);
+        pt.setOnFinished(e -> { baseStack.getChildren().remove(fly); target.setOpacity(1.0); });
+        pt.play();
+    }
 
     public void animateCardTaken(String nickname, String cardID, CardType type, RowPosition source) {
         Platform.runLater(() -> {
             ImageView fly = new ImageView(ImageLoader.getImage(getCardPath(cardID)));
             fly.setFitHeight(170); fly.setPreserveRatio(true);
-
-            fly.setTranslateY(source == RowPosition.UPPER ? -100 : 100);
+            fly.setTranslateY(source == RowPosition.UPPER ? -150 : 150);
             baseStack.getChildren().add(fly);
-
             TranslateTransition tt = new TranslateTransition(Duration.seconds(1), fly);
-
-            if (nickname.equals(model.getMyNickname())) {
-                tt.setToY(350);
-                tt.setToX(-150);
-            } else {
-                tt.setToY(-200);
-                tt.setToX(500);
-            }
-
-            ScaleTransition st = new ScaleTransition(Duration.seconds(1), fly);
-            st.setToX(0.1); st.setToY(0.1);
-
-            FadeTransition ft = new FadeTransition(Duration.seconds(1), fly);
-            ft.setToValue(0);
-
+            if (nickname.equals(model.getMyNickname())) { tt.setToY(350); tt.setToX(-200); }
+            else { tt.setToY(-250); tt.setToX(500); }
+            ScaleTransition st = new ScaleTransition(Duration.seconds(1), fly); st.setToX(0.1); st.setToY(0.1);
+            FadeTransition ft = new FadeTransition(Duration.seconds(1), fly); ft.setToValue(0);
             ParallelTransition pt = new ParallelTransition(tt, st, ft);
-            pt.setOnFinished(e -> {
-                baseStack.getChildren().remove(fly);
-                knownCardsOnBoard.remove(cardID);
-                refreshAll(model);
-            });
+            pt.setOnFinished(e -> { baseStack.getChildren().remove(fly); knownCardsOnBoard.remove(cardID); refreshAll(model); });
             pt.play();
         });
     }
 
+    public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }
+    public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
+    public void showNewEraAnimation(List<String> u, List<String> l) { currentEra++; refreshAll(model); }
     public void setupInitialBoard(List<String> t, Map<String, Integer> f, BoardSnapshot b) { refreshAll(model); }
     public void updatePhase(PhaseType p, String c, List<String> r) { refreshAll(model); }
     public void highlightCurrentPlayer(String n) { refreshAll(model); }
@@ -419,7 +394,6 @@ public class GameScene {
     public void animateTotemReturn(String n, int p) { refreshAll(model); }
     public void updateOfferTiles(List<OfferTileInfo> o) { refreshAll(model); }
     public void updateBoardCards(List<String> u, List<String> l, int d) { refreshAll(model); }
-    public void showNewEraAnimation(List<String> u, List<String> l) { refreshAll(model); }
     public void updatePlayerLimits(String n, int u, int l) { refreshAll(model); }
     public void updatePlayerResource(String n, ResourceType r, int v) { refreshAll(model); }
 }

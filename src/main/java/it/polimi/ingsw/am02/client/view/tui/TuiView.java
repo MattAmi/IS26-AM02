@@ -282,8 +282,8 @@ public class TuiView extends AbstractClientView {
     }
 
     @Override
-    public void onEraChanged(List<String> newUpperBuildings, List<String> newLowerBuildings) {
-        addNotification(PURPLE + BOLD + "[ERA] A new era has begun!" + RESET);
+    public void onEraChanged(Era era, List<String> newUpperBuildings, List<String> newLowerBuildings) {
+        addNotification(PURPLE + BOLD + "[ERA] Era " + era + " has begun!" + RESET);
         renderFullGame();
     }
 
@@ -455,7 +455,9 @@ public class TuiView extends AbstractClientView {
 
         System.out.println(CYAN + "Game ID: "       + RESET + displayId
                 + CYAN + "  |  Phase: " + RESET
-                + (phase != null ? YELLOW + phase + RESET : "Starting..."));
+                + (phase != null ? YELLOW + phase + RESET : "Starting...")
+                + CYAN + "  |  Era: " + RESET + PURPLE + BOLD
+                + gameModel.getCurrentEra() + RESET);
         System.out.println(CYAN + "Active Player: " + RESET + BOLD
                 + (currentP != null ? currentP : "---") + RESET);
         System.out.println();
@@ -494,31 +496,25 @@ public class TuiView extends AbstractClientView {
      */
     private void renderTurnOrder() {
         System.out.println(YELLOW + BOLD + "=== TURN ORDER TILE ===" + RESET);
-
         List<TurnOrderSlotInfo> slots = gameModel.getTurnOrderSlots();
         if (slots.isEmpty()) {
             System.out.println("  (awaiting turn-order data...)");
             return;
         }
-
         for (int i = 0; i < slots.size(); i++) {
             TurnOrderSlotInfo slot = slots.get(i);
             String occupant = slot.occupantNickname();
-
-            String bonusStr = GREEN
-                    + " (food: " + (slot.foodBonus() >= 0 ? "+" : "") + slot.foodBonus() + ")"
-                    + RESET;
+            String bonusStr = GREEN + " (food: "
+                    + (slot.foodBonus() >= 0 ? "+" : "") + slot.foodBonus() + ")" + RESET;
             String malusStr = slot.prestigePointsMalus() != 0
-                    ? RED + " (PP: " + slot.prestigePointsMalus() + ")" + RESET
-                    : "";
-
+                    ? RED + " (PP: " + slot.prestigePointsMalus() + ")" + RESET : "";
             if (occupant == null) {
                 System.out.printf("  Slot %d  [ empty ]%s%s%n", i + 1, bonusStr, malusStr);
             } else {
                 boolean isMe = occupant.equals(gameModel.getMyNickname());
                 String tag   = isMe ? YELLOW + BOLD + " ★ YOU" + RESET : "";
-                System.out.printf("  Slot %d  %s%s%s%s%s%n",
-                        i + 1, BOLD, occupant, RESET, tag, bonusStr + malusStr);
+                System.out.printf("  Slot %d  %s%s%s%s%n",
+                        i + 1, BOLD + formatOccupant(occupant) + RESET, tag, bonusStr, malusStr);
             }
         }
     }
@@ -531,12 +527,11 @@ public class TuiView extends AbstractClientView {
         System.out.println(PURPLE + BOLD + "=== OFFER TRACK ===" + RESET);
         for (OfferTileInfo tile : gameModel.getOfferTiles()) {
             String occupant = tile.occupantNickname() != null
-                    ? YELLOW + "  <-- [ " + tile.occupantNickname() + " ]" + RESET
+                    ? YELLOW + "  <-- " + formatOccupant(tile.occupantNickname()) + RESET
                     : "";
             System.out.printf("  [%c]  Food: %+d  |  Upper: %d  |  Lower: %d%s%n",
                     tile.tileID(), tile.foodBonus(),
-                    tile.upperChoosable(), tile.lowerChoosable(),
-                    occupant);
+                    tile.upperChoosable(), tile.lowerChoosable(), occupant);
         }
     }
 
@@ -592,10 +587,12 @@ public class TuiView extends AbstractClientView {
             String prefix = isMe ? GREEN + BOLD + "=> " + RESET : "   ";
             String marker = isMe ? YELLOW + BOLD + " (YOU)" + RESET : RESET;
 
-            System.out.printf("%s%-15s | Food: " + GREEN + "%2d" + RESET
+            Totem t = gameModel.getTotem(nickname);
+            String totemTag = t != null ? totemColor(t) + "[" + t + "]" + RESET + " " : "";
+            System.out.printf("%s%s%-15s | Food: " + GREEN + "%2d" + RESET
                             + "  | PP: " + YELLOW + "%3d" + RESET
                             + "  | Picks (Up/Low): " + CYAN + "%d/%d" + RESET + "%s%n",
-                    prefix, nickname, food, pp, picksUp, picksLow, marker);
+                    prefix, totemTag, nickname, food, pp, picksUp, picksLow, marker);
 
             List<String> chars = gameModel.getCharactersByPlayer()
                     .getOrDefault(nickname, List.of());
@@ -615,6 +612,34 @@ public class TuiView extends AbstractClientView {
 
             System.out.println();
         }
+    }
+
+    /**
+     * Formats a player's totem color tag and nickname for display.
+     *
+     * @param nickname the player's nickname
+     * @return ANSI-colored "[TOTEM] nickname" string, or just the nickname if totem is unknown
+     */
+    private String formatOccupant(String nickname) {
+        Totem totem = gameModel.getTotem(nickname);
+        String totemStr = totem != null ? totemColor(totem) + "[" + totem + "]" + RESET + " " : "";
+        return totemStr + nickname;
+    }
+
+    /**
+     * Maps a {@link Totem} enum value to its corresponding ANSI color code.
+     *
+     * @param totem the totem; must not be {@code null}
+     * @return ANSI escape sequence for the totem's color
+     */
+    private String totemColor(Totem totem) {
+        return switch (totem) {
+            case WHITE  -> WHITE;
+            case PURPLE -> PURPLE;
+            case BLUE   -> BLUE;
+            case RED    -> RED;
+            case YELLOW -> YELLOW;
+        };
     }
 
     /**

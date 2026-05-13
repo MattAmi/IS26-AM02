@@ -5,10 +5,7 @@ import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
-import it.polimi.ingsw.am02.common.enumerations.CardType;
-import it.polimi.ingsw.am02.common.enumerations.PhaseType;
-import it.polimi.ingsw.am02.common.enumerations.ResourceType;
-import it.polimi.ingsw.am02.common.enumerations.RowPosition;
+import it.polimi.ingsw.am02.common.enumerations.*;
 
 import java.util.List;
 import java.util.Map;
@@ -36,7 +33,7 @@ public abstract class AbstractClientView implements ClientView {
     @Override public void onTotemReturned(String nickname, int turnOrderPosition) {}
     @Override public void onOfferTilesUpdated(List<OfferTileInfo> offerTiles) {}
     @Override public void onBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, int deckRemainingCount) {}
-    @Override public void onEraChanged(List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {}
+    @Override public void onEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {}
 
     @Override public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {}
     @Override public void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {}

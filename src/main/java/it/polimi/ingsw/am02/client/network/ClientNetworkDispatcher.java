@@ -140,7 +140,7 @@ public class ClientNetworkDispatcher implements VirtualView {
     public void notifyEraChanged(Era era, List<String> upper, List<String> lower, List<String> disc) {
         ensureGameModel();
         if (clientController.getGameModel() != null) {
-            clientController.getGameModel().updateEra(upper, lower);
+            clientController.getGameModel().updateEra(era, upper, lower);
         }
     }
 

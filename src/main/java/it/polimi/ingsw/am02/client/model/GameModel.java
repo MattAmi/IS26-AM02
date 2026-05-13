@@ -14,6 +14,7 @@ public class GameModel {
     private PhaseType currentPhase;
     private String currentPlayer;
     private Map<String, Totem> totemByPlayer;
+    private Era currentEra = Era.I;
     private List<String> turnOrder = new ArrayList<>();
     private List<String> upperRow = new ArrayList<>();
     private List<String> lowerRow = new ArrayList<>();
@@ -238,16 +239,19 @@ public class GameModel {
     }
 
     /**
-     * Applies an era change: replaces both building rows and notifies views.
+     * Applies an era change: updates the current era, replaces both building rows,
+     * and notifies views.
      *
-     * @param newUpperRowBuildings the new upper row building IDs
-     * @param newLowerRowBuildings the new lower row building IDs
+     * @param newEra               the new era
+     * @param newUpperRowBuildings the updated upper row building IDs
+     * @param newLowerRowBuildings the updated lower row building IDs
      */
-    public synchronized void updateEra(List<String> newUpperRowBuildings,
+    public synchronized void updateEra(Era newEra, List<String> newUpperRowBuildings,
                                        List<String> newLowerRowBuildings) {
+        this.currentEra = newEra;
         this.upperRowBuildings = new ArrayList<>(newUpperRowBuildings);
         this.lowerRowBuildings = new ArrayList<>(newLowerRowBuildings);
-        clientViews.forEach(o -> o.onEraChanged(newUpperRowBuildings, newLowerRowBuildings));
+        clientViews.forEach(o -> o.onEraChanged(newEra, newUpperRowBuildings, newLowerRowBuildings));
     }
 
     /**
@@ -468,4 +472,5 @@ public class GameModel {
     public synchronized List<TurnOrderSlotInfo> getTurnOrderSlots() { return Collections.unmodifiableList(turnOrderSlots); }
     public synchronized void setGameId(String gameId) { this.gameId = gameId; }
     public synchronized Totem getTotem(String nickname) { return totemByPlayer.get(nickname); }
+    public synchronized Era getCurrentEra() { return currentEra; }
 }

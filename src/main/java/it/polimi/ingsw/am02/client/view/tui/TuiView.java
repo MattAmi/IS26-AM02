@@ -742,27 +742,22 @@ public class TuiView extends AbstractClientView {
             System.out.println("  Waiting for " + BOLD + currentP + RESET + " to finish their turn...");
         } else {
             switch (phase) {
-                case TOTEM_PLACEMENT -> {
-                    System.out.println("  move <tileID>     — Place your totem on a free offer tile  (e.g., move B)");
-                    System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
-                    System.out.println("  summary           — Show the summary card (quick-reference rules)");
-                }
+                case TOTEM_PLACEMENT -> System.out.println("  move <tileID>     — Place your totem on a free offer tile  (e.g., move B)");
+
                 case ACTION_RESOLUTION -> {
                     System.out.println("  resolve <id...>   — Pick card IDs from the board  (e.g., resolve C_001 E_002)");
                     System.out.println("  move T            — Return your totem and END YOUR TURN");
-                    System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
                     System.out.println(YELLOW + "  (You MUST type 'move T' after resolving actions.)" + RESET);
-                    System.out.println("  summary           — Show the summary card (quick-reference rules)");
                 }
-                default -> {
-                    System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
-                    System.out.println("  (Waiting for the current phase to complete...)");
-                    System.out.println("  summary           — Show the summary card (quick-reference rules)");
-                }
+
+                default -> System.out.println("  (Waiting for the current phase to complete...)");
+
             }
         }
 
-        // Always visible
+        // Always visible — regardless of whose turn it is
+        System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
+        System.out.println("  summary           — Show the summary card (quick-reference rules)");
         System.out.println("  lobby             — Leave the game and return to lobby");
         System.out.println("  quit              — Close the application");
     }
@@ -780,7 +775,7 @@ public class TuiView extends AbstractClientView {
 
     /** Clears the terminal using ANSI escape codes. */
     private void clearScreen() {
-        System.out.print("\033[H\033[2J");
+        System.out.print("\n\033[H\033[2J");
         System.out.flush();
     }
 }

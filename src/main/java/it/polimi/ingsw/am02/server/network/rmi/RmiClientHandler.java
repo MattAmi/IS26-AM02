@@ -19,13 +19,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Server-side handler for a single RMI-connected client.
  *
- * <p>Inbound RMI calls (client → server) are submitted to a single-thread executor
- * to avoid blocking the RMI thread pool and to serialize command processing.
+ * <p>Inbound RMI calls (client → server) are executed directly on the RMI
+ * thread pool — no extra executor needed, because the client's outbound queue
+ * already breaks the synchronicity chain on the other end.
  *
- * <p>Outbound notifications (server → client) are queued as {@link RmiCall} lambdas
- * and drained by a dedicated thread, so that
- * {@link it.polimi.ingsw.am02.server.controller.GameController} never blocks on a
- * slow or dead client while holding its lock.
+ * <p>Outbound notifications (server → client) are queued as {@link RmiCall}
+ * lambdas and drained by a dedicated worker thread, so that
+ * {@link it.polimi.ingsw.am02.server.controller.GameController} never blocks
+ * on a slow or dead client while holding its lock.
+ *
+ * <p>Keep-alive is handled by a dedicated ping thread that fires at a fixed
+ * interval regardless of outbound traffic, matching the design of
+ * {@link it.polimi.ingsw.am02.server.network.socket.SocketClientHandler}.
  */
 public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
@@ -42,14 +47,15 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     private final RmiClientRemote stub;
     private final String clientId;
 
-    private final ExecutorService inboundExecutor = Executors.newSingleThreadExecutor();
     private final BlockingQueue<RmiCall> outboundQueue = new LinkedBlockingQueue<>();
     private final Thread outboundWorker;
+    private Thread pingThread;
 
     private volatile boolean running = true;
     private final AtomicBoolean disconnected = new AtomicBoolean(false);
 
-    private static final long POLL_TIMEOUT_SECONDS = 2;
+    private static final long POLL_TIMEOUT_SECONDS  = 2;
+    private static final long PING_INTERVAL_MILLIS  = 5_000;
 
     public RmiClientHandler(RmiClientRemote stub) {
         this.manager = ControllerManager.getInstance();
@@ -58,15 +64,16 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
         this.outboundWorker = new Thread(this::drainOutboundQueue, "rmi-out-" + clientId);
         this.outboundWorker.setDaemon(true);
         this.outboundWorker.start();
+        startPingThread();
     }
 
     // =========================================================
-    // INTERNAL HELPER
+    // INTERNAL HELPERS
     // =========================================================
 
     /**
-     * Adds a call to the outbound queue. Uses {@link BlockingQueue#add} instead of
-     * {@code offer} to avoid the "result ignored" warning; with an unbounded
+     * Adds a call to the outbound queue. Uses {@link BlockingQueue#add} instead
+     * of {@code offer} to avoid the "result ignored" warning; with an unbounded
      * {@link LinkedBlockingQueue} the queue can never be full, so
      * {@link IllegalStateException} is unreachable in practice.
      */
@@ -74,18 +81,42 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
         outboundQueue.add(call);
     }
 
+    private void startPingThread() {
+        pingThread = new Thread(() -> {
+            while (running) {
+                try {
+                    Thread.sleep(PING_INTERVAL_MILLIS);
+                    if (running) stub.ping();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (RemoteException e) {
+                    System.err.println("[RmiClientHandler] Ping failed for client "
+                            + clientId + ": " + e.getMessage());
+                    disconnect();
+                    break;
+                }
+            }
+        }, "rmi-ping-" + clientId);
+        pingThread.setDaemon(true);
+        pingThread.start();
+    }
+
     // =========================================================
     // DRAIN LOOP — runs on outboundWorker thread
     // =========================================================
 
+    /**
+     * Drains the outbound queue, executing each enqueued {@link RmiCall} in order.
+     * On {@link RemoteException} the client is considered unreachable and
+     * {@link #disconnect()} is called.
+     */
     private void drainOutboundQueue() {
         while (running) {
             try {
                 RmiCall call = outboundQueue.poll(POLL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                 if (call != null) {
                     call.invoke(stub);
-                } else {
-                    stub.ping();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -129,9 +160,12 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood,
+    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer,
+                                         List<String> turnOrder,
+                                         Map<String, Integer> initialFood,
                                          BoardSnapshot boardSnapshot) {
-        enqueue(s -> s.notifyGameSetupCompleted(totemByPlayer, turnOrder, initialFood, boardSnapshot));
+        enqueue(s -> s.notifyGameSetupCompleted(totemByPlayer, turnOrder,
+                initialFood, boardSnapshot));
     }
 
     @Override
@@ -189,7 +223,8 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void notifyPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {
+    public void notifyPlayerLimitsUpdated(String nickname, int remainingUpper,
+                                          int remainingLower) {
         enqueue(s -> s.notifyPlayerLimitsUpdated(nickname, remainingUpper, remainingLower));
     }
 
@@ -205,7 +240,8 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void notifyExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+    public void notifyExtraTurnStarted(String nickname, int remainingUpper,
+                                       int remainingLower) {
         enqueue(s -> s.notifyExtraTurnStarted(nickname, remainingUpper, remainingLower));
     }
 
@@ -256,46 +292,47 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
 
     // =========================================================
     // RmiServerRemote — inbound calls (client → server)
+    // Executed directly on the RMI thread pool — no executor wrapper.
     // =========================================================
 
     @Override
     public void requestSetUsername(String username) throws RemoteException {
-        inboundExecutor.submit(() -> manager.requestSetUsername(clientId, username));
+        manager.requestSetUsername(clientId, username);
     }
 
     @Override
     public void requestCreateLobby(int numPlayers) throws RemoteException {
-        inboundExecutor.submit(() -> manager.requestCreateLobby(clientId, numPlayers));
+        manager.requestCreateLobby(clientId, numPlayers);
     }
 
     @Override
     public void requestJoinLobby(String lobbyID) throws RemoteException {
-        inboundExecutor.submit(() -> manager.requestJoinLobby(clientId, lobbyID));
+        manager.requestJoinLobby(clientId, lobbyID);
     }
 
     @Override
     public void requestSelectTotem(Totem color) throws RemoteException {
-        inboundExecutor.submit(() -> manager.requestSelectTotem(clientId, color));
+        manager.requestSelectTotem(clientId, color);
     }
 
     @Override
     public void requestLeaveLobby() throws RemoteException {
-        inboundExecutor.submit(() -> manager.requestLeaveLobby(clientId));
+        manager.requestLeaveLobby(clientId);
     }
 
     @Override
     public void requestReconnect(String nickname, String gameId) throws RemoteException {
-        inboundExecutor.submit(() -> manager.requestReconnect(clientId, this, nickname, gameId));
+        manager.requestReconnect(clientId, this, nickname, gameId);
     }
 
     @Override
     public void moveTotem(char tileID) throws RemoteException {
-        inboundExecutor.submit(() -> manager.requestMoveTotem(clientId, tileID));
+        manager.requestMoveTotem(clientId, tileID);
     }
 
     @Override
     public void resolveActions(List<String> selectedIDs) throws RemoteException {
-        inboundExecutor.submit(() -> manager.requestResolveActions(clientId, selectedIDs));
+        manager.requestResolveActions(clientId, selectedIDs);
     }
 
     @Override
@@ -311,8 +348,8 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     public void disconnect() {
         if (!disconnected.compareAndSet(false, true)) return;
         running = false;
-        inboundExecutor.shutdownNow();
         outboundWorker.interrupt();
+        if (pingThread != null) pingThread.interrupt();
         manager.handleDisconnection(clientId);
     }
 }

@@ -14,16 +14,55 @@ import it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
 
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * RMI proxy on the client side. Receives calls from server (Inbound) and sends commands (Outbound).
+ * RMI proxy on the client side.
+ *
+ * <p><b>Inbound</b> (server → client): the server calls {@link RmiClientRemote}
+ * methods directly on this object via the RMI thread pool; each call is
+ * forwarded synchronously to the {@link ClientNetworkDispatcher}.
+ *
+ * <p><b>Outbound</b> (client → server): calls from the UI thread are enqueued
+ * into a {@link BlockingQueue} and drained by a dedicated worker thread, so
+ * the UI never blocks on a slow or unreachable server.
+ *
+ * <p>Keep-alive is handled by a dedicated ping thread that fires at a fixed
+ * interval regardless of outbound traffic, matching the design of
+ * {@link it.polimi.ingsw.am02.client.network.socket.SocketServerProxy}.
  */
 public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, RmiClientRemote {
+
+    // ------------------------------------------------------------------
+    // Outbound infrastructure
+    // ------------------------------------------------------------------
+
+    /**
+     * Functional interface equivalent to a {@code Runnable} that may throw
+     * {@link RemoteException}, allowing RMI method references in lambdas.
+     */
+    @FunctionalInterface
+    private interface RemoteAction {
+        void run() throws RemoteException;
+    }
+
+    private final BlockingQueue<RemoteAction> outboundQueue = new LinkedBlockingQueue<>();
+    private final Thread outboundWorker;
+    private Thread pingThread;
+
+    private volatile boolean running = true;
+    private final AtomicBoolean disconnected = new AtomicBoolean(false);
+
+    private static final long POLL_TIMEOUT_SECONDS = 2;
+    private static final long PING_INTERVAL_MILLIS = 5_000;
+
+    // ------------------------------------------------------------------
+    // Connection state
+    // ------------------------------------------------------------------
 
     private final String host;
     private final int port;
@@ -36,20 +75,96 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     private volatile boolean connected = false;
     private volatile boolean attemptingReconnection = false;
-    private Thread pingThread;
-    private static final long PING_INTERVAL_MILLIS = 5000;
     private volatile boolean intentionalDisconnect = false;
-    // Cache for automatic reconnection
-    private String activeNickname = null;
-    private String activeGameId = null;
 
-    public RmiServerProxy(String host, int port, LobbyModel lobbyModel, ClientView clientView) throws RemoteException {
+    private String activeNickname = null;
+    private String activeGameId   = null;
+
+    // ------------------------------------------------------------------
+    // Constructor
+    // ------------------------------------------------------------------
+
+    public RmiServerProxy(String host, int port, LobbyModel lobbyModel,
+                          ClientView clientView) throws RemoteException {
         super();
-        this.host = host;
-        this.port = port;
+        this.host       = host;
+        this.port       = port;
         this.lobbyModel = lobbyModel;
         this.clientView = clientView;
+
+        this.outboundWorker = new Thread(this::drainOutboundQueue, "rmi-client-out");
+        this.outboundWorker.setDaemon(true);
+        this.outboundWorker.start();
     }
+
+    // ------------------------------------------------------------------
+    // Outbound drain loop
+    // ------------------------------------------------------------------
+
+    /**
+     * Drains the outbound queue, executing each enqueued {@link RemoteAction}
+     * in order. On {@link RemoteException} triggers the network-failure handler.
+     */
+    private void drainOutboundQueue() {
+        while (running) {
+            try {
+                RemoteAction action = outboundQueue.poll(POLL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                if (action != null) {
+                    action.run();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (RemoteException e) {
+                if (connected) {
+                    handleNetworkFailure(e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Enqueues an outbound action. Uses {@link BlockingQueue#add} because the
+     * queue is unbounded, so {@link IllegalStateException} is unreachable.
+     */
+    private void enqueue(RemoteAction action) {
+        outboundQueue.add(action);
+    }
+
+    // ------------------------------------------------------------------
+    // Ping
+    // ------------------------------------------------------------------
+
+    private void startPingThread() {
+        stopPingThread();
+        pingThread = new Thread(() -> {
+            while (connected && !intentionalDisconnect) {
+                try {
+                    Thread.sleep(PING_INTERVAL_MILLIS);
+                    if (connected && !intentionalDisconnect) serverStub.ping();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (RemoteException e) {
+                    if (connected) handleNetworkFailure(e);
+                    break;
+                }
+            }
+        }, "rmi-client-ping");
+        pingThread.setDaemon(true);
+        pingThread.start();
+    }
+
+    private void stopPingThread() {
+        if (pingThread != null) {
+            pingThread.interrupt();
+            pingThread = null;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Lifecycle
+    // ------------------------------------------------------------------
 
     @Override
     public void setClientController(ClientController controller) {
@@ -59,79 +174,136 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
     @Override
     public void connect() throws Exception {
-        intentionalDisconnect = false; // Resettiamo la bandiera quando ci colleghiamo
+        intentionalDisconnect = false;
 
-        // Il client deve ascoltare su una porta anonima (0) per RMI
-        try { UnicastRemoteObject.exportObject(this, 0); } catch (java.rmi.RemoteException ignored) {}
+        try {
+            UnicastRemoteObject.exportObject(this, 0);
+        } catch (RemoteException ignored) {
+            // Already exported on a previous connect() call — safe to ignore.
+        }
 
-        java.rmi.registry.Registry registry = java.rmi.registry.LocateRegistry.getRegistry(host, port);
-        it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory factory =
-                (it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory) registry.lookup("AM02-GameServer");
+        RmiServerFactory factory = (RmiServerFactory)
+                java.rmi.registry.LocateRegistry.getRegistry(host, port)
+                        .lookup("AM02-GameServer");
 
         this.serverStub = factory.registerClient(this);
-        this.connected = true;
+        this.connected  = true;
         startPingThread();
     }
 
     @Override
     public void disconnect() {
-        intentionalDisconnect = true; // Segnaliamo che stiamo staccando la spina di proposito
-        this.connected = false;
-        this.activeGameId = null; // FONDAMENTALE: Dimentichiamo la partita
+        intentionalDisconnect = true;
+        this.connected   = false;
+        this.activeGameId = null;
 
+        running = false;
+        outboundWorker.interrupt();
         stopPingThread();
-        try { UnicastRemoteObject.unexportObject(this, true); } catch (Exception ignored) {}
+
+        try {
+            UnicastRemoteObject.unexportObject(this, true);
+        } catch (Exception ignored) {}
     }
 
+    @Override
+    public boolean isConnected() { return connected; }
+
+    // ------------------------------------------------------------------
+    // Network-failure handler
+    // ------------------------------------------------------------------
+
     private synchronized void handleNetworkFailure(Exception e) {
-        // Se stavamo già provando a riconnetterci, o se siamo usciti noi volontariamente, fermati
         if (attemptingReconnection || intentionalDisconnect) return;
 
-        this.connected = false;
+        this.connected              = false;
         this.attemptingReconnection = true;
         clientView.onConnectionLost();
 
         new Thread(() -> {
-            stopPingThread();
-            while (!this.connected && !intentionalDisconnect) {
+            while (!connected && !intentionalDisconnect) {
                 try {
-                    Thread.sleep(5000);
-
-                    // 1. TENTATIVO FISICO
-                    // Se il server è giù, lancia eccezione QUI e salta direttamente al catch.
-                    // NON spamma più nulla alla UI!
+                    Thread.sleep(5_000);
                     connect();
-
-                    // 2. SE SIAMO QUI, LA CONNESSIONE HA AVUTO SUCCESSO!
-                    // Ora è il momento giusto per dire alla UI che siamo tornati online
                     clientView.onConnectionRestored();
 
-                    // 3. RIPRISTINO LOGICO DELLA SESSIONE
                     if (activeNickname != null && activeGameId != null) {
-                        if (this.dispatcher != null) {
-                            this.dispatcher.updateActiveNickname(activeNickname);
-                            this.dispatcher.updateActiveGameId(activeGameId);
+                        if (dispatcher != null) {
+                            dispatcher.updateActiveNickname(activeNickname);
+                            dispatcher.updateActiveGameId(activeGameId);
                         }
-                        serverStub.requestReconnect(activeNickname, activeGameId);
-                    } else {
-                        // Siamo nel pre-partita.
-                        if (activeNickname != null) {
-                            serverStub.requestSetUsername(activeNickname);
-                        }
+                        enqueue(() -> serverStub.requestReconnect(activeNickname, activeGameId));
+                    } else if (activeNickname != null) {
+                        enqueue(() -> serverStub.requestSetUsername(activeNickname));
                     }
 
-                    this.attemptingReconnection = false;
+                    attemptingReconnection = false;
                 } catch (Exception ignored) {
-                    // Server ancora offline. Si riprova in silenzio al prossimo giro.
+                    // Server still offline — retry silently.
                 }
             }
-        }, "RmiProxy-ReconnectThread").start();
+        }, "rmi-client-reconnect").start();
     }
 
-    @Override public boolean isConnected() { return connected; }
-    @Override public void ping() throws RemoteException { /* Heartbeat */ }
+    // ------------------------------------------------------------------
+    // Outbound — client → server (all enqueued, never blocking the caller)
+    // ------------------------------------------------------------------
 
-    // INBOUND (From server via RMI)
+    @Override
+    public void requestSetUsername(String username) {
+        enqueue(() -> serverStub.requestSetUsername(username));
+    }
+
+    @Override
+    public void requestCreateLobby(int numPlayers) {
+        enqueue(() -> serverStub.requestCreateLobby(numPlayers));
+    }
+
+    @Override
+    public void requestJoinLobby(String lobbyID) {
+        enqueue(() -> serverStub.requestJoinLobby(lobbyID));
+    }
+
+    @Override
+    public void requestSelectTotem(Totem totem) {
+        enqueue(() -> serverStub.requestSelectTotem(totem));
+    }
+
+    @Override
+    public void requestLeaveLobby() {
+        enqueue(() -> serverStub.requestLeaveLobby());
+    }
+
+    @Override
+    public void requestReconnect(String nickname, String gameId) {
+        this.activeNickname = nickname;
+        this.activeGameId   = gameId;
+
+        if (dispatcher != null) {
+            dispatcher.updateActiveNickname(nickname);
+            dispatcher.updateActiveGameId(gameId);
+        }
+
+        enqueue(() -> serverStub.requestReconnect(nickname, gameId));
+    }
+
+    @Override
+    public void moveTotem(char tileID) {
+        enqueue(() -> serverStub.moveTotem(tileID));
+    }
+
+    @Override
+    public void resolveActions(List<String> selectedIDs) {
+        enqueue(() -> serverStub.resolveActions(selectedIDs));
+    }
+
+    // ------------------------------------------------------------------
+    // Inbound — server → client (called by RMI thread pool, forwarded
+    // synchronously to the dispatcher — no queue needed here)
+    // ------------------------------------------------------------------
+
+    @Override
+    public void ping() throws RemoteException { /* heartbeat — no-op */ }
 
     @Override
     public void notifyUsernameResult(String u, boolean v, String r) throws RemoteException {
@@ -161,7 +333,9 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> t, Map<String, Integer> f, BoardSnapshot b) throws RemoteException {
+    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer,
+                                         List<String> t, Map<String, Integer> f,
+                                         BoardSnapshot b) throws RemoteException {
         dispatcher.notifyGameSetupCompleted(totemByPlayer, t, f, b);
     }
 
@@ -181,12 +355,15 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void notifyBoardUpdated(List<String> u, List<String> l, List<String> d, List<String> m, int dr) throws RemoteException {
+    public void notifyBoardUpdated(List<String> u, List<String> l,
+                                   List<String> d, List<String> m,
+                                   int dr) throws RemoteException {
         dispatcher.notifyBoardUpdated(u, l, d, m, dr);
     }
 
     @Override
-    public void notifyEraChanged(Era e, List<String> u, List<String> l, List<String> d) throws RemoteException {
+    public void notifyEraChanged(Era e, List<String> u,
+                                 List<String> l, List<String> d) throws RemoteException {
         dispatcher.notifyEraChanged(e, u, l, d);
     }
 
@@ -201,7 +378,8 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void notifyCardTaken(String n, String c, CardType t, RowPosition s) throws RemoteException {
+    public void notifyCardTaken(String n, String c,
+                                CardType t, RowPosition s) throws RemoteException {
         dispatcher.notifyCardTaken(n, c, t, s);
     }
 
@@ -216,7 +394,8 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void notifyPlayerResourceChanged(String n, ResourceType r, int v, int d) throws RemoteException {
+    public void notifyPlayerResourceChanged(String n, ResourceType r,
+                                            int v, int d) throws RemoteException {
         dispatcher.notifyPlayerResourceChanged(n, r, v, d);
     }
 
@@ -236,7 +415,8 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void notifyGameEnded(List<String> w, List<PlayerFinalScore> r) throws RemoteException {
+    public void notifyGameEnded(List<String> w,
+                                List<PlayerFinalScore> r) throws RemoteException {
         dispatcher.notifyGameEnded(w, r);
     }
 
@@ -273,61 +453,5 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     @Override
     public void notifyGameRecoveryFailed() throws RemoteException {
         dispatcher.notifyGameRecoveryFailed();
-    }
-
-
-    // OUTBOUND (From client to server)
-
-    private void execute(RemoteAction action) {
-        try { action.run(); } catch (RemoteException e) { handleNetworkFailure(e); }
-    }
-
-    @FunctionalInterface interface RemoteAction { void run() throws RemoteException; }
-
-    @Override public void requestSetUsername(String u)   { execute(() -> serverStub.requestSetUsername(u)); }
-    @Override public void requestCreateLobby(int n)      { execute(() -> serverStub.requestCreateLobby(n)); }
-    @Override public void requestJoinLobby(String id)    { execute(() -> serverStub.requestJoinLobby(id)); }
-    @Override public void requestSelectTotem(Totem t)    { execute(() -> serverStub.requestSelectTotem(t)); }
-
-    @Override public void requestLeaveLobby()            { execute(() -> serverStub.requestLeaveLobby()); }
-    @Override public void moveTotem(char t)              { execute(() -> serverStub.moveTotem(t)); }
-    @Override public void resolveActions(List<String> s) { execute(() -> serverStub.resolveActions(s)); }
-
-    @Override
-    public void requestReconnect(String n, String g) {
-        this.activeNickname = n;
-        this.activeGameId = g;
-
-        // Stessa logica: allineiamo il dispatcher locale
-        if (this.dispatcher != null) {
-            this.dispatcher.updateActiveNickname(n);
-            this.dispatcher.updateActiveGameId(g);
-        }
-
-        execute(() -> serverStub.requestReconnect(n, g));
-    }
-
-    private void startPingThread() {
-        stopPingThread();
-        pingThread = new Thread(() -> {
-            while (connected) {
-                try {
-                    Thread.sleep(PING_INTERVAL_MILLIS);
-                    if (connected) serverStub.ping();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                } catch (RemoteException e) {
-                    if (connected) handleNetworkFailure(e);
-                    break;
-                }
-            }
-        });
-        pingThread.setDaemon(true);
-        pingThread.start();
-    }
-
-    private void stopPingThread() {
-        if (pingThread != null) { pingThread.interrupt(); pingThread = null; }
     }
 }

@@ -25,7 +25,7 @@ public interface RmiClientRemote extends Remote {
     void notifyLobbyDissolved(String lobbyID) throws RemoteException;
 
     // Lifecycle
-    void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) throws RemoteException;
+    void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) throws RemoteException;
     void notifyPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) throws RemoteException;
     void notifyCurrentPlayerChanged(String nextPlayer) throws RemoteException;
     void notifyTurnOrderEstablished(List<String> turnOrder) throws RemoteException;

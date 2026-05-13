@@ -485,11 +485,12 @@ public class GameController implements GameObserver {
     // =========================================================
 
     @Override
-    public synchronized void onGameSetupCompleted(List<String> turnOrder,
+    public synchronized void onGameSetupCompleted(Map<String, Totem> totemByPlayer,
+                                                  List<String> turnOrder,
                                                   Map<String, Integer> initialFood,
                                                   BoardSnapshot boardSnapshot) {
         snapshot.applySetup(boardSnapshot);
-        pushGlobalCall(v -> v.notifyGameSetupCompleted(turnOrder, initialFood, boardSnapshot));
+        pushGlobalCall(v -> v.notifyGameSetupCompleted(totemByPlayer, turnOrder, initialFood, boardSnapshot));
     }
 
     @Override

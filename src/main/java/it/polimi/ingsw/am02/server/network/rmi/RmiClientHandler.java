@@ -129,9 +129,9 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood,
+    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood,
                                          BoardSnapshot boardSnapshot) {
-        enqueue(s -> s.notifyGameSetupCompleted(turnOrder, initialFood, boardSnapshot));
+        enqueue(s -> s.notifyGameSetupCompleted(totemByPlayer, turnOrder, initialFood, boardSnapshot));
     }
 
     @Override

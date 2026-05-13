@@ -13,7 +13,7 @@ public interface VirtualView {
     /** Silent no-operation implementation used during server-side replay. */
     final class NoOp implements VirtualView {
         private NoOp() {}
-        @Override public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {}
+        @Override public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {}
         @Override public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {}
         @Override public void notifyCurrentPlayerChanged(String nextPlayer) {}
         @Override public void notifyTurnOrderEstablished(List<String> turnOrder) {}
@@ -55,7 +55,7 @@ public interface VirtualView {
     void notifyLobbyDissolved(String lobbyID);
 
     // Lifecycle
-    void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot);
+    void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot);
     void notifyPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder);
     void notifyCurrentPlayerChanged(String nextPlayer);
     void notifyTurnOrderEstablished(List<String> turnOrder);

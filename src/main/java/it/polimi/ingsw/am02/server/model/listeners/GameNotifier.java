@@ -43,9 +43,9 @@ public final class GameNotifier implements GameObserverRegistry, GameEventEmitte
 
     // SetUp
     @Override
-    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
+    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
         for (GameObserver o : observers)
-            o.onGameSetupCompleted(turnOrder, initialFood, boardSnapshot);
+            o.onGameSetupCompleted(totemByPlayer, turnOrder, initialFood, boardSnapshot);
     }
 
     // TotemPlacement

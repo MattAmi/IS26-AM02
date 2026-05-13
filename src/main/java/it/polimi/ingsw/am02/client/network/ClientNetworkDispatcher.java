@@ -95,10 +95,10 @@ public class ClientNetworkDispatcher implements VirtualView {
     // --- LIFECYCLE NOTIFICATIONS ---
 
     @Override
-    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
+    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
         ensureGameModel();
         if (clientController.getGameModel() != null) {
-            clientController.getGameModel().updateGameSetupCompleted(turnOrder, initialFood, boardSnapshot);
+            clientController.getGameModel().updateGameSetupCompleted(totemByPlayer, turnOrder, initialFood, boardSnapshot);
         }
     }
 

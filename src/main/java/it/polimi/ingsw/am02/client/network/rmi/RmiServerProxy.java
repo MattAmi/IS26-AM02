@@ -161,8 +161,8 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void notifyGameSetupCompleted(List<String> t, Map<String, Integer> f, BoardSnapshot b) throws RemoteException {
-        dispatcher.notifyGameSetupCompleted(t, f, b);
+    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> t, Map<String, Integer> f, BoardSnapshot b) throws RemoteException {
+        dispatcher.notifyGameSetupCompleted(totemByPlayer, t, f, b);
     }
 
     @Override

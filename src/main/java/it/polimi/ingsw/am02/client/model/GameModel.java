@@ -2,10 +2,7 @@ package it.polimi.ingsw.am02.client.model;
 
 import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.common.dto.*;
-import it.polimi.ingsw.am02.common.enumerations.CardType;
-import it.polimi.ingsw.am02.common.enumerations.PhaseType;
-import it.polimi.ingsw.am02.common.enumerations.ResourceType;
-import it.polimi.ingsw.am02.common.enumerations.RowPosition;
+import it.polimi.ingsw.am02.common.enumerations.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,6 +13,7 @@ public class GameModel {
     private String gameId;
     private PhaseType currentPhase;
     private String currentPlayer;
+    private Map<String, Totem> totemByPlayer;
     private List<String> turnOrder = new ArrayList<>();
     private List<String> upperRow = new ArrayList<>();
     private List<String> lowerRow = new ArrayList<>();
@@ -72,13 +70,16 @@ public class GameModel {
      * Applies the initial game setup: populates all board and player collections
      * from the server snapshot and notifies views.
      *
+     * @param totemByPlayer  map containing nickname-totem association
      * @param turnOrder    the initial player turn order
      * @param initialFood  the starting food amounts per player
      * @param boardSnapshot the full initial board state, or {@code null}
      */
-    public synchronized void updateGameSetupCompleted(List<String> turnOrder,
+    public synchronized void updateGameSetupCompleted(Map<String, Totem> totemByPlayer,
+                                                      List<String> turnOrder,
                                                       Map<String, Integer> initialFood,
                                                       BoardSnapshot boardSnapshot) {
+        this.totemByPlayer = new LinkedHashMap<>(totemByPlayer);
         this.turnOrder = new ArrayList<>(turnOrder);
 
         this.upperRow.clear();
@@ -466,4 +467,5 @@ public class GameModel {
     public synchronized boolean isInGame() { return gameId != null && !gameEnded; }
     public synchronized List<TurnOrderSlotInfo> getTurnOrderSlots() { return Collections.unmodifiableList(turnOrderSlots); }
     public synchronized void setGameId(String gameId) { this.gameId = gameId; }
+    public synchronized Totem getTotem(String nickname) { return totemByPlayer.get(nickname); }
 }

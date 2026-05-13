@@ -13,6 +13,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.*;
@@ -38,6 +40,7 @@ public class GameScene {
     private Font tribalFont;
     private StackPane centerLayout;
     private ImageView currentDeckView;
+    private Label gameIdLabel;
 
     private final List<String> selected = new ArrayList<>();
     private final List<String> offlinePlayers = new ArrayList<>();
@@ -67,14 +70,43 @@ public class GameScene {
 
         root = new BorderPane();
 
-        HBox topBanner = new HBox();
-        topBanner.setPadding(new Insets(10));
+        StackPane topBanner = new StackPane();
+        topBanner.setPadding(new Insets(10, 20, 10, 20));
         topBanner.setStyle("-fx-background-color: #A31D1D;");
-        topBanner.setAlignment(Pos.CENTER);
+
+        HBox idBox = new HBox(10);
+        idBox.setAlignment(Pos.CENTER_LEFT);
+
+        gameIdLabel = new Label("ID: ---");
+        gameIdLabel.setTextFill(Color.WHITE);
+        gameIdLabel.setFont(Font.font(tribalFont.getFamily(), 14));
+
+        Button copyBtn = new Button("📋");
+        copyBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand; -fx-padding: 0; -fx-font-size: 16;");
+        copyBtn.setTooltip(new Tooltip("Copy Game ID"));
+        copyBtn.setOnAction(e -> {
+            if (model != null && model.getGameId() != null) {
+                Clipboard clipboard = Clipboard.getSystemClipboard();
+                ClipboardContent content = new ClipboardContent();
+                content.putString(model.getGameId());
+                clipboard.setContent(content);
+            }
+        });
+
+        idBox.getChildren().addAll(gameIdLabel, copyBtn);
+        StackPane.setAlignment(idBox, Pos.CENTER_LEFT);
+
+        Button burgerMenuBtn = new Button("☰");
+        burgerMenuBtn.setFont(Font.font(tribalFont.getFamily(), 24));
+        burgerMenuBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
+        burgerMenuBtn.setOnAction(e -> controller.showInGameMenu());
+        StackPane.setAlignment(burgerMenuBtn, Pos.CENTER_RIGHT);
 
         statusFlow = new TextFlow();
         statusFlow.setTextAlignment(TextAlignment.CENTER);
-        topBanner.getChildren().add(statusFlow);
+        statusFlow.setMouseTransparent(true);
+
+        topBanner.getChildren().addAll(statusFlow, idBox, burgerMenuBtn);
         root.setTop(topBanner);
 
         rightSidebar = new VBox(15);
@@ -91,7 +123,7 @@ public class GameScene {
         String bgPath = getClass().getResource("/it.polimi.ingsw.am02.images/mesos_box.png").toExternalForm();
         centerLayout.setStyle(
                 "-fx-background-image: url('" + bgPath + "'); " +
-                        "-fx-background-size: 115%; " +
+                        "-fx-background-size: 130%; " +
                         "-fx-background-position: center;"
         );
 
@@ -168,6 +200,7 @@ public class GameScene {
         if (viewedPlayerHand == null) viewedPlayerHand = model.getMyNickname();
 
         Platform.runLater(() -> {
+            gameIdLabel.setText("ID: " + (model.getGameId() != null ? model.getGameId() : "---"));
             updateStatusBanner();
             updateSidebar();
             updateMainBoard();

@@ -7,10 +7,7 @@ import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
-import it.polimi.ingsw.am02.common.enumerations.CardType;
-import it.polimi.ingsw.am02.common.enumerations.PhaseType;
-import it.polimi.ingsw.am02.common.enumerations.ResourceType;
-import it.polimi.ingsw.am02.common.enumerations.RowPosition;
+import it.polimi.ingsw.am02.common.enumerations.*;
 import javafx.application.Platform;
 
 import java.util.List;
@@ -108,8 +105,8 @@ public class GuiView extends AbstractClientView {
     }
 
     @Override
-    public void onEraChanged(List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
-        Platform.runLater(() -> guiController.handleEraChanged(newUpperRowBuildings, newLowerRowBuildings));
+    public void onEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
+        Platform.runLater(() -> guiController.handleEraChanged(newEra, newUpperRowBuildings, newLowerRowBuildings));
     }
 
     @Override

@@ -282,7 +282,7 @@ public class TuiView extends AbstractClientView {
     }
 
     @Override
-    public void onEraChanged(List<String> newUpperBuildings, List<String> newLowerBuildings) {
+    public void onEraChanged(Era newEra, List<String> newUpperBuildings, List<String> newLowerBuildings){
         addNotification(PURPLE + BOLD + "[ERA] A new era has begun!" + RESET);
         renderFullGame();
     }

@@ -7,6 +7,7 @@ import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.common.enumerations.Era;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import it.polimi.ingsw.am02.common.enumerations.RowPosition;
 
@@ -37,7 +38,7 @@ public interface ClientView {
     void onTotemReturned(String nickname, int turnOrderPosition);
     void onOfferTilesUpdated(List<OfferTileInfo> offerTiles);
     void onBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, int deckRemainingCount);
-    void onEraChanged(List<String> newUpperRowBuildings, List<String> newLowerRowBuildings);
+    void onEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings);
 
     // Player state
     void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower);

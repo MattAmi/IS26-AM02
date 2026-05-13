@@ -19,6 +19,9 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import it.polimi.ingsw.am02.common.enumerations.Era;
+import it.polimi.ingsw.am02.client.view.gui.scenes.NewEraOverlay;
+import javafx.scene.effect.GaussianBlur;
 
 import java.util.List;
 import java.util.Map;
@@ -249,7 +252,24 @@ public class GuiController extends ClientController {
     public void handleTotemReturned(String n, int p) { refreshFullGameScene(getGameModel()); }
     public void handleOfferTilesUpdated(List<OfferTileInfo> o) { refreshFullGameScene(getGameModel()); }
     public void handleBoardUpdated(List<String> u, List<String> l, int d) { refreshFullGameScene(getGameModel()); }
-    public void handleEraChanged(List<String> u, List<String> l) { refreshFullGameScene(getGameModel()); }
+    public void handleEraChanged(Era newEra, List<String> u, List<String> l) {
+        Platform.runLater(() -> {
+            refreshFullGameScene(getGameModel());
+
+            // Sfoca il gioco sottostante
+            baseLayer.setEffect(new GaussianBlur(12));
+
+            NewEraOverlay overlay = new NewEraOverlay();
+            StackPane node = overlay.buildNode(newEra, () -> {
+                // Rimuovi la sfocatura quando l'overlay finisce
+                baseLayer.setEffect(null);
+                modalLayer.setVisible(false);
+                modalLayer.getChildren().clear();
+            });
+            modalLayer.getChildren().setAll(node);
+            modalLayer.setVisible(true);
+        });
+    }
     public void handlePlayerLimitsUpdated(String n, int u, int l) { refreshFullGameScene(getGameModel()); }
     public void handlePlayerResourceChanged(String n, ResourceType r, int v) { refreshFullGameScene(getGameModel()); }
     public void handleCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {

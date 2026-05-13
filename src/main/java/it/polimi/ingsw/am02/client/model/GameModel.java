@@ -6,6 +6,7 @@ import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import it.polimi.ingsw.am02.common.enumerations.RowPosition;
+import it.polimi.ingsw.am02.common.enumerations.Era;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -242,11 +243,11 @@ public class GameModel {
      * @param newUpperRowBuildings the new upper row building IDs
      * @param newLowerRowBuildings the new lower row building IDs
      */
-    public synchronized void updateEra(List<String> newUpperRowBuildings,
+    public synchronized void updateEra(Era newEra, List<String> newUpperRowBuildings,
                                        List<String> newLowerRowBuildings) {
         this.upperRowBuildings = new ArrayList<>(newUpperRowBuildings);
         this.lowerRowBuildings = new ArrayList<>(newLowerRowBuildings);
-        clientViews.forEach(o -> o.onEraChanged(newUpperRowBuildings, newLowerRowBuildings));
+        clientViews.forEach(o -> o.onEraChanged(newEra, newUpperRowBuildings, newLowerRowBuildings));
     }
 
     /**

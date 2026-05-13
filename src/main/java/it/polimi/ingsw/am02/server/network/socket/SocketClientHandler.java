@@ -169,9 +169,9 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood,
+    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood,
                                          BoardSnapshot boardSnapshot) {
-        eventQueue.add(new GameSetupCompletedEvent(turnOrder, initialFood, boardSnapshot));
+        eventQueue.add(new GameSetupCompletedEvent(totemByPlayer, turnOrder, initialFood, boardSnapshot));
     }
 
     @Override

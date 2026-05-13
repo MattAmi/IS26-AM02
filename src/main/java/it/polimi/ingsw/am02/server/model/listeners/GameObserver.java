@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface GameObserver {
-    void onGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot);
+    void onGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot);
 
     void onPhaseChanged(PhaseType phase);
     void onPhaseChanged(PhaseType phase, String currentPlayer);

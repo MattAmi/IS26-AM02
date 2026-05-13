@@ -351,11 +351,14 @@ public class Game implements ModelInterface {
             // Notify game observers that the setup is complete
             BoardSnapshot snapshot = gameBoard.buildSnapshot();
             Map<String, Integer> initialFood = new LinkedHashMap<>();
+            Map<String, Totem> totemByPlayer = new LinkedHashMap<>();
             for (String nick : turnOrder) {
-                initialFood.put(nick, getPlayerByNickname(nick).getTribu().getFoodPoints());
+                Player p = getPlayerByNickname(nick);
+                initialFood.put(nick, p.getTribu().getFoodPoints());
+                totemByPlayer.put(nick, p.getTotem());
             }
-            notifier.notifyGameSetupCompleted(List.copyOf(turnOrder), initialFood, snapshot);
 
+            notifier.notifyGameSetupCompleted(Map.copyOf(totemByPlayer), List.copyOf(turnOrder), Map.copyOf(initialFood), snapshot);
 
             transitionTo(new TotemPlacementState());
         }

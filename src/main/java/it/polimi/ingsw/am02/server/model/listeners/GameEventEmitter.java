@@ -14,7 +14,7 @@ public interface GameEventEmitter {
     void emitOutcome(EffectOutcome outcome);
 
     // SetUp
-    void notifyGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot);
+    void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot);
 
     // TotemPlacement
     void notifyTotemPlaced(String nickname, char tileID);

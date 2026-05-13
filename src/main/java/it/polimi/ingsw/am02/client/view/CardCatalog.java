@@ -156,28 +156,28 @@ public class CardCatalog {
                 ╠══════════════════════════════════════════════════════════════╣
                 ║  ROUND EVENTS (resolved at end of each round)                ║
                 ║                                                              ║
-                ║  [SHAMANIC RITUAL]  ★ above threshold → +? PP               ║
-                ║                     ★ below threshold → -? PP               ║
+                ║  [SHAMANIC RITUAL] ★ above threshold → +? PP                 ║
+                ║                    ★ below threshold → -? PP                 ║
                 ║                                                              ║
-                ║  [HUNT]             gain 1 Food + ? PP × Hunters            ║
+                ║  [HUNT]             gain 1 Food + ? PP × Hunters             ║
                 ║                                                              ║
-                ║  [CAVE PAINTINGS]   0–? Shamans → -? PP                     ║
-                ║                     ?+ Shamans → ? PP × Shamans             ║
+                ║  [CAVE PAINTINGS]   0–? Shamans → -? PP                      ║
+                ║                     ?+ Shamans → ? PP × Shamans              ║
                 ║                                                              ║
-                ║  [SUSTENANCE]       pay 1 Food per tribe member             ║
-                ║                     OR lose ? PP × tribe members            ║
+                ║  [SUSTENANCE]       pay 1 Food per tribe member              ║
+                ║                     OR lose ? PP × tribe members             ║
                 ║                     (resolved last)                          ║
                 ╠══════════════════════════════════════════════════════════════╣
                 ║  FINAL SCORING  (end of game, after round 10)                ║
                 ║                                                              ║
-                ║  Builders   → PP as printed on each Builder card            ║
-                ║  Inventors  → number of Inventors                           ║
-                ║               × number of different invention icons         ║
-                ║  Artists    → 10 PP per every 2 Artists in your tribe       ║
-                ║  Buildings  → PP printed on card                            ║
-                ║               + any end-game effect bonuses                 ║
+                ║  Builders   → PP as printed on each Builder card             ║
+                ║  Inventors  → number of Inventors                            ║
+                ║               × number of different invention icons          ║
+                ║  Artists    → 10 PP per every 2 Artists in your tribe        ║
+                ║  Buildings  → PP printed on card                             ║
+                ║               + any end-game effect bonuses                  ║
                 ╠══════════════════════════════════════════════════════════════╣
-                ║  TIEBREAKER: most Food wins. Still tied → shared victory.   ║
+                ║  TIEBREAKER: most Food wins. Still tied → shared victory.    ║
                 ╚══════════════════════════════════════════════════════════════╝
             """;
     }

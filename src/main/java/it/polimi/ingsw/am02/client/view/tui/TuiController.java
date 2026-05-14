@@ -122,7 +122,9 @@ public class TuiController extends ClientController {
             }
 
             default -> {
-                if (gameModel != null) handleResolveActions(List.of(cmd.toUpperCase()));
+                boolean inGame = gameModel != null && !gameModel.isGameEnded();
+                boolean isMyTurn = inGame && myNickname().equals(gameModel.getCurrentPlayer());
+                if (isMyTurn) handleResolveActions(List.of(cmd.toUpperCase()));
                 else view.onError("Unknown command: '" + cmd + "'. Type 'help' for assistance.");
             }
         }

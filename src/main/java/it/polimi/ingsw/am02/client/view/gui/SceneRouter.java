@@ -88,8 +88,7 @@ public class SceneRouter {
     public void showIntroScene() {
         runOnUi(() -> {
             primaryStage.setResizable(true);
-            primaryStage.setWidth(1280);
-            primaryStage.setHeight(800);
+            primaryStage.setFullScreen(true);
             primaryStage.centerOnScreen();
             switchView(new IntroScene().buildNode(this::showGameMenuScene));
         });
@@ -133,8 +132,6 @@ public class SceneRouter {
             this.lobbyScene = null;
             this.lobbyListScene = null;
             this.gameScene = new GameScene();
-            primaryStage.setWidth(1280);
-            primaryStage.setHeight(800);
             primaryStage.setResizable(true);
             primaryStage.centerOnScreen();
             switchView(this.gameScene.buildNode(guiController, this::showInGameMenu, this::showSummaryCard));

@@ -19,6 +19,11 @@ public class MainGUI extends Application {
                 lobbyModel = new LobbyModel();
             }
 
+            primaryStage.setOnCloseRequest(event -> {
+                javafx.application.Platform.exit();
+                System.exit(0);
+            });
+
             GuiView guiView = new GuiView(lobbyModel);
             SceneRouter sceneRouter = new SceneRouter(primaryStage);
             GuiController guiController = new GuiController(null, lobbyModel, guiView);

@@ -26,14 +26,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class GameScene {
     private GuiController controller;
     private GameModel model;
     private StackPane baseStack;
     private BorderPane root;
-    private TextFlow statusFlow;
+    private HBox statusBox; // Modificato da TextFlow a HBox per l'allineamento perfetto
     private VBox rightSidebar;
     private VBox mainBoardArea;
     private HBox handCardsBox;
@@ -71,23 +70,54 @@ public class GameScene {
         topBanner.setPadding(new Insets(10, 20, 10, 20));
         topBanner.setStyle("-fx-background-color: #A31D1D;");
 
-        HBox idBox = new HBox(10); idBox.setAlignment(Pos.CENTER_LEFT);
-        gameIdLabel = new Label("ID: ---");
-        gameIdLabel.setTextFill(Color.WHITE); gameIdLabel.setFont(Font.font(tribalFont.getFamily(), 14));
+        HBox idBox = new HBox(10);
+        idBox.setAlignment(Pos.CENTER_LEFT);
 
-        Button copyBtn = new Button("📋");
-        copyBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand; -fx-padding: 0; -fx-font-size: 16;");
-        copyBtn.setTooltip(new Tooltip("Copy Game ID"));
+        gameIdLabel = new Label("ID: ---");
+        gameIdLabel.setTextFill(Color.WHITE);
+        gameIdLabel.setFont(Font.font(tribalFont.getFamily(), 14));
+
+        // --- NUOVO BOTTONE COPIA + TOAST ---
+        Button copyBtn = new Button("COPY ID");
+        String btnIdle = "-fx-background-color: rgba(255,255,255,0.15); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-weight: bold;";
+        String btnHover = "-fx-background-color: rgba(255,255,255,0.3); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-weight: bold;";
+        copyBtn.setStyle(btnIdle);
+        if (tribalFont != null) copyBtn.setFont(Font.font(tribalFont.getFamily(), 12));
+
+        copyBtn.setOnMouseEntered(e -> copyBtn.setStyle(btnHover));
+        copyBtn.setOnMouseExited(e -> copyBtn.setStyle(btnIdle));
+
+        Label toastLabel = new Label("COPIED!");
+        toastLabel.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 4 10; -fx-background-radius: 15; -fx-font-weight: bold;");
+        if (tribalFont != null) toastLabel.setFont(Font.font(tribalFont.getFamily(), 10));
+        toastLabel.setOpacity(0); // Invisibile di default
+
         copyBtn.setOnAction(e -> {
             if (model != null && model.getGameId() != null) {
                 Clipboard clipboard = Clipboard.getSystemClipboard();
                 ClipboardContent content = new ClipboardContent();
                 content.putString(model.getGameId());
                 clipboard.setContent(content);
+
+                // Animazione di comparsa, piccolo salto in su, e scomparsa
+                toastLabel.setTranslateY(0);
+                FadeTransition fadeIn = new FadeTransition(Duration.millis(200), toastLabel);
+                fadeIn.setFromValue(0); fadeIn.setToValue(1);
+
+                TranslateTransition moveUp = new TranslateTransition(Duration.millis(200), toastLabel);
+                moveUp.setByY(-5);
+
+                FadeTransition fadeOut = new FadeTransition(Duration.seconds(1), toastLabel);
+                fadeOut.setDelay(Duration.seconds(1.5)); // Resta visibile 1.5 secondi
+                fadeOut.setFromValue(1); fadeOut.setToValue(0);
+
+                ParallelTransition pt = new ParallelTransition(fadeIn, moveUp);
+                pt.setOnFinished(ev -> fadeOut.play());
+                pt.play();
             }
         });
 
-        idBox.getChildren().addAll(gameIdLabel, copyBtn);
+        idBox.getChildren().addAll(gameIdLabel, copyBtn, toastLabel);
         StackPane.setAlignment(idBox, Pos.CENTER_LEFT);
 
         Button burgerMenuBtn = new Button("☰");
@@ -96,11 +126,12 @@ public class GameScene {
         burgerMenuBtn.setOnAction(e -> onShowMenu.run());
         StackPane.setAlignment(burgerMenuBtn, Pos.CENTER_RIGHT);
 
-        statusFlow = new TextFlow();
-        statusFlow.setTextAlignment(TextAlignment.CENTER);
-        statusFlow.setMouseTransparent(true);
+        // --- HBOX CENTRALE (Allineamento Perfetto) ---
+        statusBox = new HBox(15);
+        statusBox.setAlignment(Pos.CENTER);
+        statusBox.setMouseTransparent(true);
 
-        topBanner.getChildren().addAll(statusFlow, idBox, burgerMenuBtn);
+        topBanner.getChildren().addAll(statusBox, idBox, burgerMenuBtn);
         root.setTop(topBanner);
 
         // --- RIGHT SIDEBAR ---
@@ -125,14 +156,15 @@ public class GameScene {
         bottomLayout.setMaxHeight(Region.USE_PREF_SIZE); bottomLayout.setAlignment(Pos.BOTTOM_CENTER);
 
         VBox handArea = new VBox(5);
-        handArea.setPadding(new Insets(10));
-        handArea.setStyle("-fx-background-color: rgba(26, 15, 7, 0.4); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;");
+        handArea.setPadding(new Insets(10, 10, 30, 10));
+        handArea.setStyle("-fx-background-color: rgba(26, 15, 7, 0.90); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;");
 
         handTitle = new Label("TRIBE");
         handTitle.setTextFill(Color.web("#F2D5A3")); handTitle.setFont(Font.font(tribalFont.getFamily(), 14));
 
-        handCardsBox = new HBox(10);
-        handCardsBox.setAlignment(Pos.CENTER_LEFT); handCardsBox.setMinHeight(180); handCardsBox.setPrefHeight(180);
+        handCardsBox = new HBox(15);
+        handCardsBox.setAlignment(Pos.TOP_CENTER);
+        handCardsBox.setMinHeight(220);
 
         ScrollPane handScroll = new ScrollPane(handCardsBox);
         handScroll.setFitToHeight(true); handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -143,18 +175,25 @@ public class GameScene {
         bottomButtons.setPadding(new Insets(15)); bottomButtons.setAlignment(Pos.CENTER);
         bottomButtons.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
 
-        String buttonStyle = "-fx-base: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + tribalFont.getFamily() + "\"; -fx-font-weight: bold; -fx-border-color: #4A3B32; -fx-border-radius: 3;";
+        String idleStyle = "-fx-background-color: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + tribalFont.getFamily() + "\"; -fx-font-weight: bold; -fx-border-color: #4A3B32; -fx-border-radius: 3; -fx-border-width: 1;";
+        String hoverStyle = "-fx-background-color: #4e3219; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-font-family: \"" + tribalFont.getFamily() + "\"; -fx-font-weight: bold; -fx-border-color: #F2D5A3; -fx-border-radius: 3; -fx-border-width: 1;";
 
         Button confirmBtn = new Button("CONFIRM PICK");
-        confirmBtn.setFont(Font.font(tribalFont.getFamily(), 16)); confirmBtn.setStyle(buttonStyle);
+        confirmBtn.setStyle(idleStyle);
+        confirmBtn.setOnMouseEntered(e -> confirmBtn.setStyle(hoverStyle));
+        confirmBtn.setOnMouseExited(e -> confirmBtn.setStyle(idleStyle));
         confirmBtn.setOnAction(e -> { controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
 
         Button endTurnBtn = new Button("END TURN");
-        endTurnBtn.setFont(Font.font(tribalFont.getFamily(), 16)); endTurnBtn.setStyle(buttonStyle);
+        endTurnBtn.setStyle(idleStyle);
+        endTurnBtn.setOnMouseEntered(e -> endTurnBtn.setStyle(hoverStyle));
+        endTurnBtn.setOnMouseExited(e -> endTurnBtn.setStyle(idleStyle));
         endTurnBtn.setOnAction(e -> controller.moveTotem('T'));
 
         Button summaryBtn = new Button("SUMMARY");
-        summaryBtn.setFont(Font.font(tribalFont.getFamily(), 16)); summaryBtn.setStyle(buttonStyle);
+        summaryBtn.setStyle(idleStyle);
+        summaryBtn.setOnMouseEntered(e -> summaryBtn.setStyle(hoverStyle));
+        summaryBtn.setOnMouseExited(e -> summaryBtn.setStyle(idleStyle));
         summaryBtn.setOnAction(e -> onShowSummary.run());
 
         bottomButtons.getChildren().addAll(confirmBtn, endTurnBtn, summaryBtn);
@@ -172,6 +211,10 @@ public class GameScene {
         if (model == null) return;
         this.model = model;
         if (viewedPlayerHand == null) viewedPlayerHand = model.getMyNickname();
+
+        // FIX ERA: Se il tuo model conosce l'era attuale, la sincronizziamo.
+        // Togli il commento dalla riga sotto se il model ha un metodo getEra() o getRound()
+        // if (model.getEra() > 0) this.currentEra = model.getEra();
 
         Platform.runLater(() -> {
             gameIdLabel.setText("ID: " + (model.getGameId() != null ? model.getGameId() : "---"));
@@ -191,23 +234,28 @@ public class GameScene {
     }
 
     private void updateStatusBanner() {
-        statusFlow.getChildren().clear();
+        statusBox.getChildren().clear();
         String activePlayer = model.getCurrentPlayer() != null ? model.getCurrentPlayer().toUpperCase() : "...";
         String currentPhase = model.getCurrentPhase() != null ? model.getCurrentPhase().toString().replace("_", " ") : "WAITING";
 
-        Text eraTxt = new Text("ERA " + currentEra + "  |  ");
-        eraTxt.setFill(Color.WHITE); eraTxt.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));
+        // Usiamo Label dentro HBox per un allineamento verticale millimetrico
+        Label eraTxt = new Label("ERA " + currentEra + "  |");
+        eraTxt.setTextFill(Color.WHITE);
+        eraTxt.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 18));
 
-        Text phaseTxt = new Text(currentPhase + "  |  ");
-        phaseTxt.setFill(Color.LIGHTGRAY); phaseTxt.setFont(Font.font(tribalFont.getFamily(), 16));
+        Label phaseTxt = new Label(currentPhase + "  |");
+        phaseTxt.setTextFill(Color.LIGHTGRAY);
+        phaseTxt.setFont(Font.font(tribalFont.getFamily(), 16));
 
-        Text p1 = new Text("PLAYER ");
-        p1.setFill(Color.WHITE); p1.setFont(Font.font(tribalFont.getFamily(), 16));
+        Label p1 = new Label("PLAYER");
+        p1.setTextFill(Color.WHITE);
+        p1.setFont(Font.font(tribalFont.getFamily(), 16));
 
-        Text p2 = new Text(activePlayer);
-        p2.setFill(Color.GOLD); p2.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 22));
+        Label p2 = new Label(activePlayer);
+        p2.setTextFill(Color.GOLD);
+        p2.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 18));
 
-        statusFlow.getChildren().addAll(eraTxt, phaseTxt, p1, p2);
+        statusBox.getChildren().addAll(eraTxt, phaseTxt, p1, p2);
     }
 
     private void updateSidebar() {
@@ -253,17 +301,14 @@ public class GameScene {
     private HBox createTrackArea() {
         HBox track = new HBox(25); track.setAlignment(Pos.CENTER);
 
-        // Era Deck Image
         int displayEra = Math.min(currentEra, 3);
         String eraPath = "/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png";
         currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
         currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
 
-        // Turn Order Cave using custom Component
         int numPlayers = model.getTurnOrder() != null ? model.getTurnOrder().size() : 2;
         TurnOrderCaveView turnOrderCave = new TurnOrderCaveView(numPlayers, model.getTurnOrderSlots(), model);
 
-        // Offer Tiles using custom Component
         HBox offerTiles = new HBox(5);
         if (model.getOfferTiles() != null) {
             for (OfferTileInfo t : model.getOfferTiles()) {
@@ -277,18 +322,178 @@ public class GameScene {
         return track;
     }
 
+    private String extractCategoryFromId(String cardId) {
+        if (cardId.startsWith("B_")) return "BUILDING";
+
+        String cardInfo = CardCatalog.getInstance().format(cardId).toUpperCase();
+
+        if (cardInfo.contains("INVENTOR")) return "INVENTOR";
+        if (cardInfo.contains("BUILDER")) return "BUILDER";
+        if (cardInfo.contains("GATHERER")) return "GATHERER";
+        if (cardInfo.contains("ARTIST")) return "ARTIST";
+        if (cardInfo.contains("SHAMAN")) return "SHAMAN";
+        if (cardInfo.contains("HUNTER")) return "HUNTER";
+
+        System.err.println("ATTENZIONE: Tipo carta non riconosciuto per: " + cardId + ". Stringa catalogo: " + cardInfo);
+        return "UNKNOWN";
+    }
+
     private void updateHandDisplay() {
         handCardsBox.getChildren().clear();
         handTitle.setText("TRIBE OF: " + viewedPlayerHand.toUpperCase());
 
         List<String> chars = model.getCharactersByPlayer().getOrDefault(viewedPlayerHand, List.of());
         List<String> buildings = model.getBuildingsByPlayer().getOrDefault(viewedPlayerHand, List.of());
-        List<String> allCards = Stream.concat(chars.stream(), buildings.stream()).collect(Collectors.toList());
 
-        for (String id : allCards) {
-            GameCardView cardView = new GameCardView(id, selected.contains(id), 160, () -> toggleCardSelection(id));
-            handCardsBox.getChildren().add(cardView);
+        List<String> allCards = new ArrayList<>(chars);
+        allCards.addAll(buildings);
+
+        String[] columnOrder = {"INVENTOR", "BUILDER", "GATHERER", "ARTIST", "SHAMAN", "HUNTER", "BUILDING"};
+
+        for (String category : columnOrder) {
+            List<String> cardsInCategory = allCards.stream()
+                    .filter(id -> extractCategoryFromId(id).equals(category))
+                    .collect(Collectors.toList());
+
+            handCardsBox.getChildren().add(createCascadingStack(category, cardsInCategory));
         }
+    }
+
+    private StackPane createCascadingStack(String category, List<String> cardIds) {
+        StackPane stack = new StackPane();
+        stack.setAlignment(Pos.TOP_CENTER);
+        int offsetPerCard = 25;
+
+        if (cardIds.isEmpty()) {
+            stack.setPrefWidth(90);
+            return stack;
+        }
+
+        stack.setPadding(new Insets(20, 0, Math.max(0, cardIds.size() - 1) * offsetPerCard, 0));
+
+        for (int i = 0; i < cardIds.size(); i++) {
+            String id = cardIds.get(i);
+            // Click sulla carta in mano -> Lancia lo Zoom per vedere meglio
+            GameCardView cardView = new GameCardView(id, false, 130, () -> showZoomedCard(id));
+            cardView.setTranslateY(i * offsetPerCard);
+            stack.getChildren().add(cardView);
+        }
+
+        int totaleStelle = 0;
+        int totaleScontoEdifici = 0;
+        int totalePP = 0;
+        int totaleScontoCibo = 0;
+        long simboliInventoreUnici = 0;
+
+        if (category.equals("SHAMAN")) {
+            totaleStelle = cardIds.stream().mapToInt(this::extractShamanStars).sum();
+        } else if (category.equals("BUILDER")) {
+            totaleScontoEdifici = cardIds.stream().mapToInt(this::extractBuilderDiscount).sum();
+            totalePP = cardIds.stream().mapToInt(this::extractPrestigePoints).sum();
+        } else if (category.equals("GATHERER")) {
+            totaleScontoCibo = cardIds.stream().mapToInt(this::extractGathererDiscount).sum();
+        } else if (category.equals("INVENTOR")) {
+            simboliInventoreUnici = cardIds.stream().map(this::extractInventorSymbol).filter(s -> !s.isEmpty()).distinct().count();
+        }
+
+        String countBadge = "(x" + cardIds.size() + ")";
+        String infoText = "";
+
+        if (category.equals("SHAMAN") && totaleStelle > 0) infoText = countBadge + " | " + totaleStelle + " ⭐";
+        else if (category.equals("BUILDER")) infoText = countBadge + " | -" + totaleScontoEdifici + " Cost | " + totalePP + " PP";
+        else if (category.equals("GATHERER") && totaleScontoCibo > 0) infoText = countBadge + " | -" + totaleScontoCibo + " Food";
+        else if (category.equals("INVENTOR") && simboliInventoreUnici > 0) infoText = countBadge + " | " + simboliInventoreUnici + " 💡";
+        else infoText = category.substring(0, Math.min(3, category.length())) + " " + countBadge;
+
+        Label infoBadge = new Label(infoText);
+        infoBadge.setStyle("-fx-background-color: rgba(0,0,0,0.85); -fx-text-fill: gold; -fx-padding: 3 8; -fx-background-radius: 5; -fx-border-color: gold; -fx-border-radius: 5;");
+        if (tribalFont != null) infoBadge.setFont(Font.font(tribalFont.getFamily(), 10));
+        infoBadge.setTranslateY(-15);
+        StackPane.setAlignment(infoBadge, Pos.TOP_CENTER);
+        stack.getChildren().add(infoBadge);
+
+        return stack;
+    }
+
+    // --- PARSERS ---
+
+    private int extractPrestigePoints(String cardId) {
+        String desc = CardCatalog.getInstance().format(cardId);
+        String target = "PP:";
+        int index = desc.indexOf(target);
+        if (index != -1) {
+            int end = desc.indexOf(" ", index + target.length());
+            if (end == -1) end = desc.length();
+            try { return Integer.parseInt(desc.substring(index + target.length(), end).trim()); }
+            catch (Exception ignored) {}
+        }
+        return 0;
+    }
+
+    private String extractInventorSymbol(String cardId) {
+        String desc = CardCatalog.getInstance().format(cardId);
+        int start = desc.indexOf(" (");
+        if (start != -1) {
+            int end = desc.indexOf(")", start);
+            if (end != -1) {
+                return desc.substring(start + 2, end).trim();
+            }
+        }
+        return "";
+    }
+
+    private int extractShamanStars(String cardId) {
+        String desc = CardCatalog.getInstance().getFullDescription(cardId);
+        String target = "Shaman Stars: ";
+        int index = desc.indexOf(target);
+        if (index != -1) {
+            int end = desc.indexOf("\n", index + target.length());
+            if (end != -1) {
+                try { return Integer.parseInt(desc.substring(index + target.length(), end).trim()); }
+                catch (Exception ignored) {}
+            }
+        }
+        return 0;
+    }
+
+    private int extractBuilderDiscount(String cardId) {
+        String desc = CardCatalog.getInstance().getFullDescription(cardId);
+        String target = "Building Discount: -";
+        int index = desc.indexOf(target);
+        if (index != -1) {
+            int end = desc.indexOf(" Food", index + target.length());
+            if (end != -1) {
+                try { return Integer.parseInt(desc.substring(index + target.length(), end).trim()); }
+                catch (Exception ignored) {}
+            }
+        }
+        return 0;
+    }
+
+    private int extractGathererDiscount(String cardId) {
+        String desc = CardCatalog.getInstance().getFullDescription(cardId);
+        String target = "Food Discount: -";
+        int index = desc.indexOf(target);
+        if (index != -1) {
+            int end = desc.indexOf(" Food", index + target.length());
+            if (end != -1) {
+                try { return Integer.parseInt(desc.substring(index + target.length(), end).trim()); }
+                catch (Exception ignored) {}
+            }
+        }
+        return 0;
+    }
+
+    // ----------------------------------------------------------------------------
+
+    private void toggleCardSelection(String id) {
+        if (model != null && !model.getMyNickname().equals(model.getCurrentPlayer())) {
+            return;
+        }
+
+        if(selected.contains(id)) selected.remove(id);
+        else selected.add(id);
+        refreshAll(model);
     }
 
     private HBox createCardGroup(List<String> ids) {
@@ -308,12 +513,6 @@ public class GameScene {
             }
         }
         return hb;
-    }
-
-    private void toggleCardSelection(String id) {
-        if(selected.contains(id)) selected.remove(id);
-        else selected.add(id);
-        refreshAll(model);
     }
 
     private void animateDeal(String id, ImageView target) {
@@ -364,6 +563,33 @@ public class GameScene {
 
     public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }
     public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
+
+    // --- FUNZIONE ZOOM: Mostra la carta in grande ---
+    private void showZoomedCard(String cardId) {
+        StackPane overlay = new StackPane();
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85);"); // Sfondo scuro
+
+        String sub = cardId.startsWith("C_") ? "characters/" : cardId.startsWith("B_") ? "buildings/" : "events/";
+        String path = "/it.polimi.ingsw.am02.images/cards/" + sub + cardId + ".png";
+
+        ImageView bigCard = new ImageView(ImageLoader.getImage(path));
+        bigCard.setFitHeight(550);
+        bigCard.setPreserveRatio(true);
+        bigCard.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 40, 0.4, 0, 0);");
+
+        bigCard.setScaleX(0.5);
+        bigCard.setScaleY(0.5);
+        ScaleTransition st = new ScaleTransition(Duration.millis(200), bigCard);
+        st.setToX(1.0);
+        st.setToY(1.0);
+        st.play();
+
+        overlay.setOnMouseClicked(e -> baseStack.getChildren().remove(overlay));
+
+        overlay.getChildren().add(bigCard);
+        baseStack.getChildren().add(overlay);
+    }
+
     public void showNewEraAnimation(List<String> u, List<String> l) { if (currentEra < 3) currentEra++; refreshAll(model); }
     public void setupInitialBoard(List<String> t, Map<String, Integer> f, BoardSnapshot b) { refreshAll(model); }
     public void updatePhase(PhaseType p, String c, List<String> r) { refreshAll(model); }

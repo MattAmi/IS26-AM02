@@ -4,6 +4,7 @@ import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.view.CardCatalog;
 import it.polimi.ingsw.am02.client.view.gui.GuiController;
 import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
+import it.polimi.ingsw.am02.client.view.gui.components.*;
 import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.*;
 import javafx.animation.*;
@@ -17,6 +18,7 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.*;
 import javafx.util.Duration;
 
@@ -38,7 +40,6 @@ public class GameScene {
     private Label handTitle;
     private String viewedPlayerHand;
     private Font tribalFont;
-    private StackPane centerLayout;
     private ImageView currentDeckView;
     private Label gameIdLabel;
 
@@ -65,6 +66,7 @@ public class GameScene {
 
         root = new BorderPane();
 
+        // --- TOP BANNER ---
         StackPane topBanner = new StackPane();
         topBanner.setPadding(new Insets(10, 20, 10, 20));
         topBanner.setStyle("-fx-background-color: #A31D1D;");
@@ -101,17 +103,17 @@ public class GameScene {
         topBanner.getChildren().addAll(statusFlow, idBox, burgerMenuBtn);
         root.setTop(topBanner);
 
+        // --- RIGHT SIDEBAR ---
         rightSidebar = new VBox(15);
         rightSidebar.setPadding(new Insets(20)); rightSidebar.setPrefWidth(260);
         rightSidebar.setStyle("-fx-background-color: #1a0f07; -fx-border-color: #3e2a1d; -fx-border-width: 0 0 0 4;");
         root.setRight(rightSidebar);
 
-        centerLayout = new StackPane();
+        // --- CENTER AREA (Board + Hand) ---
+        StackPane centerLayout = new StackPane();
         String bgPath = getClass().getResource("/it.polimi.ingsw.am02.images/mesos_box.png").toExternalForm();
         centerLayout.setStyle("-fx-background-image: url('" + bgPath + "'); -fx-background-size: 130%; -fx-background-position: center;");
-
-        Region darkOverlay = new Region();
-        darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.55);");
+        Region darkOverlay = new Region(); darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.55);");
 
         mainBoardArea = new VBox(30);
         mainBoardArea.setPadding(new Insets(20, 20, 250, 20));
@@ -222,26 +224,18 @@ public class GameScene {
 
         if (players != null) {
             for (String nick : players) {
-                VBox pBox = new VBox(5); pBox.setPadding(new Insets(10)); pBox.setCursor(Cursor.HAND);
                 boolean isActive = nick.equals(model.getCurrentPlayer());
                 boolean isOffline = offlinePlayers.contains(nick);
-                String borderColor = nick.equals(viewedPlayerHand) ? "#F2D5A3" : "transparent";
-
-                pBox.setStyle("-fx-background-color: " + (isActive ? "rgba(163, 29, 29, 0.3)" : "rgba(255,255,255,0.05)") +
-                        "; -fx-border-color: " + borderColor + "; -fx-border-radius: 5; -fx-border-width: 2;");
-                pBox.setOpacity(isOffline ? 0.5 : 1.0);
-
-                Label nameL = new Label(nick.toUpperCase() + (nick.equals(model.getMyNickname()) ? " (YOU)" : ""));
-                nameL.setTextFill(isActive ? Color.GOLD : Color.WHITE);
-                nameL.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));
-
+                boolean isViewed = nick.equals(viewedPlayerHand);
                 int food = model.getFoodByPlayer().getOrDefault(nick, 0);
                 int pp = model.getPpByPlayer().getOrDefault(nick, 0);
-                Label statsL = new Label("Food: " + food + " | PP: " + pp);
-                statsL.setTextFill(Color.LIGHTGRAY); statsL.setFont(Font.font(tribalFont.getFamily(), 12));
 
-                pBox.getChildren().addAll(nameL, statsL);
-                pBox.setOnMouseClicked(e -> { viewedPlayerHand = nick; refreshAll(model); });
+                PlayerSidebarItem pBox = new PlayerSidebarItem(
+                        nick, nick.equals(model.getMyNickname()), isActive, isOffline, isViewed,
+                        food, pp, model.getTotem(nick), tribalFont,
+                        () -> { viewedPlayerHand = nick; refreshAll(model); }
+                );
+
                 rightSidebar.getChildren().add(pBox);
             }
         }
@@ -258,33 +252,42 @@ public class GameScene {
 
     private HBox createTrackArea() {
         HBox track = new HBox(25); track.setAlignment(Pos.CENTER);
+
+        // Era Deck Image
         int displayEra = Math.min(currentEra, 3);
         String eraPath = "/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png";
         currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
         currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
 
+        // Turn Order Cave using custom Component
         int numPlayers = model.getTurnOrder() != null ? model.getTurnOrder().size() : 2;
-        ImageView turnTile = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/turn_order_tiles/tile_turn_" + numPlayers + "p.png"));
-        turnTile.setFitHeight(150); turnTile.setPreserveRatio(true);
+        TurnOrderCaveView turnOrderCave = new TurnOrderCaveView(numPlayers, model.getTurnOrderSlots(), model);
 
+        // Offer Tiles using custom Component
         HBox offerTiles = new HBox(5);
         if (model.getOfferTiles() != null) {
-            for (OfferTileInfo t : model.getOfferTiles()) offerTiles.getChildren().add(createTileView(t));
+            for (OfferTileInfo t : model.getOfferTiles()) {
+                Totem occupantTotem = t.occupantNickname() != null ? model.getTotem(t.occupantNickname()) : null;
+                OfferTileView tileView = new OfferTileView(t, occupantTotem, controller);
+                offerTiles.getChildren().add(tileView);
+            }
         }
-        track.getChildren().addAll(currentDeckView, turnTile, offerTiles);
+
+        track.getChildren().addAll(currentDeckView, turnOrderCave, offerTiles);
         return track;
     }
 
     private void updateHandDisplay() {
         handCardsBox.getChildren().clear();
         handTitle.setText("TRIBE OF: " + viewedPlayerHand.toUpperCase());
+
         List<String> chars = model.getCharactersByPlayer().getOrDefault(viewedPlayerHand, List.of());
         List<String> buildings = model.getBuildingsByPlayer().getOrDefault(viewedPlayerHand, List.of());
         List<String> allCards = Stream.concat(chars.stream(), buildings.stream()).collect(Collectors.toList());
+
         for (String id : allCards) {
-            VBox cardBox = createCardBox(id);
-            ((ImageView) cardBox.getChildren().get(0)).setFitHeight(160);
-            handCardsBox.getChildren().add(cardBox);
+            GameCardView cardView = new GameCardView(id, selected.contains(id), 160, () -> toggleCardSelection(id));
+            handCardsBox.getChildren().add(cardView);
         }
     }
 
@@ -294,58 +297,23 @@ public class GameScene {
             for (String id : ids) {
                 boolean isNew = !knownCardsOnBoard.contains(id);
                 if (isNew) knownCardsOnBoard.add(id);
-                VBox box = createCardBox(id);
-                ImageView iv = (ImageView) box.getChildren().get(0);
-                if (isNew) { iv.setOpacity(0.0); pendingDeals.add(new DealTask(id, iv)); }
-                hb.getChildren().add(box);
+
+                GameCardView cardView = new GameCardView(id, selected.contains(id), 170, () -> toggleCardSelection(id));
+
+                if (isNew) {
+                    cardView.getCardImageView().setOpacity(0.0);
+                    pendingDeals.add(new DealTask(id, cardView.getCardImageView()));
+                }
+                hb.getChildren().add(cardView);
             }
         }
         return hb;
     }
 
-    private VBox createCardBox(String id) {
-        VBox b = new VBox(); b.setCursor(Cursor.HAND);
-        ImageView iv = new ImageView(ImageLoader.getImage(getCardPath(id)));
-        iv.setFitHeight(170); iv.setPreserveRatio(true);
-        if (selected.contains(id)) iv.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);");
-        b.getChildren().add(iv);
-
-        try {
-            Tooltip tooltip = new Tooltip(CardCatalog.getInstance().format(id));
-            tooltip.setWrapText(true); tooltip.setPrefWidth(250); tooltip.setShowDelay(Duration.seconds(1));
-            Tooltip.install(b, tooltip);
-        } catch (Exception ignored) { }
-
-        b.setOnMouseEntered(e -> {
-            iv.setTranslateY(-10); iv.setScaleX(1.1); iv.setScaleY(1.1);
-            if (!selected.contains(id)) iv.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(255,255,255,0.7), 15, 0.4, 0, 0);");
-        });
-        b.setOnMouseExited(e -> {
-            iv.setTranslateY(0); iv.setScaleX(1.0); iv.setScaleY(1.0);
-            iv.setStyle(selected.contains(id) ? "-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);" : "");
-        });
-        b.setOnMouseClicked(e -> { if(selected.contains(id)) selected.remove(id); else selected.add(id); refreshAll(model); });
-        return b;
-    }
-
-    private String getCardPath(String id) {
-        String sub = id.startsWith("C_") ? "characters/" : id.startsWith("B_") ? "buildings/" : "events/";
-        return "/it.polimi.ingsw.am02.images/cards/" + sub + id + ".png";
-    }
-
-    private StackPane createTileView(OfferTileInfo t) {
-        StackPane st = new StackPane(); st.setCursor(Cursor.HAND);
-        ImageView iv = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/offer_tiles/tile_offer_" + t.tileID() + ".png"));
-        iv.setFitHeight(150); iv.setPreserveRatio(true);
-        st.getChildren().add(iv);
-        if (t.occupantNickname() != null) {
-            Label nick = new Label(t.occupantNickname().substring(0, Math.min(3, t.occupantNickname().length())).toUpperCase());
-            nick.setStyle("-fx-background-color: rgba(255,255,255,0.9); -fx-text-fill: black; -fx-font-weight: bold; -fx-padding: 2 5 2 5; -fx-background-radius: 3;");
-            StackPane.setAlignment(nick, Pos.TOP_CENTER); StackPane.setMargin(nick, new Insets(10, 0, 0, 0));
-            st.getChildren().add(nick);
-        }
-        st.setOnMouseClicked(e -> controller.moveTotem(t.tileID()));
-        return st;
+    private void toggleCardSelection(String id) {
+        if(selected.contains(id)) selected.remove(id);
+        else selected.add(id);
+        refreshAll(model);
     }
 
     private void animateDeal(String id, ImageView target) {
@@ -365,7 +333,8 @@ public class GameScene {
 
         ScaleTransition st1 = new ScaleTransition(Duration.millis(350), fly); st1.setToX(0);
         st1.setOnFinished(e -> {
-            fly.setImage(ImageLoader.getImage(getCardPath(id)));
+            String sub = id.startsWith("C_") ? "characters/" : id.startsWith("B_") ? "buildings/" : "events/";
+            fly.setImage(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/" + sub + id + ".png"));
             ScaleTransition st2 = new ScaleTransition(Duration.millis(350), fly);
             st2.setToX(1.0); st2.play();
         });
@@ -377,7 +346,8 @@ public class GameScene {
 
     public void animateCardTaken(String nickname, String cardID, CardType type, RowPosition source) {
         Platform.runLater(() -> {
-            ImageView fly = new ImageView(ImageLoader.getImage(getCardPath(cardID)));
+            String sub = cardID.startsWith("C_") ? "characters/" : cardID.startsWith("B_") ? "buildings/" : "events/";
+            ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/" + sub + cardID + ".png"));
             fly.setFitHeight(170); fly.setPreserveRatio(true);
             fly.setTranslateY(source == RowPosition.UPPER ? -150 : 150);
             baseStack.getChildren().add(fly);

@@ -9,8 +9,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 
 public class OfferTileView extends StackPane {
 
@@ -23,23 +21,6 @@ public class OfferTileView extends StackPane {
         bgImage.setPreserveRatio(true);
         this.getChildren().add(bgImage);
 
-        // Rettangolo dorato per l'Hover (lo slot)
-        Rectangle slotHighlight = new Rectangle(50, 45);
-        slotHighlight.setFill(Color.TRANSPARENT);
-        slotHighlight.setStroke(Color.GOLD);
-        slotHighlight.setStrokeWidth(3);
-        slotHighlight.setOpacity(0);
-        slotHighlight.setMouseTransparent(true); // Non blocca i click
-
-        StackPane.setAlignment(slotHighlight, Pos.TOP_CENTER);
-        StackPane.setMargin(slotHighlight, new Insets(20, 0, 0, 0));
-
-        // Attiviamo l'hover sulla tessera
-        this.setOnMouseEntered(e -> slotHighlight.setOpacity(1));
-        this.setOnMouseExited(e -> slotHighlight.setOpacity(0));
-        this.getChildren().add(slotHighlight);
-
-        // Posizionamento Totem
         if (occupantTotem != null) {
             String path = "/it.polimi.ingsw.am02.images/totems/totem_" + occupantTotem.name().toLowerCase() + ".png";
             ImageView totemView = new ImageView(ImageLoader.getImage(path));
@@ -51,8 +32,8 @@ public class OfferTileView extends StackPane {
 
             StackPane.setAlignment(totemView, Pos.TOP_CENTER);
 
-            // REGOLA IL PRIMO NUMERO (es: 30) per abbassare il totem nello slot dorato
-            StackPane.setMargin(totemView, new Insets(15, 0, 0, 0));
+            // Abbassa il totem nello slot
+            StackPane.setMargin(totemView, new Insets(30, 0, 0, 0));
 
             this.getChildren().add(totemView);
         }

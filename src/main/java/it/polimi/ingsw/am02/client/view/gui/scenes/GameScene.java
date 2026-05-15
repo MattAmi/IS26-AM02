@@ -590,7 +590,10 @@ public class GameScene {
         baseStack.getChildren().add(overlay);
     }
 
-    public void showNewEraAnimation(List<String> u, List<String> l) { if (currentEra < 3) currentEra++; refreshAll(model); }
+    public void showNewEraAnimation(List<String> u, List<String> l) {
+        if (currentEra < 3) currentEra++; // Aumenta l'era!
+        refreshAll(model); // Ridisegna tutto con la nuova era
+    }
     public void setupInitialBoard(List<String> t, Map<String, Integer> f, BoardSnapshot b) { refreshAll(model); }
     public void updatePhase(PhaseType p, String c, List<String> r) { refreshAll(model); }
     public void highlightCurrentPlayer(String n) { refreshAll(model); }

@@ -112,7 +112,15 @@ public class GuiView extends AbstractClientView {
     @Override
     public void onBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, int deckRemainingCount) { refreshGameIfActive(); }
     @Override
-    public void onEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) { refreshGameIfActive(); }
+    public void onEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) {
+            // Questo comando fa fare +1 alla variabile currentEra e poi fa il refresh!
+            gs.showNewEraAnimation(newUpperRowBuildings, newLowerRowBuildings);
+        } else {
+            refreshGameIfActive();
+        }
+    }
     @Override
     public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }
     @Override

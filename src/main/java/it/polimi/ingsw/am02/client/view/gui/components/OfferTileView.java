@@ -33,7 +33,7 @@ public class OfferTileView extends StackPane {
             StackPane.setAlignment(totemView, Pos.TOP_CENTER);
 
             // Abbassa il totem nello slot
-            StackPane.setMargin(totemView, new Insets(30, 0, 0, 0));
+            StackPane.setMargin(totemView, new Insets(15, 0, 0, 0));
 
             this.getChildren().add(totemView);
         }

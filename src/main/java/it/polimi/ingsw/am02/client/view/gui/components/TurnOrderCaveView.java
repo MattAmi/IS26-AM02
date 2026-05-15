@@ -34,7 +34,7 @@ public class TurnOrderCaveView extends StackPane {
         // If a specific tile looks slightly off in the future, just tweak its case!
         switch (numPlayers) {
             case 5:
-                return new CaveLayoutConfig(15, 5, 22); // 25 - (3*4)
+                return new CaveLayoutConfig(10, 5, 22); // 25 - (3*4)
             case 4:
                 return new CaveLayoutConfig(20, 5, 22); // 25 - (2*4)
             case 3:

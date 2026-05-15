@@ -290,10 +290,29 @@ public class GameScene {
 
     private void updateMainBoard(SceneState state, List<DealTask> localDeals) {
         mainBoardArea.getChildren().clear();
+
+        // 1. Calcoliamo la grandezza delle carte in base al numero di giocatori!
+        int numPlayers = Math.max(2, state.turnOrder.size());
+        int boardCardHeight = 170; // Standard per 2 giocatori
+        if (numPlayers == 3) boardCardHeight = 150;
+        if (numPlayers == 4) boardCardHeight = 135;
+        if (numPlayers >= 5) boardCardHeight = 115; // Molto più piccole per farle stare tutte
+
+        // 2. Stringiamo anche lo spazio vuoto tra le carte se ci sono tanti giocatori
+        int spacing = numPlayers >= 4 ? 6 : 12;
+
         HBox upperBand = new HBox(40); upperBand.setAlignment(Pos.CENTER);
-        upperBand.getChildren().addAll(createCardGroup(state.upperRowBuildings, localDeals), createCardGroup(state.upperRow, localDeals));
+        upperBand.getChildren().addAll(
+                createCardGroup(state.upperRowBuildings, localDeals, boardCardHeight, spacing),
+                createCardGroup(state.upperRow, localDeals, boardCardHeight, spacing)
+        );
+
         HBox lowerBand = new HBox(40); lowerBand.setAlignment(Pos.CENTER);
-        lowerBand.getChildren().addAll(createCardGroup(state.lowerRowBuildings, localDeals), createCardGroup(state.lowerRow, localDeals));
+        lowerBand.getChildren().addAll(
+                createCardGroup(state.lowerRowBuildings, localDeals, boardCardHeight, spacing),
+                createCardGroup(state.lowerRow, localDeals, boardCardHeight, spacing)
+        );
+
         mainBoardArea.getChildren().addAll(upperBand, createTrackArea(state), lowerBand);
     }
 
@@ -391,8 +410,13 @@ public class GameScene {
         javafx.geometry.Point2D start = currentDeckView.localToScene(0, 0);
         javafx.geometry.Point2D end = target.localToScene(0, 0);
         int displayEra = Math.min(era, 3);
+
+        // Legge l'altezza finale che dovrà avere la carta sul tabellone
+        double targetHeight = target.getFitHeight() > 0 ? target.getFitHeight() : 170;
+
         ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png"));
-        fly.setFitHeight(170); fly.setPreserveRatio(true); fly.setManaged(false);
+        fly.setFitHeight(targetHeight); // Fa volare la carta già con la misura giusta!
+        fly.setPreserveRatio(true); fly.setManaged(false);
         fly.relocate(start.getX(), start.getY()); baseStack.getChildren().add(fly);
 
         TranslateTransition tt = new TranslateTransition(Duration.millis(700), fly);
@@ -526,4 +550,26 @@ public class GameScene {
     public void showNewEraAnimation(List<String> u, List<String> l) { if (currentEra < 3) currentEra++; refreshAll(model); }
     public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }
     public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
+
+    // Aggiunti i parametri cardHeight e spacing
+    private HBox createCardGroup(List<String> ids, List<DealTask> localDeals, int cardHeight, int spacing) {
+        HBox hb = new HBox(spacing); hb.setAlignment(Pos.CENTER);
+        if (ids != null) {
+            for (String id : ids) {
+                boolean isNew = !knownCardsOnBoard.contains(id);
+                if (isNew) knownCardsOnBoard.add(id);
+
+                // Passiamo la nuova altezza calcolata alla visuale della carta
+                GameCardView cardView = new GameCardView(id, selected.contains(id), cardHeight, () -> toggleCardSelection(id));
+
+                if (isNew) {
+                    cardView.getCardImageView().setOpacity(0.0);
+                    localDeals.add(new DealTask(id, cardView.getCardImageView()));
+                }
+                hb.getChildren().add(cardView);
+            }
+        }
+        return hb;
+    }
+
 }

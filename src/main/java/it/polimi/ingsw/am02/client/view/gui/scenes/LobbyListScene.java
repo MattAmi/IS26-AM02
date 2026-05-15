@@ -33,7 +33,7 @@ public class LobbyListScene {
     private Font tribalLarge;
     private Font introFont;
 
-    public Region buildNode(GuiController controller) {
+    public Region buildNode(GuiController controller, Runnable onBack) {
         this.controller = controller;
 
         try {
@@ -81,13 +81,8 @@ public class LobbyListScene {
         fadeIn.play();
 
         ScaleTransition st = new ScaleTransition(Duration.seconds(20), backgroundView);
-        st.setFromX(1.0);
-        st.setFromY(1.0);
-        st.setToX(1.25);
-        st.setToY(1.25);
-        st.setCycleCount(ScaleTransition.INDEFINITE);
-        st.setAutoReverse(true);
-        st.play();
+        st.setFromX(1.0); st.setFromY(1.0); st.setToX(1.25); st.setToY(1.25);
+        st.setCycleCount(ScaleTransition.INDEFINITE); st.setAutoReverse(true); st.play();
 
         bgContainer.getChildren().add(backgroundView);
         Region overlay = new Region();
@@ -106,7 +101,7 @@ public class LobbyListScene {
         Button backBtn = new Button("BACK TO MENU");
         backBtn.setStyle("-fx-base: #444; -fx-text-fill: white; -fx-cursor: hand;");
         if (tribalSmall != null) backBtn.setFont(tribalSmall);
-        backBtn.setOnAction(e -> controller.showGameMenuScene());
+        backBtn.setOnAction(e -> onBack.run());
         StackPane.setAlignment(backBtn, Pos.CENTER_LEFT);
 
         Label title = new Label("AVAILABLE LOBBIES");
@@ -126,7 +121,6 @@ public class LobbyListScene {
         scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-control-inner-background: transparent; -fx-viewport-background: transparent;");
 
         uiLayer.setCenter(scroll);
-
         rootNode.getChildren().addAll(bgContainer, overlay, uiLayer);
 
         return rootNode;
@@ -151,8 +145,7 @@ public class LobbyListScene {
                 row.setStyle("-fx-background-color: rgba(43, 29, 20, 0.85); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 10;");
 
                 TextField idField = new TextField("Lobby ID: " + lobby.lobbyId());
-                idField.setEditable(false);
-                idField.setFocusTraversable(false);
+                idField.setEditable(false); idField.setFocusTraversable(false);
                 idField.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-padding: 0; -fx-cursor: text;");
                 if (introFont != null) idField.setFont(introFont);
                 idField.setMinWidth(Region.USE_PREF_SIZE);

@@ -50,22 +50,17 @@ public class GameScene {
     private int currentEra = 1;
 
     private static class DealTask {
-        String id;
-        ImageView target;
-        DealTask(String id, ImageView target) {
-            this.id = id;
-            this.target = target;
-        }
+        String id; ImageView target;
+        DealTask(String id, ImageView target) { this.id = id; this.target = target; }
     }
 
-    public Region buildNode(GuiController controller) {
+    public Region buildNode(GuiController controller, Runnable onShowMenu, Runnable onShowSummary) {
         this.controller = controller;
         this.tribalFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 14);
         if (tribalFont == null) tribalFont = Font.font("System", 14);
 
         baseStack = new StackPane();
-        baseStack.setMinWidth(1280);
-        baseStack.setMinHeight(800);
+        baseStack.setMinWidth(1280); baseStack.setMinHeight(800);
         baseStack.setStyle("-fx-background-color: #0a0a0a;");
 
         root = new BorderPane();
@@ -74,12 +69,9 @@ public class GameScene {
         topBanner.setPadding(new Insets(10, 20, 10, 20));
         topBanner.setStyle("-fx-background-color: #A31D1D;");
 
-        HBox idBox = new HBox(10);
-        idBox.setAlignment(Pos.CENTER_LEFT);
-
+        HBox idBox = new HBox(10); idBox.setAlignment(Pos.CENTER_LEFT);
         gameIdLabel = new Label("ID: ---");
-        gameIdLabel.setTextFill(Color.WHITE);
-        gameIdLabel.setFont(Font.font(tribalFont.getFamily(), 14));
+        gameIdLabel.setTextFill(Color.WHITE); gameIdLabel.setFont(Font.font(tribalFont.getFamily(), 14));
 
         Button copyBtn = new Button("📋");
         copyBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand; -fx-padding: 0; -fx-font-size: 16;");
@@ -99,7 +91,7 @@ public class GameScene {
         Button burgerMenuBtn = new Button("☰");
         burgerMenuBtn.setFont(Font.font(tribalFont.getFamily(), 24));
         burgerMenuBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
-        burgerMenuBtn.setOnAction(e -> controller.showInGameMenu());
+        burgerMenuBtn.setOnAction(e -> onShowMenu.run());
         StackPane.setAlignment(burgerMenuBtn, Pos.CENTER_RIGHT);
 
         statusFlow = new TextFlow();
@@ -110,22 +102,13 @@ public class GameScene {
         root.setTop(topBanner);
 
         rightSidebar = new VBox(15);
-        rightSidebar.setPadding(new Insets(20));
-        rightSidebar.setPrefWidth(260);
-        rightSidebar.setStyle(
-                "-fx-background-color: #1a0f07; " +
-                        "-fx-border-color: #3e2a1d; " +
-                        "-fx-border-width: 0 0 0 4;"
-        );
+        rightSidebar.setPadding(new Insets(20)); rightSidebar.setPrefWidth(260);
+        rightSidebar.setStyle("-fx-background-color: #1a0f07; -fx-border-color: #3e2a1d; -fx-border-width: 0 0 0 4;");
         root.setRight(rightSidebar);
 
         centerLayout = new StackPane();
         String bgPath = getClass().getResource("/it.polimi.ingsw.am02.images/mesos_box.png").toExternalForm();
-        centerLayout.setStyle(
-                "-fx-background-image: url('" + bgPath + "'); " +
-                        "-fx-background-size: 130%; " +
-                        "-fx-background-position: center;"
-        );
+        centerLayout.setStyle("-fx-background-image: url('" + bgPath + "'); -fx-background-size: 130%; -fx-background-position: center;");
 
         Region darkOverlay = new Region();
         darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.55);");
@@ -134,53 +117,43 @@ public class GameScene {
         mainBoardArea.setPadding(new Insets(20, 20, 250, 20));
         mainBoardArea.setAlignment(Pos.CENTER);
         ScrollPane scrollPane = new ScrollPane(mainBoardArea);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setFitToWidth(true); scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
         VBox bottomLayout = new VBox(0);
-        bottomLayout.setMaxHeight(Region.USE_PREF_SIZE);
-        bottomLayout.setAlignment(Pos.BOTTOM_CENTER);
+        bottomLayout.setMaxHeight(Region.USE_PREF_SIZE); bottomLayout.setAlignment(Pos.BOTTOM_CENTER);
 
         VBox handArea = new VBox(5);
         handArea.setPadding(new Insets(10));
         handArea.setStyle("-fx-background-color: rgba(26, 15, 7, 0.4); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;");
 
         handTitle = new Label("TRIBE");
-        handTitle.setTextFill(Color.web("#F2D5A3"));
-        handTitle.setFont(Font.font(tribalFont.getFamily(), 14));
+        handTitle.setTextFill(Color.web("#F2D5A3")); handTitle.setFont(Font.font(tribalFont.getFamily(), 14));
 
         handCardsBox = new HBox(10);
-        handCardsBox.setAlignment(Pos.CENTER_LEFT);
-        handCardsBox.setMinHeight(180);
-        handCardsBox.setPrefHeight(180);
+        handCardsBox.setAlignment(Pos.CENTER_LEFT); handCardsBox.setMinHeight(180); handCardsBox.setPrefHeight(180);
 
         ScrollPane handScroll = new ScrollPane(handCardsBox);
-        handScroll.setFitToHeight(true);
-        handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        handScroll.setFitToHeight(true); handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         handScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         handArea.getChildren().addAll(handTitle, handScroll);
 
         HBox bottomButtons = new HBox(25);
-        bottomButtons.setPadding(new Insets(15));
-        bottomButtons.setAlignment(Pos.CENTER);
+        bottomButtons.setPadding(new Insets(15)); bottomButtons.setAlignment(Pos.CENTER);
         bottomButtons.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
 
         String buttonStyle = "-fx-base: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + tribalFont.getFamily() + "\"; -fx-font-weight: bold; -fx-border-color: #4A3B32; -fx-border-radius: 3;";
 
         Button confirmBtn = new Button("CONFIRM PICK");
-        confirmBtn.setFont(Font.font(tribalFont.getFamily(), 16));
-        confirmBtn.setStyle(buttonStyle);
+        confirmBtn.setFont(Font.font(tribalFont.getFamily(), 16)); confirmBtn.setStyle(buttonStyle);
         confirmBtn.setOnAction(e -> { controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
 
         Button endTurnBtn = new Button("END TURN");
-        endTurnBtn.setFont(Font.font(tribalFont.getFamily(), 16));
-        endTurnBtn.setStyle(buttonStyle);
+        endTurnBtn.setFont(Font.font(tribalFont.getFamily(), 16)); endTurnBtn.setStyle(buttonStyle);
         endTurnBtn.setOnAction(e -> controller.moveTotem('T'));
 
         Button summaryBtn = new Button("SUMMARY");
-        summaryBtn.setFont(Font.font(tribalFont.getFamily(), 16));
-        summaryBtn.setStyle(buttonStyle);
-        summaryBtn.setOnAction(e -> controller.showSummaryCard());
+        summaryBtn.setFont(Font.font(tribalFont.getFamily(), 16)); summaryBtn.setStyle(buttonStyle);
+        summaryBtn.setOnAction(e -> onShowSummary.run());
 
         bottomButtons.getChildren().addAll(confirmBtn, endTurnBtn, summaryBtn);
         bottomLayout.getChildren().addAll(handArea, bottomButtons);
@@ -189,7 +162,6 @@ public class GameScene {
         centerLayout.getChildren().addAll(darkOverlay, scrollPane, bottomLayout);
 
         root.setCenter(centerLayout);
-
         baseStack.getChildren().add(root);
         return baseStack;
     }
@@ -210,9 +182,7 @@ public class GameScene {
             root.layout();
 
             if (!pendingDeals.isEmpty()) {
-                for (DealTask task : pendingDeals) {
-                    animateDeal(task.id, task.target);
-                }
+                for (DealTask task : pendingDeals) animateDeal(task.id, task.target);
                 pendingDeals.clear();
             }
         });
@@ -224,20 +194,16 @@ public class GameScene {
         String currentPhase = model.getCurrentPhase() != null ? model.getCurrentPhase().toString().replace("_", " ") : "WAITING";
 
         Text eraTxt = new Text("ERA " + currentEra + "  |  ");
-        eraTxt.setFill(Color.WHITE);
-        eraTxt.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));
+        eraTxt.setFill(Color.WHITE); eraTxt.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));
 
         Text phaseTxt = new Text(currentPhase + "  |  ");
-        phaseTxt.setFill(Color.LIGHTGRAY);
-        phaseTxt.setFont(Font.font(tribalFont.getFamily(), 16));
+        phaseTxt.setFill(Color.LIGHTGRAY); phaseTxt.setFont(Font.font(tribalFont.getFamily(), 16));
 
         Text p1 = new Text("PLAYER ");
-        p1.setFill(Color.WHITE);
-        p1.setFont(Font.font(tribalFont.getFamily(), 16));
+        p1.setFill(Color.WHITE); p1.setFont(Font.font(tribalFont.getFamily(), 16));
 
         Text p2 = new Text(activePlayer);
-        p2.setFill(Color.GOLD);
-        p2.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 22));
+        p2.setFill(Color.GOLD); p2.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 22));
 
         statusFlow.getChildren().addAll(eraTxt, phaseTxt, p1, p2);
     }
@@ -245,10 +211,8 @@ public class GameScene {
     private void updateSidebar() {
         rightSidebar.getChildren().clear();
         Label sidebarTitle = new Label("PLAYERS");
-        sidebarTitle.setTextFill(Color.WHITE);
-        sidebarTitle.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));
-        sidebarTitle.setMaxWidth(Double.MAX_VALUE);
-        sidebarTitle.setAlignment(Pos.CENTER);
+        sidebarTitle.setTextFill(Color.WHITE); sidebarTitle.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));
+        sidebarTitle.setMaxWidth(Double.MAX_VALUE); sidebarTitle.setAlignment(Pos.CENTER);
         rightSidebar.getChildren().add(sidebarTitle);
 
         List<String> players = model.getTurnOrder();
@@ -258,9 +222,7 @@ public class GameScene {
 
         if (players != null) {
             for (String nick : players) {
-                VBox pBox = new VBox(5);
-                pBox.setPadding(new Insets(10));
-                pBox.setCursor(Cursor.HAND);
+                VBox pBox = new VBox(5); pBox.setPadding(new Insets(10)); pBox.setCursor(Cursor.HAND);
                 boolean isActive = nick.equals(model.getCurrentPlayer());
                 boolean isOffline = offlinePlayers.contains(nick);
                 String borderColor = nick.equals(viewedPlayerHand) ? "#F2D5A3" : "transparent";
@@ -276,8 +238,7 @@ public class GameScene {
                 int food = model.getFoodByPlayer().getOrDefault(nick, 0);
                 int pp = model.getPpByPlayer().getOrDefault(nick, 0);
                 Label statsL = new Label("Food: " + food + " | PP: " + pp);
-                statsL.setTextFill(Color.LIGHTGRAY);
-                statsL.setFont(Font.font(tribalFont.getFamily(), 12));
+                statsL.setTextFill(Color.LIGHTGRAY); statsL.setFont(Font.font(tribalFont.getFamily(), 12));
 
                 pBox.getChildren().addAll(nameL, statsL);
                 pBox.setOnMouseClicked(e -> { viewedPlayerHand = nick; refreshAll(model); });
@@ -288,15 +249,10 @@ public class GameScene {
 
     private void updateMainBoard() {
         mainBoardArea.getChildren().clear();
-
-        HBox upperBand = new HBox(40);
-        upperBand.setAlignment(Pos.CENTER);
+        HBox upperBand = new HBox(40); upperBand.setAlignment(Pos.CENTER);
         upperBand.getChildren().addAll(createCardGroup(model.getUpperRowBuildings()), createCardGroup(model.getUpperRow()));
-
-        HBox lowerBand = new HBox(40);
-        lowerBand.setAlignment(Pos.CENTER);
+        HBox lowerBand = new HBox(40); lowerBand.setAlignment(Pos.CENTER);
         lowerBand.getChildren().addAll(createCardGroup(model.getLowerRowBuildings()), createCardGroup(model.getLowerRow()));
-
         mainBoardArea.getChildren().addAll(upperBand, createTrackArea(), lowerBand);
     }
 
@@ -356,9 +312,7 @@ public class GameScene {
 
         try {
             Tooltip tooltip = new Tooltip(CardCatalog.getInstance().format(id));
-            tooltip.setWrapText(true);
-            tooltip.setPrefWidth(250);
-            tooltip.setShowDelay(Duration.seconds(1));
+            tooltip.setWrapText(true); tooltip.setPrefWidth(250); tooltip.setShowDelay(Duration.seconds(1));
             Tooltip.install(b, tooltip);
         } catch (Exception ignored) { }
 
@@ -396,8 +350,7 @@ public class GameScene {
 
     private void animateDeal(String id, ImageView target) {
         if (currentDeckView == null || currentDeckView.getScene() == null || target.getScene() == null) {
-            target.setOpacity(1.0);
-            return;
+            target.setOpacity(1.0); return;
         }
         javafx.geometry.Point2D start = currentDeckView.localToScene(0, 0);
         javafx.geometry.Point2D end = target.localToScene(0, 0);
@@ -410,8 +363,7 @@ public class GameScene {
         TranslateTransition tt = new TranslateTransition(Duration.millis(700), fly);
         tt.setToX(end.getX() - start.getX()); tt.setToY(end.getY() - start.getY());
 
-        ScaleTransition st1 = new ScaleTransition(Duration.millis(350), fly);
-        st1.setToX(0);
+        ScaleTransition st1 = new ScaleTransition(Duration.millis(350), fly); st1.setToX(0);
         st1.setOnFinished(e -> {
             fly.setImage(ImageLoader.getImage(getCardPath(id)));
             ScaleTransition st2 = new ScaleTransition(Duration.millis(350), fly);

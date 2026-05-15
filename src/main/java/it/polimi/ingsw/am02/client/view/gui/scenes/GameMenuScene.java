@@ -1,6 +1,7 @@
 package it.polimi.ingsw.am02.client.view.gui.scenes;
 
 import it.polimi.ingsw.am02.client.view.gui.GuiController;
+import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
@@ -21,6 +22,7 @@ import javafx.util.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class GameMenuScene {
 
@@ -37,7 +39,7 @@ public class GameMenuScene {
     private Font tribalLarge;
     private Font introFont;
 
-    public Region buildNode(GuiController controller) {
+    public Region buildNode(GuiController controller, Runnable onShowLobbyList, Consumer<String> onError) {
         this.controller = controller;
 
         try {
@@ -46,7 +48,7 @@ public class GameMenuScene {
             introFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 18);
 
             for (int i = 0; i < 8; i++) {
-                rulesPages.add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/rules/page" + i + ".png"))));
+                rulesPages.add(ImageLoader.getImage("/it.polimi.ingsw.am02.images/rules/page" + i + ".png"));
             }
         } catch (Exception ignored) {}
 
@@ -65,8 +67,7 @@ public class GameMenuScene {
 
         ImageView backgroundView = new ImageView();
         try {
-            Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/mesos_box.png")));
-            backgroundView.setImage(img);
+            Image img = ImageLoader.getImage("/it.polimi.ingsw.am02.images/mesos_box.png");            backgroundView.setImage(img);
             double iw = img.getWidth();
             double ih = img.getHeight();
             double vw = iw * 0.7;
@@ -98,9 +99,9 @@ public class GameMenuScene {
         menuContainer = new StackPane();
         menuContainer.setMaxSize(450, 550);
 
-        buildMainButtons();
-        buildCreateLobbyForm();
-        buildReconnectForm();
+        buildMainButtons(onShowLobbyList);
+        buildCreateLobbyForm(onError);
+        buildReconnectForm(onError);
         buildRulesOverlay();
 
         menuContainer.getChildren().addAll(createLobbyBox, reconnectBox, mainButtonsBox);
@@ -113,12 +114,12 @@ public class GameMenuScene {
         return root;
     }
 
-    private void buildMainButtons() {
+    private void buildMainButtons(Runnable onShowLobbyList) {
         mainButtonsBox = new VBox(20);
         mainButtonsBox.setAlignment(Pos.CENTER);
         mainButtonsBox.getChildren().addAll(
                 createMenuButton("CREATE LOBBY", e -> switchInternalMenu(createLobbyBox)),
-                createMenuButton("JOIN LOBBY", e -> controller.showLobbyListScene()),
+                createMenuButton("JOIN LOBBY", e -> onShowLobbyList.run()),
                 createMenuButton("RECONNECT", e -> switchInternalMenu(reconnectBox)),
                 createMenuButton("GAME RULES", e -> showRules()),
                 createQuitButton()
@@ -154,42 +155,33 @@ public class GameMenuScene {
         closeBtn.setPrefSize(150, 45);
         closeBtn.setStyle("-fx-base: #8B0000; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: white; -fx-border-radius: 5;");
 
-        Region spacer1 = new Region();
-        HBox.setHgrow(spacer1, Priority.ALWAYS);
-        Region spacer2 = new Region();
-        HBox.setHgrow(spacer2, Priority.ALWAYS);
+        Region spacer1 = new Region(); HBox.setHgrow(spacer1, Priority.ALWAYS);
+        Region spacer2 = new Region(); HBox.setHgrow(spacer2, Priority.ALWAYS);
 
         navigationBar.getChildren().addAll(prevBtn, spacer1, closeBtn, spacer2, nextBtn);
-
         content.getChildren().addAll(rulesImageView, navigationBar);
         rulesOverlay.getChildren().add(content);
     }
 
     private void showRules() {
-        currentPage = 0;
-        updateRulesDisplay();
-        rulesOverlay.setOpacity(0);
-        rulesOverlay.setVisible(true);
+        currentPage = 0; updateRulesDisplay();
+        rulesOverlay.setOpacity(0); rulesOverlay.setVisible(true);
         FadeTransition ft = new FadeTransition(Duration.millis(300), rulesOverlay);
-        ft.setToValue(1);
-        ft.play();
+        ft.setToValue(1); ft.play();
     }
 
     private void navigateRules(int direction) {
         int next = currentPage + direction;
         if (next >= 0 && next < rulesPages.size()) {
-            currentPage = next;
-            updateRulesDisplay();
+            currentPage = next; updateRulesDisplay();
         }
     }
 
     private void updateRulesDisplay() {
-        if (!rulesPages.isEmpty()) {
-            rulesImageView.setImage(rulesPages.get(currentPage));
-        }
+        if (!rulesPages.isEmpty()) rulesImageView.setImage(rulesPages.get(currentPage));
     }
 
-    private void buildCreateLobbyForm() {
+    private void buildCreateLobbyForm(Consumer<String> onError) {
         createLobbyBox = new VBox(15);
         createLobbyBox.setAlignment(Pos.CENTER);
         createLobbyBox.setStyle("-fx-background-color: rgba(43, 29, 20, 0.95); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 15; -fx-padding: 30;");
@@ -199,26 +191,23 @@ public class GameMenuScene {
         if (tribalSmall != null) lbl.setFont(tribalSmall);
 
         TextField sizeField = new TextField("2");
-        sizeField.setMaxWidth(100);
-        sizeField.setAlignment(Pos.CENTER);
+        sizeField.setMaxWidth(100); sizeField.setAlignment(Pos.CENTER);
         sizeField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;");
-        if (tribalSmall != null) {
-            sizeField.setFont(tribalSmall);
-        }
+        if (tribalSmall != null) sizeField.setFont(tribalSmall);
 
         createLobbyBox.getChildren().addAll(lbl, sizeField,
                 createMenuButton("CONFIRM", e -> {
                     try {
                         int size = Integer.parseInt(sizeField.getText());
                         if (size >= 2 && size <= 5) controller.requestCreateLobby(size);
-                        else controller.handleError("Size must be between 2 and 5.");
-                    } catch (Exception ex) { controller.handleError("Invalid format."); }
+                        else onError.accept("Size must be between 2 and 5.");
+                    } catch (Exception ex) { onError.accept("Invalid format."); }
                 }),
                 createMenuButton("BACK", e -> switchInternalMenu(mainButtonsBox))
         );
     }
 
-    private void buildReconnectForm() {
+    private void buildReconnectForm(Consumer<String> onError) {
         reconnectBox = new VBox(15);
         reconnectBox.setAlignment(Pos.CENTER);
         reconnectBox.setStyle("-fx-background-color: rgba(43, 29, 20, 0.95); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 15; -fx-padding: 30;");
@@ -228,8 +217,7 @@ public class GameMenuScene {
         if (introFont != null) lblNick.setFont(introFont);
 
         TextField nickField = new TextField();
-        nickField.setPromptText("Enter Nickname");
-        nickField.setMaxWidth(220);
+        nickField.setPromptText("Enter Nickname"); nickField.setMaxWidth(220);
         nickField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;");
         if (introFont != null) nickField.setFont(introFont);
 
@@ -238,8 +226,7 @@ public class GameMenuScene {
         if (introFont != null) lblId.setFont(introFont);
 
         TextField gameIdField = new TextField();
-        gameIdField.setPromptText("Enter Game ID");
-        gameIdField.setMaxWidth(220);
+        gameIdField.setPromptText("Enter Game ID"); gameIdField.setMaxWidth(220);
         gameIdField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;");
         if (introFont != null) gameIdField.setFont(introFont);
 
@@ -247,7 +234,7 @@ public class GameMenuScene {
                 createMenuButton("RECONNECT", e -> {
                     if (!nickField.getText().isBlank() && !gameIdField.getText().isBlank())
                         controller.requestReconnect(nickField.getText(), gameIdField.getText());
-                    else controller.handleError("Fill both fields.");
+                    else onError.accept("Fill both fields.");
                 }),
                 createMenuButton("BACK", e -> switchInternalMenu(mainButtonsBox))
         );
@@ -272,9 +259,7 @@ public class GameMenuScene {
     }
 
     private void switchInternalMenu(VBox menuToShow) {
-        mainButtonsBox.setVisible(false);
-        createLobbyBox.setVisible(false);
-        reconnectBox.setVisible(false);
-        menuToShow.setVisible(true);
+        mainButtonsBox.setVisible(false); createLobbyBox.setVisible(false);
+        reconnectBox.setVisible(false); menuToShow.setVisible(true);
     }
 }

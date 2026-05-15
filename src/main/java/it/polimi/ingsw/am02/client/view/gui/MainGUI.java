@@ -2,6 +2,7 @@ package it.polimi.ingsw.am02.client.view.gui;
 
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import javafx.application.Application;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class MainGUI extends Application {
@@ -11,17 +12,27 @@ public class MainGUI extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            // 1. Creiamo la View (inizialmente senza controller)
-            GuiView view = new GuiView(null, lobbyModel);
 
-            // 2. Creiamo il Controller (Il Proxy verrà creato dopo, quando l'utente sceglie la rete)
-            GuiController guiController = new GuiController(primaryStage, null, lobbyModel, view);
+            ImageLoader.preloadRulesInBackground();
 
-            // 3. Leghiamo la View al Controller
-            view.setGuiController(guiController);
+            if (lobbyModel == null) {
+                lobbyModel = new LobbyModel();
+            }
 
-            // 4. Avviamo la SPA!
-            guiController.start();
+            primaryStage.setOnCloseRequest(event -> {
+                javafx.application.Platform.exit();
+                System.exit(0);
+            });
+
+            GuiView guiView = new GuiView(lobbyModel);
+            SceneRouter sceneRouter = new SceneRouter(primaryStage);
+            GuiController guiController = new GuiController(null, lobbyModel, guiView);
+
+            guiView.setSceneRouter(sceneRouter);
+            sceneRouter.setGuiController(guiController);
+
+            sceneRouter.show();
+            sceneRouter.promptConnectionAndRetry(lobbyModel, guiView);
 
         } catch (Exception e) {
             System.err.println("[FATAL] Critical error during GUI startup:");

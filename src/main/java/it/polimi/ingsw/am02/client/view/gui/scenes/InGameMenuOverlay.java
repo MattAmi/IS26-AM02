@@ -1,6 +1,7 @@
 package it.polimi.ingsw.am02.client.view.gui.scenes;
 
 import it.polimi.ingsw.am02.client.view.gui.GuiController;
+import it.polimi.ingsw.am02.client.view.gui.ImageLoader; // <-- IMPORTANTE: Importa l'ImageLoader
 import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -15,7 +16,6 @@ import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class InGameMenuOverlay {
 
@@ -33,7 +33,9 @@ public class InGameMenuOverlay {
 
             if (rulesPages.isEmpty()) {
                 for (int i = 0; i < 8; i++) {
-                    rulesPages.add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/rules/page" + i + ".png"))));
+                    // FIX: Usa ImageLoader invece di new Image()
+                    String path = "/it.polimi.ingsw.am02.images/rules/page" + i + ".png";
+                    rulesPages.add(ImageLoader.getImage(path));
                 }
             }
         } catch (Exception ignored) {}

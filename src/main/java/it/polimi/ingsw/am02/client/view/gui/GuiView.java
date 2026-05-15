@@ -3,195 +3,193 @@ package it.polimi.ingsw.am02.client.view.gui;
 import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.view.AbstractClientView;
+import it.polimi.ingsw.am02.client.view.gui.scenes.GameScene;
+import it.polimi.ingsw.am02.client.view.gui.scenes.LobbyListScene;
+import it.polimi.ingsw.am02.client.view.gui.scenes.LobbyScene;
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
-import javafx.application.Platform;
+import javafx.scene.control.Alert;
 
 import java.util.List;
 import java.util.Map;
 
 public class GuiView extends AbstractClientView {
 
-    private GuiController guiController;
+    private SceneRouter sceneRouter;
     private final LobbyModel lobbyModel;
     private GameModel gameModel;
 
-    public GuiView(GuiController guiController, LobbyModel lobbyModel) {
-        this.guiController = guiController;
+    public GuiView(LobbyModel lobbyModel) {
         this.lobbyModel = lobbyModel;
         this.lobbyModel.addObserver(this);
     }
 
-    public void setGuiController(GuiController guiController) {
-        this.guiController = guiController;
-    }
+    public void setSceneRouter(SceneRouter sceneRouter) { this.sceneRouter = sceneRouter; }
 
     @Override
     public void setGameModel(GameModel gameModel) {
         this.gameModel = gameModel;
         if (this.gameModel != null) {
             this.gameModel.addObserver(this);
-            Platform.runLater(() -> guiController.refreshFullGameScene(gameModel));
+            if (sceneRouter.getGameScene() != null) sceneRouter.getGameScene().refreshAll(gameModel);
+        }
+    }
+
+    private void refreshGameIfActive() {
+        if (sceneRouter.getGameScene() != null && gameModel != null) {
+            sceneRouter.getGameScene().refreshAll(gameModel);
         }
     }
 
     @Override
     public void onUsernameResult(String username, boolean accepted, String reason) {
-        Platform.runLater(() -> guiController.handleUsernameResult(username, accepted, reason));
+        if (!accepted) {
+            sceneRouter.showToast("Nickname Rejected", reason, Alert.AlertType.WARNING);
+            LobbyScene ls = sceneRouter.getLobbyScene();
+            if (ls != null) ls.onNicknameRejected();
+        } else {
+            LobbyScene ls = sceneRouter.getLobbyScene();
+            if (ls != null) ls.onNicknameAccepted(username);
+            else sceneRouter.showIntroScene();
+        }
     }
 
     @Override
     public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
-        Platform.runLater(() -> guiController.handleAvailableLobbiesUpdated(lobbies));
+        LobbyListScene lls = sceneRouter.getLobbyListScene();
+        if (lls != null) lls.onAvailableLobbiesUpdated(lobbies);
+        else if (sceneRouter.getLobbyScene() != null || sceneRouter.getGameScene() != null) sceneRouter.showGameMenuScene();
     }
 
     @Override
     public void onCurrentLobbyUpdated(LobbyInfo lobby) {
-        Platform.runLater(() -> guiController.handleCurrentLobbyUpdated(lobby));
+        LobbyScene ls = sceneRouter.getLobbyScene();
+        if (ls == null) sceneRouter.showLobbyScene(lobby);
+        else ls.updateLobbyState(lobby);
     }
 
     @Override
     public void onLobbyDissolved() {
-        Platform.runLater(guiController::handleLobbyDissolved);
+        sceneRouter.showBlockingAlert("Lobby Closed", "The lobby has been dissolved.", Alert.AlertType.INFORMATION);
+        sceneRouter.showGameMenuScene();
     }
 
     @Override
     public void onGameStarted(String gameId) {
         lobbyModel.removeObserver(this);
-        Platform.runLater(() -> guiController.switchToGameScene(gameId));
+        sceneRouter.switchToGameScene(gameModel);
     }
 
     @Override
     public void onGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot board) {
-        Platform.runLater(() -> guiController.handleGameSetupCompleted(turnOrder, initialFood, board));
+        if (sceneRouter.getGameScene() == null) {
+            sceneRouter.hideModal();
+            sceneRouter.switchToGameScene(gameModel);
+        } else refreshGameIfActive();
     }
 
     @Override
     public void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
-        Platform.runLater(() -> guiController.handlePhaseChanged(phase, currentPlayer, resolutionOrder));
+        if (sceneRouter.getGameScene() == null) {
+            sceneRouter.hideModal();
+            sceneRouter.switchToGameScene(gameModel);
+        } else refreshGameIfActive();
     }
 
     @Override
-    public void onCurrentPlayerChanged(String nextPlayer) {
-        Platform.runLater(() -> guiController.handleCurrentPlayerChanged(nextPlayer));
-    }
-
+    public void onCurrentPlayerChanged(String nextPlayer) { refreshGameIfActive(); }
     @Override
-    public void onTurnOrderEstablished(List<String> turnOrder) {
-        Platform.runLater(() -> guiController.handleTurnOrderEstablished(turnOrder));
-    }
-
+    public void onTurnOrderEstablished(List<String> turnOrder) { refreshGameIfActive(); }
     @Override
-    public void onTotemPlaced(String nickname, char tileID) {
-        Platform.runLater(() -> guiController.handleTotemPlaced(nickname, tileID));
-    }
-
+    public void onTotemPlaced(String nickname, char tileID) { refreshGameIfActive(); }
     @Override
-    public void onTotemReturned(String nickname, int turnOrderPosition) {
-        Platform.runLater(() -> guiController.handleTotemReturned(nickname, turnOrderPosition));
-    }
-
+    public void onTotemReturned(String nickname, int turnOrderPosition) { refreshGameIfActive(); }
     @Override
-    public void onOfferTilesUpdated(List<OfferTileInfo> offerTiles) {
-        Platform.runLater(() -> guiController.handleOfferTilesUpdated(offerTiles));
-    }
-
+    public void onOfferTilesUpdated(List<OfferTileInfo> offerTiles) { refreshGameIfActive(); }
     @Override
-    public void onBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, int deckRemainingCount) {
-        Platform.runLater(() -> guiController.handleBoardUpdated(newUpperRow, newLowerRow, deckRemainingCount));
-    }
-
+    public void onBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, int deckRemainingCount) { refreshGameIfActive(); }
     @Override
     public void onEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
-        //DA CAMBIARE: ho infatti inserito newEra come parametro di input
-        Platform.runLater(() -> guiController.handleEraChanged(newUpperRowBuildings, newLowerRowBuildings));
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) {
+            // Questo comando fa fare +1 alla variabile currentEra e poi fa il refresh!
+            gs.showNewEraAnimation(newUpperRowBuildings, newLowerRowBuildings);
+        } else {
+            refreshGameIfActive();
+        }
     }
-
     @Override
-    public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {
-        Platform.runLater(() -> guiController.handlePlayerLimitsInitialized(nickname, remainingUpper, remainingLower));
-    }
-
+    public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }
     @Override
-    public void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {
-        Platform.runLater(() -> guiController.handlePlayerLimitsUpdated(nickname, remainingUpper, remainingLower));
-    }
-
+    public void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }
     @Override
-    public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-        Platform.runLater(() -> guiController.handlePlayerResourceChanged(nickname, resource, newValue));
-    }
+    public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) { refreshGameIfActive(); }
 
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
-        Platform.runLater(() -> guiController.handleCardTaken(nickname, cardID, cardType, sourceRow));
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.animateCardTaken(nickname, cardID, cardType, sourceRow);
     }
 
     @Override
-    public void onEventResolved(String eventID, String eventName) {
-        Platform.runLater(() -> guiController.handleEventResolved(eventID, eventName));
-    }
-
+    public void onEventResolved(String eventID, String eventName) { refreshGameIfActive(); }
     @Override
-    public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-        Platform.runLater(() -> guiController.handleExtraTurnStarted(nickname, remainingUpper, remainingLower));
-    }
-
+    public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }
     @Override
-    public void onExtraTurnEnded(String nickname) {
-        Platform.runLater(() -> guiController.handleExtraTurnEnded(nickname));
-    }
+    public void onExtraTurnEnded(String nickname) { refreshGameIfActive(); }
 
     @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
-        Platform.runLater(() -> guiController.handleGameEnded(winners, finalRankings));
+        sceneRouter.showBlockingAlert("Game Over", "Winners: " + winners, Alert.AlertType.INFORMATION);
     }
 
     @Override
     public void onPlayerDisconnected(String nickname) {
-        Platform.runLater(() -> guiController.handlePlayerDisconnected(nickname));
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.setPlayerOffline(nickname);
+        sceneRouter.showPlayerDisconnectedPopup(nickname);
     }
 
     @Override
     public void onGameAborted(String lastManStanding) {
-        Platform.runLater(() -> guiController.handleGameAborted(lastManStanding));
+        sceneRouter.showBlockingAlert("Aborted", "Game ended. Last standing: " + lastManStanding, Alert.AlertType.INFORMATION);
+        sceneRouter.showGameMenuScene();
     }
 
     @Override
     public void onGameRecoveryFailed() {
-        Platform.runLater(guiController::handleGameRecoveryFailed);
+        sceneRouter.showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR);
+        sceneRouter.showGameMenuScene();
     }
 
     @Override
     public void onPlayerReconnected(String nickname) {
-        Platform.runLater(() -> guiController.handlePlayerReconnected(nickname));
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.setPlayerOnline(nickname);
     }
 
     @Override
     public void onError(String message) {
-        Platform.runLater(() -> guiController.handleError(message));
+        sceneRouter.showToast("Errore", message, Alert.AlertType.WARNING);
+        LobbyScene ls = sceneRouter.getLobbyScene();
+        if (ls != null) ls.onNicknameRejected();
     }
 
     @Override
-    public void onShowAvailableTotems() {
-        Platform.runLater(guiController::handleShowAvailableTotems);
-    }
+    public void onShowAvailableTotems() { }
 
     @Override
-    public void onConnectionLost() {
-        Platform.runLater(guiController::handleConnectionLost);
-    }
+    public void onConnectionLost() { sceneRouter.showConnectionLost(); }
 
     @Override
     public void onConnectionRestored() {
-        Platform.runLater(guiController::handleConnectionRestored);
+        sceneRouter.hideModal();
+        sceneRouter.showToast("Connected", "You're back online!", Alert.AlertType.INFORMATION);
     }
 
     @Override
-    public void onReturnToLobby() {
-        Platform.runLater(guiController::handleReturnToLobby);
-    }
+    public void onReturnToLobby() { sceneRouter.showGameMenuScene(); }
 }

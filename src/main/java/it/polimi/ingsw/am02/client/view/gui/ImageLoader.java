@@ -1,21 +1,29 @@
 package it.polimi.ingsw.am02.client.view.gui;
 
 import javafx.scene.image.Image;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 
 public class ImageLoader {
-    private static final Map<String, Image> cache = new HashMap<>();
+    // ConcurrentHashMap è obbligatoria per leggere e scrivere da thread diversi in sicurezza
+    private static final Map<String, Image> cache = new ConcurrentHashMap<>();
 
     public static Image getImage(String path) {
-        if (cache.containsKey(path)) {
-            return cache.get(path);
-        }
+        // computeIfAbsent è super efficiente: carica l'immagine solo se non c'è già
+        return cache.computeIfAbsent(path, p ->
+                new Image(Objects.requireNonNull(ImageLoader.class.getResourceAsStream(p)))
+        );
+    }
 
-        Image img = new Image(Objects.requireNonNull(ImageLoader.class.getResourceAsStream(path)));
-        cache.put(path, img);
-        return img;
 
+    public static void preloadRulesInBackground() {
+        CompletableFuture.runAsync(() -> {
+            for (int i = 0; i < 8; i++) {
+                String path = "/it.polimi.ingsw.am02.images/rules/page" + i + ".png";
+                getImage(path);
+            }
+        });
     }
 }

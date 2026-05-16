@@ -125,19 +125,26 @@ public abstract class ClientController {
             view.onError("Action blocked: Lobby size must be between 2 and 5 players.");
             return;
         }
-        if (lobbyModel.getCurrentLobby() != null || gameModel != null) {
-            view.onError("Action blocked: You must leave your current lobby or game before creating a new one.");
+        if (lobbyModel.getCurrentLobby() != null) {
+            view.onError("Action blocked: You must leave your current lobby before creating a new one.");
+            return;
+        }
+        if (gameModel != null) {
+            view.onError("Action blocked: Type 'lobby' first to return to the lobby screen.");
             return;
         }
         proxy.requestCreateLobby(size);
     }
-
     /**
      * Validates the lobby index against the locally known list, then forwards to the server.
      */
     public void handleJoinLobby(int index) {
-        if (lobbyModel.getCurrentLobby() != null || gameModel != null) {
-            view.onError("Action blocked: You are already in a lobby or game.");
+        if (lobbyModel.getCurrentLobby() != null) {
+            view.onError("Action blocked: You are already in a lobby.");
+            return;
+        }
+        if (gameModel != null) {
+            view.onError("Action blocked: Type 'lobby' first to return to the lobby screen.");
             return;
         }
         List<LobbyInfo> available = lobbyModel.getAvailableLobbies();

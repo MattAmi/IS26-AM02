@@ -51,7 +51,7 @@ public class ClientApp {
                 ClientView view = new TuiView(lobbyModel);
                 ServerProxy proxy = ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
 
-                TuiController controller = new TuiController(proxy, lobbyModel, view);
+                TuiController controller = new TuiController(proxy, lobbyModel, view, networkType, host, port);
                 proxy.setClientController(controller);
 
                 System.out.println("\nConnecting to server via " + networkType + " on " + host + ":" + port + "...");

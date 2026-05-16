@@ -3,7 +3,9 @@ package it.polimi.ingsw.am02.client.view.tui;
 import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
 import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
 import java.util.ArrayList;
@@ -19,11 +21,18 @@ import java.util.Scanner;
 public class TuiController extends ClientController {
 
     private final TuiView tuiView; // Specific reference to the TUI implementation
+    private final NetworkType networkType;  // aggiunto
+    private final String host;              // aggiunto
+    private final int port;                 // aggiunto
 
-    public TuiController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
+
+    public TuiController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view,
+                         NetworkType networkType, String host, int port) {
         super(proxy, lobbyModel, view);
-        // We know for sure that 'view' is a TuiView in this context
         this.tuiView = (TuiView) view;
+        this.networkType = networkType;
+        this.host = host;
+        this.port = port;
     }
 
     public void run() {
@@ -114,7 +123,17 @@ public class TuiController extends ClientController {
                 tuiView.onShowHelp(inPreLobby, inLobby, inGame);
             }
 
-            case "lobby" -> performReturnToLobby();
+            case "lobby" -> {
+                if (gameModel == null) {
+                    if (lobbyModel.getCurrentLobby() != null) {
+                        view.onError("Action blocked: You are already in the lobby. Use 'leave' to exit.");
+                    } else {
+                        view.onError("Action blocked: You are already in the pre-lobby screen.");
+                    }
+                    return;
+                }
+                performReturnToLobby();
+            }
 
             case "quit" -> {
                 proxy.disconnect();
@@ -128,6 +147,11 @@ public class TuiController extends ClientController {
                 else view.onError("Unknown command: '" + cmd + "'. Type 'help' for assistance.");
             }
         }
+    }
+
+    @Override
+    protected ServerProxy createNewProxy() throws Exception {
+        return ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
     }
 
     private int parseNumericArg(String input, String usage) {

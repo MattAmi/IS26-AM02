@@ -198,9 +198,13 @@ public class TuiView extends AbstractClientView {
             // Nickname set, check if they already have a totem
             boolean hasTotem = lobby.chosenTotems().containsKey(myNick);
             String totemCmd = hasTotem ? "totem <color> (to change)" : "totem <color>";
-            String statusMsg = hasTotem ? "You are ready!" : "Pick your totem!";
 
+            Totem myTotem = lobby.chosenTotems().get(myNick);
+            String statusMsg = hasTotem
+                    ? "You are ready! Totem: " + totemColor(myTotem) + "[" + myTotem + "]" + RESET
+                    : "Pick your totem!";
             System.out.println("\n" + GREEN + BOLD + ">> STEP 2: Nickname set (" + myNick + "). " + statusMsg + RESET);
+
             System.out.println("Commands: nick <name> (to change) | " + totemCmd + " | totems | leave | quit");
         }
         // -----------------------------------------

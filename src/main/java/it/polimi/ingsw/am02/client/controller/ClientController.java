@@ -93,6 +93,13 @@ public abstract class ClientController {
             return;
         }
 
+        // Se stai ri-inviando il tuo stesso nick, non fare nulla
+        String myCurrentNick = lobbyModel.getMyNickname();
+        if (myCurrentNick != null && myCurrentNick.equals(nickname)) {
+            view.onError("'" + nickname + "' is already your current nickname. No change made.");
+            return;
+        }
+
         LobbyInfo current = lobbyModel.getCurrentLobby();
         if (current != null && current.currentPlayers().contains(nickname)) {
             view.onError("Action blocked: The nickname '" + nickname + "' is already taken in this lobby.");
@@ -120,6 +127,7 @@ public abstract class ClientController {
         }
         proxy.requestCreateLobby(size);
     }
+
     /**
      * Validates the lobby index against the locally known list, then forwards to the server.
      */
@@ -164,6 +172,12 @@ public abstract class ClientController {
         LobbyInfo current = lobbyModel.getCurrentLobby();
         if (current == null) {
             view.onError("Action blocked: You must be in a lobby to select a totem.");
+            return;
+        }
+
+        Totem myCurrentTotem = current.chosenTotems().get(lobbyModel.getMyNickname());
+        if (totem.equals(myCurrentTotem)) {
+            view.onError("'" + totem + "' is already your current totem. No change made.");
             return;
         }
 

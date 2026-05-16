@@ -240,8 +240,9 @@ public class SceneRouter {
                         guiController.setServerProxy(newProxy);
                         newProxy.setClientController(guiController);
                         newProxy.connect();
-
+                        guiController.setConnectionConfig(config.type(), config.host(), config.port()); // aggiunto
                         showToast("Connected", "Successfully connected via " + config.type(), Alert.AlertType.INFORMATION);
+
                         hideModal();
                         showIntroScene();
                     } catch (Exception ex) { onError.accept(ex.getMessage()); }

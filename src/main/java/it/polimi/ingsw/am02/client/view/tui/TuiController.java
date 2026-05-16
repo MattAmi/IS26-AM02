@@ -130,24 +130,9 @@ public class TuiController extends ClientController {
                     } else {
                         view.onError("Action blocked: You are already in the pre-lobby screen.");
                     }
-                    return; // ← return invece di break
+                    return;
                 }
-
-                gameModel.removeObserver(view);
-                setGameModel(null);
-                view.onReturnToLobby();            // reset locale immediato
-
-                try { proxy.disconnect(); } catch (Exception ignored) {}
-
-                try {
-                    ServerProxy newProxy = ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
-                    newProxy.setClientController(this);
-                    setServerProxy(newProxy);
-                    lobbyModel.addObserver(view);
-                    newProxy.connect();
-                } catch (Exception e) {
-                    view.onError("Return to lobby failed: " + e.getMessage());
-                }
+                performReturnToLobby();
             }
 
             case "quit" -> {
@@ -162,6 +147,11 @@ public class TuiController extends ClientController {
                 else view.onError("Unknown command: '" + cmd + "'. Type 'help' for assistance.");
             }
         }
+    }
+
+    @Override
+    protected ServerProxy createNewProxy() throws Exception {
+        return ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
     }
 
     private int parseNumericArg(String input, String usage) {

@@ -27,6 +27,7 @@ public abstract class ClientController {
     protected final LobbyModel lobbyModel;
     protected final ClientView view;
     protected GameModel gameModel;
+    protected abstract ServerProxy createNewProxy() throws Exception;
 
     public ClientController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
         this.proxy = proxy;
@@ -52,39 +53,23 @@ public abstract class ClientController {
         this.view.setGameModel(this.gameModel);
     }
 
-    /**
-     * Tears down the game context and attempts to reconnect to the lobby.
-     * Handles network failures gracefully by notifying the view.
-     * Provides instant UI feedback before executing network operations in the background.
-     */
     protected void performReturnToLobby() {
-
         if (gameModel != null) {
             gameModel.removeObserver(view);
             gameModel = null;
         }
         view.onReturnToLobby();
+        try { proxy.disconnect(); } catch (Exception ignored) {}
+
         new Thread(() -> {
             try {
-                proxy.disconnect();
-                boolean isConnected = false;
-                int attempts = 0;
-                while (!isConnected && attempts < 5) {
-                    try {
-                        Thread.sleep(1000); // Give the socket time to breathe
-                        proxy.connect();
-                        isConnected = true;
-                    } catch (Exception e) {
-                        attempts++;
-                        System.err.println("[Network] Reconnect attempt " + attempts + " failed: " + e.getMessage());
-                        if (attempts >= 5) throw e; // Give up after 5 failures
-                    }
-                }
+                ServerProxy newProxy = createNewProxy();
+                newProxy.setClientController(this);
+                setServerProxy(newProxy);
                 lobbyModel.addObserver(view);
-
+                newProxy.connect();
             } catch (Exception e) {
-                e.printStackTrace();
-                view.onError("Return to lobby failed: The server is unreachable. Please check your connection.");
+                view.onError("Return to lobby failed: " + e.getMessage());
             }
         }, "ReturnToLobby-Worker").start();
     }

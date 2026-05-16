@@ -3,16 +3,33 @@ package it.polimi.ingsw.am02.client.view.gui;
 import it.polimi.ingsw.am02.client.controller.ClientController;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
 import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
 import java.util.List;
 
 public class GuiController extends ClientController {
 
+    private NetworkType networkType;
+    private String host;
+    private int port;
+
     public GuiController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
         super(proxy, lobbyModel, view);
+    }
+
+    public void setConnectionConfig(NetworkType networkType, String host, int port) {
+        this.networkType = networkType;
+        this.host = host;
+        this.port = port;
+    }
+
+    @Override
+    protected ServerProxy createNewProxy() throws Exception {
+        return ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
     }
 
     public List<LobbyInfo> getAvailableLobbies() {

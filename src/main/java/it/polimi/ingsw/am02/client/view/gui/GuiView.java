@@ -116,7 +116,7 @@ public class GuiView extends AbstractClientView {
         GameScene gs = sceneRouter.getGameScene();
         if (gs != null) {
             // Questo comando fa fare +1 alla variabile currentEra e poi fa il refresh!
-            gs.showNewEraAnimation(newUpperRowBuildings, newLowerRowBuildings);
+            gs.showNewEraAnimation(newEra, newUpperRowBuildings, newLowerRowBuildings);
         } else {
             refreshGameIfActive();
         }

@@ -20,6 +20,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.*;
 import javafx.util.Duration;
+import it.polimi.ingsw.am02.common.enumerations.Era;
+import javafx.scene.effect.GaussianBlur;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +35,7 @@ public class GameScene {
     private GuiController controller;
     private GameModel model;
     private StackPane baseStack;
+    private StackPane modalLayer;   // ← AGGIUNGI questa riga
     private BorderPane root;
     private HBox statusBox;
     private VBox rightSidebar;
@@ -202,6 +205,11 @@ public class GameScene {
         StackPane.setAlignment(bottomLayout, Pos.BOTTOM_CENTER);
         centerLayout.getChildren().addAll(darkOverlay, scrollPane, bottomLayout);
         root.setCenter(centerLayout); baseStack.getChildren().add(root);
+
+        modalLayer = new StackPane();
+        modalLayer.setVisible(false);
+        modalLayer.setStyle("-fx-background-color: transparent;");
+        baseStack.getChildren().add(modalLayer);
         return baseStack;
     }
 
@@ -547,7 +555,24 @@ public class GameScene {
     private int extractGathererDiscount(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf("Food Discount: -"); if (index != -1) { int end = desc.indexOf(" Food", index + 16); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 16, end).trim()); } catch (Exception ignored) {} } } return 0; }
 
     // --- EVENTI BASE ---
-    public void showNewEraAnimation(List<String> u, List<String> l) { if (currentEra < 3) currentEra++; refreshAll(model); }
+    public void showNewEraAnimation(Era newEra, List<String> u, List<String> l) {
+        if (currentEra < 3) currentEra++;
+        refreshAll(model);
+
+        Platform.runLater(() -> {
+            // Sfoca il gioco sottostante
+            root.setEffect(new GaussianBlur(12));
+
+            NewEraOverlay overlay = new NewEraOverlay();
+            StackPane node = overlay.buildNode(newEra, () -> {
+                root.setEffect(null);
+                modalLayer.setVisible(false);
+                modalLayer.getChildren().clear();
+            });
+            modalLayer.getChildren().setAll(node);
+            modalLayer.setVisible(true);
+        });
+    }
     public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }
     public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
 

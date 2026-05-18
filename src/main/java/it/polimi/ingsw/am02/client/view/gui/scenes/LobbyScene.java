@@ -141,9 +141,19 @@ public class LobbyScene {
         confirmNick.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3;");
         if (tribalSmall != null) confirmNick.setFont(tribalSmall);
         confirmNick.setOnAction(e -> {
-            if (!nickField.getText().isBlank()) {
-                nickField.setEditable(false);
-                controller.requestSetUsername(nickField.getText());
+            String inputText = nickField.getText();
+            if (!inputText.isBlank()) {
+                if (inputText.equals(myNickname)) {
+                    // Fast-forward se il nome è lo stesso
+                    nickField.setEditable(false);
+                    nicknameBox.setVisible(false);
+                    totemBox.setVisible(true);
+                    updateCarouselVisuals();
+                } else {
+                    // Nome nuovo, invia richiesta
+                    nickField.setEditable(false);
+                    controller.requestSetUsername(inputText);
+                }
             }
         });
         nicknameBox.getChildren().addAll(nickLabel, nickField, confirmNick);
@@ -204,7 +214,6 @@ public class LobbyScene {
         backBtn.setStyle("-fx-base: #555555; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #888888;"); // Gray style
         if (tribalSmall != null) backBtn.setFont(tribalSmall);
         backBtn.setOnAction(e -> {
-            myNickname = null;
             nickField.setEditable(true);
             totemBox.setVisible(false);
             nicknameBox.setVisible(true);

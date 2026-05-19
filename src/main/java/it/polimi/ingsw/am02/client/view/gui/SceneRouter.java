@@ -66,6 +66,7 @@ public class SceneRouter {
         primaryStage.setTitle("Mesos - Board Game");
         primaryStage.setScene(mainScene);
         primaryStage.setResizable(false);
+        primaryStage.setFullScreenExitHint("Press ESC to exit full screen");
     }
 
     // GESTORE THREAD-SAFE UNIVERSALE

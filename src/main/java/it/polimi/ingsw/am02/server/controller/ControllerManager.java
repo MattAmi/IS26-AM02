@@ -306,6 +306,7 @@ public class ControllerManager implements VirtualControllerManager {
 
         broadcastToPreLobbyClients();
         model.startFSM();
+        //model.injectBuildingForTesting("Matteo", "B_020"); FOR TESTING
     }
 
     public synchronized void removeLobby(String lobbyId) {

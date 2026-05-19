@@ -384,6 +384,15 @@ public class GameController implements GameObserver {
             }
 
             handle(autoCmd, nickname);
+
+            // Se il comando era un pick (non move T), rischedula per il pick successivo
+            synchronized (this) {
+                if (nickname.equals(currentPlayerNickname)
+                        && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED
+                        && autoCmd instanceof ResolveActionsCommand) {
+                    scheduleAutoPlayerMove(nickname);
+                }
+            }
         });
     }
 
@@ -580,11 +589,6 @@ public class GameController implements GameObserver {
                                                    int remainingUpper, int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         pushGlobalCall(v -> v.notifyPlayerLimitsUpdated(nickname, remainingUpper, remainingLower));
-
-        if (nickname.equals(currentPlayerNickname)
-                && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
-            scheduleAutoPlayerMove(nickname);
-        }
     }
 
     @Override
@@ -604,11 +608,6 @@ public class GameController implements GameObserver {
         snapshot.setExtraTurnMode(true);
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         pushGlobalCall(v -> v.notifyExtraTurnStarted(nickname, remainingUpper, remainingLower));
-
-        if (nickname.equals(currentPlayerNickname)
-                && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
-            scheduleAutoPlayerMove(nickname);
-        }
     }
 
     @Override

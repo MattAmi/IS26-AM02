@@ -367,8 +367,9 @@ public class GameController implements GameObserver {
         autoPlayerExecutor.execute(() -> {
             GameCommand autoCmd;
             synchronized (this) {
-                if (!nickname.equals(currentPlayerNickname)) {
-                    log("AutoPlayer skipped for " + nickname + ": no longer current player.");
+                if (!nickname.equals(currentPlayerNickname)
+                        || connectionStatus.get(nickname) != ConnectionStatus.DISCONNECTED) {
+                    log("AutoPlayer skipped for " + nickname + ": no longer disconnected or current player.");
                     return;
                 }
                 autoCmd = AutoPlayer.computeMove(nickname, snapshot);

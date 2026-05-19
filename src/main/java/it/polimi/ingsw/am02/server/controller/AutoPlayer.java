@@ -45,6 +45,10 @@ final class AutoPlayer {
     // Action resolution
 
     private static GameCommand computeActionResolution(String nickname, ServerGameSnapshot snapshot) {
+        if (snapshot.isExtraTurnMode()) {
+            return new MoveTotemCommand(nickname, 'T');   // extra turn: always skip
+        }
+
         if (canPlayerFinish(nickname, snapshot)) {
             return new MoveTotemCommand(nickname,'T');
         }

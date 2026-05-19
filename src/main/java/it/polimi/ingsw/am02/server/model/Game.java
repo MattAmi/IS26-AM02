@@ -495,6 +495,7 @@ public class Game implements ModelInterface {
                         extraTurnLowerPicks);
 
                 // Notify observers that an extra turn has started for a player
+                notifier.notifyPhaseChanged(PhaseType.ACTION_RESOLUTION, currentPlayerNickname);
                 notifier.notifyExtraTurnStarted(extraTurnPlayerNickname, extraTurnUpperPicks, extraTurnLowerPicks);
 
                 transitionTo(new ActionResolutionState());
@@ -622,5 +623,19 @@ public class Game implements ModelInterface {
     // FOR TESTING
     String getCurrentPlayerNickname() { return currentPlayerNickname; } // FOR TESTING
     List<String> getTurnOrder() { return turnOrder; } // FOR TESTING
+
+    /**
+     * FOR TESTING ONLY.
+     * Instantly grants a building card to a player, bypassing deck draw,
+     * board availability, and food cost requirements.
+     * Call after {@code startFSM()} has completed setup.
+     *
+     * @param nickname the player to receive the building
+     * @param cardID   the building card ID to grant (e.g. "B_020")
+     */
+    public void injectBuildingForTesting(String nickname, String cardID) { // FOR TESTING
+        Player player = getPlayerByNickname(nickname);
+        player.getTribu().insertBuilding(cardID, player, this);
+    }
 }
 

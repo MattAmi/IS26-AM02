@@ -496,6 +496,12 @@ public class GameBoard {
 
         this.extraTurnRemainingUpper = Math.min(upperPicks, availableUpper);
         this.extraTurnRemainingLower = Math.min(lowerPicks, availableLower);
+
+        // Initializes and broadcasts the turn limits for a specific player
+        notifier.notifyPlayerLimitsInitialized(
+                player.getNickname(),
+                extraTurnRemainingUpper,
+                extraTurnRemainingLower);
     }
 
     public void processExtraActionSelection(Player player, List<String> selectedIDs, Game game) {

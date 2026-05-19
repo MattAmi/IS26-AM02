@@ -367,6 +367,10 @@ public class GameController implements GameObserver {
         autoPlayerExecutor.execute(() -> {
             GameCommand autoCmd;
             synchronized (this) {
+                if (!nickname.equals(currentPlayerNickname)) {
+                    log("AutoPlayer skipped for " + nickname + ": no longer current player.");
+                    return;
+                }
                 autoCmd = AutoPlayer.computeMove(nickname, snapshot);
             }
 
@@ -380,6 +384,15 @@ public class GameController implements GameObserver {
             }
 
             handle(autoCmd, nickname);
+
+            // Se il comando era un pick (non move T), rischedula per il pick successivo
+            synchronized (this) {
+                if (nickname.equals(currentPlayerNickname)
+                        && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED
+                        && autoCmd instanceof ResolveActionsCommand) {
+                    scheduleAutoPlayerMove(nickname);
+                }
+            }
         });
     }
 
@@ -576,11 +589,6 @@ public class GameController implements GameObserver {
                                                    int remainingUpper, int remainingLower) {
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         pushGlobalCall(v -> v.notifyPlayerLimitsUpdated(nickname, remainingUpper, remainingLower));
-
-        if (nickname.equals(currentPlayerNickname)
-                && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
-            scheduleAutoPlayerMove(nickname);
-        }
     }
 
     @Override
@@ -597,17 +605,14 @@ public class GameController implements GameObserver {
     @Override
     public synchronized void onExtraTurnStarted(String nickname,
                                                 int remainingUpper, int remainingLower) {
+        snapshot.setExtraTurnMode(true);
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         pushGlobalCall(v -> v.notifyExtraTurnStarted(nickname, remainingUpper, remainingLower));
-
-        if (nickname.equals(currentPlayerNickname)
-                && connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {
-            scheduleAutoPlayerMove(nickname);
-        }
     }
 
     @Override
     public synchronized void onExtraTurnEnded(String nickname) {
+        snapshot.setExtraTurnMode(false);
         pushGlobalCall(v -> v.notifyExtraTurnEnded(nickname));
     }
 

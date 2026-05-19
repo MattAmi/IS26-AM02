@@ -23,6 +23,7 @@ final class ServerGameSnapshot {
     //Phase / turn
     private PhaseType currentPhase;
     private String currentPlayerNickname;
+    private boolean extraTurnMode = false;
 
     // Tribe-card rows
     private final List<String> upperRow = new ArrayList<>();
@@ -51,6 +52,10 @@ final class ServerGameSnapshot {
         }
         return free;
     }
+
+    // Extra turn
+    void setExtraTurnMode(boolean active) { this.extraTurnMode = active; }
+    boolean isExtraTurnMode() { return extraTurnMode; }
 
 
     // Mutators — called exclusively by GameController's GameObserver callbacks

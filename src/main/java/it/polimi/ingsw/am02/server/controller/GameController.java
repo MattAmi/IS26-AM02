@@ -367,6 +367,10 @@ public class GameController implements GameObserver {
         autoPlayerExecutor.execute(() -> {
             GameCommand autoCmd;
             synchronized (this) {
+                if (!nickname.equals(currentPlayerNickname)) {
+                    log("AutoPlayer skipped for " + nickname + ": no longer current player.");
+                    return;
+                }
                 autoCmd = AutoPlayer.computeMove(nickname, snapshot);
             }
 
@@ -597,6 +601,7 @@ public class GameController implements GameObserver {
     @Override
     public synchronized void onExtraTurnStarted(String nickname,
                                                 int remainingUpper, int remainingLower) {
+        snapshot.setExtraTurnMode(true);
         snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);
         pushGlobalCall(v -> v.notifyExtraTurnStarted(nickname, remainingUpper, remainingLower));
 
@@ -608,6 +613,7 @@ public class GameController implements GameObserver {
 
     @Override
     public synchronized void onExtraTurnEnded(String nickname) {
+        snapshot.setExtraTurnMode(false);
         pushGlobalCall(v -> v.notifyExtraTurnEnded(nickname));
     }
 

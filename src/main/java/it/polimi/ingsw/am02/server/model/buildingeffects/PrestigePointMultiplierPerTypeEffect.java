@@ -37,6 +37,9 @@ public class PrestigePointMultiplierPerTypeEffect implements BuildingEffect, Pha
 
             int bonus = tribu.getPPBuilders() * (multiplier - 1);
 
+            if (bonus == 0)
+                return EffectOutcome.empty();
+
             tribu.addPrestigePoints(bonus);
 
             return new EffectOutcome(List.of(

@@ -1,10 +1,12 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.server.model.GameRegistry;
 import it.polimi.ingsw.am02.server.model.Tribu;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.server.model.enumerations.InventionType;
 import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
 
 import java.util.List;
 
@@ -14,6 +16,7 @@ class TribuTest {
 
     private Tribu tribu;
     private static GameRegistry registry;
+    private final Player mockPlayer = Mockito.mock(Player.class);
 
     @BeforeEach
     void setUp() {
@@ -22,6 +25,8 @@ class TribuTest {
         tribu = new Tribu();
         TestHelper.ensureRegistryLoaded();
         registry = GameRegistry.getInstance();
+        Mockito.when(mockPlayer.getTribu()).thenReturn(tribu);
+        Mockito.when(mockPlayer.getNickname()).thenReturn("TestPlayer");
     }
 
     @Test
@@ -177,7 +182,7 @@ class TribuTest {
         String hunterID = findFirstCardIDByType(CharacterType.HUNTER);
         assertNotNull(hunterID, "No HUNTER card found in registry");
 
-        tribu.insertCharacter(hunterID);
+        tribu.insertCharacter(hunterID, mockPlayer);
         assertEquals(1, tribu.getCharacterCount(CharacterType.HUNTER));
     }
 
@@ -187,7 +192,7 @@ class TribuTest {
         String hunterID = findFirstCardIDByType(CharacterType.HUNTER);
         assertNotNull(hunterID, "No HUNTER card found in registry");
 
-        tribu.insertCharacter(hunterID);
+        tribu.insertCharacter(hunterID, mockPlayer);
         assertEquals(1, tribu.getNumCharacters());
     }
 
@@ -197,8 +202,8 @@ class TribuTest {
         List<String> hunterIDs = findCardIDsByType(CharacterType.HUNTER, 2);
         assertTrue(hunterIDs.size() >= 2, "Need at least 2 HUNTER cards in registry");
 
-        tribu.insertCharacter(hunterIDs.get(0));
-        tribu.insertCharacter(hunterIDs.get(1));
+        tribu.insertCharacter(hunterIDs.get(0), mockPlayer);
+        tribu.insertCharacter(hunterIDs.get(1), mockPlayer);
 
         assertEquals(2, tribu.getCharacterCount(CharacterType.HUNTER));
         assertEquals(2, tribu.getNumCharacters());
@@ -212,8 +217,8 @@ class TribuTest {
         assertNotNull(hunterID);
         assertNotNull(builderID);
 
-        tribu.insertCharacter(hunterID);
-        tribu.insertCharacter(builderID);
+        tribu.insertCharacter(hunterID, mockPlayer);
+        tribu.insertCharacter(builderID, mockPlayer);
 
         assertEquals(1, tribu.getCharacterCount(CharacterType.HUNTER));
         assertEquals(1, tribu.getCharacterCount(CharacterType.BUILDER));
@@ -233,7 +238,7 @@ class TribuTest {
         assertNotNull(builderID, "No BUILDER card found in registry");
 
         int discountBefore = tribu.getBuildingDiscount();
-        tribu.insertCharacter(builderID);
+        tribu.insertCharacter(builderID, mockPlayer);
 
         assertTrue(tribu.getBuildingDiscount() > discountBefore,
                 "Building discount should increase after inserting a BUILDER");
@@ -245,10 +250,10 @@ class TribuTest {
         List<String> builderIDs = findCardIDsByType(CharacterType.BUILDER, 2);
         assertTrue(builderIDs.size() >= 2, "Need at least 2 BUILDER cards in registry");
 
-        tribu.insertCharacter(builderIDs.get(0));
+        tribu.insertCharacter(builderIDs.get(0), mockPlayer);
         int discountAfterFirst = tribu.getBuildingDiscount();
 
-        tribu.insertCharacter(builderIDs.get(1));
+        tribu.insertCharacter(builderIDs.get(1), mockPlayer);
         assertTrue(tribu.getBuildingDiscount() >= discountAfterFirst,
                 "Building discount should not decrease after adding another BUILDER");
     }
@@ -259,7 +264,7 @@ class TribuTest {
         String builderID = findFirstCardIDByType(CharacterType.BUILDER);
         assertNotNull(builderID);
 
-        tribu.insertCharacter(builderID);
+        tribu.insertCharacter(builderID, mockPlayer);
 
         assertTrue(tribu.getPPBuilders() > 0,
                 "PP from builders should be positive after inserting a BUILDER");
@@ -271,7 +276,7 @@ class TribuTest {
         String inventorID = findFirstCardIDByType(CharacterType.INVENTOR);
         assertNotNull(inventorID, "No INVENTOR card found in registry");
 
-        tribu.insertCharacter(inventorID);
+        tribu.insertCharacter(inventorID, mockPlayer);
 
         assertTrue(tribu.getNumOfDifferentInventionTypes() > 0,
                 "After inserting an INVENTOR, at least one invention type should be tracked");
@@ -284,12 +289,12 @@ class TribuTest {
         List<String> inventorIDs = findCardIDsByType(CharacterType.INVENTOR, 6);
         assertTrue(inventorIDs.size() >= 2, "Need at least 2 INVENTOR cards in registry");
 
-        tribu.insertCharacter(inventorIDs.getFirst());
+        tribu.insertCharacter(inventorIDs.getFirst(), mockPlayer);
         int distinctAfterFirst = tribu.getNumOfDifferentInventionTypes();
 
         // Try adding more inventors until we find one that increases distinct count
         for (int i = 1; i < inventorIDs.size(); i++) {
-            tribu.insertCharacter(inventorIDs.get(i));
+            tribu.insertCharacter(inventorIDs.get(i), mockPlayer);
         }
 
         assertTrue(tribu.getNumOfDifferentInventionTypes() >= distinctAfterFirst,
@@ -302,7 +307,7 @@ class TribuTest {
         String hunterID = findFirstCardIDByType(CharacterType.HUNTER);
         assertNotNull(hunterID);
 
-        tribu.insertCharacter(hunterID);
+        tribu.insertCharacter(hunterID, mockPlayer);
 
         assertEquals(0, tribu.getBuildingDiscount(),
                 "HUNTER should not affect building discount");
@@ -322,7 +327,7 @@ class TribuTest {
         String hunterID = findFirstCardIDByType(CharacterType.HUNTER);
         assertNotNull(hunterID);
 
-        tribu.insertCharacter(hunterID);
+        tribu.insertCharacter(hunterID, mockPlayer);
 
         assertTrue(tribu.calculateSustenanceCost() > 0,
                 "Sustenance cost should be positive after adding a character");
@@ -334,13 +339,13 @@ class TribuTest {
         List<String> hunterIDs = findCardIDsByType(CharacterType.HUNTER, 3);
         assertTrue(hunterIDs.size() >= 3, "Need at least 3 HUNTER cards in registry");
 
-        tribu.insertCharacter(hunterIDs.get(0));
+        tribu.insertCharacter(hunterIDs.get(0), mockPlayer);
         int costAfter1 = tribu.calculateSustenanceCost();
 
-        tribu.insertCharacter(hunterIDs.get(1));
+        tribu.insertCharacter(hunterIDs.get(1), mockPlayer);
         int costAfter2 = tribu.calculateSustenanceCost();
 
-        tribu.insertCharacter(hunterIDs.get(2));
+        tribu.insertCharacter(hunterIDs.get(2), mockPlayer);
         int costAfter3 = tribu.calculateSustenanceCost();
 
         assertTrue(costAfter2 > costAfter1,
@@ -357,7 +362,7 @@ class TribuTest {
 
         int previousDiscount = 0;
         for (String id : builderIDs) {
-            tribu.insertCharacter(id);
+            tribu.insertCharacter(id, mockPlayer);
             int currentDiscount = tribu.getBuildingDiscount();
             assertTrue(currentDiscount >= previousDiscount,
                     "Building discount should never decrease after inserting a BUILDER (was "
@@ -377,7 +382,7 @@ class TribuTest {
 
         int previousPP = 0;
         for (String id : builderIDs) {
-            tribu.insertCharacter(id);
+            tribu.insertCharacter(id, mockPlayer);
             int currentPP = tribu.getPPBuilders();
             assertTrue(currentPP >= previousPP,
                     "PP from builders should never decrease after inserting a BUILDER (was "
@@ -395,7 +400,7 @@ class TribuTest {
         String hunterID = findFirstCardIDByType(CharacterType.HUNTER);
         assertNotNull(hunterID);
 
-        tribu.insertCharacter(hunterID);
+        tribu.insertCharacter(hunterID, mockPlayer);
         assertEquals(0, tribu.getTotalPPBuildings(),
                 "Character insertions should not affect totalPPBuildings");
     }

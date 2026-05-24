@@ -1,11 +1,16 @@
 package it.polimi.ingsw.am02.server.model;
 
-import it.polimi.ingsw.am02.common.enumerations.PhaseType;
-import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
+import it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.server.controller.GameController;
+import it.polimi.ingsw.am02.server.controller.persistence.NoOpCommandLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +31,7 @@ class FullRoundIntegrationTest {
 
     private static final String P1 = "Matteo";
     private static final String P2 = "Husnain";
+    private static final long seed = 42L;
 
     private Game game;
     private EventCollector collector;
@@ -34,10 +40,52 @@ class FullRoundIntegrationTest {
     static class EventCollector implements VirtualView {
         final List<Event> events = new ArrayList<>();
 
+        @Override public void notifyUsernameResult(String username, boolean isValid, String reason) {}
+        @Override public void notifyGameStarted(String gameId) { events.add(new GameStartedEvent(gameId)); }
+        @Override public void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {}
+        @Override public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {}
+        @Override public void notifyLobbyDissolved(String lobbyID) {}
+
         @Override
-        public void notify(Event event) {
-            events.add(event);
+        public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
+            events.add(new GameSetupCompletedEvent(totemByPlayer, turnOrder, initialFood, boardSnapshot));
         }
+
+        @Override
+        public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
+            events.add(new PhaseChangedEvent(phase, currentPlayer, resolutionOrder));
+        }
+
+        @Override public void notifyCurrentPlayerChanged(String nextPlayer) { events.add(new CurrentPlayerChangedEvent(nextPlayer)); }
+        @Override public void notifyTurnOrderEstablished(List<String> turnOrder) { events.add(new TurnOrderEstablishedEvent(turnOrder)); }
+
+        @Override
+        public void notifyBoardUpdated(List<String> newUpperRow, List<String> newLowerRow, List<String> discardedCards, List<String> movedToLowerRow, int deckRemainingCount) {
+            events.add(new BoardUpdatedEvent(newUpperRow, newLowerRow, discardedCards, movedToLowerRow, deckRemainingCount));
+        }
+
+        @Override
+        public void notifyEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings, List<String> discardedBuildings) {
+            events.add(new EraChangedEvent(newEra, newUpperRowBuildings, newLowerRowBuildings, discardedBuildings));
+        }
+
+        @Override public void notifyTotemPlaced(String nickname, char tileID) { events.add(new TotemPlacedEvent(nickname, tileID)); }
+        @Override public void notifyTotemReturned(String nickname, int turnOrderPosition) { events.add(new TotemReturnedEvent(nickname, turnOrderPosition)); }
+        @Override public void notifyCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) { events.add(new CardTakenEvent(nickname, cardID, cardType, sourceRow)); }
+        @Override public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) { events.add(new PlayerLimitsInitializedEvent(nickname, remainingUpper, remainingLower)); }
+        @Override public void notifyPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) { events.add(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower)); }
+        @Override public void notifyPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta) { events.add(new PlayerResourceChangedEvent(nickname, resource, newValue, delta)); }
+        @Override public void notifyEventResolved(String eventID, String eventName) { events.add(new EventResolvedEvent(eventID, eventName)); }
+        @Override public void notifyExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) { events.add(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower)); }
+        @Override public void notifyExtraTurnEnded(String nickname) { events.add(new ExtraTurnEndedEvent(nickname)); }
+        @Override public void notifyGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) { events.add(new GameEndedEvent(winners, finalRankings)); }
+        @Override public void notifyError(String message) { events.add(new ErrorEvent(message)); }
+        @Override public void notifyPlayerDisconnected(String nickname) { events.add(new PlayerDisconnectedEvent(nickname)); }
+        @Override public void notifyPlayerReconnected(String nickname) { events.add(new PlayerReconnectedEvent(nickname)); }
+        @Override public void notifyAutoPlayerTimerStarted(String nickname) { events.add(new AutoPlayerTimerStartedEvent(nickname)); }
+        @Override public void notifyAutoPlayerInvoked(String nickname) { events.add(new AutoPlayerInvokedEvent(nickname)); }
+        @Override public void notifyGameAborted(String winner) { events.add(new GameAbortedEvent(winner)); }
+        @Override public void notifyGameRecoveryFailed() { events.add(new GameRecoveryFailedEvent()); }
 
         /** Returns the last event of the given type, or null. */
         @SuppressWarnings("unchecked")
@@ -74,7 +122,7 @@ class FullRoundIntegrationTest {
         Map<String, VirtualView> views = Map.of(P1, collector, P2, collector);
 
         // GameController registers itself as GameObserver on construction
-        new GameController(game, views);
+        new GameController("test-game-01", game, views, new NoOpCommandLogger());
 
         // Triggers SetUpState → TotemPlacementState automatically
         game.startFSM();
@@ -167,17 +215,34 @@ class FullRoundIntegrationTest {
 
     /**
      * Attempts to resolve actions for a player.
-     * Passes empty list first; if the model throws (mandatory pick), falls back
-     * to picking the first available upper-row card.
+     * Picks characters until the player is allowed to finish their turn.
      */
     private void tryResolveOrSkip(String player, GameSetupCompletedEvent setupEvent) {
-        try {
-            game.resolveActions(player, List.of());
-        } catch (RuntimeException e) {
-            // Mandatory pick required — take the first upper-row card available
-            List<String> upper = setupEvent.boardSnapshot().upperRowCards();
-            if (!upper.isEmpty()) {
-                game.resolveActions(player, List.of(upper.get(0)));
+        Player p = game.getPlayerByNickname(player);
+        while (!game.getGameBoard().canPlayerFinish(p)) {
+            OfferTile tile = game.getGameBoard().getOfferTrack().getTileByPlayer(p);
+            String toPick = null;
+            if (tile.getRemainingUpper() > 0) {
+                for (String id : game.getGameBoard().getUpperRow()) {
+                    if (GameRegistry.getInstance().isCharacter(id)) {
+                        toPick = id;
+                        break;
+                    }
+                }
+            }
+            if (toPick == null && tile.getRemainingLower() > 0) {
+                for (String id : game.getGameBoard().getLowerRow()) {
+                    if (GameRegistry.getInstance().isCharacter(id)) {
+                        toPick = id;
+                        break;
+                    }
+                }
+            }
+
+            if (toPick != null) {
+                game.resolveActions(player, List.of(toPick));
+            } else {
+                break; // No characters left to pick
             }
         }
     }

@@ -1,16 +1,26 @@
 package it.polimi.ingsw.am02.server.model.buildingeffects;
 
-import it.polimi.ingsw.am02.server.model.EffectVisitor;
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.server.model.EffectVisitor;
 import it.polimi.ingsw.am02.server.model.Game;
 import it.polimi.ingsw.am02.server.model.Player;
-import it.polimi.ingsw.am02.server.model.buildingeffects.ExtraTurnEffect;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.Mockito;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for the {@link ExtraTurnEffect} class.
+ * Ensures that the effect correctly enqueues an extra turn for the player
+ * exclusively during the END_ROUND phase, and properly implements the visitor pattern.
+ */
 class ExtraTurnEffectTest {
 
     private Player mockPlayer;
@@ -18,52 +28,77 @@ class ExtraTurnEffectTest {
     private EffectVisitor mockVisitor;
     private ExtraTurnEffect effect;
 
-    // Strict test constants to prevent "cheating"
-    private final String TEST_NICKNAME = "TestPlayer123";
-    private final int EXTRA_UPPER_PICKS = 2;
-    private final int EXTRA_LOWER_PICKS = 1;
+    // Strict test constants to prevent false positives
+    private static final String TEST_NICKNAME = "TestPlayer123";
+    private static final int EXTRA_UPPER_PICKS = 2;
+    private static final int EXTRA_LOWER_PICKS = 1;
 
     @BeforeEach
     void setUp() {
-        // 1. Create the mocks
+        // Arrange: Initialize mocks
         mockPlayer = Mockito.mock(Player.class);
         mockGame = Mockito.mock(Game.class);
         mockVisitor = Mockito.mock(EffectVisitor.class);
 
-        // 2. Instantiate the effect with strict expected values
+        // Standard setup for the player mock
+        when(mockPlayer.getNickname()).thenReturn(TEST_NICKNAME);
+
+        // Instantiate the effect with strict expected values
         effect = new ExtraTurnEffect(mockPlayer, mockGame, EXTRA_UPPER_PICKS, EXTRA_LOWER_PICKS);
     }
 
+    /**
+     * Tests that the visitor pattern is correctly implemented.
+     */
     @Test
-    void testAcceptCallsVisitPhaseObserver() {
+    void accept_validVisitor_callsVisitPhaseObserver() {
+        // Act
         effect.accept(mockVisitor);
+
+        // Assert
         verify(mockVisitor, times(1)).visitPhaseObserver(effect);
     }
 
+    // =========================================================================================
+    // ON PHASE CHANGE TESTS
+    // =========================================================================================
+
+    /**
+     * Tests that the effect extracts the player's nickname and enqueues an extra turn
+     * with the precise configuration when the END_ROUND phase triggers.
+     */
     @Test
-    void testOnPhaseChange_WithEndRoundPhase_ShouldEnqueueExtraTurnWithCorrectData() {
-        // Arrange: The mock player MUST return our specific test nickname
-        when(mockPlayer.getNickname()).thenReturn(TEST_NICKNAME);
+    void onPhaseChange_endRoundPhase_enqueuesExtraTurnAndReturnsEmptyOutcome() {
+        // Act
+        EffectOutcome outcome = effect.onPhaseChange(PhaseType.END_ROUND);
 
-        // Act: Trigger the phase change
-        effect.onPhaseChange(PhaseType.END_ROUND);
-
-        // Assert: We DO NOT use any(), anyInt(), or anyString() here.
-        // We strictly verify that the exact values passed to the constructor
-        // and extracted from the player are correctly routed to the Game.
+        // Assert: Verify state and interactions strictly
         verify(mockPlayer, times(1)).getNickname();
         verify(mockGame, times(1)).enqueueExtraTurn(TEST_NICKNAME, EXTRA_UPPER_PICKS, EXTRA_LOWER_PICKS);
+
+        // Assert: Ensure the outcome obeys the contract
+        assertNotNull(outcome, "EffectOutcome should never be null");
+        assertTrue(outcome.isEmpty(), "EffectOutcome should be explicitly empty for this effect");
     }
 
-    @Test
-    void testOnPhaseChange_WithOtherPhases_ShouldDoNothing() {
-        // Act: Trigger a phase change that is NOT END_ROUND
-        effect.onPhaseChange(PhaseType.ACTION_RESOLUTION);
+    /**
+     * Tests that the effect remains completely dormant during any phase other than END_ROUND,
+     * including null phases.
+     * @param phase A phase type that is NOT END_ROUND, or null.
+     */
+    @ParameterizedTest
+    @EnumSource(value = PhaseType.class, mode = EnumSource.Mode.EXCLUDE, names = {"END_ROUND"})
+    @NullSource
+    void onPhaseChange_nonEndRoundOrNullPhase_doesNothingAndReturnsEmptyOutcome(PhaseType phase) {
+        // Act
+        EffectOutcome outcome = effect.onPhaseChange(phase);
 
-        // Assert: The effect must remain completely silent
+        // Assert: Verify the effect remained silent
         verify(mockPlayer, never()).getNickname();
-
-        // Ensure no extra turn is queued under any circumstance
         verify(mockGame, never()).enqueueExtraTurn(anyString(), anyInt(), anyInt());
+
+        // Assert: Ensure the outcome obeys the contract even when ignored
+        assertNotNull(outcome, "EffectOutcome should never be null");
+        assertTrue(outcome.isEmpty(), "EffectOutcome should be explicitly empty when phase is ignored");
     }
 }

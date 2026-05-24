@@ -1,102 +1,155 @@
 package it.polimi.ingsw.am02.server.model.buildingeffects;
 
-import it.polimi.ingsw.am02.server.model.EffectVisitor;
-import it.polimi.ingsw.am02.server.model.buildingeffects.EndGameFullSetPPEffect;
-import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.server.model.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.Player;
 import it.polimi.ingsw.am02.server.model.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.Mockito;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for the {@link EndGameFullSetPPEffect} class.
+ * Ensures that the effect calculates the minimum number of character sets
+ * across all CharacterTypes, and awards the correct multiplier of prestige points
+ * exclusively during the END_GAME phase.
+ */
 class EndGameFullSetPPEffectTest {
 
+    private Player mockPlayer;
     private Tribu mockTribu;
     private EffectVisitor mockVisitor;
     private EndGameFullSetPPEffect effect;
 
-    // Mock values
-    private final int BONUS_PP_PER_SET = 3;
+    // Constants for test predictability
+    private static final int BONUS_PP_PER_SET = 3;
+    private static final String PLAYER_NICKNAME = "BetaPlayer";
 
     @BeforeEach
     void setUp() {
-        // Mock creation
+        // Arrange: Initialize mocks
+        mockPlayer = Mockito.mock(Player.class);
         mockTribu = Mockito.mock(Tribu.class);
         mockVisitor = Mockito.mock(EffectVisitor.class);
 
-        // Effect instantiation
-        effect = new EndGameFullSetPPEffect(BONUS_PP_PER_SET, mockTribu);
+        // Setup common mock behaviors
+        when(mockPlayer.getTribu()).thenReturn(mockTribu);
+        when(mockPlayer.getNickname()).thenReturn(PLAYER_NICKNAME);
+
+        // Instantiate the effect
+        effect = new EndGameFullSetPPEffect(mockPlayer, BONUS_PP_PER_SET);
     }
 
+    /**
+     * Tests that the visitor pattern is correctly implemented for PhaseObservers.
+     */
     @Test
-    void testAcceptCallsVisitPhaseObserver() {
+    void accept_validVisitor_callsVisitPhaseObserver() {
+        // Act
         effect.accept(mockVisitor);
+
+        // Assert
         verify(mockVisitor, times(1)).visitPhaseObserver(effect);
     }
 
+    // =========================================================================================
+    // ON PHASE CHANGE TESTS
+    // =========================================================================================
+
+    /**
+     * Tests calculation and DTO generation when the player has perfectly balanced sets
+     * of every character type.
+     */
     @Test
-    void testOnPhaseChange_WithEndGamePhase_PerfectSets() {
-        // Setup: The player has exactly 2 of EVERY character type
-        int simulatedCharacterCount = 2;
-        int expectedPrestigePoints = BONUS_PP_PER_SET * simulatedCharacterCount;
+    void onPhaseChange_endGamePhaseWithPerfectSets_calculatesCorrectBonusAndReturnsDelta() {
+        // Arrange
+        int simulatedCharacterCount = 2; // 2 of EVERY character
+        int expectedPrestigePoints = BONUS_PP_PER_SET * simulatedCharacterCount; // 3 * 2 = 6
 
         // any() tells Mockito to return 2 no matter which CharacterType is asked for
         when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(simulatedCharacterCount);
+        when(mockTribu.getPrestigePoints()).thenReturn(20);
 
-        // Triggering effect activation
-        effect.onPhaseChange(PhaseType.END_GAME);
+        // Act
+        EffectOutcome outcome = effect.onPhaseChange(PhaseType.END_GAME);
 
-        // Verify that 2 sets * 3 bonus = 6 points are added
+        // Assert
         verify(mockTribu, times(1)).addPrestigePoints(expectedPrestigePoints);
+        assertNotNull(outcome, "EffectOutcome should not be null");
+        assertFalse(outcome.isEmpty(), "EffectOutcome should contain a ResourceDelta when points are awarded");
     }
 
+    /**
+     * Tests the calculation logic to ensure it properly identifies the bottleneck
+     * (the character type with the lowest count) when determining the number of full sets.
+     */
     @Test
-    void testOnPhaseChange_WithEndGamePhase_UnevenSets() {
-        // Setup: The player has 3 of most characters, but only 1 of SHAMAN.
-        // The minimum (the bottleneck) is 1, so they only have 1 full set.
+    void onPhaseChange_endGamePhaseWithUnevenSets_usesBottleneckToCalculateBonus() {
+        // Arrange
         int baseCharacterCount = 3;
-        int bottleneckCount = 1;
-        int expectedPrestigePoints = BONUS_PP_PER_SET * bottleneckCount;
+        int bottleneckCount = 1; // Only 1 set can be completed
+        int expectedPrestigePoints = BONUS_PP_PER_SET * bottleneckCount; // 3 * 1 = 3
 
-        // Set default return to 3
         when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(baseCharacterCount);
-        // Override specifically for SHAMAN to be the bottleneck
         when(mockTribu.getCharacterCount(CharacterType.SHAMAN)).thenReturn(bottleneckCount);
+        when(mockTribu.getPrestigePoints()).thenReturn(20);
 
-        // Triggering effect activation
-        effect.onPhaseChange(PhaseType.END_GAME);
+        // Act
+        EffectOutcome outcome = effect.onPhaseChange(PhaseType.END_GAME);
 
-        // Verify that the logic correctly identifies the minimum (1 set)
+        // Assert
         verify(mockTribu, times(1)).addPrestigePoints(expectedPrestigePoints);
+        assertNotNull(outcome, "EffectOutcome should not be null");
+        assertFalse(outcome.isEmpty(), "EffectOutcome should contain a ResourceDelta");
     }
 
+    /**
+     * Tests the early exit logic when the player is missing at least one character type entirely,
+     * resulting in 0 completed sets.
+     */
     @Test
-    void testOnPhaseChange_WithEndGamePhase_MissingCharacterForSet() {
-        // Setup: The player has 5 of almost everything, but 0 of one specific type.
-        // This means 0 full sets completed.
+    void onPhaseChange_endGamePhaseWithMissingCharacter_addsZeroPointsAndReturnsEmpty() {
+        // Arrange
         int baseCharacterCount = 5;
-        int bottleneckCount = 0;
-        int expectedPrestigePoints = 0; // 0 sets * 3 = 0
+        int bottleneckCount = 0; // 0 sets completed
 
         when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(baseCharacterCount);
         when(mockTribu.getCharacterCount(CharacterType.SHAMAN)).thenReturn(bottleneckCount);
 
-        // Triggering effect activation
-        effect.onPhaseChange(PhaseType.END_GAME);
+        // Act
+        EffectOutcome outcome = effect.onPhaseChange(PhaseType.END_GAME);
 
-        // Verify that it adds 0 points without throwing errors
-        verify(mockTribu, times(1)).addPrestigePoints(expectedPrestigePoints);
+        // Assert: Verify it explicitly avoids adding 0 points to the Tribu
+        verify(mockTribu, never()).addPrestigePoints(anyInt());
+        assertNotNull(outcome, "EffectOutcome should not be null");
+        assertTrue(outcome.isEmpty(), "EffectOutcome should be explicitly empty when bonus is 0");
     }
 
-    @Test
-    void testOnPhaseChange_WithOtherPhases_ShouldDoNothing() {
-        // Trigger effect when it shouldn't activate
-        effect.onPhaseChange(PhaseType.ACTION_RESOLUTION);
+    /**
+     * Tests that the effect completely ignores any phase change that is not END_GAME.
+     * @param phase A phase type that is NOT END_GAME, or null.
+     */
+    @ParameterizedTest
+    @EnumSource(value = PhaseType.class, mode = EnumSource.Mode.EXCLUDE, names = {"END_GAME"})
+    @NullSource
+    void onPhaseChange_nonEndGameOrNullPhase_doesNothingAndReturnsEmpty(PhaseType phase) {
+        // Act
+        EffectOutcome outcome = effect.onPhaseChange(phase);
 
-        // Verify that it is not actually triggered
-        verify(mockTribu, never()).addPrestigePoints(anyInt());
+        // Assert: Verify no logic was triggered
+        verify(mockPlayer, never()).getTribu();
         verify(mockTribu, never()).getCharacterCount(any());
+        verify(mockTribu, never()).addPrestigePoints(anyInt());
+
+        assertNotNull(outcome, "EffectOutcome should not be null");
+        assertTrue(outcome.isEmpty(), "EffectOutcome should be empty for ignored phases");
     }
 }

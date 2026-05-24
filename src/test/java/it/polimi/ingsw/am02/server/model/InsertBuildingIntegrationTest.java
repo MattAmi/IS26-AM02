@@ -25,6 +25,7 @@ class InsertBuildingIntegrationTest {
 
     private static GameRegistry registry;
     private static final String BUILDING_ID = "B_021"; // FLAT_ENDGAME_PP
+    private static final long seed = 42L;
 
     private Game game;
     private Player player1;

@@ -42,10 +42,15 @@ public class EndGameFullSetPPEffect implements BuildingEffect, PhaseObserver {
                 }
             }
 
-            tribu.addPrestigePoints(nSet * bonusPP);
+            int bonus = nSet * bonusPP;
+
+            if (bonus == 0)
+                return EffectOutcome.empty();
+
+            tribu.addPrestigePoints(bonus);
 
             return new EffectOutcome(List.of(
-                    new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), bonusPP)
+                    new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), bonus)
             ));
         }
 

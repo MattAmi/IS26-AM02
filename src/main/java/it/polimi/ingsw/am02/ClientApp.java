@@ -15,6 +15,9 @@ import java.util.Scanner;
 public class ClientApp {
 
     public static void main(String[] args) {
+        // Force UTF-8 output on all platforms (including Windows PowerShell)
+        System.setOut(new java.io.PrintStream(System.out, true, java.nio.charset.StandardCharsets.UTF_8));
+
         Scanner setupScanner = new Scanner(System.in);
 
         try {

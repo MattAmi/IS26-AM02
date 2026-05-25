@@ -4,6 +4,7 @@ import it.polimi.ingsw.am02.client.view.CardCatalog;
 import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.view.AbstractClientView;
+import it.polimi.ingsw.am02.common.ProjectInfo;
 import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.*;
 
@@ -67,6 +68,8 @@ public class TuiView extends AbstractClientView {
     private final LinkedList<String> notifications = new LinkedList<>();
 
     private final BlockingQueue<Runnable> eventQueue = new LinkedBlockingQueue<>();
+
+    private boolean bannerPrinted = false;
 
     // -----------------------------------------------------------------------
     // Constructor
@@ -179,6 +182,10 @@ public class TuiView extends AbstractClientView {
         eventQueue.add(() -> {
             if (gameModel != null) return;
             clearScreen();
+            if (!bannerPrinted) {
+                printBanner();
+                bannerPrinted = true;
+            }
             printHeader();
             System.out.println(YELLOW + "Logged in as: " + BOLD + lobbyModel.getMyNickname() + RESET);
             System.out.println("\n" + PURPLE + BOLD + "--- AVAILABLE LOBBIES ---" + RESET);
@@ -817,6 +824,32 @@ public class TuiView extends AbstractClientView {
     // -----------------------------------------------------------------------
     // Utilities
     // -----------------------------------------------------------------------
+
+    private void printBanner() {
+        System.out.println(GREEN + BOLD
+                + "  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\\n"
+                + "  \\                                                /\n"
+                + "  /    M  E  S  O  S  —  P R E H I S T O R I C   \\\n"
+                + "  \\                                                /\n"
+                + "  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\"
+                + RESET);
+        System.out.println(YELLOW
+                + "\n  " + ProjectInfo.GROUP_NAME
+                + "  │  " + ProjectInfo.ACADEMIC_YEAR
+                + "  │  Politecnico di Milano"
+                + RESET);
+        System.out.println(WHITE
+                + "  ──────────────────────────────────────────────────────"
+                + RESET);
+        System.out.println(PURPLE + "  Members:" + RESET);
+        ProjectInfo.MEMBERS.forEach((name, code) ->
+                System.out.println("  " + YELLOW + "◆" + RESET
+                        + "  " + String.format("%-20s", name)
+                        + " [" + code + "]"));
+        System.out.println(WHITE
+                + "  ──────────────────────────────────────────────────────\n"
+                + RESET);
+    }
 
     /** Prints the game title banner. */
     private void printHeader() {

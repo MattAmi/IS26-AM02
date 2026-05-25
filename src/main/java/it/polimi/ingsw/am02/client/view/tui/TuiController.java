@@ -38,7 +38,6 @@ public class TuiController extends ClientController {
     }
 
     public void run() {
-        printBanner();
         Scanner scanner = new Scanner(System.in);
         while (true) {
             try {
@@ -49,22 +48,6 @@ public class TuiController extends ClientController {
                 view.onError("Fatal system error: " + e.getMessage());
             }
         }
-    }
-
-    private void printBanner() {
-        String line = "==========================================================";
-        System.out.println(line);
-        System.out.println("            MESOS — PREHISTORIC BOARD GAME              ");
-        System.out.println("              " + ProjectInfo.GROUP_NAME + " | " + ProjectInfo.ACADEMIC_YEAR);
-        System.out.println(line);
-
-        // Stampa i membri in formato lista: NOME [CODICE]
-        System.out.println("Members:");
-        ProjectInfo.MEMBERS.forEach((name, code) ->
-                System.out.printf("  %-20s [%s]%n", name, code)
-        );
-
-        System.out.println(line + "\n");
     }
 
     private void dispatch(String input) {

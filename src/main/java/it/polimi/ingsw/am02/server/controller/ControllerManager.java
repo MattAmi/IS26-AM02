@@ -348,6 +348,17 @@ public class ControllerManager implements VirtualControllerManager {
         gameNicknameToClient.remove(gameId);
         clientToGame.entrySet().removeIf(e -> gameId.equals(e.getValue()));
         log("Game removed: " + gameId);
+        try {
+            Path logFilePath = Path.of("logs", gameId + ".ndjson");
+
+            // deleteIfExists è perfetto: se per qualche motivo il file non c'è, non fa crashare il server
+            boolean deleted = Files.deleteIfExists(logFilePath);
+            if (deleted) {
+                log("Log file deleted successfully: " + logFilePath.getFileName());
+            }
+        } catch (IOException e) {
+            System.err.println("[ControllerManager] Could not delete log file for game " + gameId + ": " + e.getMessage());
+        }
         broadcastToPreLobbyClients();
     }
 

@@ -11,10 +11,10 @@ public final class ProjectInfo {
 
     static {
         Map<String, String> membersMap = new LinkedHashMap<>();
-        membersMap.put("Raed Abbas", "TOADD");
-        membersMap.put("Matteo Amico", "TOADD");
+        membersMap.put("Raed Abbas", "10929713");
+        membersMap.put("Matteo Amico", "10906267");
         membersMap.put("Husnain Arshed", "10973025");
-        membersMap.put("Francesco Bagnuolo", "TOADD");
+        membersMap.put("Francesco Bagnuolo", "10963509");
         MEMBERS = Collections.unmodifiableMap(membersMap);
     }
     private ProjectInfo() {}

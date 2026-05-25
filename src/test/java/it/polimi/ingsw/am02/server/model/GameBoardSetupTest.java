@@ -4,12 +4,15 @@ import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.server.model.GameBoard;
 import it.polimi.ingsw.am02.server.model.Player;
 import it.polimi.ingsw.am02.server.model.TurnOrderTile;
+import it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,13 +21,15 @@ class GameBoardSetupTest {
 
     private GameBoard gameBoard;
     private List<Player> players;
+    private final GameEventEmitter notifier = Mockito.mock(GameEventEmitter.class);
+    private final Random gameRandom = new Random(42);
 
     @BeforeEach
     void setUp() {
         TestHelper.ensureRegistryLoaded();
 
         int numPlayers = 5;
-        gameBoard = new GameBoard(numPlayers);
+        gameBoard = new GameBoard(numPlayers, notifier, gameRandom);
 
         players = new ArrayList<>();
         Player p1 = new Player("P1", Totem.RED);
@@ -74,7 +79,7 @@ class GameBoardSetupTest {
     void setUpInitialTurnOrderWithFewerPlayers() {
         // Test with 3 players — only first 3 food bonuses apply (2, 3, 3)
         int numPlayers = 3;
-        gameBoard = new GameBoard(numPlayers);
+        gameBoard = new GameBoard(numPlayers, notifier, gameRandom);
 
         Player player1 = new Player("Matteo", Totem.WHITE);
         Player player2 = new Player("Raed", Totem.BLUE);
@@ -103,7 +108,7 @@ class GameBoardSetupTest {
     void setUpInitialTurnOrderWithTwoPlayers() {
         // Test with 2 players — minimum count, food: (2, 3)
         int numPlayers = 2;
-        gameBoard = new GameBoard(numPlayers);
+        gameBoard = new GameBoard(numPlayers, notifier, gameRandom);
 
         Player player1 = new Player("Matteo", Totem.WHITE);
         Player player2 = new Player("Raed", Totem.BLUE);

@@ -23,6 +23,7 @@ class GameBoardActionResolutionTest {
     private Player player1;
     private Player player2;
     private Game game;
+    private static final long seed = 42L;
 
     // helpers
 
@@ -139,6 +140,7 @@ class GameBoardActionResolutionTest {
         Map<String, Totem> totemMap = Map.of("Matteo", Totem.WHITE, "Raed", Totem.BLUE);
 
         game = new Game(gameId, nicknames, totemMap, seed);
+        game.startFSM();
         gameBoard = game.getGameBoard();
 
         for (int i = 0; i < nicknames.size(); i++) {

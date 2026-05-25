@@ -13,7 +13,6 @@ import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
 
 import java.util.List;
 
-
 public class EndGameCharacterPrestigeEffect implements BuildingEffect, PhaseObserver {
     final Player owner;
     final CharacterType type;

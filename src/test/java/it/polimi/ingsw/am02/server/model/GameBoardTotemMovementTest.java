@@ -30,6 +30,8 @@ class GameBoardTotemMovementTest {
     private GameBoard gameBoard;
     private List<Player> players;
     private GameRegistry registry;
+    private final it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter notifier = org.mockito.Mockito.mock(it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter.class);
+    private final java.util.Random gameRandom = new java.util.Random(42);
 
     @BeforeEach
     void setUp() {
@@ -37,7 +39,7 @@ class GameBoardTotemMovementTest {
         registry = GameRegistry.getInstance();
 
         // Create the board for a 3-player game
-        gameBoard = new GameBoard(NUM_PLAYERS);
+        gameBoard = new GameBoard(NUM_PLAYERS, notifier, gameRandom);
 
         players = new ArrayList<>();
 

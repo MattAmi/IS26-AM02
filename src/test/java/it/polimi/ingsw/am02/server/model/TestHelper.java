@@ -15,16 +15,7 @@ public final class TestHelper {
             return;
         }
 
-        GameRegistry registry = GameRegistry.getInstance();
-
-        String basePath = resolveResourceDir("it/polimi/ingsw/am02/JSON/");
-
-        registry.loadCharacters(basePath + "Characters.JSON");
-        registry.loadEvents(basePath + "Events.JSON");
-        registry.loadBuildings(basePath + "Buildings.JSON");
-        registry.loadOfferTiles(basePath + "OfferTiles.JSON");
-        registry.loadTurnOrderTiles(basePath + "TurnOrderTiles.JSON");
-
+        GameRegistry.getInstance();
         registryLoaded = true;
     }
 

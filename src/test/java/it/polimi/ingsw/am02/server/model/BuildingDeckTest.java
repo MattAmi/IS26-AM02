@@ -7,12 +7,14 @@ import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 public class BuildingDeckTest {
 
+    private final Random gameRandom = new Random(42);
 
     @Test
     public void testBuildingDeck_SetupFor2Players() {

@@ -17,7 +17,6 @@ public class GameController implements GameObserver {
 
     private static final long DISCONNECTED_PLAYER_TIMEOUT_SECONDS = 30;
     private static final long GLOBAL_DISCONNECTION_TIMEOUT_SECONDS = 120;
-    private static final long DRAIN_DELAY_MILLIS = 5;
 
     private final String gameId;
     private final ModelInterface model;
@@ -229,6 +228,8 @@ public class GameController implements GameObserver {
         drainExecutor.submit(() -> {
             try {
                 int currentIndex = 0;
+
+                // Svuota la coda il più velocemente possibile senza bloccare il server
                 while (true) {
                     Consumer<VirtualView> historicalCall;
                     synchronized (this) {
@@ -237,14 +238,15 @@ public class GameController implements GameObserver {
                     }
                     historicalCall.accept(newView);
                     currentIndex++;
-                    Thread.sleep(DRAIN_DELAY_MILLIS);
                 }
 
                 synchronized (this) {
+                    // Assicuriamoci di non aver perso nessun evento dell'ultimo millisecondo
                     while (currentIndex < globalEventHistory.size()) {
                         globalEventHistory.get(currentIndex).accept(newView);
                         currentIndex++;
                     }
+
                     connectionStatus.put(nickname, ConnectionStatus.CONNECTED);
                     log("Drain complete for " + nickname + " — now CONNECTED.");
 

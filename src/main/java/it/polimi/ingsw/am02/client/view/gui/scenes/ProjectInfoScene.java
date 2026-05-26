@@ -64,8 +64,12 @@ public class ProjectInfoScene {
         titleFlow.setTextAlignment(TextAlignment.CENTER);
 
         StringBuilder infoBuilder = new StringBuilder();
-        infoBuilder.append(ProjectInfo.GROUP_NAME).append("\n");
-        infoBuilder.append(ProjectInfo.ACADEMIC_YEAR).append("\n\n");
+        infoBuilder.append(ProjectInfo.GROUP).append("\n");
+        infoBuilder.append(ProjectInfo.COURSE).append("\n");
+        infoBuilder.append(ProjectInfo.PROFESSOR).append("\n");
+        infoBuilder.append(ProjectInfo.UNIVERSITY).append("\n");
+        infoBuilder.append(ProjectInfo.YEAR).append("\n\n");
+
         for (Map.Entry<String, String> member : ProjectInfo.MEMBERS.entrySet()) {
             infoBuilder.append(member.getKey()).append(" - ").append(member.getValue()).append("\n");
         }

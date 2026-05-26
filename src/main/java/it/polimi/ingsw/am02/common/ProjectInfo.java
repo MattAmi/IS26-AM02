@@ -6,7 +6,7 @@ import java.util.Map;
 
 public final class ProjectInfo {
     public static final String GROUP      = "Group AM02";
-    public static final String COURSE     = "Software Engineering — Final Project";
+    public static final String COURSE     = "Software Engineering - Final Project";
     public static final String UNIVERSITY = "Politecnico di Milano";
     public static final String PROFESSOR  = "Prof. Alessandro Margara";
     public static final String YEAR       = "A.Y. 2025/2026";

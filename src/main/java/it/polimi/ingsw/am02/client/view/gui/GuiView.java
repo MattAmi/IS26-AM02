@@ -147,7 +147,7 @@ public class GuiView extends AbstractClientView {
 
     @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
-        sceneRouter.showBlockingAlert("Game Over", "Winners: " + winners, Alert.AlertType.INFORMATION);
+        sceneRouter.showGameOverPopup("Game Over", "Winners: " + String.join(", ", winners));
     }
 
     @Override
@@ -159,14 +159,12 @@ public class GuiView extends AbstractClientView {
 
     @Override
     public void onGameAborted(String lastManStanding) {
-        sceneRouter.showBlockingAlert("Aborted", "Game ended. Last standing: " + lastManStanding, Alert.AlertType.INFORMATION);
-        sceneRouter.showGameMenuScene();
+        sceneRouter.showGameOverPopup("Game Aborted", "Game ended. Last standing: " + lastManStanding);
     }
 
     @Override
     public void onGameRecoveryFailed() {
-        sceneRouter.showBlockingAlert("Error", "Recovery failed", Alert.AlertType.ERROR);
-        sceneRouter.showGameMenuScene();
+        sceneRouter.showGameOverPopup("Error", "Recovery failed. Not all players reconnected in time.");
     }
 
     @Override

@@ -5,6 +5,7 @@ import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
 import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.ProjectInfo;
 import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 /**
  * TUI-specific controller.

@@ -4,10 +4,13 @@ import it.polimi.ingsw.am02.client.view.CardCatalog;
 import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.view.AbstractClientView;
+import it.polimi.ingsw.am02.common.ProjectInfo;
 import it.polimi.ingsw.am02.common.dto.*;
 import it.polimi.ingsw.am02.common.enumerations.*;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Text-based user interface for the MESOS game client.
@@ -64,6 +67,10 @@ public class TuiView extends AbstractClientView {
     /** Ring buffer of recent log lines. */
     private final LinkedList<String> notifications = new LinkedList<>();
 
+    private final BlockingQueue<Runnable> eventQueue = new LinkedBlockingQueue<>();
+
+    private boolean bannerPrinted = false;
+
     // -----------------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------------
@@ -75,6 +82,29 @@ public class TuiView extends AbstractClientView {
      */
     public TuiView(LobbyModel lobbyModel) {
         this.lobbyModel = lobbyModel;
+        startEventProcessor();
+    }
+
+    private void startEventProcessor() {
+        Thread processor = new Thread(() -> {
+            try {
+                while (true) {
+                    Runnable event = eventQueue.take();
+                    event.run();
+
+                    // FORZA il terminale a disegnare immediatamente lo schermo
+                    System.out.flush();
+
+                    // PACING UNIVERSALE: 50ms dopo ogni operazione.
+                    // Invisibile nel gioco live, perfetto durante il catch-up.
+                    Thread.sleep(50);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, "TUI-Event-Processor");
+        processor.setDaemon(true);
+        processor.start();
     }
 
     // -----------------------------------------------------------------------
@@ -90,14 +120,16 @@ public class TuiView extends AbstractClientView {
      * complete, current game state — cards taken, resources, turn order, etc.</p>
      *
      * @param gameModel the populated client-side game model; {@code null} resets
-     *                  the view to the pre-game state
+     * the view to the pre-game state
      */
     @Override
     public void setGameModel(GameModel gameModel) {
-        this.gameModel = gameModel;
-        if (this.gameModel != null) {
-            renderFullGame();
-        }
+        eventQueue.add(() -> {
+            this.gameModel = gameModel;
+            if (this.gameModel != null) {
+                renderFullGame();
+            }
+        });
     }
 
     private String pendingSummary = null;
@@ -132,101 +164,115 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onUsernameResult(String username, boolean accepted, String reason) {
-        if (accepted) {
-            clearScreen();
-            printHeader();
-            System.out.println(GREEN + "Successfully logged in as: " + BOLD + username + RESET);
-            System.out.println("\nCommands: create <size> | join <index> | quit");
-        } else {
-            System.out.println(RED + "[ERROR] Username '" + username + "' rejected: " + reason + RESET);
-        }
-        System.out.print("\n" + CYAN + "> " + RESET);
+        eventQueue.add(() -> {
+            if (accepted) {
+                clearScreen();
+                printHeader();
+                System.out.println(GREEN + "Successfully logged in as: " + BOLD + username + RESET);
+                System.out.println("\nCommands: create <size> | join <index> | quit");
+            } else {
+                System.out.println(RED + "[ERROR] Username '" + username + "' rejected: " + reason + RESET);
+            }
+            System.out.print("\n" + CYAN + "> " + RESET);
+        });
     }
 
     @Override
     public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
-        if (gameModel != null) return;
-        clearScreen();
-        printHeader();
-        System.out.println(YELLOW + "Logged in as: " + BOLD + lobbyModel.getMyNickname() + RESET);
-        System.out.println("\n" + PURPLE + BOLD + "--- AVAILABLE LOBBIES ---" + RESET);
-        if (lobbies.isEmpty()) {
-            System.out.println("  No active lobbies found. Use 'create <size>' to start one.");
-        } else {
-            for (int i = 0; i < lobbies.size(); i++) {
-                LobbyInfo info = lobbies.get(i);
-                System.out.printf("  [%d] Players: %d/%d%n",
-                        i, info.currentPlayers().size(), info.expectedPlayers());
+        eventQueue.add(() -> {
+            if (gameModel != null) return;
+            clearScreen();
+            if (!bannerPrinted) {
+                printBanner();
+                bannerPrinted = true;
             }
-        }
-        System.out.println("\nCommands: create <2-5> | join <index> | reconnect <nick> <id> | quit");
-        System.out.print("\n" + CYAN + "> " + RESET);
+            printHeader();
+            System.out.println(YELLOW + "Logged in as: " + BOLD + lobbyModel.getMyNickname() + RESET);
+            System.out.println("\n" + PURPLE + BOLD + "--- AVAILABLE LOBBIES ---" + RESET);
+            if (lobbies.isEmpty()) {
+                System.out.println("  No active lobbies found. Use 'create <size>' to start one.");
+            } else {
+                for (int i = 0; i < lobbies.size(); i++) {
+                    LobbyInfo info = lobbies.get(i);
+                    System.out.printf("  [%d] Players: %d/%d%n",
+                            i, info.currentPlayers().size(), info.expectedPlayers());
+                }
+            }
+            System.out.println("\nCommands: create <2-5> | join <index> | reconnect <nick> <id> | quit");
+            System.out.print("\n" + CYAN + "> " + RESET);
+        });
     }
 
     @Override
     public void onCurrentLobbyUpdated(LobbyInfo lobby) {
-        if (gameModel != null) return;
-        clearScreen();
-        printHeader();
-        System.out.println(PURPLE + BOLD + "--- LOBBY: " + lobby.lobbyId() + " ---" + RESET);
-        System.out.printf("Capacity: %d/%d players%n",
-                lobby.currentPlayers().size(), lobby.expectedPlayers());
-        System.out.println("\nPlayers:");
+        eventQueue.add(() -> {
+            if (gameModel != null) return;
+            clearScreen();
+            printHeader();
+            System.out.println(PURPLE + BOLD + "--- LOBBY: " + lobby.lobbyId() + " ---" + RESET);
+            System.out.printf("Capacity: %d/%d players%n",
+                    lobby.currentPlayers().size(), lobby.expectedPlayers());
+            System.out.println("\nPlayers:");
 
-        lobby.currentPlayers().forEach(n -> {
-            Totem chosen = lobby.chosenTotems().get(n);
-            String totemStr = (chosen != null)
-                    ? YELLOW + "[" + chosen + "]"
-                    : RED + "[no totem selected]";
-            System.out.println("  • " + n + " " + totemStr + RESET);
+            lobby.currentPlayers().forEach(n -> {
+                Totem chosen = lobby.chosenTotems().get(n);
+                String totemStr = (chosen != null)
+                        ? YELLOW + "[" + chosen + "]"
+                        : RED + "[no totem selected]";
+                System.out.println("  • " + n + " " + totemStr + RESET);
+            });
+
+            // CALCOLO T
+            List<Totem> availableTotems = new ArrayList<>(Arrays.asList(Totem.values()));
+            availableTotems.removeAll(lobby.chosenTotems().values());
+
+            System.out.println("\n" + CYAN + "Available totems: " + RESET + availableTotems);
+
+            // --- CONDITIONAL COMMAND LOGIC ---
+            String myNick = lobbyModel.getMyNickname(); // Retrieve local nickname
+
+            if (myNick == null || myNick.isBlank()) {
+                // Player hasn't set a nickname yet
+                System.out.println("\n" + YELLOW + BOLD + ">> STEP 1: Enter a nickname to join" + RESET);
+                System.out.println("Commands: nick <name> | leave | quit");
+            } else {
+                // Nickname set, check if they already have a totem
+                boolean hasTotem = lobby.chosenTotems().containsKey(myNick);
+                String totemCmd = hasTotem ? "totem <color> (to change)" : "totem <color>";
+
+                Totem myTotem = lobby.chosenTotems().get(myNick);
+                String statusMsg = hasTotem
+                        ? "You are ready! Totem: " + totemColor(myTotem) + "[" + myTotem + "]" + RESET
+                        : "Pick your totem!";
+                System.out.println("\n" + GREEN + BOLD + ">> STEP 2: Nickname set (" + myNick + "). " + statusMsg + RESET);
+
+                System.out.println("Commands: nick <name> (to change) | " + totemCmd + " | totems | leave | quit");
+            }
+            // -----------------------------------------
+
+            System.out.print("\n" + CYAN + "> " + RESET);
         });
-
-        // CALCOLO T
-        List<Totem> availableTotems = new ArrayList<>(Arrays.asList(Totem.values()));
-        availableTotems.removeAll(lobby.chosenTotems().values());
-
-        System.out.println("\n" + CYAN + "Available totems: " + RESET + availableTotems);
-
-        // --- CONDITIONAL COMMAND LOGIC ---
-        String myNick = lobbyModel.getMyNickname(); // Retrieve local nickname
-
-        if (myNick == null || myNick.isBlank()) {
-            // Player hasn't set a nickname yet
-            System.out.println("\n" + YELLOW + BOLD + ">> STEP 1: Enter a nickname to join" + RESET);
-            System.out.println("Commands: nick <name> | leave | quit");
-        } else {
-            // Nickname set, check if they already have a totem
-            boolean hasTotem = lobby.chosenTotems().containsKey(myNick);
-            String totemCmd = hasTotem ? "totem <color> (to change)" : "totem <color>";
-
-            Totem myTotem = lobby.chosenTotems().get(myNick);
-            String statusMsg = hasTotem
-                    ? "You are ready! Totem: " + totemColor(myTotem) + "[" + myTotem + "]" + RESET
-                    : "Pick your totem!";
-            System.out.println("\n" + GREEN + BOLD + ">> STEP 2: Nickname set (" + myNick + "). " + statusMsg + RESET);
-
-            System.out.println("Commands: nick <name> (to change) | " + totemCmd + " | totems | leave | quit");
-        }
-        // -----------------------------------------
-
-        System.out.print("\n" + CYAN + "> " + RESET);
     }
 
     @Override
     public void onShowAvailableTotems() {
-        LobbyInfo lobby = lobbyModel.getCurrentLobby();
-        if (lobby != null) {
-            List<Totem> available = new ArrayList<>(Arrays.asList(Totem.values()));
-            available.removeAll(lobby.chosenTotems().values());
+        eventQueue.add(() -> {
+            LobbyInfo lobby = lobbyModel.getCurrentLobby();
+            if (lobby != null) {
+                List<Totem> available = new ArrayList<>(Arrays.asList(Totem.values()));
+                available.removeAll(lobby.chosenTotems().values());
 
-            addNotification(CYAN + "[LOBBY] Available totems: " + GREEN + available + RESET);
-        }
+                addNotification(CYAN + "[LOBBY] Available totems: " + GREEN + available + RESET);
+            }
+        });
     }
 
     @Override
     public void onLobbyDissolved() {
-        System.out.println("\n" + RED + "[LOBBY] The lobby has been dissolved." + RESET);
-        System.out.print("\n" + CYAN + "> " + RESET);
+        eventQueue.add(() -> {
+            System.out.println("\n" + RED + "[LOBBY] The lobby has been dissolved." + RESET);
+            System.out.print("\n" + CYAN + "> " + RESET);
+        });
     }
 
     // -----------------------------------------------------------------------
@@ -235,205 +281,273 @@ public class TuiView extends AbstractClientView {
 
     @Override
     public void onGameStarted(String gameId) {
-        this.currentGameId = gameId;
-        lobbyModel.removeObserver(this);
-        addNotification(GREEN + BOLD + "GAME STARTED! ID: " + gameId + RESET);
+        eventQueue.add(() -> {
+            this.currentGameId = gameId;
+            lobbyModel.removeObserver(this);
+            addNotification(GREEN + BOLD + "GAME STARTED! ID: " + gameId + RESET);
+        });
     }
 
     @Override
     public void onGameSetupCompleted(List<String> turnOrder,
                                      Map<String, Integer> initialFood,
                                      BoardSnapshot board) {
-        renderFullGame();
+        eventQueue.add(this::renderFullGame);
     }
 
     @Override
     public void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> order) {
-        renderFullGame();
+        eventQueue.add(this::renderFullGame);
     }
 
     @Override
     public void onCurrentPlayerChanged(String nextPlayer) {
-        renderFullGame();
+        eventQueue.add(this::renderFullGame);
     }
 
     @Override
     public void onTurnOrderEstablished(List<String> turnOrder) {
-        renderFullGame();
+        eventQueue.add(this::renderFullGame);
     }
 
     @Override
     public void onTotemPlaced(String nickname, char tileID) {
-        addNotification(WHITE + "[BOARD] " + nickname
-                + " placed their totem on tile " + BOLD + tileID + RESET);
+        eventQueue.add(() -> addNotification(WHITE + "[BOARD] " + nickname
+                + " placed their totem on tile " + BOLD + tileID + RESET));
     }
 
     @Override
     public void onTotemReturned(String nickname, int turnOrderPosition) {
-        // turnOrderPosition is 0-based from the server; display as 1-based
-        addNotification(WHITE + "[BOARD] " + nickname
-                + " returned to turn-order slot " + (turnOrderPosition + 1) + RESET);
+        eventQueue.add(() -> {
+            // turnOrderPosition is 0-based from the server; display as 1-based
+            addNotification(WHITE + "[BOARD] " + nickname
+                    + " returned to turn-order slot " + (turnOrderPosition + 1) + RESET);
+        });
     }
 
     @Override
     public void onOfferTilesUpdated(List<OfferTileInfo> tiles) {
-        renderFullGame();
+        eventQueue.add(this::renderFullGame);
     }
 
     @Override
     public void onBoardUpdated(List<String> newUpper, List<String> newLower, int deckCount) {
-        renderFullGame();
+        eventQueue.add(this::renderFullGame);
     }
 
     @Override
     public void onEraChanged(Era era, List<String> newUpperBuildings, List<String> newLowerBuildings) {
-        addNotification(PURPLE + BOLD + "[ERA] Era " + era + " has begun!" + RESET);
-        renderFullGame();
+        eventQueue.add(() -> {
+            addNotification(PURPLE + BOLD + "[ERA] Era " + era + " has begun!" + RESET);
+            renderFullGame();
+        });
     }
 
     @Override
     public void onPlayerLimitsInitialized(String nickname, int upper, int lower) {
-        renderFullGame();
+        eventQueue.add(this::renderFullGame);
     }
 
     @Override
     public void onPlayerLimitsUpdated(String nickname, int upper, int lower) {
-        renderFullGame();
+        eventQueue.add(this::renderFullGame);
     }
 
     @Override
     public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-        addNotification(YELLOW + "[RESOURCE] " + nickname
-                + " now has " + newValue + " " + resource + RESET);
+        eventQueue.add(() -> addNotification(YELLOW + "[RESOURCE] " + nickname
+                + " now has " + newValue + " " + resource + RESET));
     }
 
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
-        String formatted = CardCatalog.getInstance().format(cardID);
-        addNotification(CYAN + "[ACTION] " + nickname + " took " + formatted + RESET);
+        eventQueue.add(() -> {
+            String formatted = CardCatalog.getInstance().format(cardID);
+            addNotification(CYAN + "[ACTION] " + nickname + " took " + formatted + RESET);
+        });
     }
 
     @Override
     public void onEventResolved(String eventID, String eventName) {
-        addNotification(PURPLE + "[EVENT] Resolved: " + eventName + RESET);
+        eventQueue.add(() -> addNotification(PURPLE + "[EVENT] Resolved: " + eventName + RESET));
     }
 
     @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-        addNotification(GREEN + "[EXTRA] " + nickname + " gained an extra turn!"
-                + " (Up:" + remainingUpper + " Lw:" + remainingLower + ")" + RESET);
+        eventQueue.add(() -> addNotification(GREEN + "[EXTRA] " + nickname + " gained an extra turn!"
+                + " (Up:" + remainingUpper + " Lw:" + remainingLower + ")" + RESET));
     }
 
     @Override
     public void onExtraTurnEnded(String nickname) {
-        addNotification(YELLOW + "[EXTRA] " + nickname + "'s extra turn ended." + RESET);
+        eventQueue.add(() -> addNotification(YELLOW + "[EXTRA] " + nickname + "'s extra turn ended." + RESET));
     }
 
     @Override
     public void onPlayerDisconnected(String nickname) {
-        addNotification(RED + BOLD + "[!] Player disconnected: " + nickname + RESET);
+        eventQueue.add(() -> addNotification(RED + BOLD + "[!] Player disconnected: " + nickname + RESET));
     }
 
     @Override
     public void onPlayerReconnected(String nickname) {
-        addNotification(GREEN + "[!] Player reconnected: " + nickname + RESET);
+        eventQueue.add(() -> addNotification(GREEN + "[!] Player reconnected: " + nickname + RESET));
     }
 
     @Override
     public void onError(String message) {
-        addNotification(RED + "[ERROR] " + message + RESET);
+        eventQueue.add(() -> addNotification(RED + "[ERROR] " + message + RESET));
     }
 
     @Override
     public void onConnectionLost() {
-        clearScreen();
-        printHeader();
-        System.out.println(RED + BOLD + "=== SERVER CONNECTION LOST ===" + RESET);
-        System.out.println(YELLOW + "The server is currently offline or unreachable." + RESET);
-        System.out.println("Please wait. The client will attempt to reconnect automatically...\n");
+        eventQueue.add(() -> {
+            clearScreen();
+            printHeader();
+            System.out.println(RED + BOLD + "=== SERVER CONNECTION LOST ===" + RESET);
+            System.out.println(YELLOW + "The server is currently offline or unreachable." + RESET);
+            System.out.println("Please wait. The client will attempt to reconnect automatically...\n");
 
-        // Recupera l'id del gioco se disponibile
-        String idToPrint = (gameModel != null && gameModel.getGameId() != null)
-                ? gameModel.getGameId()
-                : currentGameId;
+            // Recupera l'id del gioco se disponibile
+            String idToPrint = (gameModel != null && gameModel.getGameId() != null)
+                    ? gameModel.getGameId()
+                    : currentGameId;
 
-        if (idToPrint != null) {
-            System.out.println(CYAN + "Your Game ID (in case you need to reconnect later): " + BOLD + idToPrint + RESET);
-        }
+            if (idToPrint != null) {
+                System.out.println(CYAN + "Your Game ID (in case you need to reconnect later): " + BOLD + idToPrint + RESET);
+            }
+        });
     }
 
     @Override
     public void onConnectionRestored() {
-        clearScreen();
-        printHeader();
-        System.out.println(GREEN + BOLD + "=== CONNECTION RESTORED ===" + RESET);
-        System.out.println("Successfully reconnected to the server!");
-        System.out.println("Resynchronizing state, please wait...\n");
+        eventQueue.add(() -> {
+            clearScreen();
+            printHeader();
+            System.out.println(GREEN + BOLD + "=== CONNECTION RESTORED ===" + RESET);
+            System.out.println("Successfully reconnected to the server!");
+            System.out.println("Resynchronizing state, please wait...\n");
+        });
     }
 
     @Override
     public void onAutoPlayerTimerStarted(String nickname) {
-        addNotification(YELLOW + "[BOT] " + nickname
-                + " is disconnected — 30s timer started before AutoPlayer takes over." + RESET);
+        eventQueue.add(() -> addNotification(YELLOW + "[BOT] " + nickname
+                + " is disconnected — 30s timer started before AutoPlayer takes over." + RESET));
     }
 
     @Override
     public void onAutoPlayerInvoked(String nickname) {
-        addNotification(PURPLE + BOLD + "[BOT] AutoPlayer acting for "
-                + nickname + "..." + RESET);
+        eventQueue.add(() -> addNotification(PURPLE + BOLD + "[BOT] AutoPlayer acting for "
+                + nickname + "..." + RESET));
     }
 
     @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
-        this.gameModel = null;
-        clearScreen();
-        printHeader();
-        System.out.println(GREEN + BOLD + "=== GAME OVER ===" + RESET);
-        System.out.println("Winners: " + String.join(", ", winners));
-        System.out.println("\n" + PURPLE + "--- FINAL RANKINGS ---" + RESET);
-        for (int i = 0; i < finalRankings.size(); i++) {
-            PlayerFinalScore s = finalRankings.get(i);
-            System.out.printf("  %d. %-15s  PP: %d%n",
-                    i + 1, s.nickname(), s.totalPrestigePoints());
-        }
-        System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
-        System.out.print("\n" + CYAN + "> " + RESET);
+        eventQueue.add(() -> {
+            this.gameModel = null;
+            clearScreen();
+            printHeader();
+            System.out.println(GREEN + BOLD + "=== GAME OVER ===" + RESET);
+            System.out.println("Winners: " + String.join(", ", winners));
+            System.out.println("\n" + PURPLE + "--- FINAL RANKINGS ---" + RESET);
+            for (int i = 0; i < finalRankings.size(); i++) {
+                PlayerFinalScore s = finalRankings.get(i);
+                System.out.printf("  %d. %-15s  PP: %d%n",
+                        i + 1, s.nickname(), s.totalPrestigePoints());
+            }
+            System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
+            System.out.print("\n" + CYAN + "> " + RESET);
+        });
     }
 
     @Override
     public void onGameAborted(String lastManStanding) {
-        this.gameModel = null;
-        clearScreen();
-        printHeader();
-        System.out.println(RED + BOLD + "=== GAME ABORTED ===" + RESET);
-        System.out.println("Winner by forfeit: " + lastManStanding);
-        System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
-        System.out.print("\n" + CYAN + "> " + RESET);
+        eventQueue.add(() -> {
+            this.gameModel = null;
+            clearScreen();
+            printHeader();
+            System.out.println(RED + BOLD + "=== GAME ABORTED ===" + RESET);
+            System.out.println("Winner by forfeit: " + lastManStanding);
+            System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
+            System.out.print("\n" + CYAN + "> " + RESET);
+        });
     }
 
     @Override
     public void onGameRecoveryFailed() {
-        this.gameModel = null;
-        clearScreen();
-        printHeader();
-        System.out.println(RED + BOLD + "=== GAME RECOVERY FAILED ===" + RESET);
-        System.out.println("Not all players reconnected in time. The game has been terminated.");
-        System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
-        System.out.print("\n" + CYAN + "> " + RESET);
+        eventQueue.add(() -> {
+            this.gameModel = null;
+            clearScreen();
+            printHeader();
+            System.out.println(RED + BOLD + "=== GAME RECOVERY FAILED ===" + RESET);
+            System.out.println("Not all players reconnected in time. The game has been terminated.");
+            System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
+            System.out.print("\n" + CYAN + "> " + RESET);
+        });
     }
 
     @Override
     public void onReturnToLobby() {
-        this.currentGameId = null;
-        this.gameModel = null;
+        eventQueue.add(() -> {
+            this.currentGameId = null;
+            this.gameModel = null;
 
-        this.notifications.clear();
+            this.notifications.clear();
 
-        clearScreen();
-        printHeader();
-        /*System.out.println(GREEN + "You are back in the lobby." + RESET);
-        System.out.println("\nCommands: create <size> | join <index> | quit");
-        System.out.print("\n" + CYAN + "> " + RESET);*/
+            clearScreen();
+            printHeader();
+        });
+    }
+
+    public void onShowCardInfo(String cardId) {
+        eventQueue.add(() -> {
+            String fullInfo = CardCatalog.getInstance().getFullDescription(cardId);
+            String[] lines = fullInfo.split("\n");
+            for (String line : lines) {
+                addNotification(WHITE + line + RESET);
+            }
+        });
+    }
+
+    public void onShowSummaryCard() {
+        eventQueue.add(() -> {
+            this.pendingSummary = CardCatalog.getInstance().getSummaryCardText();
+            renderFullGame();
+        });
+    }
+
+    public void onShowHelp(boolean inPreLobby, boolean inLobby, boolean inGame) {
+        eventQueue.add(() -> {
+            System.out.println("\n" + CYAN + BOLD + "--- COMMAND CHEATSHEET ---" + RESET);
+            if (inPreLobby) {
+                System.out.println("  create <size>         - Start a new lobby (size 2-5)");
+                System.out.println("  join <index>          - Join a waiting lobby");
+                System.out.println("  reconnect <nick> <id> - Rejoin a crashed game");
+            } else if (inLobby) {
+                System.out.println("  nick <name>           - Set or change your nickname");
+                System.out.println("  totem <color>         - Pick your totem (WHITE, PURPLE, BLUE, RED, YELLOW)");
+                System.out.println("  totems                - View available totems");
+                System.out.println("  leave                 - Exit the lobby");
+            } else if (inGame) {
+                System.out.println("  move <tileID>         - Place totem on the offer track (e.g., move B)");
+                System.out.println("  resolve <id...>       - Take specific cards (e.g., resolve C_001 E_002)");
+                System.out.println("  move T                - Return totem and END YOUR TURN");
+                System.out.println("  info <cardID>         - Read full card details (e.g., info B_004)");
+                System.out.println("  summary               - Show the summary card (quick-reference rules)");
+                System.out.println("  lobby                 - Leave the game and return to lobby");
+            }
+            System.out.println("  quit                  - Close the application");
+
+            if (inGame && gameModel != null && gameModel.getCurrentPlayer() != null) {
+                if (gameModel.getCurrentPlayer().equals(gameModel.getMyNickname())) {
+                    System.out.print("\n" + GREEN + BOLD + "[YOUR TURN] > " + RESET);
+                } else {
+                    System.out.print("\n" + YELLOW + "[Waiting for " + gameModel.getCurrentPlayer() + "...] > " + RESET);
+                }
+            } else {
+                System.out.print("\n" + CYAN + "> " + RESET);
+            }
+        });
     }
 
     // -----------------------------------------------------------------------
@@ -665,65 +779,6 @@ public class TuiView extends AbstractClientView {
     }
 
     /**
-     * Retrieves the full description of a card from the catalog and displays it.
-     *
-     * @param cardId the ID of the card to lookup (e.g., "C_008")
-     */
-    public void onShowCardInfo(String cardId) {
-        // Fetch the detailed description
-        String fullInfo = CardCatalog.getInstance().getFullDescription(cardId);
-
-        // Split the info by newlines to add them cleanly to the notification buffer
-        String[] lines = fullInfo.split("\n");
-        for (String line : lines) {
-            // We use standard white text for the info output, or you can add color codes
-            addNotification(WHITE + line + RESET);
-        }
-    }
-
-    /**
-     * Displays the summary card in the notification bar.
-     * TuiController already guards against calling this outside a game.
-     */
-    public void onShowSummaryCard() {
-        this.pendingSummary = CardCatalog.getInstance().getSummaryCardText();
-        renderFullGame();
-    }
-
-    public void onShowHelp(boolean inPreLobby, boolean inLobby, boolean inGame) {
-        System.out.println("\n" + CYAN + BOLD + "--- COMMAND CHEATSHEET ---" + RESET);
-        if (inPreLobby) {
-            System.out.println("  create <size>         - Start a new lobby (size 2-5)");
-            System.out.println("  join <index>          - Join a waiting lobby");
-            System.out.println("  reconnect <nick> <id> - Rejoin a crashed game");
-        } else if (inLobby) {
-            System.out.println("  nick <name>           - Set or change your nickname");
-            System.out.println("  totem <color>         - Pick your totem (WHITE, PURPLE, BLUE, RED, YELLOW)");
-            System.out.println("  totems                - View available totems");
-            System.out.println("  leave                 - Exit the lobby");
-        } else if (inGame) {
-            System.out.println("  move <tileID>         - Place totem on the offer track (e.g., move B)");
-            System.out.println("  resolve <id...>       - Take specific cards (e.g., resolve C_001 E_002)");
-            System.out.println("  move T                - Return totem and END YOUR TURN");
-            System.out.println("  info <cardID>         - Read full card details (e.g., info B_004)");
-            System.out.println("  summary               - Show the summary card (quick-reference rules)");
-            System.out.println("  lobby                 - Leave the game and return to lobby");
-        }
-        System.out.println("  quit                  - Close the application");
-
-        // Ristampa il prompt per non lasciare l'utente "sospeso"
-        if (inGame && gameModel != null && gameModel.getCurrentPlayer() != null) {
-            if (gameModel.getCurrentPlayer().equals(gameModel.getMyNickname())) {
-                System.out.print("\n" + GREEN + BOLD + "[YOUR TURN] > " + RESET);
-            } else {
-                System.out.print("\n" + YELLOW + "[Waiting for " + gameModel.getCurrentPlayer() + "...] > " + RESET);
-            }
-        } else {
-            System.out.print("\n" + CYAN + "> " + RESET);
-        }
-    }
-
-    /**
      * Renders the context-sensitive command list.
      * Shows a waiting message when it is not this client's turn.
      *
@@ -769,6 +824,37 @@ public class TuiView extends AbstractClientView {
     // -----------------------------------------------------------------------
     // Utilities
     // -----------------------------------------------------------------------
+
+    private void printBanner() {
+        System.out.println(GREEN + BOLD
+                + "  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\\n"
+                + "  \\                                                /\n"
+                + "  /    M  E  S  O  S  —  P R E H I S T O R I C   \\\n"
+                + "  \\                                                /\n"
+                + "  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\"
+                + RESET);
+        System.out.println(YELLOW
+                + "\n  " + ProjectInfo.GROUP
+                + "  │  " + ProjectInfo.YEAR
+                + "  │  " + ProjectInfo.UNIVERSITY
+                + RESET);
+        System.out.println(WHITE
+                + "  ──────────────────────────────────────────────────────"
+                + RESET);
+        System.out.println(PURPLE + "  Members:" + RESET);
+        ProjectInfo.MEMBERS.forEach((name, code) ->
+                System.out.println("  " + YELLOW + "◆" + RESET
+                        + "  " + String.format("%-20s", name)
+                        + " [" + code + "]"));
+        System.out.println(WHITE
+                + "  ──────────────────────────────────────────────────────"
+                + RESET);
+        System.out.println(WHITE
+                + "  " + ProjectInfo.COURSE
+                + "  │  " + ProjectInfo.PROFESSOR
+                + "\n"
+                + RESET);
+    }
 
     /** Prints the game title banner. */
     private void printHeader() {

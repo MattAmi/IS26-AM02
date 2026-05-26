@@ -834,9 +834,9 @@ public class TuiView extends AbstractClientView {
                 + "  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\"
                 + RESET);
         System.out.println(YELLOW
-                + "\n  " + ProjectInfo.GROUP_NAME
-                + "  │  " + ProjectInfo.ACADEMIC_YEAR
-                + "  │  Politecnico di Milano"
+                + "\n  " + ProjectInfo.GROUP
+                + "  │  " + ProjectInfo.YEAR
+                + "  │  " + ProjectInfo.UNIVERSITY
                 + RESET);
         System.out.println(WHITE
                 + "  ──────────────────────────────────────────────────────"
@@ -847,7 +847,12 @@ public class TuiView extends AbstractClientView {
                         + "  " + String.format("%-20s", name)
                         + " [" + code + "]"));
         System.out.println(WHITE
-                + "  ──────────────────────────────────────────────────────\n"
+                + "  ──────────────────────────────────────────────────────"
+                + RESET);
+        System.out.println(WHITE
+                + "  " + ProjectInfo.COURSE
+                + "  │  " + ProjectInfo.PROFESSOR
+                + "\n"
                 + RESET);
     }
 

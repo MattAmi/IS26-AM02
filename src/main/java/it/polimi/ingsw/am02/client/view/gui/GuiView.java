@@ -85,6 +85,10 @@ public class GuiView extends AbstractClientView {
 
     @Override
     public void onGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot board) {
+        if (sceneRouter.getGameScene() != null) {
+            sceneRouter.getGameScene().prepareForReplay();
+        }
+
         if (sceneRouter.getGameScene() == null) {
             sceneRouter.hideModal();
             sceneRouter.switchToGameScene(gameModel);

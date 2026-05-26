@@ -600,4 +600,11 @@ public class GameScene {
         return hb;
     }
 
+    public void prepareForReplay() {
+        this.knownCardsOnBoard.clear();
+        this.selected.clear();
+        this.animationQueue.clear();
+        this.isAnimating = false;
+    }
+
 }

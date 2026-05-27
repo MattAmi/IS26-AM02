@@ -257,7 +257,30 @@ public class GameController implements GameObserver {
                             .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
                             .count();
 
-                    if (pendingCount > 0 || (activeCount == 1 && connectionStatus.size() > 1)) {
+                    if (activeCount >= 2) {
+                        // At least 2 players active: game can resume. Cancel the global forfeit timer
+                        // and convert any remaining PENDING_RECONNECTION players to DISCONNECTED so
+                        // AutoPlayer can act for them. We check activeCount rather than pendingCount
+                        // because a concurrent network thread may have already transitioned some
+                        // PENDING players to RECONNECTING before this drain completed (race condition).
+                        cancelGlobalDisconnectionTimer();
+                        connectionStatus.replaceAll((nick, status) ->
+                                status == ConnectionStatus.PENDING_RECONNECTION
+                                        ? ConnectionStatus.DISCONNECTED
+                                        : status);
+                        log("Recovery threshold reached (" + activeCount + " players back). "
+                                + "Remaining PENDING players converted to DISCONNECTED.");
+                        if (currentPlayerNickname != null
+                                && connectionStatus.get(currentPlayerNickname) == ConnectionStatus.DISCONNECTED) {
+                            if (gracePeriodExpired.contains(currentPlayerNickname)) {
+                                scheduleAutoPlayerMove(currentPlayerNickname);
+                            } else {
+                                startDisconnectedPlayerTimer(currentPlayerNickname);
+                            }
+                        }
+                    } else {
+                        // Only one player active so far: arm the 120s global timer.
+                        // If a second player's drain completes later, the branch above will cancel it.
                         startGlobalDisconnectionTimeout();
                     }
                 }
@@ -474,19 +497,23 @@ public class GameController implements GameObserver {
 
             globalTimer = null;
 
-            if (pendingCount > 0) {
-                log("Global timer expired — recovery failed, " + pendingCount
-                        + " players never reconnected.");
-                pushGlobalCall(VirtualView::notifyGameRecoveryFailed);
-            } else {
-                String winner = connectionStatus.entrySet().stream()
-                        .filter(e -> e.getValue() == ConnectionStatus.CONNECTED
-                                || e.getValue() == ConnectionStatus.RECONNECTING)
-                        .map(Map.Entry::getKey)
-                        .findFirst()
-                        .orElseThrow();
-                log("Global timer expired — winner by forfeit: " + winner);
+            // In both recovery (pendingCount > 0, activeCount == 1) and normal single-survivor
+            // scenarios, the winner is the sole active player.
+            String winner = connectionStatus.entrySet().stream()
+                    .filter(e -> e.getValue() == ConnectionStatus.CONNECTED
+                            || e.getValue() == ConnectionStatus.RECONNECTING)
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElse(null);
+
+            if (winner != null) {
+                log("Global timer expired — winner by forfeit: " + winner
+                        + " (pendingCount=" + pendingCount + ", activeCount=" + activeCount + ").");
                 pushGlobalCall(v -> v.notifyGameAborted(winner));
+            } else {
+                // Defensive fallback: timer fired with nobody active (should never happen).
+                log("Global timer expired with no active player — notifying recovery failed.");
+                pushGlobalCall(VirtualView::notifyGameRecoveryFailed);
             }
 
             gameLogger.logGameEnded();

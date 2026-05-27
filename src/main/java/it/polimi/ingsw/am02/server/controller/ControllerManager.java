@@ -239,8 +239,6 @@ public class ControllerManager implements VirtualControllerManager {
         GameController controller = controllers.get(gameId);
         if (controller == null) return;
 
-        gameLogger(gameId).logCommand(new MoveTotemCommand(nickname, tileId), nickname);
-        log("Logged MoveTotem for " + nickname + " (tileId=" + tileId + ")");
         controller.executeMoveTotem(nickname, tileId);
     }
 
@@ -253,8 +251,6 @@ public class ControllerManager implements VirtualControllerManager {
         GameController controller = controllers.get(gameId);
         if (controller == null) return;
 
-        gameLogger(gameId).logCommand(new ResolveActionsCommand(nickname, selectedIds), nickname);
-        log("Logged ResolveActions for " + nickname + " (selectedIds=" + selectedIds + ")");
         controller.executeResolveActions(nickname, selectedIds);
     }
 
@@ -487,11 +483,6 @@ public class ControllerManager implements VirtualControllerManager {
             System.err.println("[ControllerManager:Recovery] Cannot quarantine "
                     + logFile.getFileName() + ": " + e.getMessage());
         }
-    }
-
-    private GameLogger gameLogger(String gameId) {
-        GameController c = controllers.get(gameId);
-        return c != null ? c.getLogger() : new NoOpCommandLogger();
     }
 
     private void log(String msg) {

@@ -449,29 +449,37 @@ public class GameModel {
     public synchronized String getGameId() { return gameId; }
     public synchronized PhaseType getCurrentPhase() { return currentPhase; }
     public synchronized String getCurrentPlayer() { return currentPlayer; }
-    public synchronized List<String> getTurnOrder() { return Collections.unmodifiableList(turnOrder); }
-    public synchronized List<String> getUpperRow() { return Collections.unmodifiableList(upperRow); }
-    public synchronized List<String> getLowerRow() { return Collections.unmodifiableList(lowerRow); }
-    public synchronized List<String> getUpperRowBuildings() { return Collections.unmodifiableList(upperRowBuildings); }
-    public synchronized List<String> getLowerRowBuildings() { return Collections.unmodifiableList(lowerRowBuildings); }
-    public synchronized List<OfferTileInfo> getOfferTiles() { return Collections.unmodifiableList(offerTiles); }
-    public synchronized Map<String, Integer> getFoodByPlayer() { return Collections.unmodifiableMap(foodByPlayer); }
-    public synchronized Map<String, Integer> getPpByPlayer() { return Collections.unmodifiableMap(ppByPlayer); }
-    public synchronized Map<String, Character> getTotemPositions() { return Collections.unmodifiableMap(totemPositions); }
-    public synchronized Map<String, Integer> getTurnOrderPositions() { return Collections.unmodifiableMap(turnOrderPositions); }
-    public synchronized Map<String, Integer> getRemainingUpper() { return Collections.unmodifiableMap(remainingUpper); }
-    public synchronized Map<String, Integer> getRemainingLower() { return Collections.unmodifiableMap(remainingLower); }
-    public synchronized Map<String, List<String>> getCharactersByPlayer() { return Collections.unmodifiableMap(charactersByPlayer); }
-    public synchronized Map<String, List<String>> getBuildingsByPlayer() { return Collections.unmodifiableMap(buildingsByPlayer); }
-    public synchronized List<String> getWinners() { return Collections.unmodifiableList(winners); }
-    public synchronized List<PlayerFinalScore> getFinalRankings() { return Collections.unmodifiableList(finalRankings); }
+    public synchronized List<String> getTurnOrder() { return List.copyOf(turnOrder); }
+    public synchronized List<String> getUpperRow() { return List.copyOf(upperRow); }
+    public synchronized List<String> getLowerRow() { return List.copyOf(lowerRow); }
+    public synchronized List<String> getUpperRowBuildings() { return List.copyOf(upperRowBuildings); }
+    public synchronized List<String> getLowerRowBuildings() { return List.copyOf(lowerRowBuildings); }
+    public synchronized List<OfferTileInfo> getOfferTiles() { return List.copyOf(offerTiles); }
+    public synchronized Map<String, Integer> getFoodByPlayer() { return Map.copyOf(foodByPlayer); }
+    public synchronized Map<String, Integer> getPpByPlayer() { return Map.copyOf(ppByPlayer); }
+    public synchronized Map<String, Character> getTotemPositions() { return Map.copyOf(totemPositions); }
+    public synchronized Map<String, Integer> getTurnOrderPositions() { return Map.copyOf(turnOrderPositions); }
+    public synchronized Map<String, Integer> getRemainingUpper() { return Map.copyOf(remainingUpper); }
+    public synchronized Map<String, Integer> getRemainingLower() { return Map.copyOf(remainingLower); }
+    public synchronized Map<String, List<String>> getCharactersByPlayer() {
+        Map<String, List<String>> copy = new LinkedHashMap<>();
+        charactersByPlayer.forEach((k, v) -> copy.put(k, List.copyOf(v)));
+        return Collections.unmodifiableMap(copy);
+    }
+    public synchronized Map<String, List<String>> getBuildingsByPlayer() {
+        Map<String, List<String>> copy = new LinkedHashMap<>();
+        buildingsByPlayer.forEach((k, v) -> copy.put(k, List.copyOf(v)));
+        return Collections.unmodifiableMap(copy);
+    }
+    public synchronized List<String> getWinners() { return List.copyOf(winners); }
+    public synchronized List<PlayerFinalScore> getFinalRankings() { return List.copyOf(finalRankings); }
     public synchronized int getDeckRemainingCount() { return deckRemainingCount; }
     public synchronized boolean isGameEnded() { return gameEnded; }
     public synchronized String getLastEventResolved() { return lastEventResolved; }
     public synchronized String getLastErrorMessage() { return lastErrorMessage; }
     public synchronized boolean isInGame() { return gameId != null && !gameEnded; }
-    public synchronized List<TurnOrderSlotInfo> getTurnOrderSlots() { return Collections.unmodifiableList(turnOrderSlots); }
+    public synchronized List<TurnOrderSlotInfo> getTurnOrderSlots() { return List.copyOf(turnOrderSlots); }
     public synchronized void setGameId(String gameId) { this.gameId = gameId; }
-    public synchronized Totem getTotem(String nickname) { return totemByPlayer.get(nickname); }
+    public synchronized Totem getTotem(String nickname) { return totemByPlayer != null ? totemByPlayer.get(nickname) : null; }
     public synchronized Era getCurrentEra() { return currentEra; }
 }

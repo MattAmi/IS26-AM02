@@ -14,6 +14,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -169,6 +170,39 @@ public class SceneRouter {
             Button okBtn = new Button("OK"); okBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white;");
             okBtn.setOnAction(e -> hideModal());
             alertBox.getChildren().addAll(tL, cL, okBtn);
+            modalLayer.getChildren().setAll(alertBox);
+            modalLayer.setVisible(true);
+        });
+    }
+
+    public void showGameOverPopup(String title, String content) {
+        runOnUi(() -> {
+            VBox alertBox = new VBox(20);
+            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(450, 250);
+            alertBox.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+
+            Label tL = new Label(title); tL.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
+            Label cL = new Label(content); cL.setStyle("-fx-text-fill: white; -fx-font-size: 14px;"); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);
+
+            HBox buttons = new HBox(20);
+            buttons.setAlignment(Pos.CENTER);
+
+            Button menuBtn = new Button("RETURN TO MENU");
+            menuBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;");
+            menuBtn.setPrefHeight(40);
+            menuBtn.setOnAction(e -> {
+                hideModal();
+                guiController.requestReturnToLobby();
+            });
+
+            Button exitBtn = new Button("EXIT GAME");
+            exitBtn.setStyle("-fx-base: #8B0000; -fx-text-fill: white; -fx-font-weight: bold;");
+            exitBtn.setPrefHeight(40);
+            exitBtn.setOnAction(e -> System.exit(0));
+
+            buttons.getChildren().addAll(menuBtn, exitBtn);
+            alertBox.getChildren().addAll(tL, cL, buttons);
+
             modalLayer.getChildren().setAll(alertBox);
             modalLayer.setVisible(true);
         });

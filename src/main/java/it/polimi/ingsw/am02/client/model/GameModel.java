@@ -94,6 +94,7 @@ public class GameModel {
         this.remainingUpper.clear();
         this.remainingLower.clear();
         this.turnOrderSlots.clear();
+        this.currentEra = Era.I;
 
         this.foodByPlayer.putAll(initialFood);
         initialFood.keySet().forEach(n -> ppByPlayer.put(n, 0));

@@ -5,20 +5,31 @@ import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.dto.ResourceDelta;
 import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.server.model.Game;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * Concrete implementation of both {@link GameObserverRegistry} and {@link GameEventEmitter}.
+ * Maintains a thread-safe list of {@link GameObserver}s and broadcasts each event
+ * by iterating over all registered observers.
+ *
+ * <p>Uses a {@link java.util.concurrent.CopyOnWriteArrayList} so that observers can
+ * be added or removed concurrently without risk of {@code ConcurrentModificationException}.
+ *
+ * <p>This class is the single internal notification hub owned by {@link Game}.
+ */
 public final class GameNotifier implements GameObserverRegistry, GameEventEmitter {
 
     private final List<GameObserver> observers = new CopyOnWriteArrayList<>();
 
     //GameObserverRegistry methods
-
+    /** {@inheritDoc} */
     @Override
     public void addObserver(GameObserver observer) { observers.add(observer); }
-
+    /** {@inheritDoc} */
     @Override
     public void removeObserver(GameObserver observer) { observers.remove(observer); }
 
@@ -26,6 +37,7 @@ public final class GameNotifier implements GameObserverRegistry, GameEventEmitte
     //GameEventEmitter methods
 
     //Outcome
+    /** {@inheritDoc} */
     @Override
     public void emitOutcome(EffectOutcome outcome) {
         if (outcome == null || outcome.isEmpty())

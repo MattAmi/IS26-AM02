@@ -90,13 +90,18 @@ public class GameController implements GameObserver {
     // =========================================================
 
     /**
-     * Executes a move-totem action on behalf of the given player.
-     * Logging is handled by {@link ControllerManager} before this call.
+     * Logs and executes a move-totem action on behalf of the given player.
+     * Logging is skipped during replay mode, since commands are already
+     * persisted in the NDJSON file being replayed.
      *
      * @param nickname the player performing the action
      * @param tileId   the letter identifier of the target offer tile
      */
     public synchronized void executeMoveTotem(String nickname, char tileId) {
+        if (!replayMode) {
+            gameLogger.logCommand(new MoveTotemCommand(nickname, tileId), nickname);
+            log("Logged MoveTotem for " + nickname + " (tileId=" + tileId + ")");
+        }
         try {
             model.moveTotem(nickname, tileId);
         } catch (RuntimeException e) {
@@ -105,13 +110,18 @@ public class GameController implements GameObserver {
     }
 
     /**
-     * Executes a resolve-actions action on behalf of the given player.
-     * Logging is handled by {@link ControllerManager} before this call.
+     * Logs and executes a resolve-actions action on behalf of the given player.
+     * Logging is skipped during replay mode, since commands are already
+     * persisted in the NDJSON file being replayed.
      *
      * @param nickname    the player performing the action
      * @param selectedIds the card identifiers the player wishes to take
      */
     public synchronized void executeResolveActions(String nickname, List<String> selectedIds) {
+        if (!replayMode) {
+            gameLogger.logCommand(new ResolveActionsCommand(nickname, selectedIds), nickname);
+            log("Logged ResolveActions for " + nickname + " (selectedIds=" + selectedIds + ")");
+        }
         try {
             model.resolveActions(nickname, selectedIds);
         } catch (RuntimeException e) {

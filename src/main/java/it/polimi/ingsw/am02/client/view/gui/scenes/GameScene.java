@@ -21,6 +21,7 @@ import javafx.scene.text.*;
 import javafx.util.Duration;
 import it.polimi.ingsw.am02.common.enumerations.Era;
 import javafx.scene.effect.GaussianBlur;
+import javafx.scene.shape.Rectangle;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -140,27 +141,35 @@ public class GameScene {
         toastLabel.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 4 10; -fx-background-radius: 15; -fx-font-weight: bold;");
         if (tribalFont != null) toastLabel.setFont(Font.font(tribalFont.getFamily(), 10));
         toastLabel.setOpacity(0);
+        toastLabel.setMouseTransparent(true);
+
+        StackPane copyContainer = new StackPane();
+        copyContainer.setAlignment(Pos.CENTER);
+        copyContainer.getChildren().addAll(copyBtn, toastLabel);
 
         copyBtn.setOnAction(e -> {
             if (model != null && model.getGameId() != null) {
                 Clipboard clipboard = Clipboard.getSystemClipboard(); ClipboardContent content = new ClipboardContent();
                 content.putString(model.getGameId()); clipboard.setContent(content);
+
                 toastLabel.setTranslateY(0);
                 FadeTransition fadeIn = new FadeTransition(Duration.millis(200), toastLabel); fadeIn.setFromValue(0); fadeIn.setToValue(1);
-                TranslateTransition moveUp = new TranslateTransition(Duration.millis(200), toastLabel); moveUp.setByY(-5);
+                TranslateTransition moveUp = new TranslateTransition(Duration.millis(200), toastLabel);
+                moveUp.setByY(-25);
                 FadeTransition fadeOut = new FadeTransition(Duration.seconds(1), toastLabel); fadeOut.setDelay(Duration.seconds(1.5)); fadeOut.setFromValue(1); fadeOut.setToValue(0);
                 ParallelTransition pt = new ParallelTransition(fadeIn, moveUp); pt.setOnFinished(ev -> fadeOut.play()); pt.play();
             }
         });
 
-        idBox.getChildren().addAll(gameIdLabel, copyBtn, toastLabel); StackPane.setAlignment(idBox, Pos.CENTER_LEFT);
+        idBox.getChildren().addAll(gameIdLabel, copyContainer);
+        StackPane.setAlignment(idBox, Pos.CENTER_LEFT);
 
         HBox rightControls = new HBox(15);
         rightControls.setAlignment(Pos.CENTER_RIGHT);
         rightControls.setPickOnBounds(false);
 
         Button logsBtn = new Button("▼");
-        logsBtn.setFont(Font.font(tribalFont.getFamily(), 8));
+        logsBtn.setFont(Font.font(tribalFont.getFamily(), 12));
         logsBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
 
         Button burgerMenuBtn = new Button("☰"); burgerMenuBtn.setFont(Font.font(tribalFont.getFamily(), 20));
@@ -410,6 +419,7 @@ public class GameScene {
         String eraPath = "/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png";
         currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
         currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
+        applyRoundedCorners(currentDeckView, 10); // ARROTONDAMENTO MAZZO
 
         int numPlayers = Math.max(2, state.turnOrder.size());
         TurnOrderCaveView turnOrderCave = new TurnOrderCaveView(numPlayers, state.turnOrderSlots, model);
@@ -505,6 +515,7 @@ public class GameScene {
         ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png"));
         fly.setFitHeight(targetHeight); // Fa volare la carta già con la misura giusta!
         fly.setPreserveRatio(true); fly.setManaged(false);
+        applyRoundedCorners(fly, 10); // ARROTONDAMENTO CARTA DISTRIBUITA
         fly.relocate(start.getX(), start.getY()); baseStack.getChildren().add(fly);
 
         TranslateTransition tt = new TranslateTransition(Duration.millis(700), fly);
@@ -534,6 +545,7 @@ public class GameScene {
         String sub = cardID.startsWith("C_") ? "characters/" : cardID.startsWith("B_") ? "buildings/" : "events/";
         ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/" + sub + cardID + ".png"));
         fly.setFitHeight(170); fly.setPreserveRatio(true); fly.setTranslateY(source == RowPosition.UPPER ? -150 : 150);
+        applyRoundedCorners(fly, 10); // ARROTONDAMENTO CARTA PESCATA
         baseStack.getChildren().add(fly);
 
         TranslateTransition tt = new TranslateTransition(Duration.seconds(1), fly);
@@ -612,6 +624,7 @@ public class GameScene {
         String sub = cardId.startsWith("C_") ? "characters/" : cardId.startsWith("B_") ? "buildings/" : "events/";
         String path = "/it.polimi.ingsw.am02.images/cards/" + sub + cardId + ".png";
         ImageView bigCard = new ImageView(ImageLoader.getImage(path)); bigCard.setFitHeight(550); bigCard.setPreserveRatio(true);
+        applyRoundedCorners(bigCard, 25); // ARROTONDAMENTO CARTA ZOOMATA
         bigCard.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 40, 0.4, 0, 0);");
         bigCard.setScaleX(0.5); bigCard.setScaleY(0.5);
         ScaleTransition st = new ScaleTransition(Duration.millis(200), bigCard); st.setToX(1.0); st.setToY(1.0); st.play();
@@ -688,4 +701,16 @@ public class GameScene {
         this.isAnimating = false;
     }
 
+    private void applyRoundedCorners(ImageView imageView, double radius) {
+        Rectangle clip = new Rectangle();
+        clip.setArcWidth(radius);
+        clip.setArcHeight(radius);
+        clip.setWidth(imageView.getBoundsInLocal().getWidth());
+        clip.setHeight(imageView.getBoundsInLocal().getHeight());
+        imageView.boundsInLocalProperty().addListener((obs, oldVal, newVal) -> {
+            clip.setWidth(newVal.getWidth());
+            clip.setHeight(newVal.getHeight());
+        });
+        imageView.setClip(clip);
+    }
 }

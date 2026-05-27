@@ -20,6 +20,20 @@ public class OfferTileView extends StackPane {
         bgImage.setFitHeight(150);
         bgImage.setPreserveRatio(true);
         this.getChildren().add(bgImage);
+        // --- ARROTONDAMENTO ANGOLI TESSERA ---
+        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
+        clip.setArcWidth(10);
+        clip.setArcHeight(10);
+
+        clip.setWidth(bgImage.getBoundsInLocal().getWidth());
+        clip.setHeight(bgImage.getBoundsInLocal().getHeight());
+
+        bgImage.boundsInLocalProperty().addListener((obs, oldVal, newVal) -> {
+            clip.setWidth(newVal.getWidth());
+            clip.setHeight(newVal.getHeight());
+        });
+        bgImage.setClip(clip);
+// --------------------------------------
 
         if (occupantTotem != null) {
             String path = "/it.polimi.ingsw.am02.images/totems/totem_" + occupantTotem.name().toLowerCase() + ".png";

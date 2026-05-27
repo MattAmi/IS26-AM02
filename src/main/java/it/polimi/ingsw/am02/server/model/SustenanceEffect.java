@@ -7,16 +7,28 @@ import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Event effect for the Sustenance event.
+ * Each player must pay food equal to their character count minus their food discount.
+ * If a player cannot pay in food, they lose prestige points at a configurable rate.
+ */
 public class SustenanceEffect implements EventEffect {
 
-    //Attributi
     private final int penaltyPerUnfed;
 
+    /**
+     * @param penaltyPerUnfed prestige points lost per unit of food that cannot be paid
+     */
     public SustenanceEffect(int penaltyPerUnfed) {
         this.penaltyPerUnfed = penaltyPerUnfed;
     }
 
-    //Metodi
+    /**
+     * Applies the sustenance cost to every player.
+     *
+     * @param players all active players
+     * @return an {@link EffectOutcome} with food and prestige-point deltas for each player
+     */
     @Override
     public EffectOutcome applyEffect(List<Player> players) {
         List<ResourceDelta> deltas = new ArrayList<>();

@@ -7,11 +7,22 @@ import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 
 import java.util.List;
 
+/**
+ * Character effect for a Hunter character carrying a gigot.
+ * Immediately grants food equal to the total number of Hunters in the tribe.
+ */
 public class HunterWithGigotEffect implements CharacterEffect {
 
     public HunterWithGigotEffect() {}
 
-    //Hunter Effect: it adds as much food as the number of hunters in the tribu
+    /**
+     * Grants food equal to the current number of Hunters (including this one)
+     * in the player's tribe.
+     *
+     * @param player the player who drew this character
+     * @return an {@link EffectOutcome} with the food delta, or an empty outcome if
+     *         there are no Hunters in the tribe
+     */
     @Override
     public EffectOutcome applyEffect(Player player) {
         Tribu tribu = player.getTribu();

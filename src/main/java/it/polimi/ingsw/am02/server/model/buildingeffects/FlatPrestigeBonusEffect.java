@@ -12,20 +12,39 @@ import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
 
 import java.util.List;
 
+/**
+ * Building effect that awards a fixed number of prestige points at the end of the game.
+ *
+ * <p>Registered as a {@link PhaseObserver}. Fires once on {@link PhaseType#END_GAME}.
+ *
+ * <p>JSON key: {@code "ENDGAME_FLAT_PP"}
+ */
 public class FlatPrestigeBonusEffect implements BuildingEffect, PhaseObserver {
     final Player owner;
     final int bonusPP;
 
+    /**
+     * @param owner   the player who owns this building
+     * @param bonusPP the flat number of prestige points awarded at game end
+     */
     public FlatPrestigeBonusEffect(Player owner, int bonusPP) {
         this.owner = owner;
         this.bonusPP = bonusPP;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void accept(EffectVisitor visitor) {
         visitor.visitPhaseObserver(this);
     }
 
+    /**
+     * Adds the flat prestige bonus to the owner's tribe when the game ends.
+     * Has no effect during any other phase transition.
+     *
+     * @param newPhase the phase the game is transitioning into
+     * @return an {@link EffectOutcome} with the prestige-point delta, or empty if not {@code END_GAME}
+     */
     @Override
     public EffectOutcome onPhaseChange(PhaseType newPhase) {
         if(newPhase == PhaseType.END_GAME) {

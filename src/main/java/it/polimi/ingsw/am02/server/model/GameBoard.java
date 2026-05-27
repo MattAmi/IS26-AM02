@@ -17,6 +17,13 @@ import it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter;
 import java.util.*;
 import java.util.stream.Stream;
 
+/**
+ * Manages the shared physical state of the game board: the two card rows (upper / lower),
+ * the building market rows, the offer track, the turn-order tile, and the two decks.
+ *
+ * <p>All mutating operations emit notifications through the injected {@link GameEventEmitter}.
+ * {@code GameBoard} is owned by {@link Game} and should not be accessed directly by network layers.
+ */
 public class GameBoard {
 
     private final List<String> upperRow;
@@ -37,6 +44,15 @@ public class GameBoard {
     private final GameEventEmitter notifier;
 
 
+    /**
+     * Constructs and fully initializes the game board for the given player count.
+     * Draws the initial card rows from the freshly built decks.
+     *
+     * @param numPlayers  the number of players in the game (2–5)
+     * @param notifier    the event emitter used to broadcast board changes; must not be {@code null}
+     * @param gameRandom  the seeded random source shared with the rest of the game
+     * @throws NullPointerException if {@code notifier} is {@code null}
+     */
     public GameBoard(int numPlayers, GameEventEmitter notifier, Random gameRandom) {
         this.upperRow = new ArrayList<>();
         this.lowerRow = new ArrayList<>();
@@ -113,6 +129,12 @@ public class GameBoard {
         }
     }
 
+    /**
+     * Places each player on the turn-order tile in the given order and grants initial food bonuses.
+     * Must be called once immediately after board construction.
+     *
+     * @param orderedPlayers players in randomized starting order (index 0 = first player)
+     */
     public void setUpInitialTurnOrder(List<Player> orderedPlayers) {
 
         for(int i = 0; i < orderedPlayers.size(); i++) {
@@ -122,6 +144,13 @@ public class GameBoard {
         }
     }
 
+    /**
+     * Moves a player's totem from the turn-order tile onto the specified offer tile,
+     * then fires a {@code totemPlaced} notification.
+     *
+     * @param player the player performing the move
+     * @param tileID the target offer tile identifier
+     */
     public void movePlayerToOffer(Player player, char tileID) {
         offerTrack.occupyTile(player, tileID);
         turnOrderTile.removePlayer(player);
@@ -130,14 +159,29 @@ public class GameBoard {
         notifier.notifyTotemPlaced(player.getNickname(), tileID);
     }
 
+    /**
+     * @return an ordered list of players currently on the offer track,
+     *         sorted by tile ID (ascending), for action-resolution turn order
+     */
     public List<Player> getPlayersInResolutionOrder() {
         return offerTrack.getOrderedPlayers();
     }
 
+    /**
+     * @return {@code true} if all player totems have been placed on the offer track
+     *         (i.e. the turn-order tile is empty)
+     */
     public boolean areAllTotemsPlaced() {
         return turnOrderTile.isEmpty();
     }
 
+    /**
+     * Initializes the remaining pick counts for the given player based on their offer tile
+     * and the number of cards actually available in each row.
+     * Fires a {@code playerLimitsInitialized} notification.
+     *
+     * @param player the player whose limits are being set up
+     */
     public void initializePlayerLimits(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
 
@@ -249,6 +293,19 @@ public class GameBoard {
         return Math.max(0, buildingCost - buildingDiscount);
     }
 
+    /**
+     * Validates and executes a card-selection action for the given player during their turn.
+     * Applies food rewards from the offer tile on first call, deducts building costs,
+     * transfers cards to the player's tribe, and fires the appropriate notifications.
+     *
+     * @param player      the player performing the action
+     * @param selectedIDs list of card IDs the player wishes to acquire
+     * @param game        the current game instance, forwarded to building-effect factories
+     * @throws CardNotFoundException       if a selected card is not on the board
+     * @throws EventCardNotTakeableException if a selected card is an event card
+     * @throws InsufficientFoodException   if the player cannot afford the selected buildings
+     * @throws PickLimitExceededException  if the selection exceeds the player's remaining pick limits
+     */
     public void processActionSelection(Player player, List<String> selectedIDs, Game game) {
 
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
@@ -283,29 +340,38 @@ public class GameBoard {
                 currentTile.getRemainingLower());
     }
 
+    /**
+     * Determines whether the given player is allowed to end their turn.
+     * A player may end if all mandatory picks are satisfied, or if no characters
+     * remain available in a row the player is still obliged to pick from.
+     *
+     * @param player the player requesting to end their turn
+     * @return {@code true} if the player may legally end their turn
+     */
     public boolean canPlayerFinish(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
 
-        // Se il giocatore ha già soddisfatto tutti i pick previsti, può terminare il turno.
         if (currentTile.isSatisfied()) {
             return true;
         }
 
         GameRegistry registry = GameRegistry.getInstance();
 
-        // Controlliamo se ci sono effettivamente dei Personaggi (Characters) nelle righe.
-        // Gli Edifici (Buildings) e gli Eventi vengono ignorati per l'obbligo di pesca.
         boolean hasCharacterInUpper = upperRow.stream().anyMatch(registry::isCharacter);
         boolean hasCharacterInLower = lowerRow.stream().anyMatch(registry::isCharacter);
 
-        // L'obbligo sussiste solo se il giocatore ha pick residui E ci sono Personaggi disponibili.
         boolean forcedByUpper = currentTile.getRemainingUpper() > 0 && hasCharacterInUpper;
         boolean forcedByLower = currentTile.getRemainingLower() > 0 && hasCharacterInLower;
 
-        // Se non è forzato né dalla riga superiore né da quella inferiore, può passare.
         return !forcedByUpper && !forcedByLower;
     }
 
+    /**
+     * Moves a player's totem from their offer tile back to the turn-order tile,
+     * claiming the earliest free position. Fires a {@code totemReturned} notification.
+     *
+     * @param player the player returning their totem
+     */
     public void movePlayerToTurnOrder(Player player) {
         OfferTile currentTile = offerTrack.getTileByPlayer(player);
         currentTile.removePlayer(player);
@@ -315,6 +381,12 @@ public class GameBoard {
         notifier.notifyTotemReturned(player.getNickname(), position);
     }
 
+    /**
+     * Applies end-of-turn food bonuses and penalties defined by the player's
+     * position on the turn-order tile. Fires resource-change notifications for each delta.
+     *
+     * @param player the player whose end-of-turn rewards are being resolved
+     */
     public void applyTurnOrderRewards(Player player) {
         TurnOrderTile.TurnOrderRewardResult result = turnOrderTile.applyRewards(player);
         String nickname = player.getNickname();
@@ -332,10 +404,14 @@ public class GameBoard {
         }
     }
 
+    /** @return the number of players whose totems are currently on the turn-order tile */
     public int getPlayersOnTurnOrderCount() {
         return turnOrderTile.getPlayerCount();
     }
 
+    /**
+     * @return {@code true} if there is at least one non-final event card visible in the lower row
+     */
     public boolean hasRoundEvents() {
         GameRegistry registry = GameRegistry.getInstance();
 
@@ -347,6 +423,12 @@ public class GameBoard {
         return false;
     }
 
+    /**
+     * Resolves all non-final event cards currently in the lower row, in priority order.
+     * Each event's outcome is emitted via the notifier.
+     *
+     * @param players the list of all players (all are affected by events)
+     */
     public void resolveRoundEvents(List<Player> players) {
 
         GameRegistry registry = GameRegistry.getInstance();
@@ -363,14 +445,22 @@ public class GameBoard {
         }
     }
 
+    /**
+     * @return {@code true} if the most recently drawn card belongs to a different era
+     *         than the previous one (signals an era transition)
+     */
     public boolean hasEraChanged() {
         return eraChangedFlag;
     }
+    
 
-    public boolean isTribuDeckEmpty() {
-        return tribuDeck.isEmpty();
-    }
-
+    /**
+     * Prepares the board for a new round: discards the lower row, shifts the upper row
+     * down, draws new cards from the tribe deck to refill the upper row, and fires a
+     * {@code boardUpdated} notification with the full diff.
+     *
+     * @param numPlayers the number of players (determines how many cards to draw)
+     */
     public void prepareNewRound(int numPlayers) {
         GameRegistry registry = GameRegistry.getInstance();
 
@@ -411,10 +501,20 @@ public class GameBoard {
         );
     }
 
+    /**
+     * @return players in the order they should place their totems for the upcoming round,
+     *         derived from their current positions on the turn-order tile
+     */
     public List<Player> getPlayersInPlacementOrder() {
         return turnOrderTile.getOrderedPlayers();
     }
 
+    /**
+     * Updates the building market rows when a new era begins.
+     * Moves upper-row buildings to the lower row and draws new buildings for the current era.
+     * Discards lower-row buildings when entering Era III.
+     * Fires an {@code eraChanged} notification.
+     */
     public void updateRowsForNewEra() {
         List<String> discardedBuildings = new ArrayList<>();
 
@@ -442,6 +542,9 @@ public class GameBoard {
         );
     }
 
+    /**
+     * @return {@code true} if there is at least one final event card in either visible row
+     */
     public boolean hasFinalEvents() {
         GameRegistry registry = GameRegistry.getInstance();
 
@@ -459,6 +562,11 @@ public class GameBoard {
         return false;
     }
 
+    /**
+     * Resolves all final event cards visible in both rows, in priority order.
+     *
+     * @param players the list of all players
+     */
     public void resolveFinalEvents(List<Player> players) {
         GameRegistry registry = GameRegistry.getInstance();
 
@@ -488,6 +596,14 @@ public class GameBoard {
         }
     }
 
+    /**
+     * Initializes the pick limits for a player's extra turn, capped by the actual
+     * number of cards available in each row. Fires a {@code playerLimitsInitialized} notification.
+     *
+     * @param player      the player receiving the extra turn
+     * @param upperPicks  the maximum number of upper-row picks for the extra turn
+     * @param lowerPicks  the maximum number of lower-row picks for the extra turn
+     */
     public void initializeExtraPlayerLimits(Player player, int upperPicks, int lowerPicks) {
         this.extraTurnPlayer = player;
 
@@ -504,6 +620,17 @@ public class GameBoard {
                 extraTurnRemainingLower);
     }
 
+    /**
+     * Validates and executes a card-selection action during a player's extra turn.
+     * Behaves like {@link #processActionSelection} but uses the extra-turn pick counters.
+     *
+     * @param player      the player performing the extra-turn action
+     * @param selectedIDs list of card IDs the player wishes to acquire
+     * @param game        the current game instance
+     * @throws IllegalArgumentException   if the selection exceeds extra-turn pick limits
+     * @throws CardNotFoundException      if a selected card is not on the board
+     * @throws InsufficientFoodException  if the player cannot afford the selected buildings
+     */
     public void processExtraActionSelection(Player player, List<String> selectedIDs, Game game) {
         int[] counts = countSelectedByRow(selectedIDs);
 
@@ -526,12 +653,21 @@ public class GameBoard {
                 extraTurnRemainingLower);
     }
 
+    /**
+     * Resets all extra-turn state after the extra turn has ended.
+     */
     public void clearExtraTurn() {
         this.extraTurnPlayer = null;
         this.extraTurnRemainingUpper = 0;
         this.extraTurnRemainingLower = 0;
     }
 
+    /**
+     * Grants one bonus food point to the given player if their turn-order position
+     * provides a positive food reward, as a side effect of a building effect.
+     *
+     * @param player the player who may receive the bonus
+     */
     public void applyExtraTurnOrderBonus(Player player) {
         int baseBonus = turnOrderTile.getFoodForPlayer(player);
 
@@ -540,6 +676,12 @@ public class GameBoard {
         }
     }
 
+    /**
+     * Registers an {@link EventObserver} that will be notified before, during,
+     * and after each event resolution.
+     *
+     * @param effect the observer to attach
+     */
     public void attachEventObserver(EventObserver effect) {
         eventObservers.add(effect);
     }
@@ -554,6 +696,13 @@ public class GameBoard {
     List<String> getLowerRowBuildings() { return lowerRowBuildings; } // For testing
     OfferTrack getOfferTrack() { return  offerTrack; } // For testing
 
+    /**
+     * Builds and returns an immutable snapshot of the current board state,
+     * suitable for sending to clients as a DTO.
+     *
+     * @return a {@link BoardSnapshot} reflecting the current rows, building market,
+     *         offer track, turn-order tile, and remaining deck size
+     */
     public BoardSnapshot buildSnapshot() {
         List<OfferTileInfo> offerTiles = offerTrack.getTilesInfo();
 

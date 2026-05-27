@@ -13,6 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Singleton registry that loads and provides access to all static game data:
+ * character cards, event cards, building cards, offer tiles, and turn-order tiles.
+ *
+ * <p>All data is loaded from JSON resource files at class-initialization time.
+ * Use {@link #getInstance()} to obtain the single shared instance.
+ */
 public class GameRegistry {
 
     private static final GameRegistry INSTANCE = new GameRegistry(); //the only instance of the registry
@@ -47,10 +54,17 @@ public class GameRegistry {
         loadTurnOrderTiles(TURN_ORDER_TILES_PATH);
     }
 
+    /** @return the singleton instance of the registry */
     public static GameRegistry getInstance() {
         return INSTANCE;
     }
 
+    /**
+     * Loads character cards from the given JSON resource path, replacing any previously loaded characters.
+     * Normally called once during construction; exposed for testing with custom data files.
+     *
+     * @param charactersPath classpath-relative path to the JSON file (e.g. {@code "/it/.../Characters.JSON"})
+     */
     public void loadCharacters(String charactersPath) {
         try {
             List<JsonNode> nodes = parseJsonToList(charactersPath);
@@ -65,6 +79,11 @@ public class GameRegistry {
         }
     }
 
+    /**
+     * Loads event cards from the given JSON resource path.
+     *
+     * @param eventsPath classpath-relative path to the JSON file
+     */
     public void loadEvents(String eventsPath) {
         try {
             List<JsonNode> nodes = parseJsonToList(eventsPath);
@@ -79,6 +98,11 @@ public class GameRegistry {
         }
     }
 
+    /**
+     * Loads building cards from the given JSON resource path.
+     *
+     * @param buildingsPath classpath-relative path to the JSON file
+     */
     public void loadBuildings(String buildingsPath) {
         try {
             List<JsonNode> nodes = parseJsonToList(buildingsPath);
@@ -93,6 +117,11 @@ public class GameRegistry {
         }
     }
 
+    /**
+     * Loads offer tile definitions from the given JSON resource path.
+     *
+     * @param offerTilesPath classpath-relative path to the JSON file
+     */
     public void loadOfferTiles(String offerTilesPath) {
         try {
             List<JsonNode> nodes = parseJsonToList(offerTilesPath);
@@ -106,6 +135,11 @@ public class GameRegistry {
         }
     }
 
+    /**
+     * Loads turn-order tile definitions from the given JSON resource path.
+     *
+     * @param turnOrderTilesPath classpath-relative path to the JSON file
+     */
     public void loadTurnOrderTiles(String turnOrderTilesPath) {
         try {
             List<JsonNode> nodes = parseJsonToList(turnOrderTilesPath);
@@ -131,30 +165,61 @@ public class GameRegistry {
         }
     }
 
+    /**
+     * @param cardID the card ID to check
+     * @return {@code true} if the ID corresponds to a character card
+     */
     public boolean isCharacter(String cardID) {
         return characterMap.containsKey(cardID);
     }
 
+    /**
+     * @param cardID the card ID to check
+     * @return {@code true} if the ID corresponds to an event card
+     */
     public boolean isEvent(String cardID) {
         return eventMap.containsKey(cardID);
     }
 
+    /**
+     * @param cardID the card ID to check
+     * @return {@code true} if the ID corresponds to a building card
+     */
     public boolean isBuilding(String cardID) {
         return buildingMap.containsKey(cardID);
     }
 
+    /**
+     * @param cardID the character card ID
+     * @return the corresponding {@link CharacterCard}, or {@code null} if not found
+     */
     public CharacterCard getCharacter(String cardID) {
         return characterMap.get(cardID);
     }
 
+    /**
+     * @param cardID the event card ID
+     * @return the corresponding {@link EventCard}, or {@code null} if not found
+     */
     public EventCard getEvent(String cardID) {
         return eventMap.get(cardID);
     }
 
+    /**
+     * @param cardID the building card ID
+     * @return the corresponding {@link BuildingCard}, or {@code null} if not found
+     */
     public BuildingCard getBuilding(String cardID) {
         return buildingMap.get(cardID);
     }
 
+    /**
+     * Returns all offer tiles valid for the given player count
+     * (i.e. tiles whose {@code minPlayers} is {@code <= numPlayers}).
+     *
+     * @param numPlayers the number of players in the current game
+     * @return a list of qualifying {@link OfferTile} templates
+     */
     public List<OfferTile> getOfferTiles(int numPlayers) {
         List<OfferTile> myOfferTiles = new ArrayList<>();
         for (OfferTile offerTile : offerTiles){
@@ -166,6 +231,12 @@ public class GameRegistry {
         return myOfferTiles;
     }
 
+    /**
+     * Returns the turn-order tile template configured for exactly the given player count.
+     *
+     * @param numPlayers the number of players
+     * @return the matching {@link TurnOrderTile} template, or {@code null} if none matches
+     */
     public TurnOrderTile getTurnOrderTile(int numPlayers){
 
         for(TurnOrderTile turnOrderTile : turnOrderTiles){
@@ -175,14 +246,17 @@ public class GameRegistry {
         return null; //we should never get to this point
     }
 
+    /** @return a new list containing all registered character card IDs */
     public List<String> getAllCharactersIDs() {
         return new ArrayList<>(characterMap.keySet());
     }
 
+    /** @return a new list containing all registered event card IDs */
     public List<String> getAllEventsIDs() {
         return new ArrayList<>(eventMap.keySet());
     }
 
+    /** @return a new list containing all registered building card IDs */
     public List<String> getAllBuildingsIDs() {
         return new ArrayList<>(buildingMap.keySet());
     }

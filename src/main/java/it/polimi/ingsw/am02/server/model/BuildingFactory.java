@@ -6,8 +6,24 @@ import it.polimi.ingsw.am02.server.model.buildingeffects.*;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.server.model.enumerations.EventType;
 
+/**
+ * Static factory that instantiates the correct {@link BuildingEffect} implementation
+ * for a given effect type string and its JSON parameters.
+ *
+ * <p>Each case in the switch corresponds to one entry in {@code Buildings.JSON}.
+ */
 public class BuildingFactory {
 
+    /**
+     * Creates the active {@link BuildingEffect} for a building card.
+     *
+     * @param effectType   the effect type string from the building's JSON definition
+     * @param effectParams the JSON parameters for the effect
+     * @param owner        the player who owns the building
+     * @param game         the current {@link Game} instance (needed for phase/event observer registration)
+     * @return the instantiated {@link BuildingEffect}, or {@code null} if {@code effectType} is {@code null}
+     *         or unrecognized
+     */
     public static BuildingEffect createActiveEffect(String effectType, JsonNode effectParams, Player owner, Game game) {
 
         if (effectType == null) {

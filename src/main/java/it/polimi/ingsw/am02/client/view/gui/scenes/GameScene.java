@@ -53,8 +53,6 @@ public class GameScene {
     private final List<String> offlinePlayers = new ArrayList<>();
     private final List<String> knownCardsOnBoard = new ArrayList<>();
 
-    private int currentEra = 1;
-
     // --- CODA ANIMAZIONI E SNAPSHOTTING ---
     private final Queue<Runnable> animationQueue = new LinkedList<>();
     private boolean isAnimating = false;
@@ -67,16 +65,18 @@ public class GameScene {
 
     // CLASSE INTERNA: Scatta una "Fotografia" esatta dei dati nel millisecondo in cui arriva l'evento
     private static class SceneState {
-        String gameId; String currentPlayer; PhaseType currentPhase; int era; String myNickname;
+        String gameId; String currentPlayer; PhaseType currentPhase; Era era; String myNickname;
         List<String> turnOrder; Map<String, Integer> foodByPlayer; Map<String, Integer> ppByPlayer;
         Map<String, Totem> totems; List<String> upperRow; List<String> upperRowBuildings;
         List<String> lowerRow; List<String> lowerRowBuildings; List<OfferTileInfo> offerTiles;
         List<TurnOrderSlotInfo> turnOrderSlots;
         Map<String, List<String>> charactersByPlayer; Map<String, List<String>> buildingsByPlayer;
 
-        public SceneState(GameModel m, int currentEra) {
+        public SceneState(GameModel m) {
             this.gameId = m.getGameId(); this.currentPlayer = m.getCurrentPlayer();
-            this.currentPhase = m.getCurrentPhase(); this.era = currentEra; this.myNickname = m.getMyNickname();
+            this.currentPhase = m.getCurrentPhase();
+            this.era = m.getCurrentEra() != null ? m.getCurrentEra() : Era.I;
+            this.myNickname = m.getMyNickname();
             this.turnOrder = m.getTurnOrder() != null ? new ArrayList<>(m.getTurnOrder()) : new ArrayList<>();
             this.foodByPlayer = m.getFoodByPlayer() != null ? new HashMap<>(m.getFoodByPlayer()) : new HashMap<>();
             this.ppByPlayer = m.getPpByPlayer() != null ? new HashMap<>(m.getPpByPlayer()) : new HashMap<>();
@@ -296,7 +296,7 @@ public class GameScene {
         if (viewedPlayerHand == null) viewedPlayerHand = model.getMyNickname();
 
         // 1. Scatta la fotografia del modello ORA, prima che il server lo modifichi di nuovo
-        SceneState snapshot = new SceneState(model, currentEra);
+        SceneState snapshot = new SceneState(model);
         this.lastState = snapshot;
 
         // 2. Metti il compito di disegnare questa fotografia in coda
@@ -323,7 +323,7 @@ public class GameScene {
         if (!localDeals.isEmpty()) {
             ParallelTransition allDeals = new ParallelTransition();
             for (DealTask task : localDeals) {
-                allDeals.getChildren().add(createSingleDealAnimation(task.id, task.target, state.era));
+                allDeals.getChildren().add(createSingleDealAnimation(task.id, task.target, state.era.ordinal() + 1));
             }
             allDeals.setOnFinished(e -> {
                 for (DealTask task : localDeals) task.target.setOpacity(1.0);
@@ -402,7 +402,7 @@ public class GameScene {
 
     private HBox createTrackArea(SceneState state) {
         HBox track = new HBox(25); track.setAlignment(Pos.CENTER);
-        int displayEra = Math.min(state.era, 3);
+        int displayEra = state.era.ordinal() + 1;
         String eraPath = "/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png";
         currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
         currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
@@ -632,23 +632,27 @@ public class GameScene {
 
     // --- EVENTI BASE ---
     public void showNewEraAnimation(Era newEra, List<String> u, List<String> l) {
-        if (currentEra < 3) currentEra++;
         refreshAll(model);
 
         Platform.runLater(() -> {
-            // Sfoca il gioco sottostante
-            root.setEffect(new GaussianBlur(12));
+            animationQueue.add(() -> {
+                // Sfoca il gioco sottostante
+                root.setEffect(new GaussianBlur(12));
 
-            NewEraOverlay overlay = new NewEraOverlay();
-            StackPane node = overlay.buildNode(newEra, () -> {
-                root.setEffect(null);
-                modalLayer.setVisible(false);
-                modalLayer.getChildren().clear();
+                NewEraOverlay overlay = new NewEraOverlay();
+                StackPane node = overlay.buildNode(newEra, () -> {
+                    root.setEffect(null);
+                    modalLayer.setVisible(false);
+                    modalLayer.getChildren().clear();
+                    playNextAnimation(); // <-- RIPRENDE LA CODA DOPO LA CHIUSURA
+                });
+                modalLayer.getChildren().setAll(node);
+                modalLayer.setVisible(true);
             });
-            modalLayer.getChildren().setAll(node);
-            modalLayer.setVisible(true);
+            if (!isAnimating) playNextAnimation();
         });
     }
+
     public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }
     public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
 
@@ -672,4 +676,12 @@ public class GameScene {
         }
         return hb;
     }
+
+    public void prepareForReplay() {
+        this.knownCardsOnBoard.clear();
+        this.selected.clear();
+        this.animationQueue.clear();
+        this.isAnimating = false;
+    }
+
 }

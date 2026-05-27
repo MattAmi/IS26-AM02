@@ -87,6 +87,16 @@ public class SceneRouter {
         runOnUi(() -> baseLayer.getChildren().setAll(newView));
     }
 
+    public void showProjectInfoScene(Runnable onExit) {
+        runOnUi(() -> {
+            this.gameScene = null;
+            this.lobbyScene = null;
+            this.lobbyListScene = null;
+            ProjectInfoScene infoScene = new ProjectInfoScene();
+            switchView(infoScene.buildNode(onExit));
+        });
+    }
+
     public void showIntroScene() {
         runOnUi(() -> {
             primaryStage.setResizable(true);
@@ -275,11 +285,13 @@ public class SceneRouter {
                         guiController.setServerProxy(newProxy);
                         newProxy.setClientController(guiController);
                         newProxy.connect();
-                        guiController.setConnectionConfig(config.type(), config.host(), config.port()); // aggiunto
+                        guiController.setConnectionConfig(config.type(), config.host(), config.port());
                         showToast("Connected", "Successfully connected via " + config.type(), Alert.AlertType.INFORMATION);
 
                         hideModal();
-                        showIntroScene();
+
+                        showProjectInfoScene(this::showIntroScene);
+
                     } catch (Exception ex) { onError.accept(ex.getMessage()); }
                 });
                 connectionThread.setDaemon(true);

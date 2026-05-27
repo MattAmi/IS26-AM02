@@ -7,9 +7,14 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Factory that deserializes an {@link EventCard} (with the appropriate {@link EventEffect})
+ * from a Jackson {@link JsonNode}.
+ */
 public class EventFactory {
     private final Map<EventType, Function<JsonNode, EventEffect>> effectRegistry;
 
+    /** Constructs the factory and sets up the internal effect registry. */
     public EventFactory(){
         this.effectRegistry = new EnumMap<>(EventType.class);
         setUpRegistry();
@@ -42,6 +47,12 @@ public class EventFactory {
 
     }
 
+    /**
+     * Creates an {@link EventCard} from the given JSON node.
+     *
+     * @param node the JSON object representing one event card entry
+     * @return the fully constructed {@link EventCard}
+     */
     public EventCard createEvent(JsonNode node){
         String cardID = node.path("cardID").asText();
         Era era = Era.valueOf(node.path("era").asText());

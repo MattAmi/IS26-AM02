@@ -452,7 +452,7 @@ public class GameBoard {
     public boolean hasEraChanged() {
         return eraChangedFlag;
     }
-    
+
 
     /**
      * Prepares the board for a new round: discards the lower row, shifts the upper row

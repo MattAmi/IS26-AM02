@@ -40,7 +40,7 @@ public class SummaryCardOverlay {
             flipBtn.setText(showingFront ? "Rotate card" : "Rotate card");
         });
 
-        Button closeBtn = new Button("✕ close");
+        Button closeBtn = new Button("Close");
         closeBtn.setFont(introFont);
         closeBtn.setStyle(
                 "-fx-background-color: #6B2A2A; -fx-text-fill: white;" +

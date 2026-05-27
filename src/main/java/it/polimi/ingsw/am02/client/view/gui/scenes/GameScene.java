@@ -125,12 +125,15 @@ public class GameScene {
         topBanner.setPadding(new Insets(10, 20, 10, 20)); topBanner.setStyle("-fx-background-color: #A31D1D;");
 
         HBox idBox = new HBox(10); idBox.setAlignment(Pos.CENTER_LEFT);
+        idBox.setPickOnBounds(false);
         gameIdLabel = new Label("ID: ---"); gameIdLabel.setTextFill(Color.WHITE); gameIdLabel.setFont(Font.font(tribalFont.getFamily(), 14));
 
         Button copyBtn = new Button("COPY ID");
-        String btnIdle = "-fx-background-color: rgba(255,255,255,0.15); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-weight: bold;";
-        String btnHover = "-fx-background-color: rgba(255,255,255,0.3); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-weight: bold;";
-        copyBtn.setStyle(btnIdle); if (tribalFont != null) copyBtn.setFont(Font.font(tribalFont.getFamily(), 12));
+        copyBtn.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
+        String fName = tribalFont != null ? tribalFont.getFamily() : "System";
+        String btnIdle = "-fx-background-color: rgba(255,255,255,0.15); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-family: \"" + fName + "\"; -fx-font-size: 12;";
+        String btnHover = "-fx-background-color: rgba(255,255,255,0.3); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-family: \"" + fName + "\"; -fx-font-size: 12;";
+        copyBtn.setStyle(btnIdle);
         copyBtn.setOnMouseEntered(e -> copyBtn.setStyle(btnHover)); copyBtn.setOnMouseExited(e -> copyBtn.setStyle(btnIdle));
 
         Label toastLabel = new Label("COPIED!");
@@ -154,9 +157,10 @@ public class GameScene {
 
         HBox rightControls = new HBox(15);
         rightControls.setAlignment(Pos.CENTER_RIGHT);
+        rightControls.setPickOnBounds(false);
 
         Button logsBtn = new Button("▼");
-        logsBtn.setFont(Font.font(tribalFont.getFamily(), 16));
+        logsBtn.setFont(Font.font(tribalFont.getFamily(), 10));
         logsBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
 
         Button burgerMenuBtn = new Button("☰"); burgerMenuBtn.setFont(Font.font(tribalFont.getFamily(), 20));
@@ -197,8 +201,8 @@ public class GameScene {
         HBox bottomButtons = new HBox(25); bottomButtons.setPadding(new Insets(15)); bottomButtons.setAlignment(Pos.CENTER);
         bottomButtons.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
 
-        String idleStyle = "-fx-background-color: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + tribalFont.getFamily() + "\"; -fx-font-weight: bold; -fx-border-color: #4A3B32; -fx-border-radius: 3; -fx-border-width: 1;";
-        String hoverStyle = "-fx-background-color: #4e3219; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-font-family: \"" + tribalFont.getFamily() + "\"; -fx-font-weight: bold; -fx-border-color: #F2D5A3; -fx-border-radius: 3; -fx-border-width: 1;";
+        String idleStyle = "-fx-background-color: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + fName + "\"; -fx-border-color: #4A3B32; -fx-border-radius: 3; -fx-border-width: 1;";
+        String hoverStyle = "-fx-background-color: #4e3219; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-font-family: \"" + fName + "\"; -fx-border-color: #F2D5A3; -fx-border-radius: 3; -fx-border-width: 1;";
 
         Button confirmBtn = new Button("CONFIRM PICK"); confirmBtn.setStyle(idleStyle);
         confirmBtn.setOnMouseEntered(e -> confirmBtn.setStyle(hoverStyle)); confirmBtn.setOnMouseExited(e -> confirmBtn.setStyle(idleStyle));

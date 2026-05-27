@@ -52,13 +52,36 @@ public class PlayerSidebarItem extends VBox {
         nameRow.getChildren().add(nameLabel);
 
         // Setup player stats
-        Label statsLabel = new Label("Food: " + food + " | PP: " + pp);
-        statsLabel.setTextFill(Color.LIGHTGRAY);
-        if (tribalFont != null) {
-            statsLabel.setFont(Font.font(tribalFont.getFamily(), 12));
-        }
+        HBox statsRow = new HBox(10);
+        statsRow.setAlignment(Pos.CENTER_LEFT);
 
-        this.getChildren().addAll(nameRow, statsLabel);
+        HBox foodBox = new HBox(4);
+        foodBox.setAlignment(Pos.CENTER_LEFT);
+        ImageView foodIcon = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/icons/food_point.png"));
+        foodIcon.setFitHeight(12);
+        foodIcon.setPreserveRatio(true);
+        Label foodLabel = new Label(String.valueOf(food));
+        foodLabel.setTextFill(Color.LIGHTGRAY);
+        if (tribalFont != null) {
+            foodLabel.setFont(Font.font(tribalFont.getFamily(), 12));
+        }
+        foodBox.getChildren().addAll(foodIcon, foodLabel);
+
+        HBox ppBox = new HBox(4);
+        ppBox.setAlignment(Pos.CENTER_LEFT);
+        ImageView ppIcon = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/icons/prestige_point.png"));
+        ppIcon.setFitHeight(12);
+        ppIcon.setPreserveRatio(true);
+        Label ppLabel = new Label(String.valueOf(pp));
+        ppLabel.setTextFill(Color.LIGHTGRAY);
+        if (tribalFont != null) {
+            ppLabel.setFont(Font.font(tribalFont.getFamily(), 12));
+        }
+        ppBox.getChildren().addAll(ppIcon, ppLabel);
+
+        statsRow.getChildren().addAll(foodBox, ppBox);
+
+        this.getChildren().addAll(nameRow, statsRow);
         this.setOnMouseClicked(e -> onClick.run());
     }
 }

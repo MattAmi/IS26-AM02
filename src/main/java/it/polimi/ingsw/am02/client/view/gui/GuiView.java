@@ -125,8 +125,6 @@ public class GuiView extends AbstractClientView {
     public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }
     @Override
     public void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }
-    @Override
-    public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) { refreshGameIfActive(); }
 
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
@@ -134,8 +132,6 @@ public class GuiView extends AbstractClientView {
         if (gs != null) gs.animateCardTaken(nickname, cardID, cardType, sourceRow);
     }
 
-    @Override
-    public void onEventResolved(String eventID, String eventName) { refreshGameIfActive(); }
     @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }
     @Override
@@ -179,7 +175,30 @@ public class GuiView extends AbstractClientView {
     }
 
     @Override
-    public void onShowAvailableTotems() { }
+    public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.logResourceChanged(nickname, resource, newValue);
+        refreshGameIfActive();
+    }
+
+    @Override
+    public void onEventResolved(String eventID, String eventName) {
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.logEventResolved(eventName);
+        refreshGameIfActive();
+    }
+
+    @Override
+    public void onAutoPlayerTimerStarted(String nickname) {
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.logAutoPlayerTimerStarted(nickname);
+    }
+
+    @Override
+    public void onAutoPlayerInvoked(String nickname) {
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.logAutoPlayerInvoked(nickname);
+    }
 
     @Override
     public void onConnectionLost() { sceneRouter.showConnectionLost(); }

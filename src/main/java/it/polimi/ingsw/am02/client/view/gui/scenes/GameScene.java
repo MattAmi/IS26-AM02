@@ -11,7 +11,6 @@ import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
@@ -35,7 +34,7 @@ public class GameScene {
     private GuiController controller;
     private GameModel model;
     private StackPane baseStack;
-    private StackPane modalLayer;   // ← AGGIUNGI questa riga
+    private StackPane modalLayer;
     private BorderPane root;
     private HBox statusBox;
     private VBox rightSidebar;
@@ -46,6 +45,9 @@ public class GameScene {
     private Font tribalFont;
     private ImageView currentDeckView;
     private Label gameIdLabel;
+
+    private VBox notificationPanel;
+    private VBox logContainer;
 
     private final List<String> selected = new ArrayList<>();
     private final List<String> offlinePlayers = new ArrayList<>();
@@ -150,12 +152,22 @@ public class GameScene {
 
         idBox.getChildren().addAll(gameIdLabel, copyBtn, toastLabel); StackPane.setAlignment(idBox, Pos.CENTER_LEFT);
 
-        Button burgerMenuBtn = new Button("☰"); burgerMenuBtn.setFont(Font.font(tribalFont.getFamily(), 24));
+        HBox rightControls = new HBox(15);
+        rightControls.setAlignment(Pos.CENTER_RIGHT);
+
+        Button logsBtn = new Button("▼");
+        logsBtn.setFont(Font.font(tribalFont.getFamily(), 16));
+        logsBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
+
+        Button burgerMenuBtn = new Button("☰"); burgerMenuBtn.setFont(Font.font(tribalFont.getFamily(), 20));
         burgerMenuBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
         burgerMenuBtn.setOnAction(e -> onShowMenu.run()); StackPane.setAlignment(burgerMenuBtn, Pos.CENTER_RIGHT);
 
+        rightControls.getChildren().addAll(logsBtn, burgerMenuBtn);
+        StackPane.setAlignment(rightControls, Pos.CENTER_RIGHT);
+
         statusBox = new HBox(15); statusBox.setAlignment(Pos.CENTER); statusBox.setMouseTransparent(true);
-        topBanner.getChildren().addAll(statusBox, idBox, burgerMenuBtn); root.setTop(topBanner);
+        topBanner.getChildren().addAll(statusBox, idBox, rightControls); root.setTop(topBanner);
 
         // --- RIGHT SIDEBAR ---
         rightSidebar = new VBox(15); rightSidebar.setPadding(new Insets(20)); rightSidebar.setPrefWidth(260);
@@ -206,11 +218,75 @@ public class GameScene {
         centerLayout.getChildren().addAll(darkOverlay, scrollPane, bottomLayout);
         root.setCenter(centerLayout); baseStack.getChildren().add(root);
 
+        notificationPanel = new VBox(10);
+        notificationPanel.setMaxSize(380, Region.USE_PREF_SIZE);
+        notificationPanel.setStyle("-fx-background-color: rgba(26, 15, 7, 0.95); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 5; -fx-background-radius: 5; -fx-padding: 10;");
+        notificationPanel.setVisible(false);
+
+        Label logTitle = new Label("RECENT LOGS");
+        logTitle.setTextFill(Color.web("#F2D5A3"));
+        logTitle.setFont(Font.font(tribalFont.getFamily(), 14));
+
+        logContainer = new VBox(5);
+        notificationPanel.getChildren().addAll(logTitle, logContainer);
+
+        StackPane.setAlignment(notificationPanel, Pos.TOP_RIGHT);
+        StackPane.setMargin(notificationPanel, new Insets(60, 20, 0, 0));
+        baseStack.getChildren().add(notificationPanel);
+
+        logsBtn.setOnAction(e -> {
+            notificationPanel.setVisible(!notificationPanel.isVisible());
+            logsBtn.setText(notificationPanel.isVisible() ? "▲" : "▼");
+        });
+
         modalLayer = new StackPane();
         modalLayer.setVisible(false);
         modalLayer.setStyle("-fx-background-color: transparent;");
         baseStack.getChildren().add(modalLayer);
         return baseStack;
+    }
+
+    public void logEventResolved(String eventName) {
+        Platform.runLater(() -> {
+            addLogEntry("[EVENT] ", "Resolved: " + eventName, Color.web("#9C27B0"));
+        });
+    }
+
+    public void logResourceChanged(String nickname, ResourceType resource, int newValue) {
+        Platform.runLater(() -> {
+            addLogEntry("[RESOURCE] ", nickname + " now has " + newValue + " " + resource, Color.GOLD);
+        });
+    }
+
+    public void logAutoPlayerTimerStarted(String nickname) {
+        Platform.runLater(() -> {
+            addLogEntry("[BOT] ", nickname + " disconnected — 30s timer started.", Color.GOLD);
+        });
+    }
+
+    public void logAutoPlayerInvoked(String nickname) {
+        Platform.runLater(() -> {
+            addLogEntry("[BOT] ", "AutoPlayer acting for " + nickname + "...", Color.web("#9C27B0"));
+        });
+    }
+
+    private void addLogEntry(String prefix, String message, Color prefixColor) {
+        Text pText = new Text(prefix);
+        pText.setFill(prefixColor);
+        if (tribalFont != null) pText.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 14));
+
+        Text mText = new Text(message);
+        mText.setFill(Color.WHITE);
+        if (tribalFont != null) mText.setFont(Font.font(tribalFont.getFamily(), 14));
+
+        TextFlow tf = new TextFlow(pText, mText);
+        tf.setStyle("-fx-background-color: rgba(255,255,255,0.05); -fx-padding: 5; -fx-background-radius: 3;");
+
+        logContainer.getChildren().add(0, tf);
+
+        if (logContainer.getChildren().size() > 10) {
+            logContainer.getChildren().remove(10);
+        }
     }
 
     // --- PUNTO DI INGRESSO EVENTI (SCATTA LA FOTOGRAFIA DELLO STATO) ---
@@ -596,5 +672,4 @@ public class GameScene {
         }
         return hb;
     }
-
 }

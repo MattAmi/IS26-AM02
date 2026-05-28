@@ -70,6 +70,21 @@ public class TurnOrderCaveView extends StackPane {
         totemSlots.setPrefHeight(150);
         totemSlots.setMaxHeight(150);
 
+        // --- ARROTONDAMENTO ANGOLI TESSERA ---
+        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
+        clip.setArcWidth(10);
+        clip.setArcHeight(10);
+
+        clip.setWidth(caveBg.getBoundsInLocal().getWidth());
+        clip.setHeight(caveBg.getBoundsInLocal().getHeight());
+
+        caveBg.boundsInLocalProperty().addListener((obs, oldVal, newVal) -> {
+            clip.setWidth(newVal.getWidth());
+            clip.setHeight(newVal.getHeight());
+        });
+        caveBg.setClip(clip);
+// --------------------------------------
+
         if (slots != null) {
             for (TurnOrderSlotInfo slot : slots) {
                 if (slot.occupantNickname() != null) {

@@ -6,6 +6,7 @@ import javafx.scene.Cursor;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
 public class GameCardView extends VBox {
@@ -20,11 +21,27 @@ public class GameCardView extends VBox {
         this.cardImageView.setFitHeight(height);
         this.cardImageView.setPreserveRatio(true);
 
-        if (isSelected) {
-            this.cardImageView.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);");
-        }
+        // --- ARROTONDAMENTO ANGOLI FIX ---
+        Rectangle clip = new Rectangle();
+        clip.setArcWidth(12);
+        clip.setArcHeight(12);
+
+        clip.setWidth(this.cardImageView.getBoundsInLocal().getWidth());
+        clip.setHeight(this.cardImageView.getBoundsInLocal().getHeight());
+
+        this.cardImageView.boundsInLocalProperty().addListener((obs, oldVal, newVal) -> {
+            clip.setWidth(newVal.getWidth());
+            clip.setHeight(newVal.getHeight());
+        });
+        this.cardImageView.setClip(clip);
+        // ---------------------------------
 
         this.getChildren().add(cardImageView);
+
+        // APPLICHIAMO L'EFFETTO AL CONTENITORE (this) INVECE CHE ALL'IMMAGINE
+        if (isSelected) {
+            this.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);");
+        }
 
         // Attach tooltip with card rules
         try {
@@ -35,21 +52,21 @@ public class GameCardView extends VBox {
             Tooltip.install(this, tooltip);
         } catch (Exception ignored) { }
 
-        // Hover animations
+        // Hover animations applicate al contenitore (this)
         this.setOnMouseEntered(e -> {
-            cardImageView.setTranslateY(-10);
-            cardImageView.setScaleX(1.1);
-            cardImageView.setScaleY(1.1);
+            this.setTranslateY(-10);
+            this.setScaleX(1.1);
+            this.setScaleY(1.1);
             if (!isSelected) {
-                cardImageView.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(255,255,255,0.7), 15, 0.4, 0, 0);");
+                this.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(255,255,255,0.7), 15, 0.4, 0, 0);");
             }
         });
 
         this.setOnMouseExited(e -> {
-            cardImageView.setTranslateY(0);
-            cardImageView.setScaleX(1.0);
-            cardImageView.setScaleY(1.0);
-            cardImageView.setStyle(isSelected ? "-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);" : "");
+            this.setTranslateY(0);
+            this.setScaleX(1.0);
+            this.setScaleY(1.0);
+            this.setStyle(isSelected ? "-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);" : "");
         });
 
         this.setOnMouseClicked(e -> onClick.run());

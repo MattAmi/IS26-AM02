@@ -8,6 +8,9 @@ package it.polimi.ingsw.am02.server.model.exceptions;
  */
 public class InvalidMoveException extends GameRuleException {
 
+    /**
+     * @param reason a description of why the move is not permitted
+     */
     public InvalidMoveException(String reason) {
         super(reason);
     }

@@ -169,7 +169,7 @@ public class GameScene {
         rightControls.setPickOnBounds(false);
 
         Button logsBtn = new Button("▼");
-        logsBtn.setFont(Font.font(tribalFont.getFamily(), 12));
+        logsBtn.setFont(Font.font(tribalFont.getFamily(), 8));
         logsBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
 
         Button burgerMenuBtn = new Button("☰"); burgerMenuBtn.setFont(Font.font(tribalFont.getFamily(), 20));

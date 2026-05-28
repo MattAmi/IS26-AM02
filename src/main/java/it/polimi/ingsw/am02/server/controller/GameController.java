@@ -189,10 +189,13 @@ public class GameController implements GameObserver {
             log("Mass disconnection: 0 players active. Pausing game and arming global timer.");
             cancelDisconnectedPlayerTimer(currentPlayerNickname);
             startGlobalDisconnectionTimeout();
-        } else if (nickname.equals(currentPlayerNickname)) {
-            startDisconnectedPlayerTimer(nickname);
-        } else if (activeCount == 1) {
-            startGlobalDisconnectionTimeout();
+        } else {
+            if (nickname.equals(currentPlayerNickname)) {
+                startDisconnectedPlayerTimer(nickname);
+            }
+            if (activeCount == 1) {
+                startGlobalDisconnectionTimeout();
+            }
         }
     }
 

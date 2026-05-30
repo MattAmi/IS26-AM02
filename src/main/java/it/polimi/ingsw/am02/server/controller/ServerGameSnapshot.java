@@ -16,7 +16,7 @@ import java.util.*;
  * which is a read-only singleton — no duplication occurs here.
  *
  * <p>All writes happen under {@code GameController}'s monitor,
- * so no additional synchronisation is needed.
+ * so no additional synchronization is needed.
  */
 final class ServerGameSnapshot {
 
@@ -36,13 +36,35 @@ final class ServerGameSnapshot {
     private final Map<String, Integer> remainingLower = new HashMap<>();
 
     // Getters — package-private, used only by AutoPlayer
+
+    /** @return the current game phase, or {@code null} before setup completes */
     PhaseType currentPhase() { return currentPhase; }
+
+    /** @return the nickname of the player whose turn it currently is */
     String    currentPlayerNickname() { return currentPlayerNickname; }
+
+    /** @return an immutable copy of the current upper card row */
     List<String> upperRow() { return List.copyOf(upperRow); }
+
+    /** @return an immutable copy of the current lower card row */
     List<String> lowerRow() { return List.copyOf(lowerRow); }
+
+    /**
+     * @param nick the player's nickname
+     * @return the remaining upper-row picks for that player, or 0 if unknown
+     */
     int remainingUpperOf(String nick) { return remainingUpper.getOrDefault(nick, 0); }
+
+    /**
+     * @param nick the player's nickname
+     * @return the remaining lower-row picks for that player, or 0 if unknown
+     */
     int remainingLowerOf(String nick) { return remainingLower.getOrDefault(nick, 0); }
 
+    /**
+     * @return a list of offer tile IDs that currently have no occupant,
+     *         in insertion order (tile registration order)
+     */
     List<Character> freeOfferTiles() {
         List<Character> free = new ArrayList<>();
         for (Map.Entry<Character, String> entry : occupantByTile.entrySet()) {
@@ -54,13 +76,20 @@ final class ServerGameSnapshot {
     }
 
     // Extra turn
+    /**
+     * Sets or clears extra-turn mode.
+     *
+     * @param active {@code true} to enter extra-turn mode, {@code false} to exit
+     */
     void setExtraTurnMode(boolean active) { this.extraTurnMode = active; }
+
+    /** @return {@code true} if the game is currently in an extra-turn phase */
     boolean isExtraTurnMode() { return extraTurnMode; }
 
 
     // Mutators — called exclusively by GameController's GameObserver callbacks
     /**
-     * Initialises the snapshot from the single {@link BoardSnapshot} emitted
+     * Initializes the snapshot from the single {@link BoardSnapshot} emitted
      * at the end of {@code SetUpState}. After this call, every subsequent
      * delta keeps the snapshot current without further full-state reads.
      */
@@ -80,6 +109,12 @@ final class ServerGameSnapshot {
 
     }
 
+    /**
+     * Updates the current phase and, optionally, the active player nickname.
+     *
+     * @param phase         the new phase
+     * @param currentPlayer the new active player, or {@code null} to leave unchanged
+     */
     void setPhase(PhaseType phase, String currentPlayer) {
         this.currentPhase = phase;
         if (currentPlayer != null) {
@@ -87,10 +122,21 @@ final class ServerGameSnapshot {
         }
     }
 
+    /**
+     * Updates the active player without changing the phase.
+     *
+     * @param nickname the new active player's nickname
+     */
     void setCurrentPlayer(String nickname) {
         this.currentPlayerNickname = nickname;
     }
 
+    /**
+     * Replaces both card rows with the values from a {@code BoardUpdated} notification.
+     *
+     * @param newUpperRow the new upper row card IDs
+     * @param newLowerRow the new lower row card IDs
+     */
     void applyBoardUpdated(List<String> newUpperRow, List<String> newLowerRow) {
         upperRow.clear();
         upperRow.addAll(newUpperRow);
@@ -98,20 +144,43 @@ final class ServerGameSnapshot {
         lowerRow.addAll(newLowerRow);
     }
 
+    /**
+     * Removes a card from whichever row it currently occupies.
+     *
+     * @param cardId the card ID just taken by a player
+     */
     void applyCardTaken(String cardId) {
         upperRow.remove(cardId);
         lowerRow.remove(cardId);
     }
 
+    /**
+     * Marks an offer tile as occupied by the given player.
+     *
+     * @param nickname the player who just placed their totem
+     * @param tileId   the tile they placed it on
+     */
     void applyTotemPlaced(String nickname, char tileId) {
         occupantByTile.put(tileId, nickname);
     }
 
+    /**
+     * Clears the offer-tile occupant for the given player (totem returned).
+     *
+     * @param nickname the player whose totem was returned
+     */
     void applyTotemReturned(String nickname) {
         occupantByTile.replaceAll((tile, occupant) ->
                 nickname.equals(occupant) ? null : occupant);
     }
 
+    /**
+     * Updates the remaining pick counts for a player.
+     *
+     * @param nickname the player's nickname
+     * @param upper    remaining upper-row picks
+     * @param lower    remaining lower-row picks
+     */
     void setPlayerLimits(String nickname, int upper, int lower) {
         remainingUpper.put(nickname, upper);
         remainingLower.put(nickname, lower);

@@ -8,6 +8,22 @@ import it.polimi.ingsw.am02.server.model.GameRegistry;
 
 import java.util.List;
 
+/**
+ * Stateless utility that computes the best available command for a
+ * disconnected player based on the current {@link ServerGameSnapshot}.
+ *
+ * <p>The strategy is deliberately minimal:
+ * <ul>
+ *   <li>During {@link it.polimi.ingsw.am02.common.enumerations.PhaseType#TOTEM_PLACEMENT}:
+ *       place the totem on the first free offer tile.</li>
+ *   <li>During {@link it.polimi.ingsw.am02.common.enumerations.PhaseType#ACTION_RESOLUTION}:
+ *       pick one character from the upper row if possible, then the lower row;
+ *       otherwise return the totem.</li>
+ *   <li>During any other phase: return {@code null} (no player action expected).</li>
+ * </ul>
+ *
+ * <p>Package-private: only {@link GameController} may call this class.
+ */
 final class AutoPlayer {
 
     private AutoPlayer() {}

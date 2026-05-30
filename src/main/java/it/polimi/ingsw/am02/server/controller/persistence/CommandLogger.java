@@ -12,8 +12,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-// Log-class that enables replay of a game after a server crash
-public class CommandLogger implements GameLogger {
+/**
+ * File-based {@link GameLogger} that writes NDJSON (newline-delimited JSON)
+ * to {@code logs/{gameId}.ndjson}.
+ *
+ * <p>Each log entry is a self-contained JSON object on its own line:
+ * <ul>
+ *   <li>{@code GAME_INIT}  — one record at the start with seed, nicknames, and totems</li>
+ *   <li>{@code COMMAND}    — one record per player action with a sequence number and nickname</li>
+ *   <li>{@code GAME_ENDED} — one record at the end; its presence prevents replay on restart</li>
+ * </ul>
+ *
+ * <p>The writer is opened in append mode and flushed after every line,
+ * so entries survive a server crash at any point during the game.
+ */public class CommandLogger implements GameLogger {
 
     private static final String LOGS_DIR = "logs";
 
@@ -22,8 +34,12 @@ public class CommandLogger implements GameLogger {
     private int seq;
 
 
-    // Opens (or creates) the log file at logs/{gameId}.ndjson in append mode.
-    public CommandLogger(String gameId) throws IOException {
+    /**
+     * Opens (or creates) the log file at {@code logs/{gameId}.ndjson} in append mode.
+     *
+     * @param gameId the game's unique identifier (used as the filename)
+     * @throws IOException if the {@code logs/} directory cannot be created or the file cannot be opened
+     */    public CommandLogger(String gameId) throws IOException {
         this.mapper = new ObjectMapper();
         this.seq = 0;
         Files.createDirectories(Path.of(LOGS_DIR));
@@ -34,6 +50,7 @@ public class CommandLogger implements GameLogger {
     }
 
     // Writes "GAME_INIT" record before any other command
+    /** {@inheritDoc} */
     @Override
     public void logGameInit(String gameId, long seed, List<String> nicknames, Map<String, Totem> chosenTotems) {
         ObjectNode node = mapper.createObjectNode();
@@ -59,6 +76,7 @@ public class CommandLogger implements GameLogger {
     }
 
     // Writes a COMMAND after a command has been successfully applied to the model
+    /** {@inheritDoc} */
     @Override
     public void logCommand(GameCommand cmd, String senderNickname) {
         try {
@@ -79,6 +97,7 @@ public class CommandLogger implements GameLogger {
     }
 
     // Writes "GAME_ENDED" record. After this, the log won't be replayed on restart
+    /** {@inheritDoc} */
     @Override
     public void logGameEnded() {
         ObjectNode node = mapper.createObjectNode();
@@ -86,6 +105,7 @@ public class CommandLogger implements GameLogger {
         writeLine(node);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void close() {
         try {

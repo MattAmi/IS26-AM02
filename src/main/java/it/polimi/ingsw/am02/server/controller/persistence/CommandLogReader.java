@@ -15,11 +15,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+/**
+ * Reads a {@code .ndjson} log file written by {@link CommandLogger}
+ * and returns its contents as typed Java objects for replay.
+ *
+ * <p>The file format is:
+ * <ol>
+ *   <li>Line 1: {@code GAME_INIT} record</li>
+ *   <li>Lines 2…n-1: {@code COMMAND} records (may be interleaved with other types)</li>
+ *   <li>Line n: {@code GAME_ENDED} record (absent if the server crashed)</li>
+ * </ol>
+ */
 public final class CommandLogReader {
 
     private final Path logFile;
     private final ObjectMapper mapper;
 
+    /**
+     * @param logFile the path to the {@code .ndjson} log file to read
+     */
     public CommandLogReader(Path logFile) {
         this.logFile = logFile;
         this.mapper = new ObjectMapper();

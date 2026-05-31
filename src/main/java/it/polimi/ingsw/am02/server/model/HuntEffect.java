@@ -8,18 +8,32 @@ import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Event effect for the Hunt event.
+ * Each player gains food and prestige points proportional to the number of
+ * Hunter characters in their tribe.
+ */
 public class HuntEffect implements EventEffect {
 
-    //Attributi
     final int foodPerHunter;
     final int ppPerHunter;
 
-    //Costruttore
+    /**
+     * @param foodPerHunter food points gained per Hunter character
+     * @param ppPerHunter   prestige points gained per Hunter character
+     */
     public HuntEffect(int foodPerHunter, int ppPerHunter) {
         this.foodPerHunter = foodPerHunter;
         this.ppPerHunter = ppPerHunter;
     }
 
+    /**
+     * Applies the Hunt reward to every player.
+     * Players with no Hunters receive no delta.
+     *
+     * @param players all active players
+     * @return an {@link EffectOutcome} with food and prestige-point deltas
+     */
     @Override
     public EffectOutcome applyEffect(List<Player> players) {
         List<ResourceDelta> deltas = new ArrayList<>();

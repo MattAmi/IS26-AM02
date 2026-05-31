@@ -13,6 +13,28 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
+/**
+ * Per-game server-side controller that bridges the network layer and the
+ * domain model for a single game session.
+ *
+ * <p>Responsibilities:
+ * <ul>
+ *   <li>Receives granular commands from {@link ControllerManager} and forwards
+ *       them to the {@link ModelInterface}.</li>
+ *   <li>Implements {@link it.polimi.ingsw.am02.server.model.listeners.GameObserver}
+ *       to receive model notifications and fan them out to all connected clients
+ *       via {@link it.polimi.ingsw.am02.common.interfaces.VirtualView}.</li>
+ *   <li>Maintains a global event history for reconnecting players (catch-up replay).</li>
+ *   <li>Manages per-player and global disconnection timers; invokes
+ *       {@link AutoPlayer} when a timer expires.</li>
+ *   <li>Logs every successfully applied command to a {@link GameLogger} for
+ *       crash-recovery replay.</li>
+ * </ul>
+ *
+ * <p>All public methods are {@code synchronized} on the controller's monitor.
+ * Background tasks (drain threads, timer callbacks, AutoPlayer) acquire the
+ * same lock before reading or writing shared state.
+ */
 public class GameController implements GameObserver {
 
     private static final long DISCONNECTED_PLAYER_TIMEOUT_SECONDS = 30;
@@ -43,6 +65,14 @@ public class GameController implements GameObserver {
 
     private boolean replayMode = false;
 
+    /**
+     * Constructs a controller for the given game session.
+     *
+     * @param gameId     unique identifier for this game
+     * @param model      the domain model (implements {@link ModelInterface})
+     * @param handlers   mapping from player nickname to their {@link VirtualView}
+     * @param gameLogger the persistence logger for command recording
+     */
     public GameController(String gameId, ModelInterface model,
                           Map<String, VirtualView> handlers, GameLogger gameLogger) {
         this.gameId = gameId;
@@ -81,6 +111,12 @@ public class GameController implements GameObserver {
         this.model.addGameObserver(this);
     }
 
+    /**
+     * Registers a callback invoked once after the game ends (normal finish or forfeit).
+     * The callback runs on a daemon thread to avoid blocking the monitor.
+     *
+     * @param callback the runnable to call when the game session is fully over
+     */
     public synchronized void setGameEndedCallback(Runnable callback) {
         this.gameEndedCallback = callback;
     }
@@ -167,6 +203,13 @@ public class GameController implements GameObserver {
     // Disconnection / reconnection
     // =========================================================
 
+    /**
+     * Called by the network layer when a player's connection is lost.
+     * Updates connection status, notifies other players, and arms the
+     * appropriate timer (per-player or global).
+     *
+     * @param nickname the disconnected player's nickname
+     */
     public synchronized void handlePlayerDisconnected(String nickname) {
         if (!connectionStatus.containsKey(nickname)) {
             System.err.println("[GameController:" + gameId + "] Disconnect for unknown player: " + nickname);
@@ -199,6 +242,17 @@ public class GameController implements GameObserver {
         }
     }
 
+    /**
+     * Called by {@link ControllerManager} when a player reconnects.
+     * Immediately begins streaming the global event history to the new view on
+     * a background thread, then transitions the player to {@code CONNECTED}
+     * once the drain is complete.
+     *
+     * @param nickname the reconnecting player's nickname
+     * @param newView  the new {@link VirtualView} for this connection
+     * @throws IllegalStateException if the server is still in replay mode and
+     *                               cannot yet accept reconnections
+     */
     public void handlePlayerReconnected(String nickname, VirtualView newView) {
         synchronized (this) {
             if (replayMode) {
@@ -310,11 +364,20 @@ public class GameController implements GameObserver {
         connectionStatus.replaceAll((nickname, status) -> ConnectionStatus.PENDING_RECONNECTION);
     }
 
+
+    /**
+     * @return {@code true} if every player is in {@link ConnectionStatus#PENDING_RECONNECTION} state,
+     *         meaning the game was recovered from a log but no one has reconnected yet
+     */
     public synchronized boolean areAllPlayersPendingReconnection() {
         return connectionStatus.values().stream()
                 .allMatch(s -> s == ConnectionStatus.PENDING_RECONNECTION);
     }
 
+    /**
+     * Cancels all timers and shuts down the background executor services.
+     * Safe to call more than once.
+     */
     public synchronized void shutdown() {
         if (disconnectedPlayerTimer != null) {
             disconnectedPlayerTimer.cancel(false);
@@ -686,17 +749,30 @@ public class GameController implements GameObserver {
         System.out.println("[GameController:" + gameId + "] " + msg);
     }
 
+    /**
+     * @param nickname the player to query
+     * @return {@code true} if the player's status is {@link ConnectionStatus#DISCONNECTED}
+     *         or {@link ConnectionStatus#PENDING_RECONNECTION}
+     */
     public boolean isPlayerDisconnected(String nickname) {
         ConnectionStatus status = connectionStatus.get(nickname);
         return status == ConnectionStatus.DISCONNECTED
                 || status == ConnectionStatus.PENDING_RECONNECTION;
     }
 
+    /**
+     * Enters replay mode: all players are set to {@link ConnectionStatus#PENDING_RECONNECTION}
+     * and logging is suppressed. Called by {@link ControllerManager} before replaying the NDJSON log.
+     */
     void enterReplayMode() {
         this.replayMode = true;
         connectionStatus.replaceAll((nick, status) -> ConnectionStatus.PENDING_RECONNECTION);
     }
 
+    /**
+     * Exits replay mode, re-enabling logging and allowing reconnections.
+     * Called by {@link ControllerManager} after the NDJSON replay is complete.
+     */
     void exitReplayMode() {
         this.replayMode = false;
     }

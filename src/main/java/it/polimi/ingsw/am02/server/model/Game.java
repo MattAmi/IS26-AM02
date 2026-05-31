@@ -19,6 +19,18 @@ import java.util.*;
 
 import static java.util.Collections.shuffle;
 
+/**
+ * Central domain object representing a single game session.
+ *
+ * <p>{@code Game} orchestrates the full game lifecycle via an internal State Machine
+ * ({@link GameState} / {@link BaseState} and concrete inner states). It holds the authoritative
+ * list of {@link Player}s, delegates board operations to {@link GameBoard}, and broadcasts
+ * all observable changes through {@link GameNotifier}.
+ *
+ * <p>The FSM is started by calling {@link #startFSM()}. From that point on, players interact
+ * exclusively through {@link #moveTotem(String, char)} and {@link #resolveActions(String, List)},
+ * which are forwarded to the current state.
+ */
 public class Game implements ModelInterface {
 
     private final String gameID;
@@ -40,6 +52,15 @@ public class Game implements ModelInterface {
     private final GameNotifier notifier;
     private final Random gameRandom;
 
+    /**
+     * Creates a new Game with a seeded random source.
+     * Players are created from the provided nickname list using the chosen totems.
+     *
+     * @param gameID      unique identifier for this game session
+     * @param nicknames   ordered list of player nicknames (determines initial insertion order)
+     * @param chosenTotems mapping from nickname to the totem each player has chosen
+     * @param seed        seed for the internal {@link Random}, ensuring reproducible shuffles
+     */
     public Game(String gameID, List<String> nicknames, Map<String, Totem> chosenTotems, long seed) {
 
         this.gameID = gameID;
@@ -64,21 +85,53 @@ public class Game implements ModelInterface {
     }
 
 
-    // Interface methods
+    /**
+     * Moves a player's totem to an offer tile or back to the turn-order tile,
+     * depending on the current game state.
+     *
+     * @param nickname the player issuing the move
+     * @param tileID   the target tile character identifier (e.g. {@code 'A'}, {@code 'B'}, or {@code 'T'} for turn-order)
+     * @throws InvalidMoveException  if totem movement is not allowed in the current state
+     * @throws NotYourTurnException  if it is not this player's turn
+     */
     public void moveTotem(String nickname, char tileID) {
         currentState.moveTotem(nickname, tileID);
     }
 
+    /**
+     * Resolves card-selection actions for the current player.
+     *
+     * @param nickname    the player issuing the action
+     * @param selectedIDs list of card IDs the player wishes to acquire this step
+     * @throws InvalidMoveException if action resolution is not allowed in the current state
+     * @throws NotYourTurnException if it is not this player's turn
+     */
     public void resolveActions(String nickname, List<String> selectedIDs) { currentState.resolveActions(nickname, selectedIDs); }
 
+    /**
+     * Registers a {@link GameObserver} to receive all game-level notifications
+     * (phase changes, resource updates, game end, etc.).
+     *
+     * @param observer the observer to add
+     */
     public void addGameObserver(GameObserver observer) {
         notifier.addObserver(observer);
     }
 
+    /**
+     * Removes a previously registered {@link GameObserver}.
+     *
+     * @param observer the observer to remove
+     */
     public void removeGameObserver(GameObserver observer) {
         notifier.removeObserver(observer);
     }
 
+    /**
+     * Starts the FSM by entering the {@code SetUpState}, which initializes the board,
+     * randomizes the turn order, and immediately transitions into totem placement.
+     * Must be called exactly once after the game object is constructed.
+     */
     public void startFSM() { transitionTo(new SetUpState()); }
 
 
@@ -270,12 +323,26 @@ public class Game implements ModelInterface {
         return finalScoresList;
     }
 
+    /**
+     * Enqueues an extra turn for the given player.
+     * The extra turn is activated at the beginning of the next {@code EndRoundState}.
+     *
+     * @param nickname        the player who will receive the extra turn
+     * @param extraUpperPicks the number of additional upper-row picks allowed
+     * @param extraLowerPicks the number of additional lower-row picks allowed
+     */
     public void enqueueExtraTurn(String nickname, int extraUpperPicks, int extraLowerPicks) {
         this.extraTurnPlayerNickname = nickname;
         this.extraTurnUpperPicks = extraUpperPicks;
         this.extraTurnLowerPicks = extraLowerPicks;
     }
 
+    /**
+     * Attaches a {@link PhaseObserver} that is notified whenever the game transitions
+     * between phases (setup, totem placement, action resolution, etc.).
+     *
+     * @param effect the observer to attach
+     */
     public void attachPhaseObserver(PhaseObserver effect) {
         phaseObservers.add(effect);
     }
@@ -289,10 +356,20 @@ public class Game implements ModelInterface {
         }
     }
 
+    /**
+     * @return the {@link GameBoard} for this game session
+     */
     public GameBoard getGameBoard() {
         return this.gameBoard;
     }
 
+    /**
+     * Grants an extra food bonus from the turn-order tile to the current player,
+     * triggered by a building effect that observes tribe changes.
+     *
+     * @param tribu the tribe whose building triggered the bonus;
+     *              the bonus is applied only if it belongs to the current player
+     */
     public void triggerTurnOrderExtraFood(Tribu tribu) {
 
         Player current = players.get(currentPlayerNickname);

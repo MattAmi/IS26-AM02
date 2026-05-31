@@ -7,10 +7,18 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Factory that deserializes a {@link CharacterCard} (with the appropriate {@link CharacterEffect})
+ * from a Jackson {@link JsonNode}.
+ *
+ * <p>Uses an internal registry that maps each {@link CharacterType} to a lambda
+ * responsible for constructing the corresponding effect from JSON parameters.
+ */
 public class CharacterFactory {
 
     private final Map<CharacterType, Function<JsonNode, CharacterEffect>> effectRegistry;
 
+    /** Constructs the factory and populates the internal effect registry. */
     public CharacterFactory() {
         this.effectRegistry = new EnumMap<>(CharacterType.class);
         setUpRegistry();
@@ -51,7 +59,12 @@ public class CharacterFactory {
         });
     }
 
-
+    /**
+     * Creates a {@link CharacterCard} from the given JSON node.
+     *
+     * @param node the JSON object representing one character card entry
+     * @return the fully constructed {@link CharacterCard}
+     */
     public CharacterCard createCharacter(JsonNode node){
         String cardID = node.path("cardID").asText();
         Era era = Era.valueOf(node.path("era").asText());

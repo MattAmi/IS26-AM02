@@ -16,6 +16,35 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
+/**
+ * Application-level singleton that manages the full lifecycle of all
+ * lobbies and game sessions on the server.
+ *
+ * <p>Responsibilities:
+ * <ul>
+ *   <li>Maintains four routing maps (clientId → lobby, game, nickname; game → nickname map)
+ *       so that any incoming command can be dispatched to the right {@link Lobby}
+ *       or {@link GameController} in O(1).</li>
+ *   <li>Accepts clients from network handlers via {@link #handleClientConnected}
+ *       and routes their commands to the correct destination.</li>
+ *   <li>Orchestrates lobby creation, joining, nickname selection, totem selection,
+ *       and lobby dissolution.</li>
+ *   <li>Starts a game when a lobby is full ({@link #startGame}); tears it down
+ *       when it ends ({@link #removeGameController}).</li>
+ *   <li>Handles player reconnection: re-binds the new clientId and delegates
+ *       to {@link GameController#handlePlayerReconnected}.</li>
+ *   <li>Recovers interrupted games from NDJSON log files on server startup
+ *       ({@link #recoverGames}), with a configurable reconnection window
+ *       before orphaned games are discarded.</li>
+ * </ul>
+ *
+ * <p>All public methods that mutate shared state are {@code synchronized}.
+ * In-game action methods ({@link #requestMoveTotem}, {@link #requestResolveActions})
+ * are intentionally not synchronised because {@link GameController} provides
+ * its own fine-grained locking.
+ *
+ * <p>Obtain the singleton via {@link #getInstance()}.
+ */
 public class ControllerManager implements VirtualControllerManager {
 
     private static final ControllerManager INSTANCE = new ControllerManager();
@@ -50,6 +79,7 @@ public class ControllerManager implements VirtualControllerManager {
         });
     }
 
+    /** @return the singleton instance */
     public static ControllerManager getInstance() {
         return INSTANCE;
     }
@@ -258,6 +288,17 @@ public class ControllerManager implements VirtualControllerManager {
     // Callbacks from Lobby
     // =========================================================
 
+    /**
+     * Called by {@link Lobby} when all slots are filled and every player has selected
+     * a nickname and totem. Creates the {@link it.polimi.ingsw.am02.server.model.Game},
+     * sets up the {@link GameLogger}, constructs a {@link GameController}, and starts the FSM.
+     *
+     * @param gameId       the lobby ID reused as the game ID
+     * @param clientIds    ordered list of client IDs (index matches {@code nicknames})
+     * @param nicknames    ordered list of player nicknames
+     * @param views        mapping from client ID to {@link VirtualView}
+     * @param chosenTotems mapping from nickname to chosen totem
+     */
     public synchronized void startGame(String gameId,
                                        List<String> clientIds,
                                        List<String> nicknames,
@@ -305,11 +346,24 @@ public class ControllerManager implements VirtualControllerManager {
         //model.injectBuildingForTesting("Matteo", "B_020"); FOR TESTING
     }
 
+    /**
+     * Called by {@link Lobby} when the last player leaves an empty lobby.
+     * Removes the lobby and broadcasts the updated lobby list to pre-lobby clients.
+     *
+     * @param lobbyId the identifier of the lobby to remove
+     */
     public synchronized void removeLobby(String lobbyId) {
         lobbies.remove(lobbyId);
         broadcastToPreLobbyClients();
     }
 
+    /**
+     * Moves a client from a lobby back to the pre-lobby state.
+     * Sends the current lobby list to the returning client.
+     *
+     * @param clientId the client being returned
+     * @param view     the client's {@link VirtualView}
+     */
     public synchronized void returnClientToPreLobby(String clientId, VirtualView view) {
         clientToLobby.remove(clientId);
         clientToNickname.remove(clientId);
@@ -321,6 +375,10 @@ public class ControllerManager implements VirtualControllerManager {
     // Lifecycle
     // =========================================================
 
+    /**
+     * Shuts down all active game controllers and the recovery scheduler.
+     * Should be called on server shutdown.
+     */
     public synchronized void shutdown() {
         controllers.values().forEach(GameController::shutdown);
         controllers.clear();
@@ -384,6 +442,15 @@ public class ControllerManager implements VirtualControllerManager {
     // Recovery system
     // =========================================================
 
+    /**
+     * Starts recovery of any interrupted game sessions found in the given directory.
+     * For each {@code .ndjson} file that does not end with a {@code GAME_ENDED} record,
+     * replays the command log to restore the game state and waits
+     * {@value #RECOVERY_WINDOW_SECONDS} seconds for players to reconnect before
+     * discarding the session.
+     *
+     * @param logsDirectory the directory containing NDJSON log files (e.g. {@code Path.of("logs")})
+     */
     public synchronized void recoverGames(Path logsDirectory) {
         if (!Files.isDirectory(logsDirectory)) {
             logRecovery("No logs directory — starting fresh.");

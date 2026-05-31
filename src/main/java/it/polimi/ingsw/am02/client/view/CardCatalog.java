@@ -7,6 +7,20 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Client-side singleton that loads all card definitions from the JSON resource files
+ * and provides formatted string representations for use in both the TUI and the GUI.
+ *
+ * <p>Card definitions are loaded once at class-initialization time from three JSON files:
+ * {@code Characters.JSON}, {@code Events.JSON}, and {@code Buildings.JSON}.
+ * All cards are indexed by their {@code cardID} field for O(1) lookup.
+ *
+ * <p>This class is the client-side equivalent of
+ * {@link it.polimi.ingsw.am02.server.model.GameRegistry} for display purposes only;
+ * it performs no game-rule logic.
+ *
+ * <p>Obtain the singleton via {@link #getInstance()}.
+ */
 public class CardCatalog {
 
 
@@ -23,6 +37,7 @@ public class CardCatalog {
         loadJson(EVENTS_PATH);
     }
 
+    /** @return the singleton instance */
     public static CardCatalog getInstance() { return INSTANCE; }
 
     private void loadJson(String resourcePath) {
@@ -36,6 +51,18 @@ public class CardCatalog {
 
 
 
+    /**
+     * Returns a compact single-line description of the card for board/hand display.
+     * Format varies by card type:
+     * <ul>
+     *   <li>Characters — ID, era, type, and the most relevant stat</li>
+     *   <li>Buildings  — ID, era, cost, base PP, and a short effect summary</li>
+     *   <li>Events     — ID, era, type, final flag, and key numeric parameters</li>
+     * </ul>
+     *
+     * @param cardId the card identifier (e.g. {@code "C_001"}, {@code "B_020"}, {@code "E_005"})
+     * @return a formatted single-line string, or {@code "[cardId]"} if the ID is unknown
+     */
     public String format(String cardId) {
         JsonNode c = cards.get(cardId);
         if (c == null) return "[" + cardId + "]";
@@ -146,8 +173,12 @@ public class CardCatalog {
 // -----------------------------------------------------------------------
 
     /**
-     * Returns a multi-line text representation of the Summary Card.
-     * Mirrors the content shown by SummaryCardOverlay in the GUI.
+     * Returns the text content of the Summary Card — a fixed reference panel
+     * summarizing round events and end-game scoring rules.
+     * Used by the TUI {@code summary} command and mirrored by the GUI's
+     * {@code SummaryCardOverlay}.
+     *
+     * @return a multi-line ASCII-box string
      */
     public String getSummaryCardText() {
         return """
@@ -184,6 +215,13 @@ public class CardCatalog {
 
     // Full cards description (TUI 'info' command / GUI tooltip)
 
+    /**
+     * Returns the full multi-line rule description of the card, suitable for a
+     * detail tooltip in the GUI or the TUI {@code info} command.
+     *
+     * @param cardId the card identifier
+     * @return a multi-line description string, or an error message if the ID is unknown
+     */
     public String getFullDescription(String cardId) {
         JsonNode c = cards.get(cardId);
         if (c == null) return "Unknown Card ID: [" + cardId + "]";

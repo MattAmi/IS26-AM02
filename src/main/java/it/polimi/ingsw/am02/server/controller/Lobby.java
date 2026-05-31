@@ -6,6 +6,17 @@ import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 
 import java.util.*;
 
+/**
+ * Represents a pre-game lobby in which players gather before the match starts.
+ *
+ * <p>A lobby is created by {@link ControllerManager} and holds up to
+ * {@code expectedPlayers} clients. It tracks nickname selection and totem
+ * selection independently. The game starts automatically once every slot is
+ * filled with a valid nickname and a chosen totem, via
+ * {@link ControllerManager#startGame}.
+ *
+ * <p>All public methods are {@code synchronized} on the lobby's own monitor.
+ */
 public class Lobby {
 
     private final String lobbyId;
@@ -19,6 +30,12 @@ public class Lobby {
 
     private boolean started;
 
+    /**
+     * @param lobbyId           unique identifier for this lobby (reused as the game ID)
+     * @param expectedPlayers   total number of players required to start (2–5)
+     * @param controllerManager reference to the singleton controller manager,
+     *                          used to trigger game start and return clients on leave
+     */
     public Lobby(String lobbyId, int expectedPlayers, ControllerManager controllerManager) {
         this.lobbyId = lobbyId;
         this.expectedPlayers = expectedPlayers;
@@ -36,6 +53,12 @@ public class Lobby {
     boolean hasStarted() { return started; }
     VirtualView getView(String clientId) { return views.get(clientId); }
 
+    /**
+     * Builds and returns an immutable snapshot of this lobby's current state.
+     *
+     * @return a {@link it.polimi.ingsw.am02.common.dto.LobbyInfo} reflecting the
+     *         current nicknames and chosen totems
+     */
     synchronized LobbyInfo toLobbyInfo() {
         List<String> nicknameList = clientIds.stream()
                 .map(id -> clientToNickname.getOrDefault(id, ""))
@@ -53,6 +76,13 @@ public class Lobby {
     }
 
     // Lifecycle
+    /**
+     * Adds a client to the lobby and broadcasts the updated lobby state.
+     * No-op if the lobby is already full or has started.
+     *
+     * @param clientId the client's unique identifier
+     * @param view     the client's {@link it.polimi.ingsw.am02.common.interfaces.VirtualView}
+     */
     public synchronized void addClient(String clientId, VirtualView view) {
         if (isFull() || started) return;
 
@@ -61,6 +91,15 @@ public class Lobby {
         broadcastCurrentLobbyUpdated();
     }
 
+    /**
+     * Processes a nickname request from a client.
+     * Rejects the request if the nickname is blank or already taken in this lobby.
+     * Triggers {@link #checkAndStart()} after a successful assignment.
+     *
+     * @param clientId the requesting client
+     * @param nickname the desired nickname
+     * @return {@code true} if the nickname was accepted, {@code false} otherwise
+     */
     public synchronized boolean requestNickname(String clientId, String nickname) {
         VirtualView view = views.get(clientId);
         if (view == null) return false;
@@ -85,6 +124,14 @@ public class Lobby {
         return true;
     }
 
+    /**
+     * Processes a totem selection from a client.
+     * Rejects the request if the client has no nickname yet or the totem is already taken.
+     * Triggers {@link #checkAndStart()} after a successful selection.
+     *
+     * @param clientId the requesting client
+     * @param totem    the desired totem colour
+     */
     public synchronized void selectTotem(String clientId, Totem totem) {
         if (!clientIds.contains(clientId)) return;
         VirtualView view = views.get(clientId);
@@ -113,6 +160,12 @@ public class Lobby {
         checkAndStart();
     }
 
+    /**
+     * Removes a client from the lobby and returns them to the pre-lobby state.
+     * Dissolves the lobby if it becomes empty.
+     *
+     * @param clientId the client leaving the lobby
+     */
     public synchronized void removeClient(String clientId) {
         if (!clientIds.contains(clientId)) return;
 
@@ -132,6 +185,10 @@ public class Lobby {
         }
     }
 
+    /**
+     * Dissolves the lobby: notifies all clients, returns them to the pre-lobby
+     * state, and removes the lobby from {@link ControllerManager}.
+     */
     public synchronized void dissolve() {
         broadcastLobbyDissolved();
 
@@ -190,5 +247,6 @@ public class Lobby {
         views.values().forEach(v -> v.notifyLobbyDissolved(lobbyId));
     }
 
+    /** @return the current number of clients in this lobby */
     public int getPlayerCount() { return views.size(); }
 }

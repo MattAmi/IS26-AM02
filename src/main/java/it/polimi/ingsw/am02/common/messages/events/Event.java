@@ -8,6 +8,17 @@ import it.polimi.ingsw.am02.common.messages.events.error.*;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
 import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 
+/**
+ * Sealed interface for all server-to-client events.
+ * Each concrete record carries its payload as record components and
+ * implements {@link #apply} to dispatch itself to the correct
+ * {@link it.polimi.ingsw.am02.common.interfaces.VirtualView} method,
+ * eliminating switch logic in client-side transport handlers.
+ *
+ * <p>Subtypes are grouped into {@link LobbyEvent}, {@link GameEvent},
+ * {@link it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent},
+ * and {@link it.polimi.ingsw.am02.common.messages.events.game.PingEvent}.
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = BoardUpdatedEvent.class,           name = "BoardUpdated"),
@@ -42,5 +53,12 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 })
 public sealed interface Event extends Message
         permits LobbyEvent, GameEvent, ErrorEvent, PingEvent {
+
+    /**
+     * Applies this event to the given view, calling the appropriate
+     * {@link it.polimi.ingsw.am02.common.interfaces.VirtualView} notification method.
+     *
+     * @param view the client-side view to notify
+     */
     void apply(VirtualView view);
 }

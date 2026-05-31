@@ -4,6 +4,7 @@ import it.polimi.ingsw.am02.common.enumerations.CardType;
 import it.polimi.ingsw.am02.common.enumerations.RowPosition;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 
+/** Notifies all players that a player acquired a card from the board. */
 public record CardTakenEvent(String nickname, String cardID, CardType cardType, RowPosition sourceRow) implements GameEvent {
     @Override public void apply(VirtualView view) {
         view.notifyCardTaken(nickname, cardID, cardType, sourceRow);

@@ -9,21 +9,34 @@ import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Event effect for the Cave Paintings event.
+ * Players who have at least the required number of Artist characters gain prestige
+ * points per Artist; players who fall short lose prestige points.
+ */
 public class CavePaintingsEffect implements EventEffect{
 
-    //Attributi
     final int minArtists; //minimum number to profit from the event
     final int ppMalusIfFailed;
     final int bonusPerArtist;
 
-    //Costruttore
+    /**
+     * @param minArtists      minimum Artist count needed to benefit from the event
+     * @param malusIfFailed   prestige points lost if the player has fewer than {@code minArtists} Artists
+     * @param bonusPerArtist  prestige points gained per Artist if the threshold is met
+     */
     public CavePaintingsEffect(int minArtists, int malusIfFailed, int bonusPerArtist) {
         this.minArtists = minArtists;
         this.ppMalusIfFailed = malusIfFailed;
         this.bonusPerArtist = bonusPerArtist;
     }
 
-    //Metodi
+    /**
+     * Applies the Cave Paintings outcome to every player.
+     *
+     * @param players all active players
+     * @return an {@link EffectOutcome} with prestige-point deltas for each player
+     */
     @Override
     public EffectOutcome applyEffect(List<Player> players) {
         List<ResourceDelta> deltas = new ArrayList<>();

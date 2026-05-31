@@ -7,6 +7,17 @@ import it.polimi.ingsw.am02.common.enumerations.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Holds the complete client-side projection of an ongoing game session.
+ *
+ * <p>Each {@code update*} method corresponds to a specific server notification.
+ * The method applies the delta to the local state and then fans out the update
+ * to all registered {@link it.polimi.ingsw.am02.client.view.ClientView} observers,
+ * which may include both the GUI and the TUI simultaneously.
+ *
+ * <p>All public methods are {@code synchronized} on the model's own monitor,
+ * so views running on different threads can safely read state at any time.
+ */
 public class GameModel {
 
     private final String myNickname;
@@ -39,25 +50,41 @@ public class GameModel {
 
     private final List<ClientView> clientViews = new ArrayList<>();
 
+    /**
+     * Creates a new, empty game model for the given player.
+     *
+     * @param myNickname the nickname of the local player
+     */
     public GameModel(String myNickname) {
         this.myNickname = myNickname;
     }
 
     // OBSERVERS
 
+    /**
+     * Registers a {@link it.polimi.ingsw.am02.client.view.ClientView} to receive
+     * future game updates. No-op if already registered.
+     *
+     * @param observer the view to add
+     */
     public synchronized void addObserver(ClientView observer) {
         if (!clientViews.contains(observer)) {
             clientViews.add(observer);
         }
     }
 
+    /**
+     * Removes a previously registered observer.
+     *
+     * @param clientView the view to remove
+     */
     public synchronized void removeObserver(ClientView clientView) { clientViews.remove(clientView); }
 
     // DOMAIN UPDATES
 
     /**
-     * Applies a game-started event: stores the game ID, resets the ended flag,
-     * and notifies views.
+     * Applies a game-started notification: stores the game ID, resets the
+     * {@code gameEnded} flag, and notifies all views.
      *
      * @param gameID the identifier of the started game
      */
@@ -68,12 +95,12 @@ public class GameModel {
     }
 
     /**
-     * Applies the initial game setup: populates all board and player collections
-     * from the server snapshot and notifies views.
+     * Applies the initial game-setup snapshot: populates all board and player
+     * collections from the server snapshot and notifies all views.
      *
-     * @param totemByPlayer  map containing nickname-totem association
-     * @param turnOrder    the initial player turn order
-     * @param initialFood  the starting food amounts per player
+     * @param totemByPlayer map from nickname to assigned totem
+     * @param turnOrder     the initial player placement order
+     * @param initialFood   starting food per player
      * @param boardSnapshot the full initial board state, or {@code null}
      */
     public synchronized void updateGameSetupCompleted(Map<String, Totem> totemByPlayer,
@@ -120,13 +147,14 @@ public class GameModel {
     }
 
     /**
-     * Applies a phase change: updates the current phase, optionally the active
-     * player and resolution order, re-syncs pick limits at ACTION_RESOLUTION,
-     * and notifies views.
+     * Applies a phase transition: updates the current phase, optionally the
+     * active player and resolution order, re-syncs pick limits when entering
+     * {@link it.polimi.ingsw.am02.common.enumerations.PhaseType#ACTION_RESOLUTION},
+     * and notifies all views.
      *
      * @param phase           the new game phase
-     * @param currentPlayer   the active player, or {@code null} if unchanged
-     * @param resolutionOrder the new resolution order, or {@code null} if unchanged
+     * @param currentPlayer   the active player's nickname, or {@code null} if unchanged
+     * @param resolutionOrder the updated resolution order, or {@code null} if unchanged
      */
     public synchronized void updateCurrentPhase(PhaseType phase, String currentPlayer,
                                                 List<String> resolutionOrder) {
@@ -147,9 +175,9 @@ public class GameModel {
     }
 
     /**
-     * Applies a current-player change and notifies views.
+     * Applies a current-player change and notifies all views.
      *
-     * @param nextPlayer the nickname of the next active player
+     * @param nextPlayer the nickname of the new active player
      */
     public synchronized void updateCurrentPlayer(String nextPlayer) {
         this.currentPlayer = nextPlayer;
@@ -445,41 +473,121 @@ public class GameModel {
 
     // GETTERS
 
+    /** @return the local player's nickname */
     public synchronized String getMyNickname() { return myNickname; }
+
+    /** @return the game's unique identifier, or {@code null} before the game starts */
     public synchronized String getGameId() { return gameId; }
+
+    /** @return the current game phase, or {@code null} before setup completes */
     public synchronized PhaseType getCurrentPhase() { return currentPhase; }
+
+    /** @return the nickname of the currently active player, or {@code null} if not in an action phase */
     public synchronized String getCurrentPlayer() { return currentPlayer; }
+
+    /** @return an immutable copy of the current player order */
     public synchronized List<String> getTurnOrder() { return List.copyOf(turnOrder); }
+
+    /** @return an immutable copy of the upper character/event card row */
     public synchronized List<String> getUpperRow() { return List.copyOf(upperRow); }
+
+    /** @return an immutable copy of the lower character/event card row */
     public synchronized List<String> getLowerRow() { return List.copyOf(lowerRow); }
+
+    /** @return an immutable copy of the upper building market row */
     public synchronized List<String> getUpperRowBuildings() { return List.copyOf(upperRowBuildings); }
+
+    /** @return an immutable copy of the lower building market row */
     public synchronized List<String> getLowerRowBuildings() { return List.copyOf(lowerRowBuildings); }
+
+    /** @return an immutable copy of the current offer tile states */
     public synchronized List<OfferTileInfo> getOfferTiles() { return List.copyOf(offerTiles); }
+
+    /** @return an immutable copy of the food-per-player map */
     public synchronized Map<String, Integer> getFoodByPlayer() { return Map.copyOf(foodByPlayer); }
+
+    /** @return an immutable copy of the prestige-points-per-player map */
     public synchronized Map<String, Integer> getPpByPlayer() { return Map.copyOf(ppByPlayer); }
+
+    /**
+     * @return an immutable copy of the totem-position map
+     *         (nickname → offer tile ID, or empty if the totem is on the turn-order tile)
+     */
     public synchronized Map<String, Character> getTotemPositions() { return Map.copyOf(totemPositions); }
+
+    /** @return an immutable copy of the turn-order-slot-index map (nickname → slot index) */
     public synchronized Map<String, Integer> getTurnOrderPositions() { return Map.copyOf(turnOrderPositions); }
+
+    /** @return an immutable copy of the remaining-upper-picks map (nickname → count) */
     public synchronized Map<String, Integer> getRemainingUpper() { return Map.copyOf(remainingUpper); }
+
+    /** @return an immutable copy of the remaining-lower-picks map (nickname → count) */
     public synchronized Map<String, Integer> getRemainingLower() { return Map.copyOf(remainingLower); }
+
+    /**
+     * @return an unmodifiable map from nickname to an immutable list of character card IDs
+     *         owned by that player
+     */
     public synchronized Map<String, List<String>> getCharactersByPlayer() {
         Map<String, List<String>> copy = new LinkedHashMap<>();
         charactersByPlayer.forEach((k, v) -> copy.put(k, List.copyOf(v)));
         return Collections.unmodifiableMap(copy);
     }
+
+    /**
+     * @return an unmodifiable map from nickname to an immutable list of building card IDs
+     *         owned by that player
+     */
     public synchronized Map<String, List<String>> getBuildingsByPlayer() {
         Map<String, List<String>> copy = new LinkedHashMap<>();
         buildingsByPlayer.forEach((k, v) -> copy.put(k, List.copyOf(v)));
         return Collections.unmodifiableMap(copy);
     }
+
+    /** @return an immutable list of winning player nicknames (empty until the game ends) */
     public synchronized List<String> getWinners() { return List.copyOf(winners); }
+
+    /** @return an immutable list of final-score breakdowns (empty until the game ends) */
     public synchronized List<PlayerFinalScore> getFinalRankings() { return List.copyOf(finalRankings); }
+
+    /** @return the number of cards remaining in the tribe deck */
     public synchronized int getDeckRemainingCount() { return deckRemainingCount; }
+
+    /** @return {@code true} if the game has ended (normally or by abort) */
     public synchronized boolean isGameEnded() { return gameEnded; }
+
+    /** @return the display name of the most recently resolved event, or {@code null} */
     public synchronized String getLastEventResolved() { return lastEventResolved; }
+
+    /** @return the most recent error message received from the server, or {@code null} */
     public synchronized String getLastErrorMessage() { return lastErrorMessage; }
+
+    /**
+     * @return {@code true} if a game session is currently active
+     *         (game ID is set and the game has not ended)
+     */
     public synchronized boolean isInGame() { return gameId != null && !gameEnded; }
+
+    /** @return an immutable copy of the current turn-order tile slot states */
     public synchronized List<TurnOrderSlotInfo> getTurnOrderSlots() { return List.copyOf(turnOrderSlots); }
+
+    /**
+     * Overrides the stored game ID.
+     * Used during reconnection to update the model before events are replayed.
+     *
+     * @param gameId the new game identifier
+     */
     public synchronized void setGameId(String gameId) { this.gameId = gameId; }
+
+    /**
+     * Returns the totem color assigned to the given player.
+     *
+     * @param nickname the player's nickname
+     * @return their {@link it.polimi.ingsw.am02.common.enumerations.Totem},
+     *         or {@code null} if the game has not started or the nickname is unknown
+     */
     public synchronized Totem getTotem(String nickname) { return totemByPlayer != null ? totemByPlayer.get(nickname) : null; }
+
+    /** @return the current game era (defaults to {@link it.polimi.ingsw.am02.common.enumerations.Era#I}) */
     public synchronized Era getCurrentEra() { return currentEra; }
 }

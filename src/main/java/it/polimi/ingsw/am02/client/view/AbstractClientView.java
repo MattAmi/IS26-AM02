@@ -12,10 +12,16 @@ import java.util.Map;
 
 /**
  * Default no-op implementation of {@link ClientView}.
- * Concrete views (TUI, GUI) extend this class and override only
- * the methods they actually need to handle.
+ *
+ * <p>Every method is overridden with an empty body (except {@link #onError},
+ * which prints to {@code System.err}). Concrete view implementations
+ * (TUI, GUI) extend this class and override only the callbacks they need,
+ * avoiding boilerplate in each subclass.
  */
 public abstract class AbstractClientView implements ClientView {
+
+    // All ClientView methods have a default no-op body here.
+    // onError prints the message to System.err as a safety net.
 
     @Override public void onUsernameResult(String username, boolean accepted, String reason) {}
     @Override public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {}

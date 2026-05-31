@@ -5,6 +5,16 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import it.polimi.ingsw.am02.common.interfaces.VirtualControllerManager;
 import it.polimi.ingsw.am02.common.messages.Message;
 
+/**
+ * Sealed interface for all client-to-server commands.
+ * Each concrete record carries its payload as record components and
+ * implements {@link #apply} to dispatch itself to the correct
+ * {@link it.polimi.ingsw.am02.common.interfaces.VirtualControllerManager} method,
+ * eliminating switch logic in the transport handlers.
+ *
+ * <p>Subtypes are split into {@link LobbyCommand} (pre-game actions),
+ * {@link GameCommand} (in-game actions), and {@link ReconnectCommand}.
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "commandType")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = SetUsernameCommand.class,     name = "SetUsername"),

@@ -4,10 +4,21 @@ import it.polimi.ingsw.am02.common.enumerations.Era;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The building card deck, partitioned by era.
+ * On construction, all building cards are shuffled within each era and
+ * trimmed to the player-count-appropriate quantity.
+ */
 public class BuildingDeck {
 
     private final Map<Era, List<String>> eraDecks;
 
+    /**
+     * Builds the era-partitioned deck for the given player count.
+     *
+     * @param numPlayers the number of players (2–5); determines how many cards are kept per era
+     * @param gameRandom the seeded random source used for shuffling
+     */
     public BuildingDeck(int numPlayers, Random gameRandom) {
         this.eraDecks = new EnumMap<>(Era.class);
 
@@ -36,6 +47,10 @@ public class BuildingDeck {
         }
     }
 
+    /**
+     * @param era the era whose building cards are requested
+     * @return the list of building card IDs selected for the given era; empty if none
+     */
     public List<String> getBuildingsForEra(Era era) {
         return this.eraDecks.getOrDefault(era, new ArrayList<>());
     }

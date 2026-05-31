@@ -6,16 +6,27 @@ import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 
 import java.util.List;
 
+/**
+ * Character effect for the Gatherer archetype.
+ * Grants a permanent food discount applied during Sustenance event resolution.
+ */
 public class GathererEffect implements CharacterEffect {
 
     private final int foodDiscount;
 
-    //Costruttore
+    /**
+     * @param foodDiscount the number of food points discounted during each Sustenance event
+     */
     public GathererEffect(int foodDiscount) {
         this.foodDiscount = foodDiscount;
     }
 
-    //Gatherer's Effect: adds some foodDiscount to the tribu
+    /**
+     * Adds the food discount to the player's tribe.
+     *
+     * @param player the player who drew this character
+     * @return an {@link EffectOutcome} with the food-discount delta
+     */
     @Override
     public EffectOutcome applyEffect(Player player) {
 

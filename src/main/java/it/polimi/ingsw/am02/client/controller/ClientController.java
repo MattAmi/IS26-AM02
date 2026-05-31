@@ -13,13 +13,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Abstract controller that handles core logic and model synchronization.
+ * Abstract base controller that wires the network proxy, the domain models,
+ * and the view together for the client side.
  *
- * <p>Performs client-side validation only for structurally invalid input and
- * state that is stable enough to be read reliably from the local model
- * (e.g. totem availability, card presence on board). Rule enforcement — turn
- * order, phase constraints, pick limits — is delegated entirely to the server,
- * which is always the authoritative arbiter.
+ * <p>Performs lightweight client-side validation before forwarding commands
+ * to the server via {@link ServerProxy}. Only checks that are based on
+ * <em>stable</em>, locally-known state are performed here (e.g. tile
+ * occupancy, card presence on board, lobby slot availability). All
+ * authoritative rule enforcement — turn order, phase constraints, pick
+ * obligations — remains on the server.
+ *
+ * <p>Concrete subclasses ({@link it.polimi.ingsw.am02.client.view.tui.TuiController},
+ * {@link it.polimi.ingsw.am02.client.view.gui.GuiController}) implement
+ * {@link #createNewProxy()} to supply the correct transport when the client
+ * needs to reconnect or return to the lobby.
  */
 public abstract class ClientController {
 
@@ -27,8 +34,23 @@ public abstract class ClientController {
     protected final LobbyModel lobbyModel;
     protected final ClientView view;
     protected GameModel gameModel;
+
+    /**
+     * Creates a fresh {@link ServerProxy} of the same transport type as the one
+     * currently in use. Called internally during lobby return and reconnection.
+     *
+     * @return a new, unconnected proxy
+     * @throws Exception if the proxy cannot be constructed (e.g. invalid host/port)
+     */
     protected abstract ServerProxy createNewProxy() throws Exception;
 
+    /**
+     * Constructs the controller and registers the view as an observer of the lobby model.
+     *
+     * @param proxy      the initial server proxy (Socket or RMI)
+     * @param lobbyModel the client-side lobby state
+     * @param view       the view that will receive model updates
+     */
     public ClientController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
         this.proxy = proxy;
         this.lobbyModel = lobbyModel;
@@ -36,13 +58,33 @@ public abstract class ClientController {
         this.lobbyModel.addObserver(view);
     }
 
+    /**
+     * Replaces the {@link ServerProxy} (e.g. after a reconnection creates a new connection).
+     *
+     * @param proxy the new proxy
+     */
     public void setServerProxy(ServerProxy proxy) { this.proxy = proxy; }
+
+    /**
+     * Replaces the {@link GameModel} reference used by this controller.
+     * Called by the network dispatcher when the game session changes.
+     *
+     * @param gameModel the new game model, or {@code null} to clear it
+     */
     public void setGameModel(GameModel gameModel) { this.gameModel = gameModel; }
 
     // -------------------------------------------------------------------------
     // CONTEXT MANAGEMENT
     // -------------------------------------------------------------------------
 
+    /**
+     * Lazily creates the {@link GameModel} the first time it is needed (on
+     * {@code onGameStarted}), switches the view's observer registration from
+     * the lobby model to the game model, and injects the model into the view.
+     * No-op if a game model is already present.
+     *
+     * @param nickname the local player's nickname, used to initialize the game model
+     */
     public synchronized void onGameModelRequired(String nickname) {
         if (this.gameModel != null)
             return;
@@ -53,6 +95,17 @@ public abstract class ClientController {
         this.view.setGameModel(this.gameModel);
     }
 
+    /**
+     * Tears down the current game session and asynchronously re-establishes a
+     * connection for the lobby phase. Steps performed on a background thread:
+     * <ol>
+     *   <li>Removes the view from the game model observer list.</li>
+     *   <li>Notifies the view via {@link ClientView#onReturnToLobby()}.</li>
+     *   <li>Disconnects the current proxy.</li>
+     *   <li>Creates and connects a fresh proxy via {@link #createNewProxy()}.</li>
+     *   <li>Re-registers the view as a lobby model observer.</li>
+     * </ol>
+     */
     protected void performReturnToLobby() {
         if (gameModel != null) {
             gameModel.removeObserver(view);
@@ -79,9 +132,11 @@ public abstract class ClientController {
     // -------------------------------------------------------------------------
 
     /**
-     * Validates that the nickname is non-blank and not already taken in the
-     * current lobby, then forwards the request to the server.
-     * Uniqueness across all connected clients is enforced server-side.
+     * Validates the nickname locally (non-blank, not already the current nickname,
+     * not already taken in the current lobby) and forwards to the server.
+     * Global uniqueness across all clients is enforced server-side.
+     *
+     * @param nickname the desired nickname
      */
     public void handleSetNickname(String nickname) {
         if (nickname == null || nickname.isBlank()) {
@@ -110,7 +165,9 @@ public abstract class ClientController {
     }
 
     /**
-     * Validates lobby size constraints locally, then forwards to the server.
+     * Validates lobby size constraints (2–5 players) locally and forwards to the server.
+     *
+     * @param size the desired number of players
      */
     public void handleCreateLobby(int size) {
         if (size < 2 || size > 5) {
@@ -129,7 +186,10 @@ public abstract class ClientController {
     }
 
     /**
-     * Validates the lobby index against the locally known list, then forwards to the server.
+     * Resolves the target lobby from its display index in the locally cached list
+     * and forwards the join request to the server.
+     *
+     * @param index 0-based index into the list of available lobbies
      */
     public void handleJoinLobby(int index) {
         if (lobbyModel.getCurrentLobby() != null) {
@@ -154,11 +214,11 @@ public abstract class ClientController {
     }
 
     /**
-     * Validates that the totem value is non-null and not already taken according
-     * to the locally known lobby state, then forwards to the server.
+     * Validates that the totem is non-null and not already taken according to the
+     * locally known lobby state, then forwards to the server.
+     * Totem availability is stable between server notifications.
      *
-     * <p>Totem availability is stable: it changes only when another player
-     * explicitly selects one, and the corresponding event is delivered immediately.
+     * @param totem the desired totem color
      */
     public void handleSelectTotem(Totem totem) {
         if (totem == null) {
@@ -420,8 +480,15 @@ public abstract class ClientController {
         proxy.requestReconnect(nickname, gameId);
     }
 
+    /** @return the current game model, or {@code null} if no game is in progress */
     public synchronized GameModel getGameModel() { return gameModel; }
 
+    /**
+     * Returns the local player's nickname, reading from the game model if a game
+     * is in progress, or from the lobby model otherwise.
+     *
+     * @return the current nickname, or {@code null} if not yet set
+     */
     protected String myNickname() {
         return gameModel != null ? gameModel.getMyNickname() : lobbyModel.getMyNickname();
     }

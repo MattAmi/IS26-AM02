@@ -7,19 +7,32 @@ import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Event effect for the Shamanic Ritual event.
+ * The player(s) with the most shaman stars gain a prestige bonus;
+ * the player(s) with the fewest stars lose prestige points (unless immune).
+ */
 public class ShamanicRitualEffect implements EventEffect {
 
-    //Attributi
     final int majorityBonus;
     final int minorityBonus;
 
-    //Costruttore
+    /**
+     * @param maxbonus prestige points awarded to the player(s) with the most shaman stars
+     * @param minbonus prestige points deducted from the player(s) with the fewest shaman stars
+     */
     public ShamanicRitualEffect(int maxbonus, int minbonus) {
         this.majorityBonus = maxbonus;
         this.minorityBonus = minbonus;
     }
 
-    //Metodi
+    /**
+     * Resolves the Shamanic Ritual for all players.
+     * Immunity (granted by a building effect) prevents the minority penalty.
+     *
+     * @param players all active players
+     * @return an {@link EffectOutcome} with prestige-point deltas
+     */
     @Override
     public EffectOutcome applyEffect(List<Player> players) {
         List<ResourceDelta> deltas = new ArrayList<>();

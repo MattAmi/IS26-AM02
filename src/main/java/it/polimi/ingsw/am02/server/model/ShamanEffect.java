@@ -6,16 +6,27 @@ import it.polimi.ingsw.am02.common.enumerations.ResourceType;
 
 import java.util.List;
 
+/**
+ * Character effect for the Shaman archetype.
+ * Adds shaman stars to the tribe, used in Shamanic Ritual event resolution.
+ */
 public class ShamanEffect implements CharacterEffect {
 
     private final int shamanStars;
 
-    //Costruttore
+    /**
+     * @param shamanStars the number of shaman stars to add when this character is drawn
+     */
     public ShamanEffect(int shamanStars) {
         this.shamanStars = shamanStars;
     }
 
-    //Shaman's Effect: add stars to the tribu
+    /**
+     * Adds shaman stars to the player's tribe.
+     *
+     * @param player the player who drew this character
+     * @return an {@link EffectOutcome} with the shaman-stars delta
+     */
     @Override
     public EffectOutcome applyEffect(Player player) {
 

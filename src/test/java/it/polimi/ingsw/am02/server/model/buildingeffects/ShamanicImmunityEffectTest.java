@@ -1,9 +1,9 @@
 package it.polimi.ingsw.am02.server.model.buildingeffects;
 
 import it.polimi.ingsw.am02.common.dto.EffectOutcome;
-import it.polimi.ingsw.am02.server.model.EffectVisitor;
-import it.polimi.ingsw.am02.server.model.Player;
-import it.polimi.ingsw.am02.server.model.Tribu;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
 import it.polimi.ingsw.am02.server.model.enumerations.EventType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

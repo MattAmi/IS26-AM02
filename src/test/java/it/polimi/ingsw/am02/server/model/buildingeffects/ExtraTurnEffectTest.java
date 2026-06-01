@@ -2,9 +2,9 @@ package it.polimi.ingsw.am02.server.model.buildingeffects;
 
 import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.common.enumerations.PhaseType;
-import it.polimi.ingsw.am02.server.model.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
 import it.polimi.ingsw.am02.server.model.Game;
-import it.polimi.ingsw.am02.server.model.Player;
+import it.polimi.ingsw.am02.server.model.player.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

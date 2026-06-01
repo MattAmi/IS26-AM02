@@ -46,5 +46,9 @@ module it.polimi.ingsw.am02 {
 
     exports it.polimi.ingsw.am02.server.network.socket;
     exports it.polimi.ingsw.am02.client.network.socket;
+    exports it.polimi.ingsw.am02.server.model.player;
+    exports it.polimi.ingsw.am02.server.model.tile;
+    exports it.polimi.ingsw.am02.server.model.card;
+    exports it.polimi.ingsw.am02.server.model.effect;
 
 }

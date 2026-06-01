@@ -1,5 +1,7 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
+import it.polimi.ingsw.am02.server.model.tile.TurnOrderTile;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

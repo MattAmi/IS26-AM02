@@ -1,6 +1,9 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.enumerations.Era;
+import it.polimi.ingsw.am02.server.model.card.CharacterCard;
+import it.polimi.ingsw.am02.server.model.card.EventCard;
+import it.polimi.ingsw.am02.server.model.card.TribuDeck;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.MockedStatic;

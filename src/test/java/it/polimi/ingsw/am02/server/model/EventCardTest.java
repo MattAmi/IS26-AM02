@@ -4,6 +4,8 @@ import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.common.dto.ResourceDelta;
 import it.polimi.ingsw.am02.common.enumerations.Era;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.card.EventCard;
+import it.polimi.ingsw.am02.server.model.effect.EventEffect;
 import it.polimi.ingsw.am02.server.model.enumerations.EventType;
 import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
 import org.junit.jupiter.api.Test;

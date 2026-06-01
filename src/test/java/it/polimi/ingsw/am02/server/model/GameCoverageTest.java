@@ -1,8 +1,8 @@
 package it.polimi.ingsw.am02.server.model;
 
-import it.polimi.ingsw.am02.common.enumerations.PhaseType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.server.model.exceptions.InvalidMoveException;
+import it.polimi.ingsw.am02.server.model.player.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

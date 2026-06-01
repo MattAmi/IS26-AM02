@@ -54,7 +54,7 @@ public interface RmiClientRemote extends Remote {
     void notifyError(String message) throws RemoteException;
     void notifyPlayerDisconnected(String nickname) throws RemoteException;
     void notifyPlayerReconnected(String nickname) throws RemoteException;
-    void notifyAutoPlayerTimerStarted(String nickname) throws RemoteException;
+    void notifyAutoPlayerTimerStarted(String nickname, long seconds) throws RemoteException;
     void notifyAutoPlayerInvoked(String nickname) throws RemoteException;
     void notifyGameAborted(String winner) throws RemoteException;
     void notifyGameRecoveryFailed() throws RemoteException;

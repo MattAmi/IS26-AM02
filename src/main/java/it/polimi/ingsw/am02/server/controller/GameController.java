@@ -508,7 +508,7 @@ public class GameController implements GameObserver {
                 DISCONNECTED_PLAYER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         log("Per-player timer armed for " + nickname
                 + " (" + DISCONNECTED_PLAYER_TIMEOUT_SECONDS + "s).");
-        pushTransientOthers(nickname, v -> v.notifyAutoPlayerTimerStarted(nickname));
+        pushTransientOthers(nickname, v -> v.notifyAutoPlayerTimerStarted(nickname, DISCONNECTED_PLAYER_TIMEOUT_SECONDS));
     }
 
     private void cancelDisconnectedPlayerTimer(String nickname) {

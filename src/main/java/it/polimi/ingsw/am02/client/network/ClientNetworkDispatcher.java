@@ -260,10 +260,10 @@ public class ClientNetworkDispatcher implements VirtualView {
     }
 
     @Override
-    public void notifyAutoPlayerTimerStarted(String nick) {
+    public void notifyAutoPlayerTimerStarted(String nick, long seconds) {
         ensureGameModel();
         if (clientController.getGameModel() != null) {
-            clientController.getGameModel().updateAutoPlayerTimerStarted(nick);
+            clientController.getGameModel().updateAutoPlayerTimerStarted(nick, seconds);
         }
     }
 

@@ -191,9 +191,9 @@ public class GuiView extends AbstractClientView {
     }
 
     @Override
-    public void onAutoPlayerTimerStarted(String nickname) {
+    public void onAutoPlayerTimerStarted(String nickname, long seconds) {
         GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logAutoPlayerTimerStarted(nickname);
+        if (gs != null) gs.logAutoPlayerTimerStarted(nickname, seconds);
     }
 
     @Override

@@ -271,8 +271,8 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void notifyAutoPlayerTimerStarted(String nickname) {
-        enqueue(s -> s.notifyAutoPlayerTimerStarted(nickname));
+    public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {
+        enqueue(s -> s.notifyAutoPlayerTimerStarted(nickname, seconds));
     }
 
     @Override

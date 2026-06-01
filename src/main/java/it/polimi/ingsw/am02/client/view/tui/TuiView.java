@@ -430,9 +430,9 @@ public class TuiView extends AbstractClientView {
     }
 
     @Override
-    public void onAutoPlayerTimerStarted(String nickname) {
+    public void onAutoPlayerTimerStarted(String nickname, long seconds) {
         eventQueue.add(() -> addNotification(YELLOW + "[BOT] " + nickname
-                + " is disconnected — 30s timer started before AutoPlayer takes over." + RESET));
+                + " is disconnected — AutoPlayer takes over in " + seconds + "s." + RESET));
     }
 
     @Override

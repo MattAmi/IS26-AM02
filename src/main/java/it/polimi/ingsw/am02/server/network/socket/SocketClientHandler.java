@@ -275,8 +275,8 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void notifyAutoPlayerTimerStarted(String nickname) {
-        eventQueue.add(new AutoPlayerTimerStartedEvent(nickname));
+    public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {
+        eventQueue.add(new AutoPlayerTimerStartedEvent(nickname, seconds));
     }
 
     @Override

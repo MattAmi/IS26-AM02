@@ -63,7 +63,7 @@ public abstract class AbstractClientView implements ClientView {
     @Override public void setGameModel(GameModel gameModel) {}
     @Override public void onConnectionLost() {}
     @Override public void onConnectionRestored() {}
-    @Override public void onAutoPlayerTimerStarted(String nickname) {}
+    @Override public void onAutoPlayerTimerStarted(String nickname, long seconds) {}
     @Override public void onAutoPlayerInvoked(String nickname) {}
 
     @Override public void onReturnToLobby() {}

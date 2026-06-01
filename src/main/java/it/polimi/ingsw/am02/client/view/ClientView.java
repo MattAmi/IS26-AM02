@@ -294,11 +294,12 @@ public interface ClientView {
 
     /**
      * Called when the AutoPlayer grace timer has started for a disconnected player.
-     * The view should inform the other players.
+     * The view should inform the other players of the remaining time.
      *
      * @param nickname the disconnected player for whom the timer is running
+     * @param seconds  the duration of the grace period in seconds
      */
-    void onAutoPlayerTimerStarted(String nickname);
+    void onAutoPlayerTimerStarted(String nickname, long seconds);
 
     /**
      * Called immediately before the AutoPlayer acts for a disconnected player.

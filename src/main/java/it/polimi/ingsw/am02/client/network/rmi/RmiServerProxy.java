@@ -436,8 +436,8 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void notifyAutoPlayerTimerStarted(String n) throws RemoteException {
-        dispatcher.notifyAutoPlayerTimerStarted(n);
+    public void notifyAutoPlayerTimerStarted(String n, long seconds) throws RemoteException {
+        dispatcher.notifyAutoPlayerTimerStarted(n, seconds);
     }
 
     @Override

@@ -353,12 +353,13 @@ public class GameModel {
     }
 
     /**
-     * Notifies views that the auto-player timer has started for the given player.
+     * Notifies views that the AutoPlayer grace timer has started for the given player.
      *
-     * @param nickname the player whose timer started
+     * @param nickname the disconnected player for whom the timer is running
+     * @param seconds  the duration of the grace period in seconds
      */
-    public synchronized void updateAutoPlayerTimerStarted(String nickname) {
-        clientViews.forEach(o -> o.onAutoPlayerTimerStarted(nickname));
+    public synchronized void updateAutoPlayerTimerStarted(String nickname, long seconds) {
+        clientViews.forEach(o -> o.onAutoPlayerTimerStarted(nickname, seconds));
     }
 
     /**

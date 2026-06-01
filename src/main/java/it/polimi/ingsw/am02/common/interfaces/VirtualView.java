@@ -47,7 +47,7 @@ public interface VirtualView {
         @Override public void notifyError(String message) {}
         @Override public void notifyPlayerDisconnected(String nickname) {}
         @Override public void notifyPlayerReconnected(String nickname) {}
-        @Override public void notifyAutoPlayerTimerStarted(String nickname) {}
+        @Override public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {}
         @Override public void notifyAutoPlayerInvoked(String nickname) {}
         @Override public void notifyGameAborted(String winner) {}
         @Override public void notifyGameRecoveryFailed() {}
@@ -192,7 +192,9 @@ public interface VirtualView {
      * for a disconnected player.
      *
      * @param nickname the disconnected player whose timer is running
-     */void notifyAutoPlayerTimerStarted(String nickname);
+     * @param seconds  the duration of the grace period in seconds
+     */
+    void notifyAutoPlayerTimerStarted(String nickname, long seconds);
 
     /**
      * Notifies connected players that the AutoPlayer is about to act

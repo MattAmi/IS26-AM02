@@ -14,6 +14,8 @@ import it.polimi.ingsw.am02.server.model.exceptions.PlayerNotFoundException;
 import it.polimi.ingsw.am02.server.model.listeners.GameNotifier;
 import it.polimi.ingsw.am02.server.model.listeners.GameObserver;
 import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
 
 import java.util.*;
 

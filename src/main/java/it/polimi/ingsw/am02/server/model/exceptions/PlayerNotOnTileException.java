@@ -1,8 +1,10 @@
 package it.polimi.ingsw.am02.server.model.exceptions;
 
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
+
 /**
  * Thrown when the system expects a player to be occupying an
- * {@link it.polimi.ingsw.am02.server.model.OfferTile} but no tile holds
+ * {@link OfferTile} but no tile holds
  * that player. Indicates a state inconsistency in the offer track.
  */
 public class PlayerNotOnTileException extends GameRuleException {

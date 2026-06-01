@@ -11,6 +11,8 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent;
 import it.polimi.ingsw.am02.common.interfaces.VirtualView;
 import it.polimi.ingsw.am02.server.controller.GameController;
 import it.polimi.ingsw.am02.server.controller.persistence.NoOpCommandLogger;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

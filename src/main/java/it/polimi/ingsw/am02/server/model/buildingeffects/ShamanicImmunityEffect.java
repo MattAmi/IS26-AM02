@@ -1,12 +1,11 @@
 package it.polimi.ingsw.am02.server.model.buildingeffects;
 
 import it.polimi.ingsw.am02.common.dto.EffectOutcome;
-import it.polimi.ingsw.am02.server.model.BuildingEffect;
-import it.polimi.ingsw.am02.server.model.EffectVisitor;
-import it.polimi.ingsw.am02.server.model.Player;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
 import it.polimi.ingsw.am02.server.model.enumerations.EventType;
 import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
-import it.polimi.ingsw.am02.server.model.Tribu;
 
 /**
  * Building effect that makes the owner's tribe immune to the minority penalty

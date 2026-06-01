@@ -1,11 +1,12 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.dto.EffectOutcome;
-import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.CavePaintingsEffect;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.List;
 

@@ -1,9 +1,13 @@
 package it.polimi.ingsw.am02.server.model;
 
-import it.polimi.ingsw.am02.server.model.*;
+import it.polimi.ingsw.am02.server.model.card.BuildingCard;
+import it.polimi.ingsw.am02.server.model.card.CharacterCard;
+import it.polimi.ingsw.am02.server.model.card.EventCard;
 import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
 import it.polimi.ingsw.am02.common.enumerations.Era;
 import it.polimi.ingsw.am02.server.model.enumerations.EventType;
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
+import it.polimi.ingsw.am02.server.model.tile.TurnOrderTile;
 import org.junit.jupiter.api.*;
 
 import java.util.*;

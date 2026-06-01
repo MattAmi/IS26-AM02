@@ -1,8 +1,10 @@
 package it.polimi.ingsw.am02.server.model;
 
+import it.polimi.ingsw.am02.server.model.effect.RegistrationVisitor;
 import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
 import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
 import it.polimi.ingsw.am02.server.model.listeners.TribuObserver;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

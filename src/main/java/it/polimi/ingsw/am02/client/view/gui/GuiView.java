@@ -191,15 +191,25 @@ public class GuiView extends AbstractClientView {
     }
 
     @Override
-    public void onAutoPlayerTimerStarted(String nickname) {
+    public void onAutoPlayerTimerStarted(String nickname, long seconds) {
         GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logAutoPlayerTimerStarted(nickname);
+        if (gs != null) gs.logAutoPlayerTimerStarted(nickname, seconds);
     }
 
     @Override
     public void onAutoPlayerInvoked(String nickname) {
         GameScene gs = sceneRouter.getGameScene();
         if (gs != null) gs.logAutoPlayerInvoked(nickname);
+    }
+
+    @Override
+    public void onGlobalTimerStarted(long seconds) {
+        // TODO: display forfeit countdown banner in the game scene
+    }
+
+    @Override
+    public void onGlobalTimerCancelled() {
+        // TODO: dismiss forfeit countdown banner
     }
 
     @Override

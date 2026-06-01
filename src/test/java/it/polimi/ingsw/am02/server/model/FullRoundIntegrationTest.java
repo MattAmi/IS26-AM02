@@ -84,10 +84,12 @@ class FullRoundIntegrationTest {
         @Override public void notifyError(String message) { events.add(new ErrorEvent(message)); }
         @Override public void notifyPlayerDisconnected(String nickname) { events.add(new PlayerDisconnectedEvent(nickname)); }
         @Override public void notifyPlayerReconnected(String nickname) { events.add(new PlayerReconnectedEvent(nickname)); }
-        @Override public void notifyAutoPlayerTimerStarted(String nickname) { events.add(new AutoPlayerTimerStartedEvent(nickname)); }
+        @Override public void notifyAutoPlayerTimerStarted(String nickname, long seconds) { events.add(new AutoPlayerTimerStartedEvent(nickname, seconds)); }
         @Override public void notifyAutoPlayerInvoked(String nickname) { events.add(new AutoPlayerInvokedEvent(nickname)); }
         @Override public void notifyGameAborted(String winner) { events.add(new GameAbortedEvent(winner)); }
         @Override public void notifyGameRecoveryFailed() { events.add(new GameRecoveryFailedEvent()); }
+        @Override public void notifyGlobalTimerStarted(long seconds) { events.add(new GlobalTimerStartedEvent(seconds)); }
+        @Override public void notifyGlobalTimerCancelled() { events.add(new GlobalTimerCancelledEvent()); }
 
         /** Returns the last event of the given type, or null. */
         @SuppressWarnings("unchecked")

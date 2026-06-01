@@ -230,11 +230,13 @@ class GameModelTest {
         verify(mockView, times(4)).onCardTaken(anyString(), anyString(), any(), any());
     }
 
-    @Test
+  @Test
     void testAutoPlayer() {
         gameModel.addObserver(mockView);
-        gameModel.updateAutoPlayerTimerStarted("p1");
-        verify(mockView).onAutoPlayerTimerStarted("p1");
+
+        long timeout = 30L;
+        gameModel.updateAutoPlayerTimerStarted("p1", timeout);
+        verify(mockView).onAutoPlayerTimerStarted("p1", timeout);
 
         gameModel.updateAutoPlayerInvoked("p1");
         verify(mockView).onAutoPlayerInvoked("p1");

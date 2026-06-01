@@ -436,8 +436,8 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     }
 
     @Override
-    public void notifyAutoPlayerTimerStarted(String n) throws RemoteException {
-        dispatcher.notifyAutoPlayerTimerStarted(n);
+    public void notifyAutoPlayerTimerStarted(String n, long seconds) throws RemoteException {
+        dispatcher.notifyAutoPlayerTimerStarted(n, seconds);
     }
 
     @Override
@@ -453,5 +453,15 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     @Override
     public void notifyGameRecoveryFailed() throws RemoteException {
         dispatcher.notifyGameRecoveryFailed();
+    }
+
+    @Override
+    public void notifyGlobalTimerStarted(long seconds) throws RemoteException {
+        dispatcher.notifyGlobalTimerStarted(seconds);
+    }
+
+    @Override
+    public void notifyGlobalTimerCancelled() throws RemoteException {
+        dispatcher.notifyGlobalTimerCancelled();
     }
 }

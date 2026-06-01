@@ -47,7 +47,7 @@ public interface VirtualView {
         @Override public void notifyError(String message) {}
         @Override public void notifyPlayerDisconnected(String nickname) {}
         @Override public void notifyPlayerReconnected(String nickname) {}
-        @Override public void notifyAutoPlayerTimerStarted(String nickname) {}
+        @Override public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {}
         @Override public void notifyAutoPlayerInvoked(String nickname) {}
         @Override public void notifyGameAborted(String winner) {}
         @Override public void notifyGameRecoveryFailed() {}
@@ -56,6 +56,8 @@ public interface VirtualView {
         @Override public void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {}
         @Override public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {}
         @Override public void notifyLobbyDissolved(String lobbyID) {}
+        @Override public void notifyGlobalTimerStarted(long seconds) {}
+        @Override public void notifyGlobalTimerCancelled() {}
     }
 
 
@@ -173,43 +175,62 @@ public interface VirtualView {
      * Sends an error message to this client only (not stored in global history).
      *
      * @param message the human-readable error description
-     */void notifyError(String message);
+     */
+    void notifyError(String message);
 
     /**
      * Notifies all connected players that a specific player has disconnected.
      *
      * @param nickname the disconnected player's nickname
-     */void notifyPlayerDisconnected(String nickname);
+     */
+    void notifyPlayerDisconnected(String nickname);
 
     /**
      * Notifies all connected players that a specific player has reconnected.
      *
      * @param nickname the reconnected player's nickname
-     */void notifyPlayerReconnected(String nickname);
+     */
+    void notifyPlayerReconnected(String nickname);
 
     /**
      * Notifies connected players that the AutoPlayer grace timer has started
      * for a disconnected player.
      *
      * @param nickname the disconnected player whose timer is running
-     */void notifyAutoPlayerTimerStarted(String nickname);
+     * @param seconds  the duration of the grace period in seconds
+     */
+    void notifyAutoPlayerTimerStarted(String nickname, long seconds);
 
     /**
      * Notifies connected players that the AutoPlayer is about to act
      * on behalf of a disconnected player.
      *
      * @param nickname the disconnected player being substituted
-     */void notifyAutoPlayerInvoked(String nickname);
+     */
+    void notifyAutoPlayerInvoked(String nickname);
 
     /**
      * Notifies all players that the game was aborted due to forfeit.
      *
      * @param winner the nickname of the surviving player who wins by forfeit
-     */void notifyGameAborted(String winner);
+     */
+    void notifyGameAborted(String winner);
 
     /**
      * Notifies all players that the server could not complete game recovery
      * (e.g. no players reconnected within the recovery window).
      */
     void notifyGameRecoveryFailed();
+
+    /**
+     * Notifies the client that the global forfeit timer has been armed.
+     *
+     * @param seconds the duration of the forfeit countdown, in seconds
+     */
+    void notifyGlobalTimerStarted(long seconds);
+
+    /**
+     * Notifies the client that the global forfeit timer has been canceled.
+     */
+    void notifyGlobalTimerCancelled();
 }

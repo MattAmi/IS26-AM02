@@ -353,12 +353,13 @@ public class GameModel {
     }
 
     /**
-     * Notifies views that the auto-player timer has started for the given player.
+     * Notifies views that the AutoPlayer grace timer has started for the given player.
      *
-     * @param nickname the player whose timer started
+     * @param nickname the disconnected player for whom the timer is running
+     * @param seconds  the duration of the grace period in seconds
      */
-    public synchronized void updateAutoPlayerTimerStarted(String nickname) {
-        clientViews.forEach(o -> o.onAutoPlayerTimerStarted(nickname));
+    public synchronized void updateAutoPlayerTimerStarted(String nickname, long seconds) {
+        clientViews.forEach(o -> o.onAutoPlayerTimerStarted(nickname, seconds));
     }
 
     /**
@@ -469,6 +470,22 @@ public class GameModel {
     public synchronized void updateError(String errorMessage) {
         this.lastErrorMessage = errorMessage;
         clientViews.forEach(o -> o.onError(errorMessage));
+    }
+
+    /**
+     * Notifies views that the global forfeit timer has been armed on the server.
+     *
+     * @param seconds the duration of the forfeit countdown, in seconds
+     */
+    public synchronized void updateGlobalTimerStarted(long seconds) {
+        clientViews.forEach(v -> v.onGlobalTimerStarted(seconds));
+    }
+
+    /**
+     * Notifies views that the global forfeit timer has been cancelled on the server.
+     */
+    public synchronized void updateGlobalTimerCancelled() {
+        clientViews.forEach(v -> v.onGlobalTimerCancelled());
     }
 
     // GETTERS

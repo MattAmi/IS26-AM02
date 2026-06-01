@@ -870,9 +870,11 @@ public class TuiView extends AbstractClientView {
 
     /** Prints the game title banner. */
     private void printHeader() {
-        System.out.println(CYAN + BOLD + "========================================" + RESET);
-        System.out.println(CYAN + BOLD + "          MESOS — PREHISTORIC           " + RESET);
-        System.out.println(CYAN + BOLD + "========================================" + RESET);
+        System.out.println(GREEN + BOLD
+                + "  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "      M  E  S  O  S   —   P  R  E  H  I  S  T  O  R  I  C\n"
+                + "  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+                + RESET);
     }
 
     /** Clears the terminal using ANSI escape codes. */

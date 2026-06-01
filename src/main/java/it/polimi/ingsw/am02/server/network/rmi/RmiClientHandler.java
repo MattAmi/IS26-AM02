@@ -290,6 +290,12 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
         enqueue(RmiClientRemote::notifyGameRecoveryFailed);
     }
 
+    @Override
+    public void notifyGlobalTimerStarted(long seconds) { enqueue(s -> s.notifyGlobalTimerStarted(seconds)); }
+
+    @Override
+    public void notifyGlobalTimerCancelled() { enqueue(RmiClientRemote::notifyGlobalTimerCancelled);}
+
     // =========================================================
     // RmiServerRemote — inbound calls (client → server)
     // Executed directly on the RMI thread pool — no executor wrapper.

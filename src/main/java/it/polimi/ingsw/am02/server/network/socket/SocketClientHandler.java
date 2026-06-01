@@ -275,9 +275,7 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {
-        eventQueue.add(new AutoPlayerTimerStartedEvent(nickname, seconds));
-    }
+    public void notifyAutoPlayerTimerStarted(String nickname, long seconds) { eventQueue.add(new AutoPlayerTimerStartedEvent(nickname, seconds)); }
 
     @Override
     public void notifyAutoPlayerInvoked(String nickname) {
@@ -293,6 +291,11 @@ public class SocketClientHandler implements ClientHandler {
     public void notifyGameRecoveryFailed() {
         eventQueue.add(new GameRecoveryFailedEvent());
     }
+
+    @Override
+    public void notifyGlobalTimerStarted(long seconds) { eventQueue.add(new GlobalTimerStartedEvent(seconds)); }
+
+    @Override public void notifyGlobalTimerCancelled() { eventQueue.add(new GlobalTimerCancelledEvent()); }
 
     // =========================================================
     // Lifecycle

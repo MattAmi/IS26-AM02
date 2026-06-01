@@ -290,4 +290,21 @@ public class ClientNetworkDispatcher implements VirtualView {
             clientController.getGameModel().updateGameRecoveryFailed();
         }
     }
+
+    @Override
+    public void notifyGlobalTimerStarted(long seconds) {
+        ensureGameModel();
+        if (clientController.getGameModel() != null) {
+            clientController.getGameModel().updateGlobalTimerStarted(seconds);
+        }
+    }
+
+    @Override
+    public void notifyGlobalTimerCancelled() {
+        ensureGameModel();
+        if (clientController.getGameModel() != null) {
+            clientController.getGameModel().updateGlobalTimerCancelled();
+        }
+    }
+
 }

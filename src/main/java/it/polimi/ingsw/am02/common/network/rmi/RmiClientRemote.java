@@ -58,6 +58,8 @@ public interface RmiClientRemote extends Remote {
     void notifyAutoPlayerInvoked(String nickname) throws RemoteException;
     void notifyGameAborted(String winner) throws RemoteException;
     void notifyGameRecoveryFailed() throws RemoteException;
+    void notifyGlobalTimerStarted(long seconds) throws RemoteException;
+    void notifyGlobalTimerCancelled() throws RemoteException;
 
     // Heartbeat
     void ping() throws RemoteException;

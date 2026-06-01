@@ -203,6 +203,16 @@ public class GuiView extends AbstractClientView {
     }
 
     @Override
+    public void onGlobalTimerStarted(long seconds) {
+        // TODO: display forfeit countdown banner in the game scene
+    }
+
+    @Override
+    public void onGlobalTimerCancelled() {
+        // TODO: dismiss forfeit countdown banner
+    }
+
+    @Override
     public void onConnectionLost() { sceneRouter.showConnectionLost(); }
 
     @Override

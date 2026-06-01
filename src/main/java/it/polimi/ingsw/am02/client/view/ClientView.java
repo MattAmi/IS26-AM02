@@ -307,4 +307,14 @@ public interface ClientView {
      * @param nickname the disconnected player being substituted
      */
     void onAutoPlayerInvoked(String nickname);
+
+    /**
+     * Called when the global forfeit timer has been armed.
+     *
+     * @param seconds the duration of the forfeit countdown, in seconds
+     */
+    void onGlobalTimerStarted(long seconds);
+
+    /** Called when the global forfeit timer has been cancelled. */
+    void onGlobalTimerCancelled();
 }

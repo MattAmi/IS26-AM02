@@ -487,6 +487,18 @@ public class TuiView extends AbstractClientView {
     }
 
     @Override
+    public void onGlobalTimerStarted(long seconds) {
+        eventQueue.add(() -> addNotification(RED + BOLD + "[!] You are the only active player. "
+                + "If no one reconnects within " + seconds + "s, you win by forfeit." + RESET));
+    }
+
+    @Override
+    public void onGlobalTimerCancelled() {
+        eventQueue.add(() -> addNotification(GREEN + BOLD + "[!] A player has reconnected. "
+                + "The forfeit countdown has been cancelled." + RESET));
+    }
+
+    @Override
     public void onReturnToLobby() {
         eventQueue.add(() -> {
             this.currentGameId = null;

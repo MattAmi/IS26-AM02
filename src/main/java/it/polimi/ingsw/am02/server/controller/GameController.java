@@ -267,7 +267,7 @@ public class GameController implements GameObserver {
 
             handlers.put(nickname, newView);
             cancelDisconnectedPlayerTimer(nickname);
-            cancelGlobalDisconnectionTimer();
+            boolean globalTimerWasCancelled = cancelGlobalDisconnectionTimer();
 
             connectionStatus.put(nickname, ConnectionStatus.RECONNECTING);
             log("Player reconnecting: " + nickname);
@@ -290,6 +290,7 @@ public class GameController implements GameObserver {
             }
 
             pushTransientOthers(nickname, v -> v.notifyPlayerReconnected(nickname));
+            if (globalTimerWasCancelled) notifyGlobalTimerCancelled();
         }
 
         drainExecutor.submit(() -> {
@@ -330,7 +331,7 @@ public class GameController implements GameObserver {
                         // AutoPlayer can act for them. We check activeCount rather than pendingCount
                         // because a concurrent network thread may have already transitioned some
                         // PENDING players to RECONNECTING before this drain completed (race condition).
-                        cancelGlobalDisconnectionTimer();
+                        if (cancelGlobalDisconnectionTimer()) notifyGlobalTimerCancelled();
                         connectionStatus.replaceAll((nick, status) ->
                                 status == ConnectionStatus.PENDING_RECONNECTION
                                         ? ConnectionStatus.DISCONNECTED
@@ -546,14 +547,21 @@ public class GameController implements GameObserver {
                 this::onGlobalDisconnectionTimerExpired,
                 GLOBAL_DISCONNECTION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         log("Global forfeit timer armed (" + GLOBAL_DISCONNECTION_TIMEOUT_SECONDS + "s).");
+        pushTransientOthers(null, v -> v.notifyGlobalTimerStarted(GLOBAL_DISCONNECTION_TIMEOUT_SECONDS));
     }
 
-    private void cancelGlobalDisconnectionTimer() {
+    private boolean cancelGlobalDisconnectionTimer() {
         if (globalTimer != null) {
             globalTimer.cancel(false);
             globalTimer = null;
             log("Global forfeit timer cancelled.");
+            return true;
         }
+        return false;
+    }
+
+    private void notifyGlobalTimerCancelled() {
+        pushTransientOthers(null, VirtualView::notifyGlobalTimerCancelled);
     }
 
     private void onGlobalDisconnectionTimerExpired() {

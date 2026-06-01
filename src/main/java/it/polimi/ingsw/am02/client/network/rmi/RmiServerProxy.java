@@ -454,4 +454,14 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
     public void notifyGameRecoveryFailed() throws RemoteException {
         dispatcher.notifyGameRecoveryFailed();
     }
+
+    @Override
+    public void notifyGlobalTimerStarted(long seconds) throws RemoteException {
+        dispatcher.notifyGlobalTimerStarted(seconds);
+    }
+
+    @Override
+    public void notifyGlobalTimerCancelled() throws RemoteException {
+        dispatcher.notifyGlobalTimerCancelled();
+    }
 }

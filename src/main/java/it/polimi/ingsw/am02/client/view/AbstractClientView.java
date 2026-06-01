@@ -65,6 +65,8 @@ public abstract class AbstractClientView implements ClientView {
     @Override public void onConnectionRestored() {}
     @Override public void onAutoPlayerTimerStarted(String nickname, long seconds) {}
     @Override public void onAutoPlayerInvoked(String nickname) {}
+    @Override public void onGlobalTimerStarted(long seconds) {}
+    @Override public void onGlobalTimerCancelled() {}
 
     @Override public void onReturnToLobby() {}
 }

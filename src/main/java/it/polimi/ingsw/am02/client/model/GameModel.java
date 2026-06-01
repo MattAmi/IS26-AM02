@@ -472,6 +472,22 @@ public class GameModel {
         clientViews.forEach(o -> o.onError(errorMessage));
     }
 
+    /**
+     * Notifies views that the global forfeit timer has been armed on the server.
+     *
+     * @param seconds the duration of the forfeit countdown, in seconds
+     */
+    public synchronized void updateGlobalTimerStarted(long seconds) {
+        clientViews.forEach(v -> v.onGlobalTimerStarted(seconds));
+    }
+
+    /**
+     * Notifies views that the global forfeit timer has been cancelled on the server.
+     */
+    public synchronized void updateGlobalTimerCancelled() {
+        clientViews.forEach(v -> v.onGlobalTimerCancelled());
+    }
+
     // GETTERS
 
     /** @return the local player's nickname */

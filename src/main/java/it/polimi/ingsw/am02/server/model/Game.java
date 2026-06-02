@@ -43,6 +43,7 @@ public class Game implements ModelInterface {
     private String currentPlayerNickname;
     private List<String> turnOrder;
     private int completedRounds;
+    private static final int NUM_ROUNDS = 10;
 
     private final List<PhaseObserver> phaseObservers;
 
@@ -235,7 +236,7 @@ public class Game implements ModelInterface {
     }
 
     private boolean isGameOverCondition() {
-        return completedRounds > 10;
+        return completedRounds > NUM_ROUNDS;
     }
 
     private void setUpPlacementOrder() {
@@ -398,11 +399,11 @@ public class Game implements ModelInterface {
         }
 
         public void moveTotem(String nickname, char tileID) {
-            throw new InvalidMoveException("moving Totem is not allowed in the current game state.");
+            throw new InvalidMoveException("Moving Totem is not allowed in the current game state.");
         }
 
         public void resolveActions(String nickname, List<String> selectedIDs) {
-            throw new InvalidMoveException("resolving actions is not allowed in the current game state.");
+            throw new InvalidMoveException("Resolving actions is not allowed in the current game state.");
         }
 
         public final void onEntry() {

@@ -23,6 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Represents an animated overlay displayed when a new era begins.
+ * This overlay features a fire particle effect and a pulsing era title.
+ */
 public class NewEraOverlay {
 
     private static final int CANVAS_W = 1400;
@@ -33,12 +37,23 @@ public class NewEraOverlay {
     private final Random rng = new Random();
     private AnimationTimer fireTimer;
 
+    /**
+     * Inner class representing a single fire particle in the animation.
+     */
     private static class FireParticle {
         double x, y, vx, vy, life, maxLife, size;
         int type; // 0=core, 1=ember, 2=smoke
 
         FireParticle() { reset(0, 0, true, new Random()); }
 
+        /**
+         * Resets a particle to its initial state at the specified origin.
+         *
+         * @param originX The X-coordinate of the fire origin.
+         * @param originY The Y-coordinate of the fire origin.
+         * @param initial Whether this is the initial reset during particle creation.
+         * @param rng     The Random instance for variation.
+         */
         void reset(double originX, double originY, boolean initial, Random rng) {
             x = originX + (rng.nextDouble() - 0.5) * 340;
             y = initial ? originY - rng.nextDouble() * CANVAS_H * 0.6 : originY + 10;
@@ -54,9 +69,11 @@ public class NewEraOverlay {
     }
 
     /**
-     * Costruisce il nodo overlay da aggiungere al baseStack di GameScene.
-     * @param era    la nuova era appena iniziata
-     * @param onDone callback richiamata quando l'animazione termina
+     * Builds the new era overlay node.
+     *
+     * @param era    The new era that has begun.
+     * @param onDone Callback to execute when the animation finishes.
+     * @return The constructed StackPane representing the overlay.
      */
     public StackPane buildNode(Era era, Runnable onDone) {
         Canvas fireCanvas = new Canvas(CANVAS_W, CANVAS_H);
@@ -98,8 +115,6 @@ public class NewEraOverlay {
                 renderFire(fireCanvas.getGraphicsContext2D(), originX, originY);
             }
         };
-
-        // --- Animazioni ---
 
         Timeline eraReveal = new Timeline(
                 new KeyFrame(Duration.millis(0),
@@ -157,6 +172,13 @@ public class NewEraOverlay {
         return root;
     }
 
+    /**
+     * Renders the fire particles on the provided graphics context.
+     *
+     * @param gc      The GraphicsContext to draw on.
+     * @param originX The X-coordinate of the fire origin.
+     * @param originY The Y-coordinate of the fire origin.
+     */
     private void renderFire(GraphicsContext gc, double originX, double originY) {
         gc.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
@@ -197,12 +219,24 @@ public class NewEraOverlay {
         gc.fillRect(0, 0, CANVAS_W, CANVAS_H);
     }
 
+    /**
+     * Calculates the color of a fire particle based on its life stage.
+     *
+     * @param t The normalized life stage (0 to 1).
+     * @return The calculated Color.
+     */
     private Color fireColor(double t) {
         if (t < 0.3)  { double f = t / 0.3;         return Color.color(1.0, 1.0 - f*0.3, 1.0 - f,       1.0); }
         if (t < 0.65) { double f = (t - 0.3) / 0.35; return Color.color(1.0, 0.7 - f*0.4, 0.0,           1.0); }
         else          { double f = (t - 0.65) / 0.35; return Color.color(1.0 - f*0.5, 0.3 - f*0.25, 0.0, 1.0); }
     }
 
+    /**
+     * Returns the Roman numeral representation of the era.
+     *
+     * @param era The Era enum value.
+     * @return The Roman numeral string.
+     */
     private String eraRoman(Era era) {
         return switch (era) { case I -> "ERA I"; case II -> "ERA II"; case III -> "ERA III"; };
     }

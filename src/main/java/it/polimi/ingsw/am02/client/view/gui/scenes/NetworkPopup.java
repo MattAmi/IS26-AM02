@@ -16,10 +16,27 @@ import javafx.scene.effect.GaussianBlur;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+/**
+ * Utility class for building a network connection popup.
+ * This popup allows users to specify server connection details (IP, port, and network type).
+ */
 public class NetworkPopup {
 
+    /**
+     * Record representing the connection configuration.
+     *
+     * @param type The type of network connection (RMI or SOCKET).
+     * @param host The server hostname or IP.
+     * @param port The server port.
+     */
     public record ConnectionConfig(NetworkType type, String host, int port) {}
 
+    /**
+     * Builds the network connection popup node.
+     *
+     * @param onConnect Callback to execute when the "CONNECT" button is clicked.
+     * @return The constructed StackPane representing the popup.
+     */
     public static StackPane buildNode(BiConsumer<ConnectionConfig, Consumer<String>> onConnect) {
         StackPane root = new StackPane();
         root.setAlignment(Pos.CENTER);
@@ -88,7 +105,6 @@ public class NetworkPopup {
         portField.setMaxWidth(200);
         portField.setFont(introFontSmall);
 
-        // AGGIUNGI QUESTE DUE RIGHE:
         rmiBtn.setOnAction(e -> portField.setText("1099"));
         socketBtn.setOnAction(e -> portField.setText("1100"));
 

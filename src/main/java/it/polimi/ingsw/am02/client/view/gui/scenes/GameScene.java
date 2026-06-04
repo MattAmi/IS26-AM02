@@ -31,6 +31,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
+/**
+ * The main game scene of the GUI.
+ * This class handles the rendering of the game board, player hands, sidebar,
+ * and animations for various game events.
+ */
 public class GameScene {
     private GuiController controller;
     private GameModel model;
@@ -54,17 +59,21 @@ public class GameScene {
     private final List<String> offlinePlayers = new ArrayList<>();
     private final List<String> knownCardsOnBoard = new ArrayList<>();
 
-    // --- CODA ANIMAZIONI E SNAPSHOTTING ---
     private final Queue<Runnable> animationQueue = new LinkedList<>();
     private boolean isAnimating = false;
     private SceneState lastState;
 
+    /**
+     * Represents a task for dealing a card.
+     */
     private static class DealTask {
         String id; ImageView target;
         DealTask(String id, ImageView target) { this.id = id; this.target = target; }
     }
 
-    // CLASSE INTERNA: Scatta una "Fotografia" esatta dei dati nel millisecondo in cui arriva l'evento
+    /**
+     * Inner class representing a snapshot of the game state for rendering and animations.
+     */
     private static class SceneState {
         String gameId; String currentPlayer; PhaseType currentPhase; Era era; String myNickname;
         List<String> turnOrder; Map<String, Integer> foodByPlayer; Map<String, Integer> ppByPlayer;
@@ -101,6 +110,9 @@ public class GameScene {
         }
     }
 
+    /**
+     * Plays the next animation in the queue.
+     */
     private void playNextAnimation() {
         if (animationQueue.isEmpty()) {
             isAnimating = false;
@@ -110,8 +122,15 @@ public class GameScene {
         Runnable next = animationQueue.poll();
         next.run();
     }
-    // --------------------------------------
 
+    /**
+     * Builds the game scene node.
+     *
+     * @param controller    The GUI controller.
+     * @param onShowMenu    Callback to show the in-game menu.
+     * @param onShowSummary Callback to show the summary card.
+     * @return The constructed Region representing the scene.
+     */
     public Region buildNode(GuiController controller, Runnable onShowMenu, Runnable onShowSummary) {
         this.controller = controller;
         this.tribalFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 14);
@@ -121,7 +140,6 @@ public class GameScene {
         baseStack.setStyle("-fx-background-color: #0a0a0a;");
         root = new BorderPane();
 
-        // --- TOP BANNER ---
         StackPane topBanner = new StackPane();
         topBanner.setPadding(new Insets(10, 20, 10, 20)); topBanner.setStyle("-fx-background-color: #A31D1D;");
 
@@ -182,12 +200,10 @@ public class GameScene {
         statusBox = new HBox(15); statusBox.setAlignment(Pos.CENTER); statusBox.setMouseTransparent(true);
         topBanner.getChildren().addAll(statusBox, idBox, rightControls); root.setTop(topBanner);
 
-        // --- RIGHT SIDEBAR ---
         rightSidebar = new VBox(15); rightSidebar.setPadding(new Insets(20)); rightSidebar.setPrefWidth(260);
         rightSidebar.setStyle("-fx-background-color: #1a0f07; -fx-border-color: #3e2a1d; -fx-border-width: 0 0 0 4;");
         root.setRight(rightSidebar);
 
-        // --- CENTER AREA ---
         StackPane centerLayout = new StackPane();
         String bgPath = getClass().getResource("/it.polimi.ingsw.am02.images/mesos_box.png").toExternalForm();
         centerLayout.setStyle("-fx-background-image: url('" + bgPath + "'); -fx-background-size: 130%; -fx-background-position: center;");
@@ -259,30 +275,59 @@ public class GameScene {
         return baseStack;
     }
 
+    /**
+     * Logs the resolution of an event.
+     *
+     * @param eventName The name of the event.
+     */
     public void logEventResolved(String eventName) {
         Platform.runLater(() -> {
             addLogEntry("[EVENT] ", "Resolved: " + eventName, Color.web("#9C27B0"));
         });
     }
 
+    /**
+     * Logs a resource change for a player.
+     *
+     * @param nickname The nickname of the player.
+     * @param resource The type of resource.
+     * @param newValue The new value of the resource.
+     */
     public void logResourceChanged(String nickname, ResourceType resource, int newValue) {
         Platform.runLater(() -> {
             addLogEntry("[RESOURCE] ", nickname + " now has " + newValue + " " + resource, Color.GOLD);
         });
     }
 
+    /**
+     * Logs the start of the auto-player timer.
+     *
+     * @param nickname The nickname of the disconnected player.
+     */
     public void logAutoPlayerTimerStarted(String nickname, long seconds) {
         Platform.runLater(() -> {
             addLogEntry("[BOT] ", nickname + " disconnected — AutoPlayer takes over in " + seconds + "s.", Color.GOLD);
         });
     }
 
+    /**
+     * Logs the invocation of the auto-player.
+     *
+     * @param nickname The nickname of the player being substituted.
+     */
     public void logAutoPlayerInvoked(String nickname) {
         Platform.runLater(() -> {
             addLogEntry("[BOT] ", "AutoPlayer acting for " + nickname + "...", Color.web("#9C27B0"));
         });
     }
 
+    /**
+     * Adds an entry to the log container.
+     *
+     * @param prefix      The prefix for the log entry.
+     * @param message     The log message.
+     * @param prefixColor The color for the prefix text.
+     */
     private void addLogEntry(String prefix, String message, Color prefixColor) {
         Text pText = new Text(prefix);
         pText.setFill(prefixColor);
@@ -302,24 +347,31 @@ public class GameScene {
         }
     }
 
-    // --- PUNTO DI INGRESSO EVENTI (SCATTA LA FOTOGRAFIA DELLO STATO) ---
+    /**
+     * Refreshes the entire game scene based on the current model state.
+     * Takes a snapshot of the model to ensure thread safety during rendering.
+     *
+     * @param model The current game model.
+     */
     public void refreshAll(GameModel model) {
         if (model == null) return;
         this.model = model;
         if (viewedPlayerHand == null) viewedPlayerHand = model.getMyNickname();
 
-        // 1. Scatta la fotografia del modello ORA, prima che il server lo modifichi di nuovo
         SceneState snapshot = new SceneState(model);
         this.lastState = snapshot;
 
-        // 2. Metti il compito di disegnare questa fotografia in coda
         Platform.runLater(() -> {
             animationQueue.add(() -> refreshAllInternal(snapshot));
             if (!isAnimating) playNextAnimation();
         });
     }
 
-    // --- FUNZIONE DI DISEGNO BASATA ESCLUSIVAMENTE SULLA FOTOGRAFIA (STATE) ---
+    /**
+     * Internal refresh method that updates all UI components based on a state snapshot.
+     *
+     * @param state The state snapshot to render.
+     */
     private void refreshAllInternal(SceneState state) {
         gameIdLabel.setText("ID: " + (state.gameId != null ? state.gameId : "---"));
         updateStatusBanner(state);
@@ -332,7 +384,6 @@ public class GameScene {
         root.applyCss();
         root.layout();
 
-        // Se la ricostruzione del tabellone ha scoperto nuove carte, le fa volare tutte insieme
         if (!localDeals.isEmpty()) {
             ParallelTransition allDeals = new ParallelTransition();
             for (DealTask task : localDeals) {
@@ -340,14 +391,19 @@ public class GameScene {
             }
             allDeals.setOnFinished(e -> {
                 for (DealTask task : localDeals) task.target.setOpacity(1.0);
-                playNextAnimation(); // Passa al prossimo evento in coda!
+                playNextAnimation();
             });
             allDeals.play();
         } else {
-            playNextAnimation(); // Nessuna nuova carta, passa all'evento successivo
+            playNextAnimation();
         }
     }
 
+    /**
+     * Updates the status banner with the current era, phase, and active player.
+     *
+     * @param state The current state snapshot.
+     */
     private void updateStatusBanner(SceneState state) {
         statusBox.getChildren().clear();
         String activePlayer = state.currentPlayer != null ? state.currentPlayer.toUpperCase() : "...";
@@ -360,6 +416,11 @@ public class GameScene {
         statusBox.getChildren().addAll(eraTxt, phaseTxt, p1, p2);
     }
 
+    /**
+     * Updates the sidebar with the list of players and their status.
+     *
+     * @param state The current state snapshot.
+     */
     private void updateSidebar(SceneState state) {
         rightSidebar.getChildren().clear();
         Label sidebarTitle = new Label("PLAYERS"); sidebarTitle.setTextFill(Color.WHITE); sidebarTitle.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));
@@ -385,17 +446,21 @@ public class GameScene {
         }
     }
 
+    /**
+     * Updates the main board area with the card rows and offer tiles.
+     *
+     * @param state      The current state snapshot.
+     * @param localDeals Output list to store tasks for new card deal animations.
+     */
     private void updateMainBoard(SceneState state, List<DealTask> localDeals) {
         mainBoardArea.getChildren().clear();
 
-        // 1. Calcoliamo la grandezza delle carte in base al numero di giocatori!
         int numPlayers = Math.max(2, state.turnOrder.size());
-        int boardCardHeight = 170; // Standard per 2 giocatori
+        int boardCardHeight = 170;
         if (numPlayers == 3) boardCardHeight = 150;
         if (numPlayers == 4) boardCardHeight = 135;
-        if (numPlayers >= 5) boardCardHeight = 115; // Molto più piccole per farle stare tutte
+        if (numPlayers >= 5) boardCardHeight = 115;
 
-        // 2. Stringiamo anche lo spazio vuoto tra le carte se ci sono tanti giocatori
         int spacing = numPlayers >= 4 ? 6 : 12;
 
         HBox upperBand = new HBox(40); upperBand.setAlignment(Pos.CENTER);
@@ -413,13 +478,19 @@ public class GameScene {
         mainBoardArea.getChildren().addAll(upperBand, createTrackArea(state), lowerBand);
     }
 
+    /**
+     * Creates the track area containing the deck, turn order cave, and offer tiles.
+     *
+     * @param state The current state snapshot.
+     * @return The constructed HBox representing the track area.
+     */
     private HBox createTrackArea(SceneState state) {
         HBox track = new HBox(25); track.setAlignment(Pos.CENTER);
         int displayEra = state.era.ordinal() + 1;
         String eraPath = "/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png";
         currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
         currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
-        applyRoundedCorners(currentDeckView, 10); // ARROTONDAMENTO MAZZO
+        applyRoundedCorners(currentDeckView, 10);
 
         int numPlayers = Math.max(2, state.turnOrder.size());
         TurnOrderCaveView turnOrderCave = new TurnOrderCaveView(numPlayers, state.turnOrderSlots, model);
@@ -434,6 +505,13 @@ public class GameScene {
         return track;
     }
 
+    /**
+     * Creates a group of card views for a row.
+     *
+     * @param ids        The card IDs to include in the group.
+     * @param localDeals Output list to store tasks for new card deal animations.
+     * @return The constructed HBox representing the card group.
+     */
     private HBox createCardGroup(List<String> ids, List<DealTask> localDeals) {
         HBox hb = new HBox(12); hb.setAlignment(Pos.CENTER);
         if (ids != null) {
@@ -452,6 +530,11 @@ public class GameScene {
         return hb;
     }
 
+    /**
+     * Updates the hand display for the currently viewed player.
+     *
+     * @param state The current state snapshot.
+     */
     private void updateHandDisplay(SceneState state) {
         handCardsBox.getChildren().clear();
         handTitle.setText("TRIBE OF: " + viewedPlayerHand.toUpperCase());
@@ -467,6 +550,13 @@ public class GameScene {
         }
     }
 
+    /**
+     * Creates a cascading stack of card views for a specific category in the hand.
+     *
+     * @param category The card category.
+     * @param cardIds  The list of card IDs in this category.
+     * @return The constructed StackPane representing the cascading stack.
+     */
     private StackPane createCascadingStack(String category, List<String> cardIds) {
         StackPane stack = new StackPane(); stack.setAlignment(Pos.TOP_CENTER); int offsetPerCard = 25;
         if (cardIds.isEmpty()) { stack.setPrefWidth(90); return stack; }
@@ -499,8 +589,14 @@ public class GameScene {
         return stack;
     }
 
-    // --- ANIMAZIONI IN CODA ---
-
+    /**
+     * Creates a card deal animation from the deck to a target position.
+     *
+     * @param id     The card ID.
+     * @param target The target ImageView where the card will end up.
+     * @param era    The current era index.
+     * @return The constructed Animation instance.
+     */
     private Animation createSingleDealAnimation(String id, ImageView target, int era) {
         if (currentDeckView == null || currentDeckView.getScene() == null || target.getScene() == null) {
             target.setOpacity(1.0); return new PauseTransition(Duration.millis(1));
@@ -509,13 +605,12 @@ public class GameScene {
         javafx.geometry.Point2D end = target.localToScene(0, 0);
         int displayEra = Math.min(era, 3);
 
-        // Legge l'altezza finale che dovrà avere la carta sul tabellone
         double targetHeight = target.getFitHeight() > 0 ? target.getFitHeight() : 170;
 
         ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png"));
-        fly.setFitHeight(targetHeight); // Fa volare la carta già con la misura giusta!
+        fly.setFitHeight(targetHeight);
         fly.setPreserveRatio(true); fly.setManaged(false);
-        applyRoundedCorners(fly, 10); // ARROTONDAMENTO CARTA DISTRIBUITA
+        applyRoundedCorners(fly, 10);
         fly.relocate(start.getX(), start.getY()); baseStack.getChildren().add(fly);
 
         TranslateTransition tt = new TranslateTransition(Duration.millis(700), fly);
@@ -534,6 +629,14 @@ public class GameScene {
         return pt;
     }
 
+    /**
+     * Animates a card being taken from the board by a player.
+     *
+     * @param nickname The nickname of the player taking the card.
+     * @param cardID   The card ID.
+     * @param type     The type of card.
+     * @param source   The row position from which the card was taken.
+     */
     public void animateCardTaken(String nickname, String cardID, CardType type, RowPosition source) {
         Platform.runLater(() -> {
             animationQueue.add(() -> executeCardTakenAnimation(nickname, cardID, source));
@@ -541,11 +644,18 @@ public class GameScene {
         });
     }
 
+    /**
+     * Executes the card taken animation.
+     *
+     * @param nickname The nickname of the player.
+     * @param cardID   The card ID.
+     * @param source   The row position.
+     */
     private void executeCardTakenAnimation(String nickname, String cardID, RowPosition source) {
         String sub = cardID.startsWith("C_") ? "characters/" : cardID.startsWith("B_") ? "buildings/" : "events/";
         ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/" + sub + cardID + ".png"));
         fly.setFitHeight(170); fly.setPreserveRatio(true); fly.setTranslateY(source == RowPosition.UPPER ? -150 : 150);
-        applyRoundedCorners(fly, 10); // ARROTONDAMENTO CARTA PESCATA
+        applyRoundedCorners(fly, 10);
         baseStack.getChildren().add(fly);
 
         TranslateTransition tt = new TranslateTransition(Duration.seconds(1), fly);
@@ -563,9 +673,13 @@ public class GameScene {
         pt.play();
     }
 
-    // --- ANIMAZIONI TOTEM ---
+    /**
+     * Animates the placement of a totem on an offer tile.
+     *
+     * @param nickname The nickname of the player.
+     * @param tileID   The ID of the offer tile.
+     */
     public void animateTotemPlacement(String nickname, char tileID) {
-        // Cattura il totem ORA
         Totem totem = model.getTotem(nickname);
         Platform.runLater(() -> {
             animationQueue.add(() -> executeTotemAnimation(nickname, tileID, false, totem));
@@ -573,6 +687,12 @@ public class GameScene {
         });
     }
 
+    /**
+     * Animates the return of a totem to the turn order cave.
+     *
+     * @param nickname The nickname of the player.
+     * @param position The position index.
+     */
     public void animateTotemReturn(String nickname, int position) {
         Totem totem = model.getTotem(nickname);
         Platform.runLater(() -> {
@@ -581,6 +701,14 @@ public class GameScene {
         });
     }
 
+    /**
+     * Executes the totem move animation.
+     *
+     * @param nickname    The nickname of the player.
+     * @param tileID      The target tile ID.
+     * @param isReturning True if the totem is returning to the cave.
+     * @param totem       The totem color.
+     */
     private void executeTotemAnimation(String nickname, char tileID, boolean isReturning, Totem totem) {
         if (totem == null) { playNextAnimation(); return; }
 
@@ -611,20 +739,29 @@ public class GameScene {
         seq.play();
     }
 
-    // --- INTERAZIONI UTENTE ---
+    /**
+     * Toggles the selection of a card on the board.
+     *
+     * @param id The card ID.
+     */
     private void toggleCardSelection(String id) {
-        if (isAnimating) return; // Disabilita i click mentre l'interfaccia sta eseguendo il replay
+        if (isAnimating) return;
         if (lastState != null && !lastState.myNickname.equals(lastState.currentPlayer)) return;
         if (selected.contains(id)) selected.remove(id); else selected.add(id);
         refreshAllInternal(lastState);
     }
 
+    /**
+     * Displays a zoomed-in view of a card.
+     *
+     * @param cardId The card ID.
+     */
     private void showZoomedCard(String cardId) {
         StackPane overlay = new StackPane(); overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85);");
         String sub = cardId.startsWith("C_") ? "characters/" : cardId.startsWith("B_") ? "buildings/" : "events/";
         String path = "/it.polimi.ingsw.am02.images/cards/" + sub + cardId + ".png";
         ImageView bigCard = new ImageView(ImageLoader.getImage(path)); bigCard.setFitHeight(550); bigCard.setPreserveRatio(true);
-        applyRoundedCorners(bigCard, 25); // ARROTONDAMENTO CARTA ZOOMATA
+        applyRoundedCorners(bigCard, 25);
         bigCard.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 40, 0.4, 0, 0);");
         bigCard.setScaleX(0.5); bigCard.setScaleY(0.5);
         ScaleTransition st = new ScaleTransition(Duration.millis(200), bigCard); st.setToX(1.0); st.setToY(1.0); st.play();
@@ -632,7 +769,12 @@ public class GameScene {
         overlay.getChildren().add(bigCard); baseStack.getChildren().add(overlay);
     }
 
-    // --- PARSERS CATALOGO ---
+    /**
+     * Extracts the category of a card from its ID.
+     *
+     * @param cardId The card ID.
+     * @return The category string.
+     */
     private String extractCategoryFromId(String cardId) {
         if (cardId.startsWith("B_")) return "BUILDING";
         String cardInfo = CardCatalog.getInstance().format(cardId).toUpperCase();
@@ -641,19 +783,44 @@ public class GameScene {
         if (cardInfo.contains("SHAMAN")) return "SHAMAN"; if (cardInfo.contains("HUNTER")) return "HUNTER";
         return "UNKNOWN";
     }
+
+    /**
+     * Extracts prestige points from a card description.
+     */
     private int extractPrestigePoints(String cardId) { String desc = CardCatalog.getInstance().format(cardId); int index = desc.indexOf("PP:"); if (index != -1) { int end = desc.indexOf(" ", index + 3); if (end == -1) end = desc.length(); try { return Integer.parseInt(desc.substring(index + 3, end).trim()); } catch (Exception ignored) {} } return 0; }
+    
+    /**
+     * Extracts inventor symbol from a card description.
+     */
     private String extractInventorSymbol(String cardId) { String desc = CardCatalog.getInstance().format(cardId); int start = desc.indexOf(" ("); if (start != -1) { int end = desc.indexOf(")", start); if (end != -1) return desc.substring(start + 2, end).trim(); } return ""; }
+    
+    /**
+     * Extracts shaman stars from a full card description.
+     */
     private int extractShamanStars(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf("Shaman Stars: "); if (index != -1) { int end = desc.indexOf("\n", index + 14); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 14, end).trim()); } catch (Exception ignored) {} } } return 0; }
+    
+    /**
+     * Extracts builder discount from a full card description.
+     */
     private int extractBuilderDiscount(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf("Building Discount: -"); if (index != -1) { int end = desc.indexOf(" Food", index + 20); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 20, end).trim()); } catch (Exception ignored) {} } } return 0; }
+    
+    /**
+     * Extracts gatherer discount from a full card description.
+     */
     private int extractGathererDiscount(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf("Food Discount: -"); if (index != -1) { int end = desc.indexOf(" Food", index + 16); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 16, end).trim()); } catch (Exception ignored) {} } } return 0; }
 
-    // --- EVENTI BASE ---
+    /**
+     * Displays an animation for the beginning of a new era.
+     *
+     * @param newEra               The new era.
+     * @param u                    New upper row buildings.
+     * @param l                    New lower row buildings.
+     */
     public void showNewEraAnimation(Era newEra, List<String> u, List<String> l) {
         refreshAll(model);
 
         Platform.runLater(() -> {
             animationQueue.add(() -> {
-                // Sfoca il gioco sottostante
                 root.setEffect(new GaussianBlur(12));
 
                 NewEraOverlay overlay = new NewEraOverlay();
@@ -661,7 +828,7 @@ public class GameScene {
                     root.setEffect(null);
                     modalLayer.setVisible(false);
                     modalLayer.getChildren().clear();
-                    playNextAnimation(); // <-- RIPRENDE LA CODA DOPO LA CHIUSURA
+                    playNextAnimation();
                 });
                 modalLayer.getChildren().setAll(node);
                 modalLayer.setVisible(true);
@@ -670,10 +837,29 @@ public class GameScene {
         });
     }
 
+    /**
+     * Marks a player as offline and refreshes the scene.
+     *
+     * @param n The player nickname.
+     */
     public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }
+    
+    /**
+     * Marks a player as online and refreshes the scene.
+     *
+     * @param n The player nickname.
+     */
     public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
 
-    // Aggiunti i parametri cardHeight e spacing
+    /**
+     * Creates a group of card views with specific sizing and spacing.
+     *
+     * @param ids        The card IDs.
+     * @param localDeals Output list for deal tasks.
+     * @param cardHeight The height for cards.
+     * @param spacing    The spacing between cards.
+     * @return The constructed HBox.
+     */
     private HBox createCardGroup(List<String> ids, List<DealTask> localDeals, int cardHeight, int spacing) {
         HBox hb = new HBox(spacing); hb.setAlignment(Pos.CENTER);
         if (ids != null) {
@@ -681,7 +867,6 @@ public class GameScene {
                 boolean isNew = !knownCardsOnBoard.contains(id);
                 if (isNew) knownCardsOnBoard.add(id);
 
-                // Passiamo la nuova altezza calcolata alla visuale della carta
                 GameCardView cardView = new GameCardView(id, selected.contains(id), cardHeight, () -> toggleCardSelection(id));
 
                 if (isNew) {
@@ -694,6 +879,9 @@ public class GameScene {
         return hb;
     }
 
+    /**
+     * Prepares the scene for replaying events (e.g., during reconnection).
+     */
     public void prepareForReplay() {
         this.knownCardsOnBoard.clear();
         this.selected.clear();
@@ -701,6 +889,12 @@ public class GameScene {
         this.isAnimating = false;
     }
 
+    /**
+     * Applies rounded corners to an ImageView.
+     *
+     * @param imageView The ImageView to clip.
+     * @param radius    The corner radius.
+     */
     private void applyRoundedCorners(ImageView imageView, double radius) {
         Rectangle clip = new Rectangle();
         clip.setArcWidth(radius);

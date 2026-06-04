@@ -21,9 +21,13 @@ import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 
+/**
+ * Represents the main menu scene of the game.
+ * This scene allows players to create a lobby, join a lobby, reconnect to a game,
+ * or view the game rules.
+ */
 public class GameMenuScene {
 
     private GuiController controller;
@@ -39,6 +43,14 @@ public class GameMenuScene {
     private Font tribalLarge;
     private Font introFont;
 
+    /**
+     * Builds the main menu scene node.
+     *
+     * @param controller      The GUI controller.
+     * @param onShowLobbyList Callback to show the lobby list.
+     * @param onError         Callback to handle errors.
+     * @return The constructed Region representing the scene.
+     */
     public Region buildNode(GuiController controller, Runnable onShowLobbyList, Consumer<String> onError) {
         this.controller = controller;
 
@@ -114,6 +126,11 @@ public class GameMenuScene {
         return root;
     }
 
+    /**
+     * Builds the main navigation buttons.
+     *
+     * @param onShowLobbyList Callback to show the lobby list.
+     */
     private void buildMainButtons(Runnable onShowLobbyList) {
         mainButtonsBox = new VBox(20);
         mainButtonsBox.setAlignment(Pos.CENTER);
@@ -126,6 +143,9 @@ public class GameMenuScene {
         );
     }
 
+    /**
+     * Builds the rules overlay for viewing game instructions.
+     */
     private void buildRulesOverlay() {
         rulesOverlay = new StackPane();
         rulesOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.8);");
@@ -163,6 +183,9 @@ public class GameMenuScene {
         rulesOverlay.getChildren().add(content);
     }
 
+    /**
+     * Displays the rules overlay.
+     */
     private void showRules() {
         currentPage = 0; updateRulesDisplay();
         rulesOverlay.setOpacity(0); rulesOverlay.setVisible(true);
@@ -170,6 +193,11 @@ public class GameMenuScene {
         ft.setToValue(1); ft.play();
     }
 
+    /**
+     * Navigates through the rules pages.
+     *
+     * @param direction The navigation direction (-1 for previous, 1 for next).
+     */
     private void navigateRules(int direction) {
         int next = currentPage + direction;
         if (next >= 0 && next < rulesPages.size()) {
@@ -177,10 +205,18 @@ public class GameMenuScene {
         }
     }
 
+    /**
+     * Updates the rules image based on the current page.
+     */
     private void updateRulesDisplay() {
         if (!rulesPages.isEmpty()) rulesImageView.setImage(rulesPages.get(currentPage));
     }
 
+    /**
+     * Builds the form for creating a new lobby.
+     *
+     * @param onError Callback to handle errors.
+     */
     private void buildCreateLobbyForm(Consumer<String> onError) {
         createLobbyBox = new VBox(15);
         createLobbyBox.setAlignment(Pos.CENTER);
@@ -207,6 +243,11 @@ public class GameMenuScene {
         );
     }
 
+    /**
+     * Builds the form for reconnecting to an ongoing game.
+     *
+     * @param onError Callback to handle errors.
+     */
     private void buildReconnectForm(Consumer<String> onError) {
         reconnectBox = new VBox(15);
         reconnectBox.setAlignment(Pos.CENTER);
@@ -240,6 +281,13 @@ public class GameMenuScene {
         );
     }
 
+    /**
+     * Creates a menu button with the specified text and event handler.
+     *
+     * @param text  The button text.
+     * @param event The event handler for button clicks.
+     * @return The constructed Button.
+     */
     private Button createMenuButton(String text, javafx.event.EventHandler<javafx.event.ActionEvent> event) {
         Button btn = new Button(text);
         btn.setPrefSize(280, 55);
@@ -249,6 +297,11 @@ public class GameMenuScene {
         return btn;
     }
 
+    /**
+     * Creates a quit button to exit the application.
+     *
+     * @return The constructed Button.
+     */
     private Button createQuitButton() {
         Button quitBtn = new Button("QUIT GAME");
         quitBtn.setPrefSize(280, 55);
@@ -258,6 +311,11 @@ public class GameMenuScene {
         return quitBtn;
     }
 
+    /**
+     * Switches between internal menu boxes (e.g., main menu to create lobby form).
+     *
+     * @param menuToShow The VBox to display.
+     */
     private void switchInternalMenu(VBox menuToShow) {
         mainButtonsBox.setVisible(false); createLobbyBox.setVisible(false);
         reconnectBox.setVisible(false); menuToShow.setVisible(true);

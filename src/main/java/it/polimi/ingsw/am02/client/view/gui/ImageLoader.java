@@ -6,18 +6,30 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Utility class for loading and caching images used in the GUI.
+ * This class ensures that images are only loaded once and can be accessed efficiently.
+ */
 public class ImageLoader {
-    // ConcurrentHashMap è obbligatoria per leggere e scrivere da thread diversi in sicurezza
     private static final Map<String, Image> cache = new ConcurrentHashMap<>();
 
+    /**
+     * Retrieves an image from the cache or loads it from the resources if not present.
+     *
+     * @param path The resource path of the image.
+     * @return The Image instance.
+     * @throws NullPointerException if the image resource is not found.
+     */
     public static Image getImage(String path) {
-        // computeIfAbsent è super efficiente: carica l'immagine solo se non c'è già
         return cache.computeIfAbsent(path, p ->
                 new Image(Objects.requireNonNull(ImageLoader.class.getResourceAsStream(p)))
         );
     }
 
 
+    /**
+     * Preloads the rule images in a background thread to improve GUI responsiveness.
+     */
     public static void preloadRulesInBackground() {
         CompletableFuture.runAsync(() -> {
             for (int i = 0; i < 8; i++) {

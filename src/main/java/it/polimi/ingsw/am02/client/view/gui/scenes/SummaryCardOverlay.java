@@ -8,10 +8,20 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 
+/**
+ * Represents the overlay for the summary card.
+ * This overlay displays a quick-reference card that can be flipped to show its back side.
+ */
 public class SummaryCardOverlay {
 
     private boolean showingFront = true;
 
+    /**
+     * Builds the summary card overlay node.
+     *
+     * @param onClose Callback to close the overlay.
+     * @return The constructed VBox representing the overlay.
+     */
     public VBox buildNode(Runnable onClose) {
 
         Font introFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 13);

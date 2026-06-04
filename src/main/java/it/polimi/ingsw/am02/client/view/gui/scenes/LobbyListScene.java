@@ -24,6 +24,10 @@ import javafx.util.Duration;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Represents the lobby list scene of the game.
+ * This scene displays all available lobbies that players can join.
+ */
 public class LobbyListScene {
 
     private GuiController controller;
@@ -33,6 +37,13 @@ public class LobbyListScene {
     private Font tribalLarge;
     private Font introFont;
 
+    /**
+     * Builds the lobby list scene node.
+     *
+     * @param controller The GUI controller.
+     * @param onBack     Callback to return to the previous menu.
+     * @return The constructed Region representing the scene.
+     */
     public Region buildNode(GuiController controller, Runnable onBack) {
         this.controller = controller;
 
@@ -126,6 +137,11 @@ public class LobbyListScene {
         return rootNode;
     }
 
+    /**
+     * Updates the UI with the list of available lobbies.
+     *
+     * @param lobbies The list of available lobbies.
+     */
     public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
         Platform.runLater(() -> {
             listContainer.getChildren().clear();

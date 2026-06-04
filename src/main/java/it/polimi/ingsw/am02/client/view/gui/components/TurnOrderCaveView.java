@@ -13,9 +13,15 @@ import javafx.scene.layout.VBox;
 
 import java.util.List;
 
+/**
+ * Graphical representation of the turn order cave in the GUI.
+ * This class displays the cave tile and the totems in their respective slots.
+ */
 public class TurnOrderCaveView extends StackPane {
 
-    // --- OOP Configuration Object ---
+    /**
+     * Configuration object for defining the layout of the cave based on player count.
+     */
     private static class CaveLayoutConfig {
         final double topPadding;
         final double spacing;
@@ -28,7 +34,12 @@ public class TurnOrderCaveView extends StackPane {
         }
     }
 
-    // --- Factory method: Maps the exact pixels based on your previous formula ---
+    /**
+     * Returns the layout configuration for a specific number of players.
+     *
+     * @param numPlayers The number of players in the game.
+     * @return The CaveLayoutConfig instance.
+     */
     private CaveLayoutConfig getLayoutForPlayers(int numPlayers) {
 
         // If a specific tile looks slightly off in the future, just tweak its case!
@@ -40,32 +51,32 @@ public class TurnOrderCaveView extends StackPane {
         };
     }
 
+    /**
+     * Constructs a new TurnOrderCaveView.
+     *
+     * @param numPlayers The number of players in the game.
+     * @param slots      The list of turn order slots information.
+     * @param model      The game model to retrieve player totems.
+     */
     public TurnOrderCaveView(int numPlayers, List<TurnOrderSlotInfo> slots, GameModel model) {
 
-        // Cap to max players (assuming 5 is your max based on the formula)
         int playersCount = Math.max(2, Math.min(numPlayers, 5));
 
-        // Fetch layout config for THIS specific tile
         CaveLayoutConfig config = getLayoutForPlayers(playersCount);
 
-        // 1. Background image (cave tile)
         ImageView caveBg = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/turn_order_tiles/tile_turn_" + playersCount + "p.png"));
         caveBg.setFitHeight(150);
         caveBg.setPreserveRatio(true);
         this.getChildren().add(caveBg);
 
-        // 2. Vertical container for totems using config spacing
         VBox totemSlots = new VBox(config.spacing);
         totemSlots.setAlignment(Pos.TOP_CENTER);
 
-        // Apply specific top padding from config instead of inline math
         totemSlots.setPadding(new Insets(config.topPadding, 0, 0, 0));
 
-        // Lock height to prevent VBox from shrinking and causing layout shifts
         totemSlots.setPrefHeight(150);
         totemSlots.setMaxHeight(150);
 
-        // --- ARROTONDAMENTO ANGOLI TESSERA ---
         javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
         clip.setArcWidth(10);
         clip.setArcHeight(10);
@@ -78,7 +89,6 @@ public class TurnOrderCaveView extends StackPane {
             clip.setHeight(newVal.getHeight());
         });
         caveBg.setClip(clip);
-// --------------------------------------
 
         if (slots != null) {
             for (TurnOrderSlotInfo slot : slots) {
@@ -88,7 +98,6 @@ public class TurnOrderCaveView extends StackPane {
                         String path = "/it.polimi.ingsw.am02.images/totems/totem_" + totem.name().toLowerCase() + ".png";
                         ImageView tView = new ImageView(ImageLoader.getImage(path));
 
-                        // Apply config height
                         tView.setFitHeight(config.totemHeight);
                         tView.setPreserveRatio(true);
                         tView.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 3, 0, 0, 1);");
@@ -96,7 +105,6 @@ public class TurnOrderCaveView extends StackPane {
                         totemSlots.getChildren().add(tView);
                     }
                 } else {
-                    // EMPTY SLOT: Add an invisible ghost spacer matching config height
                     Region spacer = new Region();
                     spacer.setPrefHeight(config.totemHeight);
                     spacer.setMinHeight(config.totemHeight);

@@ -23,6 +23,11 @@ import javafx.util.Duration;
 
 import java.util.List;
 
+/**
+ * Router class for managing GUI scenes and navigation.
+ * This class handles switching between different views and displaying overlays,
+ * alerts, and notifications.
+ */
 public class SceneRouter {
 
     private final Stage primaryStage;
@@ -37,15 +42,29 @@ public class SceneRouter {
     private LobbyScene lobbyScene;
     private GameScene gameScene;
 
+    /**
+     * Constructs a new SceneRouter.
+     *
+     * @param primaryStage The primary stage of the JavaFX application.
+     */
     public SceneRouter(Stage primaryStage) {
         this.primaryStage = primaryStage;
         initWindowArchitecture();
     }
 
+    /**
+     * Sets the GUI controller for the router.
+     *
+     * @param guiController The GuiController instance.
+     */
     public void setGuiController(GuiController guiController) {
         this.guiController = guiController;
     }
 
+    /**
+     * Initializes the basic window architecture with layers for base content,
+     * modals, and toast notifications.
+     */
     private void initWindowArchitecture() {
         baseLayer = new StackPane();
         baseLayer.setStyle("-fx-background-color: #1a1a1a;");
@@ -70,7 +89,11 @@ public class SceneRouter {
         primaryStage.setFullScreenExitHint("Press ESC to exit full screen");
     }
 
-    // GESTORE THREAD-SAFE UNIVERSALE
+    /**
+     * Utility method to run a task on the JavaFX Application Thread.
+     *
+     * @param action The Runnable task to execute.
+     */
     private void runOnUi(Runnable action) {
         if (Platform.isFxApplicationThread()) {
             action.run();
@@ -79,14 +102,27 @@ public class SceneRouter {
         }
     }
 
+    /**
+     * Shows the primary stage.
+     */
     public void show() {
         runOnUi(primaryStage::show);
     }
 
+    /**
+     * Switches the base view to a new node.
+     *
+     * @param newView The new Region to display.
+     */
     private void switchView(Region newView) {
         runOnUi(() -> baseLayer.getChildren().setAll(newView));
     }
 
+    /**
+     * Displays the project information scene.
+     *
+     * @param onExit Callback to execute when exiting the scene.
+     */
     public void showProjectInfoScene(Runnable onExit) {
         runOnUi(() -> {
             this.gameScene = null;
@@ -97,6 +133,9 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays the introduction scene.
+     */
     public void showIntroScene() {
         runOnUi(() -> {
             primaryStage.setResizable(true);
@@ -106,6 +145,9 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays the game menu scene.
+     */
     public void showGameMenuScene() {
         runOnUi(() -> {
             this.gameScene = null;
@@ -119,6 +161,11 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays the lobby list scene.
+     *
+     * @param lobbies The list of initial lobbies to display.
+     */
     public void showLobbyListScene(List<LobbyInfo> lobbies) {
         runOnUi(() -> {
             this.gameScene = null;
@@ -129,6 +176,11 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays the current lobby scene.
+     *
+     * @param currentLobby The information of the lobby to display.
+     */
     public void showLobbyScene(LobbyInfo currentLobby) {
         runOnUi(() -> {
             this.gameScene = null;
@@ -139,6 +191,11 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Switches to the game scene.
+     *
+     * @param gameModel The game model to use for the scene.
+     */
     public void switchToGameScene(GameModel gameModel) {
         runOnUi(() -> {
             this.lobbyScene = null;
@@ -151,10 +208,34 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Returns the current LobbyListScene instance.
+     *
+     * @return The LobbyListScene or null if not active.
+     */
     public LobbyListScene getLobbyListScene() { return lobbyListScene; }
+
+    /**
+     * Returns the current LobbyScene instance.
+     *
+     * @return The LobbyScene or null if not active.
+     */
     public LobbyScene getLobbyScene() { return lobbyScene; }
+
+    /**
+     * Returns the current GameScene instance.
+     *
+     * @return The GameScene or null if not active.
+     */
     public GameScene getGameScene() { return gameScene; }
 
+    /**
+     * Shows a toast notification.
+     *
+     * @param title   The title of the toast.
+     * @param content The message content.
+     * @param type    The type of alert for styling purposes.
+     */
     public void showToast(String title, String content, Alert.AlertType type) {
         runOnUi(() -> {
             VBox toast = new VBox(5);
@@ -170,6 +251,13 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays a blocking alert modal.
+     *
+     * @param title   The title of the alert.
+     * @param content The message content.
+     * @param type    The alert type.
+     */
     public void showBlockingAlert(String title, String content, Alert.AlertType type) {
         runOnUi(() -> {
             VBox alertBox = new VBox(20);
@@ -185,6 +273,12 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays a game over popup with options to return to menu or exit.
+     *
+     * @param title   The title of the popup.
+     * @param content The message content.
+     */
     public void showGameOverPopup(String title, String content) {
         runOnUi(() -> {
             VBox alertBox = new VBox(20);
@@ -218,6 +312,9 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays the in-game menu overlay.
+     */
     public void showInGameMenu() {
         runOnUi(() -> {
             InGameMenuOverlay overlay = new InGameMenuOverlay();
@@ -227,6 +324,9 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays the summary card overlay.
+     */
     public void showSummaryCard() {
         runOnUi(() -> {
             SummaryCardOverlay overlay = new SummaryCardOverlay();
@@ -236,6 +336,9 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Hides any visible modal overlay.
+     */
     public void hideModal() {
         runOnUi(() -> {
             modalLayer.setVisible(false);
@@ -243,6 +346,11 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays a popup when a player disconnects.
+     *
+     * @param n The nickname of the disconnected player.
+     */
     public void showPlayerDisconnectedPopup(String n) {
         runOnUi(() -> {
             VBox alertBox = new VBox(20);
@@ -260,6 +368,9 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Displays an overlay indicating that connection to the server was lost.
+     */
     public void showConnectionLost() {
         runOnUi(() -> {
             VBox alertBox = new VBox(16);
@@ -275,6 +386,12 @@ public class SceneRouter {
         });
     }
 
+    /**
+     * Prompts the user for connection details and attempts to connect.
+     *
+     * @param lobbyModel The lobby model to update upon connection.
+     * @param clientView The client view to associate with the connection.
+     */
     public void promptConnectionAndRetry(it.polimi.ingsw.am02.client.model.LobbyModel lobbyModel, it.polimi.ingsw.am02.client.view.ClientView clientView) {
         runOnUi(() -> {
             StackPane connectionForm = NetworkPopup.buildNode((config, onError) -> {

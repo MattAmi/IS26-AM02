@@ -4,7 +4,6 @@ import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -12,12 +11,21 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
-import javafx.scene.layout.Region;
 
+/**
+ * Represents the introduction scene of the game.
+ * This scene displays a narrative text introducing the Mesolithic era and the game's theme.
+ */
 public class IntroScene {
 
     private String customFontFamily = "System";
 
+    /**
+     * Builds the intro scene node and starts the animation sequence.
+     *
+     * @param onFinished Callback to execute when the intro animation finishes.
+     * @return The constructed Region representing the scene.
+     */
     public Region buildNode(Runnable onFinished) {
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");

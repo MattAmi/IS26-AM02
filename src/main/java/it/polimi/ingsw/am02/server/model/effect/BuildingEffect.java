@@ -1,7 +1,7 @@
 package it.polimi.ingsw.am02.server.model.effect;
 
 /**
- * Marker interface for all active building effects.
+ * Interface for all active building effects.
  * Implementations register themselves with the correct game observer
  * via the Visitor pattern ({@link EffectVisitor}).
  */

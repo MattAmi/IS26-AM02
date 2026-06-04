@@ -30,6 +30,11 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <h2>Notification buffer</h2>
  * <p>Only the last {@value #MAX_NOTIFICATIONS} log lines are kept; older ones
  * are silently discarded.</p>
+ *
+ * <h2>Thread model</h2>
+ * <p>All public callbacks enqueue a {@link Runnable} onto {@link #eventQueue}.
+ * A single background thread ({@code TUI-Event-Processor}) drains the queue
+ * sequentially, guaranteeing that terminal writes never interleave.</p>
  */
 public class TuiView extends AbstractClientView {
 
@@ -67,6 +72,7 @@ public class TuiView extends AbstractClientView {
     /** Ring buffer of recent log lines. */
     private final LinkedList<String> notifications = new LinkedList<>();
 
+    /** Single-writer queue that serializes all terminal-output tasks. */
     private final BlockingQueue<Runnable> eventQueue = new LinkedBlockingQueue<>();
 
     private boolean bannerPrinted = false;
@@ -76,7 +82,8 @@ public class TuiView extends AbstractClientView {
     // -----------------------------------------------------------------------
 
     /**
-     * Creates a new {@code TuiView} bound to the given lobby model.
+     * Creates a new {@code TuiView} bound to the given lobby model and starts
+     * the background event-processor thread.
      *
      * @param lobbyModel the client-side lobby model; must not be {@code null}
      */
@@ -85,18 +92,18 @@ public class TuiView extends AbstractClientView {
         startEventProcessor();
     }
 
+    /**
+     * Starts the background event-processor thread that serializes all UI
+     * updates through {@link #eventQueue}, preventing concurrent terminal writes.
+     * A 50 ms pacing delay is applied after each task to smooth catch-up replay.
+     */
     private void startEventProcessor() {
         Thread processor = new Thread(() -> {
             try {
                 while (true) {
                     Runnable event = eventQueue.take();
                     event.run();
-
-                    // FORZA il terminale a disegnare immediatamente lo schermo
                     System.out.flush();
-
-                    // PACING UNIVERSALE: 50ms dopo ogni operazione.
-                    // Invisibile nel gioco live, perfetto durante il catch-up.
                     Thread.sleep(50);
                 }
             } catch (InterruptedException e) {
@@ -120,7 +127,7 @@ public class TuiView extends AbstractClientView {
      * complete, current game state — cards taken, resources, turn order, etc.</p>
      *
      * @param gameModel the populated client-side game model; {@code null} resets
-     * the view to the pre-game state
+     *                  the view to the pre-game state
      */
     @Override
     public void setGameModel(GameModel gameModel) {
@@ -132,6 +139,7 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /** Pending summary-card text to overlay on the next repaint cycle. */
     private String pendingSummary = null;
 
     // -----------------------------------------------------------------------
@@ -140,9 +148,10 @@ public class TuiView extends AbstractClientView {
 
     /**
      * Appends a message to the notification ring buffer and triggers a repaint.
-     * If {@link #gameModel} is not yet available, prints the message inline.
+     * If {@link #gameModel} is not yet available, the message is printed inline
+     * without a full repaint.
      *
-     * @param message ANSI-formatted log line
+     * @param message ANSI-formatted log line to display
      */
     private void addNotification(String message) {
         notifications.addLast(message);
@@ -162,6 +171,14 @@ public class TuiView extends AbstractClientView {
     // LOBBY CALLBACKS
     // -----------------------------------------------------------------------
 
+    /**
+     * Called when the server responds to a nickname registration attempt.
+     * Prints a confirmation or rejection message and refreshes the prompt.
+     *
+     * @param username the requested nickname
+     * @param accepted {@code true} if the server accepted the nickname
+     * @param reason   human-readable rejection reason; ignored when {@code accepted} is {@code true}
+     */
     @Override
     public void onUsernameResult(String username, boolean accepted, String reason) {
         eventQueue.add(() -> {
@@ -177,6 +194,12 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Redraws the pre-lobby screen with the current list of open lobbies.
+     * No-op when a game is already in progress.
+     *
+     * @param lobbies snapshot of lobbies currently waiting for players
+     */
     @Override
     public void onAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
         eventQueue.add(() -> {
@@ -203,6 +226,13 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Redraws the lobby screen with the updated player list and totem selections.
+     * Adapts the command hints based on whether the local player has already set
+     * a nickname and/or picked a totem. No-op when a game is already in progress.
+     *
+     * @param lobby the updated lobby snapshot
+     */
     @Override
     public void onCurrentLobbyUpdated(LobbyInfo lobby) {
         eventQueue.add(() -> {
@@ -222,21 +252,17 @@ public class TuiView extends AbstractClientView {
                 System.out.println("  • " + n + " " + totemStr + RESET);
             });
 
-            // CALCOLO T
             List<Totem> availableTotems = new ArrayList<>(Arrays.asList(Totem.values()));
             availableTotems.removeAll(lobby.chosenTotems().values());
 
             System.out.println("\n" + CYAN + "Available totems: " + RESET + availableTotems);
 
-            // --- CONDITIONAL COMMAND LOGIC ---
-            String myNick = lobbyModel.getMyNickname(); // Retrieve local nickname
+            String myNick = lobbyModel.getMyNickname();
 
             if (myNick == null || myNick.isBlank()) {
-                // Player hasn't set a nickname yet
                 System.out.println("\n" + YELLOW + BOLD + ">> STEP 1: Enter a nickname to join" + RESET);
                 System.out.println("Commands: nick <name> | leave | quit");
             } else {
-                // Nickname set, check if they already have a totem
                 boolean hasTotem = lobby.chosenTotems().containsKey(myNick);
                 String totemCmd = hasTotem ? "totem <color> (to change)" : "totem <color>";
 
@@ -248,12 +274,14 @@ public class TuiView extends AbstractClientView {
 
                 System.out.println("Commands: nick <name> (to change) | " + totemCmd + " | totems | leave | quit");
             }
-            // -----------------------------------------
 
             System.out.print("\n" + CYAN + "> " + RESET);
         });
     }
 
+    /**
+     * Appends a notification listing the totems not yet claimed in the current lobby.
+     */
     @Override
     public void onShowAvailableTotems() {
         eventQueue.add(() -> {
@@ -267,6 +295,9 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Notifies the user that the lobby they were in has been dissolved by the server.
+     */
     @Override
     public void onLobbyDissolved() {
         eventQueue.add(() -> {
@@ -279,6 +310,12 @@ public class TuiView extends AbstractClientView {
     // GAME CALLBACKS
     // -----------------------------------------------------------------------
 
+    /**
+     * Stores the assigned game ID, detaches the view from the lobby-model
+     * observer chain, and posts a game-started notification.
+     *
+     * @param gameId the server-assigned game identifier
+     */
     @Override
     public void onGameStarted(String gameId) {
         eventQueue.add(() -> {
@@ -288,6 +325,13 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Triggers a full repaint once the initial board configuration is available.
+     *
+     * @param turnOrder    initial turn order (top to bottom)
+     * @param initialFood  initial food allocation per player
+     * @param board        initial board snapshot
+     */
     @Override
     public void onGameSetupCompleted(List<String> turnOrder,
                                      Map<String, Integer> initialFood,
@@ -295,46 +339,93 @@ public class TuiView extends AbstractClientView {
         eventQueue.add(this::renderFullGame);
     }
 
+    /**
+     * Triggers a full repaint when the FSM transitions to a new phase.
+     *
+     * @param phase         the new FSM phase
+     * @param currentPlayer nickname of the player who acts in this phase
+     * @param order         current turn order
+     */
     @Override
     public void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> order) {
         eventQueue.add(this::renderFullGame);
     }
 
+    /**
+     * Triggers a full repaint when control passes to a different player.
+     *
+     * @param nextPlayer the nickname of the player who is now active
+     */
     @Override
     public void onCurrentPlayerChanged(String nextPlayer) {
         eventQueue.add(this::renderFullGame);
     }
 
+    /**
+     * Triggers a full repaint when a new turn order is established.
+     *
+     * @param turnOrder the updated turn-order list; the first element acts first
+     */
     @Override
     public void onTurnOrderEstablished(List<String> turnOrder) {
         eventQueue.add(this::renderFullGame);
     }
 
+    /**
+     * Appends a notification when a player places their totem on the offer track.
+     *
+     * @param nickname the player who placed the totem
+     * @param tileID   identifier of the tile where the totem was placed
+     */
     @Override
     public void onTotemPlaced(String nickname, char tileID) {
         eventQueue.add(() -> addNotification(WHITE + "[BOARD] " + nickname
                 + " placed their totem on tile " + BOLD + tileID + RESET));
     }
 
+    /**
+     * Appends a notification when a player's totem returns to the turn-order tile.
+     *
+     * @param nickname          the player whose totem returned
+     * @param turnOrderPosition zero-based slot index on the turn-order tile;
+     *                          displayed as one-based for readability
+     */
     @Override
     public void onTotemReturned(String nickname, int turnOrderPosition) {
-        eventQueue.add(() -> {
-            // turnOrderPosition is 0-based from the server; display as 1-based
-            addNotification(WHITE + "[BOARD] " + nickname
-                    + " returned to turn-order slot " + (turnOrderPosition + 1) + RESET);
-        });
+        eventQueue.add(() -> addNotification(WHITE + "[BOARD] " + nickname
+                + " returned to turn-order slot " + (turnOrderPosition + 1) + RESET));
     }
 
+    /**
+     * Triggers a full repaint when the offer-track tile state changes.
+     *
+     * @param tiles updated snapshot of all offer tiles
+     */
     @Override
     public void onOfferTilesUpdated(List<OfferTileInfo> tiles) {
         eventQueue.add(this::renderFullGame);
     }
 
+    /**
+     * Triggers a full repaint when the card rows or deck size change.
+     *
+     * @param newUpper  IDs of cards now in the upper row
+     * @param newLower  IDs of cards now in the lower row
+     * @param deckCount remaining cards in the draw pile
+     */
     @Override
     public void onBoardUpdated(List<String> newUpper, List<String> newLower, int deckCount) {
         eventQueue.add(this::renderFullGame);
     }
 
+    /**
+     * Posts an era-change notification and immediately repaints the board
+     * to reflect the new building market.
+     *
+     * @param era               the era that has just begun
+     * @param newUpperBuildings building card IDs now in the upper row
+     * @param newLowerBuildings building card IDs now in the lower row
+     */
     @Override
     public void onEraChanged(Era era, List<String> newUpperBuildings, List<String> newLowerBuildings) {
         eventQueue.add(() -> {
@@ -343,22 +434,51 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Triggers a full repaint when a player's initial pick limits are set.
+     *
+     * @param nickname the player whose limits were initialized
+     * @param upper    number of cards choosable from the upper row
+     * @param lower    number of cards choosable from the lower row
+     */
     @Override
     public void onPlayerLimitsInitialized(String nickname, int upper, int lower) {
         eventQueue.add(this::renderFullGame);
     }
 
+    /**
+     * Triggers a full repaint when a player's remaining pick limits change.
+     *
+     * @param nickname the player whose limits changed
+     * @param upper    updated upper-row picks remaining
+     * @param lower    updated lower-row picks remaining
+     */
     @Override
     public void onPlayerLimitsUpdated(String nickname, int upper, int lower) {
         eventQueue.add(this::renderFullGame);
     }
 
+    /**
+     * Appends a resource-change notification for the given player.
+     *
+     * @param nickname  the affected player
+     * @param resource  the resource type that changed
+     * @param newValue  the player's new resource total
+     */
     @Override
     public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
         eventQueue.add(() -> addNotification(YELLOW + "[RESOURCE] " + nickname
                 + " now has " + newValue + " " + resource + RESET));
     }
 
+    /**
+     * Appends a card-pickup notification, formatting the card ID for readability.
+     *
+     * @param nickname  the player who took the card
+     * @param cardID    identifier of the card taken
+     * @param cardType  whether the card is a character or a building
+     * @param sourceRow the row the card was taken from
+     */
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
         eventQueue.add(() -> {
@@ -367,37 +487,75 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Appends a notification when a round or final event is resolved.
+     *
+     * @param eventID   identifier of the resolved event card
+     * @param eventName human-readable name of the event
+     */
     @Override
     public void onEventResolved(String eventID, String eventName) {
         eventQueue.add(() -> addNotification(PURPLE + "[EVENT] Resolved: " + eventName + RESET));
     }
 
+    /**
+     * Appends a notification when a player gains an extra turn,
+     * reporting their remaining pick budget.
+     *
+     * @param nickname       the player who gained the extra turn
+     * @param remainingUpper upper-row picks still available
+     * @param remainingLower lower-row picks still available
+     */
     @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
         eventQueue.add(() -> addNotification(GREEN + "[EXTRA] " + nickname + " gained an extra turn!"
                 + " (Up:" + remainingUpper + " Lw:" + remainingLower + ")" + RESET));
     }
 
+    /**
+     * Appends a notification when a player's extra turn concludes.
+     *
+     * @param nickname the player whose extra turn has ended
+     */
     @Override
     public void onExtraTurnEnded(String nickname) {
         eventQueue.add(() -> addNotification(YELLOW + "[EXTRA] " + nickname + "'s extra turn ended." + RESET));
     }
 
+    /**
+     * Appends a disconnection alert for the given player.
+     *
+     * @param nickname the player who disconnected
+     */
     @Override
     public void onPlayerDisconnected(String nickname) {
         eventQueue.add(() -> addNotification(RED + BOLD + "[!] Player disconnected: " + nickname + RESET));
     }
 
+    /**
+     * Appends a reconnection notification for the given player.
+     *
+     * @param nickname the player who reconnected
+     */
     @Override
     public void onPlayerReconnected(String nickname) {
         eventQueue.add(() -> addNotification(GREEN + "[!] Player reconnected: " + nickname + RESET));
     }
 
+    /**
+     * Appends an error message to the notification log.
+     *
+     * @param message the error description to display
+     */
     @Override
     public void onError(String message) {
         eventQueue.add(() -> addNotification(RED + "[ERROR] " + message + RESET));
     }
 
+    /**
+     * Clears the screen and displays a connection-lost banner.
+     * If the game ID is known, it is shown so the player can reconnect later.
+     */
     @Override
     public void onConnectionLost() {
         eventQueue.add(() -> {
@@ -407,7 +565,6 @@ public class TuiView extends AbstractClientView {
             System.out.println(YELLOW + "The server is currently offline or unreachable." + RESET);
             System.out.println("Please wait. The client will attempt to reconnect automatically...\n");
 
-            // Recupera l'id del gioco se disponibile
             String idToPrint = (gameModel != null && gameModel.getGameId() != null)
                     ? gameModel.getGameId()
                     : currentGameId;
@@ -418,6 +575,10 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Clears the screen and displays a reconnection-success banner.
+     * The controller will follow up by replaying the game event history.
+     */
     @Override
     public void onConnectionRestored() {
         eventQueue.add(() -> {
@@ -429,18 +590,38 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Appends a notification that the AutoPlayer countdown has begun for a
+     * disconnected player.
+     *
+     * @param nickname the disconnected player
+     * @param seconds  seconds remaining before the AutoPlayer takes over
+     */
     @Override
     public void onAutoPlayerTimerStarted(String nickname, long seconds) {
         eventQueue.add(() -> addNotification(YELLOW + "[BOT] " + nickname
                 + " is disconnected — AutoPlayer takes over in " + seconds + "s." + RESET));
     }
 
+    /**
+     * Appends a notification that the AutoPlayer is acting on behalf of a
+     * disconnected player.
+     *
+     * @param nickname the player being substituted by the AutoPlayer
+     */
     @Override
     public void onAutoPlayerInvoked(String nickname) {
         eventQueue.add(() -> addNotification(PURPLE + BOLD + "[BOT] AutoPlayer acting for "
                 + nickname + "..." + RESET));
     }
 
+    /**
+     * Clears the game model and displays the end-of-game screen with the
+     * winner(s) and complete final rankings.
+     *
+     * @param winners       nicknames of the winning player(s)
+     * @param finalRankings full ranked list with each player's final PP total
+     */
     @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
         eventQueue.add(() -> {
@@ -460,6 +641,12 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Clears the game model and displays an abort screen indicating the
+     * player who won by forfeit due to all others disconnecting.
+     *
+     * @param lastManStanding the only player who remained connected
+     */
     @Override
     public void onGameAborted(String lastManStanding) {
         eventQueue.add(() -> {
@@ -473,6 +660,10 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Clears the game model and informs the user that the post-crash
+     * reconnection window expired before enough players returned.
+     */
     @Override
     public void onGameRecoveryFailed() {
         eventQueue.add(() -> {
@@ -486,24 +677,37 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Appends a notification that the global forfeit countdown has started.
+     * Only the sole remaining active player receives this event.
+     *
+     * @param seconds countdown duration in seconds
+     */
     @Override
     public void onGlobalTimerStarted(long seconds) {
         eventQueue.add(() -> addNotification(RED + BOLD + "[!] You are the only active player. "
                 + "If no one reconnects within " + seconds + "s, you win by forfeit." + RESET));
     }
 
+    /**
+     * Appends a notification that the global forfeit countdown has been canceled
+     * because another player has reconnected.
+     */
     @Override
     public void onGlobalTimerCancelled() {
         eventQueue.add(() -> addNotification(GREEN + BOLD + "[!] A player has reconnected. "
                 + "The forfeit countdown has been cancelled." + RESET));
     }
 
+    /**
+     * Resets all in-game state (game model, game ID, notification buffer) and
+     * clears the screen in preparation for the lobby view.
+     */
     @Override
     public void onReturnToLobby() {
         eventQueue.add(() -> {
             this.currentGameId = null;
             this.gameModel = null;
-
             this.notifications.clear();
 
             clearScreen();
@@ -511,6 +715,11 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Appends the full description of the specified card to the notification log.
+     *
+     * @param cardId the card identifier to look up in the {@link CardCatalog}
+     */
     public void onShowCardInfo(String cardId) {
         eventQueue.add(() -> {
             String fullInfo = CardCatalog.getInstance().getFullDescription(cardId);
@@ -521,6 +730,11 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Schedules a summary-card overlay on the next repaint.
+     * The overlay replaces the notification log for one render cycle and is
+     * then cleared automatically.
+     */
     public void onShowSummaryCard() {
         eventQueue.add(() -> {
             this.pendingSummary = CardCatalog.getInstance().getSummaryCardText();
@@ -528,6 +742,13 @@ public class TuiView extends AbstractClientView {
         });
     }
 
+    /**
+     * Prints a context-sensitive command cheatsheet to standard output.
+     *
+     * @param inPreLobby {@code true} when the player has not yet joined any lobby
+     * @param inLobby    {@code true} when the player is waiting in a lobby
+     * @param inGame     {@code true} when a game is in progress
+     */
     public void onShowHelp(boolean inPreLobby, boolean inLobby, boolean inGame) {
         eventQueue.add(() -> {
             System.out.println("\n" + CYAN + BOLD + "--- COMMAND CHEATSHEET ---" + RESET);
@@ -651,7 +872,7 @@ public class TuiView extends AbstractClientView {
 
     /**
      * Renders the offer track tiles, showing each tile's ID, food bonus,
-     * pick limits, and current occupant.
+     * pick limits, and current occupant (if any).
      */
     private void renderOfferTrack() {
         System.out.println(PURPLE + BOLD + "=== OFFER TRACK ===" + RESET);
@@ -666,7 +887,8 @@ public class TuiView extends AbstractClientView {
     }
 
     /**
-     * Renders the card rows (upper, lower) and the building market rows.
+     * Renders the card rows (upper and lower) and the building market rows,
+     * including the remaining deck count.
      */
     private void renderCards() {
         System.out.println(BLUE + BOLD + "--- CARDS IN PLAY ---" + RESET);
@@ -699,9 +921,9 @@ public class TuiView extends AbstractClientView {
     }
 
     /**
-     * Renders every player's status: food, PP, characters, and buildings.
-     * Displays cards for <em>all</em> players so a reconnecting user can
-     * immediately see the full table state without any extra server round-trip.
+     * Renders every player's status: food, PP, pick limits, characters, and
+     * buildings. Displays cards for <em>all</em> players so a reconnecting user
+     * can immediately see the full table state without any extra server round-trip.
      */
     private void renderPlayers() {
         System.out.println(PURPLE + BOLD + "=== PLAYERS STATUS ===" + RESET);
@@ -745,10 +967,11 @@ public class TuiView extends AbstractClientView {
     }
 
     /**
-     * Formats a player's totem color tag and nickname for display.
+     * Formats a player's totem color tag and nickname for terminal display.
      *
      * @param nickname the player's nickname
-     * @return ANSI-colored "[TOTEM] nickname" string, or just the nickname if totem is unknown
+     * @return ANSI-colored {@code [TOTEM] nickname} string, or just the
+     *         nickname if the totem is unknown
      */
     private String formatOccupant(String nickname) {
         Totem totem = gameModel.getTotem(nickname);
@@ -773,7 +996,8 @@ public class TuiView extends AbstractClientView {
     }
 
     /**
-     * Renders the last {@value #MAX_NOTIFICATIONS} log entries.
+     * Renders the last {@value #MAX_NOTIFICATIONS} log entries, or — if a
+     * summary-card overlay is pending — displays that instead for one cycle.
      */
     private void renderNotifications() {
         if (pendingSummary != null) {
@@ -791,10 +1015,10 @@ public class TuiView extends AbstractClientView {
     }
 
     /**
-     * Renders the context-sensitive command list.
-     * Shows a waiting message when it is not this client's turn.
+     * Renders the context-sensitive command list, adapting it to the current FSM
+     * phase and whether it is the local player's turn.
      *
-     * @param phase the current FSM phase; if {@code null} the section is skipped
+     * @param phase the current FSM phase; the section is skipped if {@code null}
      */
     private void renderCommands(PhaseType phase) {
         if (phase == null) return;
@@ -822,11 +1046,9 @@ public class TuiView extends AbstractClientView {
                 }
 
                 default -> System.out.println("  (Waiting for the current phase to complete...)");
-
             }
         }
 
-        // Always visible — regardless of whose turn it is
         System.out.println("  info <cardID>     — View full details of a specific card   (e.g., info C_012)");
         System.out.println("  summary           — Show the summary card (quick-reference rules)");
         System.out.println("  lobby             — Leave the game and return to lobby");
@@ -837,6 +1059,7 @@ public class TuiView extends AbstractClientView {
     // Utilities
     // -----------------------------------------------------------------------
 
+    /** Prints the full startup banner with team info, only shown once per session. */
     private void printBanner() {
         System.out.println(GREEN + BOLD
                 + "  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\\n"
@@ -868,7 +1091,7 @@ public class TuiView extends AbstractClientView {
                 + RESET);
     }
 
-    /** Prints the game title banner. */
+    /** Prints the compact game-title header shown at the top of every screen. */
     private void printHeader() {
         System.out.println(GREEN + BOLD
                 + "  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"

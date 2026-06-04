@@ -19,12 +19,29 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * Client-side proxy for Socket connection to the server.
- * Handles command sending and asynchronous event reception.
+ * Socket-based proxy on the client side.
+ *
+ * <p><b>Inbound</b> (server → client): a dedicated reader thread listens on
+ * the TCP stream, decodes each newline-delimited JSON message, and dispatches
+ * it to the {@link ClientNetworkDispatcher} via the IoC
+ * {@link Event#apply(it.polimi.ingsw.am02.common.interfaces.VirtualView)} pattern.
+ * {@link PingEvent}s are answered immediately with a {@link PongCommand}.
+ *
+ * <p><b>Outbound</b> (client → server): {@link Command}s are serialized and
+ * written to the socket's output stream on the caller's thread; the stream is
+ * backed by an auto-flush {@link PrintWriter} so no explicit flush is needed.
+ *
+ * <p>Keep-alive is monitored by a ping thread that checks whether a pong has
+ * been received within {@code PING_TIMEOUT_MILLIS}; if not, it triggers the
+ * automatic reconnection flow, mirroring the behaviour of
+ * {@link it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy}.
  */
 public class SocketServerProxy implements ServerProxy {
 
+    /** How often the ping thread checks liveness, in milliseconds. */
     private static final long PING_INTERVAL_MILLIS = 5_000;
+
+    /** Maximum time allowed between two consecutive pong receipts, in milliseconds. */
     private static final long PING_TIMEOUT_MILLIS  = 10_000;
 
     private final String host;
@@ -38,18 +55,32 @@ public class SocketServerProxy implements ServerProxy {
 
     private Socket socket;
     private PrintWriter out;
+
     private volatile boolean connected = false;
     private volatile boolean attemptingReconnection = false;
 
-    // FIX: Bandiera per distinguere il crash dalla disconnessione volontaria
+    /** Set by {@link #disconnect()} to prevent background threads from reconnecting. */
     private volatile boolean intentionalDisconnect = false;
 
     private Thread pingThread;
+
+    /** Timestamp of the last received pong (or initial connection time). */
     private volatile long lastPongReceivedAt = 0;
 
+    /** Nickname last successfully registered; used to restore session after reconnection. */
     private String activeNickname;
+
+    /** Game ID currently joined; used to rejoin after reconnection. */
     private String activeGameId;
 
+    /**
+     * Creates a Socket proxy ready to be wired and connected.
+     *
+     * @param host       the server hostname or IP address
+     * @param port       the server TCP port
+     * @param lobbyModel the lobby model that receives pre-game notifications
+     * @param view       the client view used to signal connection-state changes
+     */
     public SocketServerProxy(String host, int port, LobbyModel lobbyModel, ClientView view) {
         this.host = host;
         this.port = port;
@@ -57,6 +88,12 @@ public class SocketServerProxy implements ServerProxy {
         this.view = view;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Also registers a callback on the dispatcher so that
+     * {@link #activeGameId} is updated whenever a game-started notification arrives.
+     */
     @Override
     public void setClientController(ClientController controller) {
         this.clientController = controller;
@@ -64,9 +101,10 @@ public class SocketServerProxy implements ServerProxy {
         this.dispatcher.setOnGameStarted(id -> this.activeGameId = id);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void connect() throws Exception {
-        intentionalDisconnect = false; // Resettiamo la bandiera quando ci colleghiamo
+        intentionalDisconnect = false;
         socket = new Socket(host, port);
         out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
         connected = true;
@@ -79,24 +117,38 @@ public class SocketServerProxy implements ServerProxy {
         startPingThread();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void disconnect() {
-        intentionalDisconnect = true; // Segnaliamo che stiamo staccando la spina di proposito
+        intentionalDisconnect = true;
         connected = false;
-        activeGameId = null; // FONDAMENTALE: Dimentichiamo la partita per non farci ributtare dentro
+        activeGameId = null;
 
         stopPingThread();
         try { if (socket != null) socket.close(); } catch (IOException ignored) {}
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isConnected() { return connected; }
 
+    /**
+     * Main loop of the reader thread.
+     *
+     * <p>Reads newline-delimited messages from the server, updates the
+     * last-pong timestamp on every received line (any traffic counts as a
+     * sign of life), and dispatches {@link Event}s to the dispatcher.
+     * {@link PingEvent}s are answered synchronously before dispatch.
+     *
+     * <p>If the loop exits due to an {@link IOException} and the disconnect
+     * was not intentional, {@link #handleConnectionLost()} is called.
+     */
     private void listenForEvents() {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
+        try (BufferedReader in = new BufferedReader(
+                new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             while ((line = in.readLine()) != null) {
-                if (intentionalDisconnect) break; // Se siamo usciti, interrompiamo subito la lettura
+                if (intentionalDisconnect) break;
 
                 lastPongReceivedAt = System.currentTimeMillis();
                 Message msg = codec.decode(line);
@@ -111,15 +163,25 @@ public class SocketServerProxy implements ServerProxy {
                 }
             }
         } catch (IOException ignored) {
-            // Socket closed
+            // Socket closed externally.
         } finally {
-            // FIX: Avviamo il recupero d'emergenza SOLO se la disconnessione NON è stata intenzionale
             if (!intentionalDisconnect) {
                 handleConnectionLost();
             }
         }
     }
 
+    /**
+     * Handles an unexpected loss of connectivity.
+     *
+     * <p>Marks the connection as down, notifies the view, and spawns a
+     * reconnection thread that retries every 5 seconds. Once reconnected,
+     * replays the login and game-rejoin sequence using {@link #activeNickname}
+     * and {@link #activeGameId}.
+     *
+     * <p>Synchronized to prevent concurrent executions (reader thread vs.
+     * ping timeout).
+     */
     private synchronized void handleConnectionLost() {
         if (attemptingReconnection || intentionalDisconnect) return;
         connected = false;
@@ -150,6 +212,14 @@ public class SocketServerProxy implements ServerProxy {
         }, "SocketProxy-ReconnectThread").start();
     }
 
+    /**
+     * Serializes and sends a {@link Command} to the server.
+     *
+     * <p>No-op if the output stream is not yet available or if an intentional
+     * disconnect is in progress.
+     *
+     * @param command the command to send
+     */
     private void send(Command command) {
         if (out != null && !intentionalDisconnect) {
             out.println(codec.encode(command));
@@ -157,32 +227,49 @@ public class SocketServerProxy implements ServerProxy {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Also caches the username in {@link #activeNickname} for use by the
+     * reconnection loop.
+     */
     @Override
     public void requestSetUsername(String username) {
         this.activeNickname = username;
         send(new SetUsernameCommand(username));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void requestCreateLobby(int numPlayers) {
         send(new CreateLobbyCommand(numPlayers));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void requestJoinLobby(String lobbyID) {
         send(new JoinLobbyCommand(lobbyID));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void requestSelectTotem(Totem color) {
         send(new SelectTotemCommand(color));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void requestLeaveLobby() {
         send(new LeaveLobbyCommand(activeNickname != null ? activeNickname : ""));
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Also updates {@link #activeNickname}, {@link #activeGameId}, and the
+     * dispatcher's internal state so that the reconnection loop can replay
+     * this call after a network failure.
+     */
     @Override
     public void requestReconnect(String nickname, String gameId) {
         this.activeNickname = nickname;
@@ -196,16 +283,25 @@ public class SocketServerProxy implements ServerProxy {
         send(new ReconnectCommand(nickname, gameId));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void moveTotem(char tileID) {
         send(new MoveTotemCommand("", tileID));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void resolveActions(List<String> ids) {
         send(new ResolveActionsCommand("", ids));
     }
 
+    /**
+     * Starts a new ping thread, stopping any previously running one first.
+     *
+     * <p>The thread fires every {@link #PING_INTERVAL_MILLIS} milliseconds and
+     * checks whether the time since {@link #lastPongReceivedAt} exceeds
+     * {@link #PING_TIMEOUT_MILLIS}. If so, {@link #handleConnectionLost()} is called.
+     */
     private void startPingThread() {
         stopPingThread();
         pingThread = new Thread(() -> {
@@ -228,6 +324,9 @@ public class SocketServerProxy implements ServerProxy {
         pingThread.start();
     }
 
+    /**
+     * Interrupts and discards the current ping thread, if any.
+     */
     private void stopPingThread() {
         if (pingThread != null) {
             pingThread.interrupt();

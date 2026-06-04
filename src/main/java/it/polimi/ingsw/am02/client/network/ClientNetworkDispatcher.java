@@ -12,46 +12,101 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Unified handler for incoming server notifications.
- * Translates VirtualView calls into updates on local models.
+ * Unified entry point for all inbound server notifications on the client side.
+ *
+ * <p>Implements {@link VirtualView} so that it can be used both as the target of
+ * direct RMI calls (via {@link it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy})
+ * and as the argument of {@code Event#apply(VirtualView)} (Socket path).
+ * In both cases every {@code notifyXxx} call ends up here and is forwarded to
+ * either {@link LobbyModel} or the {@link it.polimi.ingsw.am02.client.model.GameModel}
+ * owned by the {@link ClientController}, depending on the current game phase.
+ *
+ * <p>The dispatcher also tracks {@link #activeNickname} and {@link #activeGameId}
+ * to support lazy {@link it.polimi.ingsw.am02.client.model.GameModel} creation
+ * ({@link #ensureGameModel()}) and session restoration after reconnection.
  */
 public class ClientNetworkDispatcher implements VirtualView {
 
     private final ClientController clientController;
     private final LobbyModel lobbyModel;
 
+    /**
+     * Optional callback invoked the first time {@link #notifyGameStarted} is called.
+     * Used by {@link it.polimi.ingsw.am02.client.network.socket.SocketServerProxy}
+     * to keep its {@code activeGameId} field in sync.
+     */
     private java.util.function.Consumer<String> onGameStarted = id -> {};
 
-    // Cache to handle automatic transition and reconnection
+    /** Last validated nickname; used to bootstrap the GameModel on reconnection. */
     private String activeNickname;
+
+    /** Game ID currently active; set on {@link #notifyGameStarted}. */
     private String activeGameId;
 
-
+    /**
+     * Creates a dispatcher wired to the given controller and lobby model.
+     *
+     * @param clientController the controller that owns the active client model
+     * @param lobbyModel       the lobby model that receives pre-game notifications
+     */
     public ClientNetworkDispatcher(ClientController clientController, LobbyModel lobbyModel) {
         this.clientController = clientController;
         this.lobbyModel = lobbyModel;
     }
 
+    /**
+     * Registers a callback that is invoked once, when {@link #notifyGameStarted}
+     * is first received.
+     *
+     * <p>Intended for the Socket proxy, which needs to cache the game ID on its own.
+     *
+     * @param callback a consumer that receives the game ID string
+     */
     public void setOnGameStarted(java.util.function.Consumer<String> callback) {
         this.onGameStarted = callback;
     }
 
+    /**
+     * Updates the cached active nickname.
+     * Called by the proxy after a successful reconnection handshake.
+     *
+     * @param nickname the player's registered nickname
+     */
     public void updateActiveNickname(String nickname) {
         this.activeNickname = nickname;
     }
 
+    /**
+     * Updates the cached active game ID.
+     * Called by the proxy after a successful reconnection handshake.
+     *
+     * @param gameId the ID of the game the player has rejoined
+     */
     public void updateActiveGameId(String gameId) {
         this.activeGameId = gameId;
     }
 
+    /**
+     * Convenience method to update both the active nickname and game ID in one call.
+     *
+     * @param nick the player's registered nickname
+     * @param gId  the ID of the active game
+     */
     public void updateInternalState(String nick, String gId) {
         this.activeNickname = nick;
         this.activeGameId = gId;
     }
 
+    /**
+     * Lazily creates the {@link it.polimi.ingsw.am02.client.model.GameModel} if it
+     * does not yet exist and {@link #activeNickname} is available.
+     *
+     * <p>This handles the case where a game-phase notification arrives before the
+     * UI has explicitly triggered the Lobby→Game context switch (e.g. during
+     * reconnection drain).
+     */
     private void ensureGameModel() {
         if (clientController.getGameModel() == null && activeNickname != null) {
-            // This call performs the observer switch: Lobby -> Game
             clientController.onGameModelRequired(activeNickname);
 
             if (activeGameId != null && clientController.getGameModel() != null) {
@@ -59,49 +114,70 @@ public class ClientNetworkDispatcher implements VirtualView {
             }
         }
     }
-    // --- LOBBY NOTIFICATIONS ---
 
+    // ------------------------------------------------------------------
+    // Lobby notifications
+    // ------------------------------------------------------------------
+
+    /** {@inheritDoc} */
     @Override
     public void notifyUsernameResult(String username, boolean isValid, String reason) {
         if (isValid) this.activeNickname = username;
         lobbyModel.updateUsernameResult(username, isValid, reason);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Also fires the {@link #onGameStarted} callback and ensures the
+     * {@link it.polimi.ingsw.am02.client.model.GameModel} is created before
+     * forwarding the event.
+     */
     @Override
     public void notifyGameStarted(String gameId) {
         this.activeGameId = gameId;
-        onGameStarted.accept(gameId);  // notifica il proxy se registrato
+        onGameStarted.accept(gameId);
         ensureGameModel();
         if (clientController.getGameModel() != null) {
             clientController.getGameModel().updateGameStarted(gameId);
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyAvailableLobbiesUpdated(List<LobbyInfo> lobbies) {
         lobbyModel.updateAvailableLobbies(lobbies);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {
         lobbyModel.updateCurrentLobby(lobby);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyLobbyDissolved(String lobbyID) {
         lobbyModel.updateLobbyDissolved();
     }
 
-    // --- LIFECYCLE NOTIFICATIONS ---
+    // ------------------------------------------------------------------
+    // Lifecycle notifications
+    // ------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
-    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot boardSnapshot) {
+    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer,
+                                         List<String> turnOrder,
+                                         Map<String, Integer> initialFood,
+                                         BoardSnapshot boardSnapshot) {
         ensureGameModel();
         if (clientController.getGameModel() != null) {
             clientController.getGameModel().updateGameSetupCompleted(totemByPlayer, turnOrder, initialFood, boardSnapshot);
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
         ensureGameModel();
@@ -110,6 +186,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyCurrentPlayerChanged(String nextPlayer) {
         ensureGameModel();
@@ -118,6 +195,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyTurnOrderEstablished(List<String> turnOrder) {
         ensureGameModel();
@@ -126,26 +204,35 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
-    // --- BOARD NOTIFICATIONS ---
+    // ------------------------------------------------------------------
+    // Board notifications
+    // ------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
-    public void notifyBoardUpdated(List<String> upper, List<String> lower, List<String> disc, List<String> moved, int deck) {
+    public void notifyBoardUpdated(List<String> upper, List<String> lower,
+                                   List<String> disc, List<String> moved, int deck) {
         ensureGameModel();
         if (clientController.getGameModel() != null) {
             clientController.getGameModel().updateBoard(upper, lower, deck);
         }
     }
 
+    /** {@inheritDoc} */
     @Override
-    public void notifyEraChanged(Era era, List<String> upper, List<String> lower, List<String> disc) {
+    public void notifyEraChanged(Era era, List<String> upper,
+                                 List<String> lower, List<String> disc) {
         ensureGameModel();
         if (clientController.getGameModel() != null) {
             clientController.getGameModel().updateEra(era, upper, lower);
         }
     }
 
-    // --- PLAYER ACTIONS NOTIFICATIONS ---
+    // ------------------------------------------------------------------
+    // Player action notifications
+    // ------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     public void notifyTotemPlaced(String nickname, char tileID) {
         ensureGameModel();
@@ -154,6 +241,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyTotemReturned(String nick, int pos) {
         ensureGameModel();
@@ -162,14 +250,17 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
-    public void notifyCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
+    public void notifyCardTaken(String nickname, String cardID,
+                                CardType cardType, RowPosition sourceRow) {
         ensureGameModel();
         if (clientController.getGameModel() != null) {
             clientController.getGameModel().updateCardTaken(nickname, cardID, cardType, sourceRow);
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyPlayerLimitsInitialized(String nick, int u, int l) {
         ensureGameModel();
@@ -178,6 +269,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyPlayerLimitsUpdated(String nick, int u, int l) {
         ensureGameModel();
@@ -186,6 +278,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyPlayerResourceChanged(String nick, ResourceType r, int v, int d) {
         ensureGameModel();
@@ -194,8 +287,11 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
-    // --- EVENTS / TURNS NOTIFICATIONS ---
+    // ------------------------------------------------------------------
+    // Event / turn notifications
+    // ------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     public void notifyEventResolved(String id, String name) {
         ensureGameModel();
@@ -204,6 +300,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyExtraTurnStarted(String nick, int u, int l) {
         ensureGameModel();
@@ -212,6 +309,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyExtraTurnEnded(String nick) {
         ensureGameModel();
@@ -220,8 +318,11 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
-    // --- GAME END NOTIFICATIONS ---
+    // ------------------------------------------------------------------
+    // Game-end notifications
+    // ------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     public void notifyGameEnded(List<String> w, List<PlayerFinalScore> r) {
         ensureGameModel();
@@ -230,11 +331,19 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
-    // --- CONNECTION NOTIFICATIONS (Transient) ---
+    // ------------------------------------------------------------------
+    // Connection / error notifications
+    // ------------------------------------------------------------------
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>If no {@link it.polimi.ingsw.am02.client.model.GameModel} is active,
+     * the error is forwarded to the {@link LobbyModel} instead and
+     * {@link #activeGameId} is cleared to prevent stale rejoin attempts.
+     */
     @Override
     public void notifyError(String message) {
-        // If we're not in a game, forward the error to the lobby
         if (clientController.getGameModel() == null) {
             this.activeGameId = null;
             lobbyModel.updateError(message);
@@ -243,6 +352,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyPlayerDisconnected(String nick) {
         ensureGameModel();
@@ -251,6 +361,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyPlayerReconnected(String nick) {
         ensureGameModel();
@@ -259,6 +370,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyAutoPlayerTimerStarted(String nick, long seconds) {
         ensureGameModel();
@@ -267,6 +379,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyAutoPlayerInvoked(String nick) {
         ensureGameModel();
@@ -275,6 +388,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyGameAborted(String winner) {
         ensureGameModel();
@@ -283,6 +397,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyGameRecoveryFailed() {
         ensureGameModel();
@@ -291,6 +406,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyGlobalTimerStarted(long seconds) {
         ensureGameModel();
@@ -299,6 +415,7 @@ public class ClientNetworkDispatcher implements VirtualView {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void notifyGlobalTimerCancelled() {
         ensureGameModel();
@@ -306,5 +423,4 @@ public class ClientNetworkDispatcher implements VirtualView {
             clientController.getGameModel().updateGlobalTimerCancelled();
         }
     }
-
 }

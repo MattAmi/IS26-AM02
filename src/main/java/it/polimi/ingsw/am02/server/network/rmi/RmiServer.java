@@ -10,29 +10,46 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
+/**
+ * {@link NetworkServer} implementation for the RMI transport.
+ *
+ * <p>On {@link #start(int)}, attempts to reuse an existing RMI registry on the
+ * given port (useful after a crash within the same JVM process); if none is
+ * reachable, a new one is created. A {@link RmiServerFactory} is then exported
+ * and bound to the registry under the name {@code "AM02-GameServer"}.
+ *
+ * <p>Each connecting client invokes {@link RmiServerFactory#registerClient},
+ * which instantiates an {@link RmiClientHandler} and exports it as a
+ * {@link RmiServerRemote} stub, establishing the two-way RMI communication
+ * channel.
+ */
 public class RmiServer implements NetworkServer {
 
     private Registry registry;
     private RmiServerFactory factory;
 
+    /**
+     * Starts the RMI server on the specified port.
+     *
+     * <p>Tries to reuse an existing registry on {@code port}; creates a new one
+     * if none responds. Exports and registers the {@link RmiServerFactory} stub
+     * so that clients can obtain a per-connection {@link RmiServerRemote} stub.
+     *
+     * @param port the RMI registry port to bind to
+     */
     @Override
     public void start(int port) {
         try {
-            // Tenta di riusare un registry esistente (es. post-crash con stesso processo)
             try {
                 registry = LocateRegistry.getRegistry(port);
-                registry.list(); // forza una chiamata per verificare che sia vivo
+                registry.list();
             } catch (Exception e) {
-                // Registry non esiste o non risponde: lo creiamo noi
                 registry = LocateRegistry.createRegistry(port);
             }
 
-            factory = new RmiServerFactory() {
-                @Override
-                public RmiServerRemote registerClient(RmiClientRemote clientCallback) throws RemoteException {
-                    RmiClientHandler handler = new RmiClientHandler(clientCallback);
-                    return (RmiServerRemote) UnicastRemoteObject.exportObject(handler, 1099);
-                }
+            factory = clientCallback -> {
+                RmiClientHandler handler = new RmiClientHandler(clientCallback);
+                return (RmiServerRemote) UnicastRemoteObject.exportObject(handler, 1099);
             };
 
             RmiServerFactory stub = (RmiServerFactory) UnicastRemoteObject.exportObject(factory, 1099);
@@ -45,6 +62,10 @@ public class RmiServer implements NetworkServer {
         }
     }
 
+    /**
+     * Stops the RMI server by unbinding the factory from the registry and
+     * unexporting the registry object.
+     */
     @Override
     public void stop() {
         try {

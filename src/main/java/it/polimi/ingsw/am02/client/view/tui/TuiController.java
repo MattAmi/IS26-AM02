@@ -5,7 +5,6 @@ import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
 import it.polimi.ingsw.am02.client.view.ClientView;
-import it.polimi.ingsw.am02.common.ProjectInfo;
 import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
@@ -13,21 +12,42 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 /**
- * TUI-specific controller.
- * Since this controller is created specifically for the TUI, it holds a
- * direct reference to TuiView to avoid continuous casting.
+ * TUI-specific input handler that reads commands from standard input and
+ * dispatches them to the appropriate {@link ClientController} actions.
+ *
+ * <p>Owns the main read-dispatch loop ({@link #run()}) and translates raw
+ * text tokens into typed method calls on the parent controller. The class also
+ * stores the connection parameters ({@code networkType}, {@code host},
+ * {@code port}) needed to rebuild the server proxy after a disconnection.</p>
+ *
+ * <p><b>MVC layer:</b> View — pure input handling; no rendering logic.</p>
  */
 public class TuiController extends ClientController {
 
-    private final TuiView tuiView; // Specific reference to the TUI implementation
-    private final NetworkType networkType;  // aggiunto
-    private final String host;              // aggiunto
-    private final int port;                 // aggiunto
+    /** Direct reference to the TUI view, avoiding repeated casting. */
+    private final TuiView tuiView;
 
+    /** Transport technology chosen by the user at startup (RMI or Socket). */
+    private final NetworkType networkType;
 
+    /** Server hostname or IP address. */
+    private final String host;
+
+    /** Server port number. */
+    private final int port;
+
+    /**
+     * Creates a {@code TuiController} bound to the given proxy, models, and view.
+     *
+     * @param proxy       the server-communication proxy
+     * @param lobbyModel  shared client-side lobby state
+     * @param view        the TUI view that will render output; must be a {@link TuiView}
+     * @param networkType the transport technology chosen at startup
+     * @param host        server hostname or IP address
+     * @param port        server port number
+     */
     public TuiController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view,
                          NetworkType networkType, String host, int port) {
         super(proxy, lobbyModel, view);
@@ -37,6 +57,13 @@ public class TuiController extends ClientController {
         this.port = port;
     }
 
+    /**
+     * Starts the blocking input loop, reading one line at a time from standard
+     * input and forwarding each non-empty line to {@link #dispatch(String)}.
+     *
+     * <p>Runs on the calling thread; designed to be invoked from the application
+     * main thread after all components have been wired up.</p>
+     */
     public void run() {
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -50,6 +77,17 @@ public class TuiController extends ClientController {
         }
     }
 
+    /**
+     * Parses a single trimmed input line and routes it to the correct handler.
+     *
+     * <p>Recognised top-level commands: {@code nick}, {@code create}, {@code join},
+     * {@code reconnect}, {@code totem}, {@code totems}, {@code leave}, {@code move},
+     * {@code resolve}, {@code summary}, {@code info}, {@code help}, {@code lobby},
+     * {@code quit}. Any unrecognized token is treated as a bare card ID and
+     * forwarded to {@link #handleResolveActions} when it is the local player's turn.</p>
+     *
+     * @param input the raw, trimmed input line
+     */
     private void dispatch(String input) {
         String[] args = input.split("\\s+");
         String cmd = args[0].toLowerCase();
@@ -112,7 +150,6 @@ public class TuiController extends ClientController {
                 }
             }
 
-            // --- NO MORE INSTANCEOF ---
             case "info" -> {
                 if (arg1.isEmpty()) view.onError("Usage: info <cardID>");
                 else tuiView.onShowCardInfo(arg1.toUpperCase());
@@ -151,11 +188,26 @@ public class TuiController extends ClientController {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Rebuilds the server proxy using the connection parameters supplied at
+     * construction time, enabling transparent reconnection after a network fault.</p>
+     */
     @Override
     protected ServerProxy createNewProxy() throws Exception {
         return ServerProxyFactory.create(networkType, host, port, lobbyModel, view);
     }
 
+    /**
+     * Attempts to parse {@code input} as an integer.
+     * Displays {@code usage} via the view and returns {@code -1} if the string
+     * is empty or not a valid integer.
+     *
+     * @param input the string token to parse
+     * @param usage human-readable usage hint shown on parse failure
+     * @return the parsed integer, or {@code -1} on failure
+     */
     private int parseNumericArg(String input, String usage) {
         try {
             if (input.isEmpty()) {

@@ -57,6 +57,12 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     private static final long POLL_TIMEOUT_SECONDS  = 2;
     private static final long PING_INTERVAL_MILLIS  = 5_000;
 
+    /**
+     * Creates a handler for the given RMI client stub, registers it with
+     * {@link ControllerManager}, and starts the outbound worker and ping threads.
+     *
+     * @param stub the remote stub used to push notifications to the client
+     */
     public RmiClientHandler(RmiClientRemote stub) {
         this.manager = ControllerManager.getInstance();
         this.stub = stub;
@@ -350,6 +356,11 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     // Lifecycle
     // =========================================================
 
+    /**
+     * Stops all background threads, marks the client as disconnected, and
+     * notifies {@link ControllerManager}. Idempotent: repeated calls are no-ops,
+     * guaranteed by an {@link AtomicBoolean} guard.
+     */
     @Override
     public void disconnect() {
         if (!disconnected.compareAndSet(false, true)) return;

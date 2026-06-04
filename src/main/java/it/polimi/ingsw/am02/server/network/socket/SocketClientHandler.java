@@ -54,6 +54,16 @@ public class SocketClientHandler implements ClientHandler {
     private static final int PING_INTERVAL_SECONDS = 5;
     private static final int PING_TIMEOUT_SECONDS = 10;
 
+    /**
+     * Creates a handler for the given socket, registers it with
+     * {@link ControllerManager}, and initializes the outbound event queue and
+     * ping scheduler.
+     *
+     * @param socket the accepted client socket
+     * @param codec  the codec used to serialize {@link Event} records and
+     *               deserialize {@link Command} records as newline-delimited JSON
+     * @throws IOException if obtaining the socket's output stream fails
+     */
     public SocketClientHandler(Socket socket, JsonMessageCodec codec) throws IOException {
         this.socket = socket;
         this.codec = codec;
@@ -65,6 +75,13 @@ public class SocketClientHandler implements ClientHandler {
         this.lastPongReceivedAt = System.currentTimeMillis();
     }
 
+    /**
+     * Starts the outbound writer thread, the ping scheduler, and then enters
+     * the blocking reader loop. Returns only when the connection is closed.
+     *
+     * <p>Must be called from a dedicated thread, as the reader loop blocks
+     * until the socket is closed or an I/O error occurs.
+     */
     public void listen() {
         Thread writerThread = new Thread(this::writerLoop, "socket-out-" + clientId);
         writerThread.setDaemon(true);
@@ -301,6 +318,11 @@ public class SocketClientHandler implements ClientHandler {
     // Lifecycle
     // =========================================================
 
+    /**
+     * Closes the socket, shuts down the ping scheduler, and notifies
+     * {@link ControllerManager} of the disconnection. Idempotent: the first
+     * call nulls out {@code clientId}; subsequent calls are no-ops.
+     */
     @Override
     public synchronized void disconnect() {
         if (clientId == null) return;

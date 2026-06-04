@@ -13,10 +13,28 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+/**
+ * Represents an item in the player sidebar of the GUI.
+ * This class displays player information such as nickname, totem, food, and prestige points.
+ */
 public class PlayerSidebarItem extends VBox {
 
+    /**
+     * Constructs a new PlayerSidebarItem.
+     *
+     * @param nickname    The player's nickname.
+     * @param isMe        True if this item represents the local player.
+     * @param isActive    True if it is currently this player's turn.
+     * @param isOffline   True if the player is currently disconnected.
+     * @param isViewed    True if this player's hand is currently being viewed.
+     * @param food        The player's current food count.
+     * @param pp          The player's current prestige points.
+     * @param totem       The totem color assigned to the player.
+     * @param tribalFont  The font to use for text display.
+     * @param onClick     The action to perform when the item is clicked.
+     */
     public PlayerSidebarItem(String nickname, boolean isMe, boolean isActive, boolean isOffline, boolean isViewed, int food, int pp, Totem totem, Font tribalFont, Runnable onClick) {
-        super(5); // Spacing
+        super(5);
 
         this.setPadding(new Insets(10));
         this.setCursor(Cursor.HAND);

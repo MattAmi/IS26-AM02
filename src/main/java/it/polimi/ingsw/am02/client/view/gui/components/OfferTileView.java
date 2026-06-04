@@ -10,17 +10,27 @@ import javafx.scene.Cursor;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 
+/**
+ * Graphical representation of an offer tile in the GUI.
+ * This class displays the tile background and the totem of the occupant player if any.
+ */
 public class OfferTileView extends StackPane {
 
+    /**
+     * Constructs a new OfferTileView.
+     *
+     * @param info           Information about the offer tile.
+     * @param occupantTotem  The totem of the player occupying the tile, or null if empty.
+     * @param controller     The GUI controller for handling tile clicks.
+     */
     public OfferTileView(OfferTileInfo info, Totem occupantTotem, GuiController controller) {
         this.setCursor(Cursor.HAND);
 
-        // Sfondo tessera
         ImageView bgImage = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/offer_tiles/tile_offer_" + info.tileID() + ".png"));
         bgImage.setFitHeight(150);
         bgImage.setPreserveRatio(true);
         this.getChildren().add(bgImage);
-        // --- ARROTONDAMENTO ANGOLI TESSERA ---
+
         javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
         clip.setArcWidth(10);
         clip.setArcHeight(10);
@@ -33,20 +43,17 @@ public class OfferTileView extends StackPane {
             clip.setHeight(newVal.getHeight());
         });
         bgImage.setClip(clip);
-// --------------------------------------
 
         if (occupantTotem != null) {
             String path = "/it.polimi.ingsw.am02.images/totems/totem_" + occupantTotem.name().toLowerCase() + ".png";
             ImageView totemView = new ImageView(ImageLoader.getImage(path));
 
-            // Regola l'altezza del totem sulla tessera
             totemView.setFitHeight(40);
             totemView.setPreserveRatio(true);
             totemView.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.7), 5, 0, 0, 2);");
 
             StackPane.setAlignment(totemView, Pos.TOP_CENTER);
 
-            // Abbassa il totem nello slot
             StackPane.setMargin(totemView, new Insets(15, 0, 0, 0));
 
             this.getChildren().add(totemView);

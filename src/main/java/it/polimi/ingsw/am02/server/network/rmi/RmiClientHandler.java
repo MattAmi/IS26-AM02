@@ -271,8 +271,8 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     }
 
     @Override
-    public void notifyAutoPlayerTimerStarted(String nickname) {
-        enqueue(s -> s.notifyAutoPlayerTimerStarted(nickname));
+    public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {
+        enqueue(s -> s.notifyAutoPlayerTimerStarted(nickname, seconds));
     }
 
     @Override
@@ -289,6 +289,12 @@ public class RmiClientHandler implements RmiServerRemote, ClientHandler {
     public void notifyGameRecoveryFailed() {
         enqueue(RmiClientRemote::notifyGameRecoveryFailed);
     }
+
+    @Override
+    public void notifyGlobalTimerStarted(long seconds) { enqueue(s -> s.notifyGlobalTimerStarted(seconds)); }
+
+    @Override
+    public void notifyGlobalTimerCancelled() { enqueue(RmiClientRemote::notifyGlobalTimerCancelled);}
 
     // =========================================================
     // RmiServerRemote — inbound calls (client → server)

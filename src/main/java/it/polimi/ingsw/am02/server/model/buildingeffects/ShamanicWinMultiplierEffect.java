@@ -3,13 +3,12 @@ package it.polimi.ingsw.am02.server.model.buildingeffects;
 import it.polimi.ingsw.am02.common.dto.EffectOutcome;
 import it.polimi.ingsw.am02.common.dto.ResourceDelta;
 import it.polimi.ingsw.am02.common.enumerations.ResourceType;
-import it.polimi.ingsw.am02.server.model.*;
-import it.polimi.ingsw.am02.server.model.BuildingEffect;
-import it.polimi.ingsw.am02.server.model.EffectVisitor;
-import it.polimi.ingsw.am02.server.model.Game;
-import it.polimi.ingsw.am02.server.model.Tribu;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
 import it.polimi.ingsw.am02.server.model.enumerations.EventType;
 import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
+import it.polimi.ingsw.am02.server.model.player.Player;
 
 import java.util.List;
 

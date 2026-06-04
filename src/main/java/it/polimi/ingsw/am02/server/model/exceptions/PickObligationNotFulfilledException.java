@@ -1,8 +1,10 @@
 package it.polimi.ingsw.am02.server.model.exceptions;
 
+import it.polimi.ingsw.am02.server.model.tile.TurnOrderTile;
+
 /**
  * Thrown when a player attempts to return their totem to the
- * {@link it.polimi.ingsw.am02.server.model.TurnOrderTile} before satisfying
+ * {@link TurnOrderTile} before satisfying
  * all mandatory pick obligations (i.e. remaining upper or lower picks are
  * still non-zero and eligible cards are available).
  */

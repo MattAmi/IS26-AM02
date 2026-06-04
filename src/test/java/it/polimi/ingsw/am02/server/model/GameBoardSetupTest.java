@@ -1,10 +1,9 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.enumerations.Totem;
-import it.polimi.ingsw.am02.server.model.GameBoard;
-import it.polimi.ingsw.am02.server.model.Player;
-import it.polimi.ingsw.am02.server.model.TurnOrderTile;
+import it.polimi.ingsw.am02.server.model.player.Player;
 import it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter;
+import it.polimi.ingsw.am02.server.model.tile.TurnOrderTile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

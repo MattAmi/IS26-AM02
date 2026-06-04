@@ -1,8 +1,10 @@
 package it.polimi.ingsw.am02.server.model.exceptions;
 
+import it.polimi.ingsw.am02.server.model.player.Player;
+
 /**
  * Thrown when a nickname cannot be resolved to a known
- * {@link it.polimi.ingsw.am02.server.model.Player} instance.
+ * {@link Player} instance.
  * This typically indicates either a stale nickname reference in the
  * controller or an invalid request from the network layer.
  */

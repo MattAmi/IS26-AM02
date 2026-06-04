@@ -4,8 +4,12 @@ package it.polimi.ingsw.am02.server.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.polimi.ingsw.am02.server.model.card.*;
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
+import it.polimi.ingsw.am02.server.model.tile.OfferTilesFactory;
+import it.polimi.ingsw.am02.server.model.tile.TurnOrderTile;
+import it.polimi.ingsw.am02.server.model.tile.TurnOrderTilesFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;

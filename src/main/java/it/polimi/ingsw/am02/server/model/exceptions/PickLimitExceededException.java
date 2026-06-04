@@ -1,9 +1,11 @@
 package it.polimi.ingsw.am02.server.model.exceptions;
 
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
+
 /**
  * Thrown when a card selection exceeds the remaining pick allowance
  * for the upper row, lower row, or extra-turn limits on the player's
- * current {@link it.polimi.ingsw.am02.server.model.OfferTile}.
+ * current {@link OfferTile}.
  */
 public class PickLimitExceededException extends GameRuleException {
 

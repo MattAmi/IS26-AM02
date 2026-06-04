@@ -1,6 +1,8 @@
 package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.enumerations.Era;
+import it.polimi.ingsw.am02.server.model.card.BuildingCard;
+import it.polimi.ingsw.am02.server.model.card.BuildingDeck;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;

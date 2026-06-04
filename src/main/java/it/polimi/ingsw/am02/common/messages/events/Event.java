@@ -32,6 +32,8 @@ import it.polimi.ingsw.am02.common.messages.events.lobby.*;
         @JsonSubTypes.Type(value = GameEndedEvent.class,              name = "GameEnded"),
         @JsonSubTypes.Type(value = GameSetupCompletedEvent.class,     name = "GameSetupCompleted"),
         @JsonSubTypes.Type(value = GameStartedEvent.class,            name = "GameStarted"),
+        @JsonSubTypes.Type(value = GlobalTimerStartedEvent.class,     name = "GlobalTimerStarted"),
+        @JsonSubTypes.Type(value = GlobalTimerCancelledEvent.class,   name = "GlobalTimerCancelled"),
         @JsonSubTypes.Type(value = LobbyDissolvedEvent.class,         name = "LobbyDissolved"),
         @JsonSubTypes.Type(value = PhaseChangedEvent.class,           name = "PhaseChanged"),
         @JsonSubTypes.Type(value = PlayerDisconnectedEvent.class,     name = "PlayerDisconnected"),

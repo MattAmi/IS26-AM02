@@ -294,11 +294,12 @@ public interface ClientView {
 
     /**
      * Called when the AutoPlayer grace timer has started for a disconnected player.
-     * The view should inform the other players.
+     * The view should inform the other players of the remaining time.
      *
      * @param nickname the disconnected player for whom the timer is running
+     * @param seconds  the duration of the grace period in seconds
      */
-    void onAutoPlayerTimerStarted(String nickname);
+    void onAutoPlayerTimerStarted(String nickname, long seconds);
 
     /**
      * Called immediately before the AutoPlayer acts for a disconnected player.
@@ -306,4 +307,14 @@ public interface ClientView {
      * @param nickname the disconnected player being substituted
      */
     void onAutoPlayerInvoked(String nickname);
+
+    /**
+     * Called when the global forfeit timer has been armed.
+     *
+     * @param seconds the duration of the forfeit countdown, in seconds
+     */
+    void onGlobalTimerStarted(long seconds);
+
+    /** Called when the global forfeit timer has been cancelled. */
+    void onGlobalTimerCancelled();
 }

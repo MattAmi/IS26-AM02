@@ -305,8 +305,9 @@ public class GameScene {
      * @param nickname The nickname of the disconnected player.
      */
     public void logAutoPlayerTimerStarted(String nickname) {
+    public void logAutoPlayerTimerStarted(String nickname, long seconds) {
         Platform.runLater(() -> {
-            addLogEntry("[BOT] ", nickname + " disconnected — 30s timer started.", Color.GOLD);
+            addLogEntry("[BOT] ", nickname + " disconnected — AutoPlayer takes over in " + seconds + "s.", Color.GOLD);
         });
     }
 

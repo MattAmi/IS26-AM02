@@ -430,9 +430,9 @@ public class TuiView extends AbstractClientView {
     }
 
     @Override
-    public void onAutoPlayerTimerStarted(String nickname) {
+    public void onAutoPlayerTimerStarted(String nickname, long seconds) {
         eventQueue.add(() -> addNotification(YELLOW + "[BOT] " + nickname
-                + " is disconnected — 30s timer started before AutoPlayer takes over." + RESET));
+                + " is disconnected — AutoPlayer takes over in " + seconds + "s." + RESET));
     }
 
     @Override
@@ -484,6 +484,18 @@ public class TuiView extends AbstractClientView {
             System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
             System.out.print("\n" + CYAN + "> " + RESET);
         });
+    }
+
+    @Override
+    public void onGlobalTimerStarted(long seconds) {
+        eventQueue.add(() -> addNotification(RED + BOLD + "[!] You are the only active player. "
+                + "If no one reconnects within " + seconds + "s, you win by forfeit." + RESET));
+    }
+
+    @Override
+    public void onGlobalTimerCancelled() {
+        eventQueue.add(() -> addNotification(GREEN + BOLD + "[!] A player has reconnected. "
+                + "The forfeit countdown has been cancelled." + RESET));
     }
 
     @Override
@@ -858,9 +870,11 @@ public class TuiView extends AbstractClientView {
 
     /** Prints the game title banner. */
     private void printHeader() {
-        System.out.println(CYAN + BOLD + "========================================" + RESET);
-        System.out.println(CYAN + BOLD + "          MESOS — PREHISTORIC           " + RESET);
-        System.out.println(CYAN + BOLD + "========================================" + RESET);
+        System.out.println(GREEN + BOLD
+                + "  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "      M  E  S  O  S   —   P  R  E  H  I  S  T  O  R  I  C\n"
+                + "  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+                + RESET);
     }
 
     /** Clears the terminal using ANSI escape codes. */

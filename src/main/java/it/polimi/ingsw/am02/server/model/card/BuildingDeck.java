@@ -58,13 +58,13 @@ public class BuildingDeck {
     }
 
     private int getCardCountForEra(Era era, int numPlayers) {
-        switch (numPlayers) {
-            case 2: return era == Era.I ? 1 : era == Era.II ? 2 : 3;
-            case 3: return era == Era.I ? 2 : era == Era.II ? 2 : 4;
-            case 4: return era == Era.I ? 2 : era == Era.II ? 3 : 4;
-            case 5: return era == Era.I ? 2 : era == Era.II ? 3 : 5;
-            default: throw new IllegalArgumentException("Invalid number of players: " + numPlayers);
-        }
+        return switch (numPlayers) {
+            case 2 -> era == Era.I ? 1 : era == Era.II ? 2 : 3;
+            case 3 -> era == Era.I ? 2 : era == Era.II ? 2 : 4;
+            case 4 -> era == Era.I ? 2 : era == Era.II ? 3 : 4;
+            case 5 -> era == Era.I ? 2 : era == Era.II ? 3 : 5;
+            default -> throw new IllegalArgumentException("Invalid number of players: " + numPlayers);
+        };
     }
 
 }

@@ -2,6 +2,7 @@ package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.messages.events.Event;
@@ -156,7 +157,7 @@ class FullRoundIntegrationTest {
         GameSetupCompletedEvent setupEvent = collector.last(GameSetupCompletedEvent.class);
         assertNotNull(setupEvent);
         List<Character> tileIDs = setupEvent.boardSnapshot().offerTiles().stream()
-                .map(t -> t.tileID())
+                .map(OfferTileInfo::tileID)
                 .toList();
 
         // Each player picks a different tile
@@ -182,7 +183,7 @@ class FullRoundIntegrationTest {
 
         GameSetupCompletedEvent setupEvent = collector.last(GameSetupCompletedEvent.class);
         List<Character> tileIDs = setupEvent.boardSnapshot().offerTiles().stream()
-                .map(t -> t.tileID())
+                .map(OfferTileInfo::tileID)
                 .toList();
 
         char tile0 = tileIDs.get(0);

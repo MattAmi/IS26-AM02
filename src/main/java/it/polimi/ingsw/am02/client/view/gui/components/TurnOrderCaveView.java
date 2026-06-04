@@ -32,17 +32,12 @@ public class TurnOrderCaveView extends StackPane {
     private CaveLayoutConfig getLayoutForPlayers(int numPlayers) {
 
         // If a specific tile looks slightly off in the future, just tweak its case!
-        switch (numPlayers) {
-            case 5:
-                return new CaveLayoutConfig(10, 5, 22); // 25 - (3*4)
-            case 4:
-                return new CaveLayoutConfig(20, 5, 22); // 25 - (2*4)
-            case 3:
-                return new CaveLayoutConfig(25, 5, 22); // 25 - (1*4)
-            case 2:
-            default:
-                return new CaveLayoutConfig(33, 5, 22); // 25 - (0*4)
-        }
+        return switch (numPlayers) {
+            case 5 -> new CaveLayoutConfig(10, 5, 22); // 25 - (3*4)
+            case 4 -> new CaveLayoutConfig(20, 5, 22); // 25 - (2*4)
+            case 3 -> new CaveLayoutConfig(25, 5, 22); // 25 - (1*4)
+            default -> new CaveLayoutConfig(33, 5, 22); // 25 - (0*4)
+        };
     }
 
     public TurnOrderCaveView(int numPlayers, List<TurnOrderSlotInfo> slots, GameModel model) {

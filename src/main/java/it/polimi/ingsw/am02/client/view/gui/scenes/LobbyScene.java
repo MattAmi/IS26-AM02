@@ -165,9 +165,9 @@ public class LobbyScene {
         StackPane carouselPane = new StackPane();
         carouselPane.setMinSize(700, 450);
 
-        for (int i = 0; i < totems.length; i++) {
+        for (Totem totem : totems) {
             ImageView view = new ImageView();
-            String colorName = getTotemColorName(totems[i]);
+            String colorName = getTotemColorName(totem);
             try {
                 Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/totems/totem_" + colorName + ".png")));
                 view.setImage(img);
@@ -175,7 +175,7 @@ public class LobbyScene {
             }
             view.setFitHeight(220);
             view.setPreserveRatio(true);
-            totemViews.put(totems[i], view);
+            totemViews.put(totem, view);
             carouselPane.getChildren().add(view);
         }
 

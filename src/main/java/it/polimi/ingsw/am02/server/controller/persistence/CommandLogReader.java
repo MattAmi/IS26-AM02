@@ -65,7 +65,7 @@ public final class CommandLogReader {
             }
 
             Map<String, Totem> totems = new LinkedHashMap<>();
-            root.path("totems").fields().forEachRemaining(entry ->
+            root.path("totems").properties().forEach(entry ->
                     totems.put(entry.getKey(), Totem.valueOf(entry.getValue().asText())));
 
             return new GameInitRecord(gameId, seed, nicknames, totems);

@@ -93,8 +93,8 @@ public class TurnOrderTile {
     /** @return {@code true} if all player slots are empty */
     public boolean isEmpty() {
 
-        for(int i = 0; i < playerPositions.length; i++) {
-            if (playerPositions[i] != null) {
+        for (Player playerPosition : playerPositions) {
+            if (playerPosition != null) {
                 return false;
             }
         }
@@ -150,8 +150,8 @@ public class TurnOrderTile {
     public int getPlayerCount() {
 
         int playerCount = 0;
-        for(int i = 0; i < playerPositions.length; i++) {
-            if (playerPositions[i] != null) {
+        for (Player playerPosition : playerPositions) {
+            if (playerPosition != null) {
                 playerCount++;
             }
         }
@@ -167,9 +167,9 @@ public class TurnOrderTile {
 
         List<Player> orderedPlayers = new ArrayList<>();
 
-        for(int i = 0; i < playerPositions.length; i++) {
-            if (playerPositions[i] != null) {
-                orderedPlayers.add(playerPositions[i]);
+        for (Player playerPosition : playerPositions) {
+            if (playerPosition != null) {
+                orderedPlayers.add(playerPosition);
             }
         }
         return orderedPlayers;

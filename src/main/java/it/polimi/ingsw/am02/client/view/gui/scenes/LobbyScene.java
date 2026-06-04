@@ -25,6 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Represents the lobby scene of the game.
+ * This scene allows players to set their nickname and select a totem color.
+ */
 public class LobbyScene {
 
     private GuiController controller;
@@ -52,6 +56,12 @@ public class LobbyScene {
 
     private Map<String, Totem> currentChosenTotems = new HashMap<>();
 
+    /**
+     * Builds the lobby scene node.
+     *
+     * @param controller The GUI controller.
+     * @return The constructed Region representing the scene.
+     */
     public Region buildNode(GuiController controller) {
         this.controller = controller;
 
@@ -144,13 +154,11 @@ public class LobbyScene {
             String inputText = nickField.getText();
             if (!inputText.isBlank()) {
                 if (inputText.equals(myNickname)) {
-                    // Fast-forward se il nome è lo stesso
                     nickField.setEditable(false);
                     nicknameBox.setVisible(false);
                     totemBox.setVisible(true);
                     updateCarouselVisuals();
                 } else {
-                    // Nome nuovo, invia richiesta
                     nickField.setEditable(false);
                     controller.requestSetUsername(inputText);
                 }
@@ -211,7 +219,7 @@ public class LobbyScene {
 
         Button backBtn = new Button("BACK");
         backBtn.setPrefSize(250, 40);
-        backBtn.setStyle("-fx-base: #555555; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #888888;"); // Gray style
+        backBtn.setStyle("-fx-base: #555555; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #888888;");
         if (tribalSmall != null) backBtn.setFont(tribalSmall);
         backBtn.setOnAction(e -> {
             nickField.setEditable(true);
@@ -254,15 +262,29 @@ public class LobbyScene {
         return root;
     }
 
+    /**
+     * Returns the name of the totem color for resource path construction.
+     *
+     * @param t The Totem enum value.
+     * @return The lowercase color name.
+     */
     private String getTotemColorName(Totem t) {
         return t.name().toLowerCase();
     }
 
+    /**
+     * Rotates the totem carousel.
+     *
+     * @param dir The direction to rotate (-1 for left, 1 for right).
+     */
     private void rotateCarousel(int dir) {
         currentCarouselIndex = (currentCarouselIndex + dir + totems.length) % totems.length;
         updateCarouselVisuals();
     }
 
+    /**
+     * Updates the visual representation of the totem carousel based on the current selection.
+     */
     private void updateCarouselVisuals() {
         for (Transition transition : runningTransitions) {
             transition.stop();
@@ -346,6 +368,9 @@ public class LobbyScene {
         updateConfirmButton();
     }
 
+    /**
+     * Updates the state of the totem confirmation button.
+     */
     private void updateConfirmButton() {
         Totem selected = totems[currentCarouselIndex];
         String owner = null;
@@ -361,9 +386,9 @@ public class LobbyScene {
             confirmTotemBtn.setText("TAKEN BY " + owner);
             confirmTotemBtn.setStyle("-fx-base: #444; -fx-text-fill: #888;");
         } else if (owner != null && owner.equals(myNickname)) {
-            confirmTotemBtn.setDisable(true); // Disable because they already have it
+            confirmTotemBtn.setDisable(true);
             confirmTotemBtn.setText("THIS IS YOUR TOTEM");
-            confirmTotemBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: #F2D5A3; -fx-border-color: #F2D5A3;"); // Slightly different style to indicate ownership
+            confirmTotemBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: #F2D5A3; -fx-border-color: #F2D5A3;");
         } else {
             confirmTotemBtn.setDisable(false);
             confirmTotemBtn.setText("CONFIRM TOTEM");
@@ -371,6 +396,11 @@ public class LobbyScene {
         }
     }
 
+    /**
+     * Handles the acceptance of a nickname.
+     *
+     * @param nickname The accepted nickname.
+     */
     public void onNicknameAccepted(String nickname) {
         this.myNickname = nickname;
         Platform.runLater(() -> {
@@ -380,6 +410,9 @@ public class LobbyScene {
         });
     }
 
+    /**
+     * Handles the rejection of a nickname.
+     */
     public void onNicknameRejected() {
         Platform.runLater(() -> {
             nickField.setEditable(true);
@@ -387,6 +420,11 @@ public class LobbyScene {
         });
     }
 
+    /**
+     * Updates the lobby state UI with player list and chosen totems.
+     *
+     * @param lobby The current lobby information.
+     */
     public void updateLobbyState(LobbyInfo lobby) {
         Platform.runLater(() -> {
             currentChosenTotems = lobby.chosenTotems();

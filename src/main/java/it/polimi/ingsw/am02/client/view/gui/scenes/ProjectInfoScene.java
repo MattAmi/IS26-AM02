@@ -20,9 +20,18 @@ import javafx.util.Duration;
 
 import java.util.Map;
 import java.util.Objects;
-
+/**
+ * Represents the project information scene.
+ * This scene displays details about the group, course, university, and project members.
+ */
 public class ProjectInfoScene {
 
+    /**
+     * Builds the project information scene node and handles the fade-in and auto-advance logic.
+     *
+     * @param onFinished Callback to execute when the scene auto-advances.
+     * @return The constructed Region representing the scene.
+     */
     public Region buildNode(Runnable onFinished) {
         Font introTitle = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 48);
         Font introText = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 18);

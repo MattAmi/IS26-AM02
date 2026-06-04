@@ -9,10 +9,22 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
+/**
+ * Graphical representation of a game card in the GUI.
+ * This class handles the display, selection effect, and tooltip for a card.
+ */
 public class GameCardView extends VBox {
 
     private final ImageView cardImageView;
 
+    /**
+     * Constructs a new GameCardView.
+     *
+     * @param cardId     The unique identifier of the card.
+     * @param isSelected Whether the card is currently selected.
+     * @param height     The desired height for the card image.
+     * @param onClick    The action to perform when the card is clicked.
+     */
     public GameCardView(String cardId, boolean isSelected, double height, Runnable onClick) {
         this.setCursor(Cursor.HAND);
 
@@ -21,7 +33,6 @@ public class GameCardView extends VBox {
         this.cardImageView.setFitHeight(height);
         this.cardImageView.setPreserveRatio(true);
 
-        // --- ARROTONDAMENTO ANGOLI FIX ---
         Rectangle clip = new Rectangle();
         clip.setArcWidth(12);
         clip.setArcHeight(12);
@@ -34,16 +45,13 @@ public class GameCardView extends VBox {
             clip.setHeight(newVal.getHeight());
         });
         this.cardImageView.setClip(clip);
-        // ---------------------------------
 
         this.getChildren().add(cardImageView);
 
-        // APPLICHIAMO L'EFFETTO AL CONTENITORE (this) INVECE CHE ALL'IMMAGINE
         if (isSelected) {
             this.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);");
         }
 
-        // Attach tooltip with card rules
         try {
             Tooltip tooltip = new Tooltip(CardCatalog.getInstance().format(cardId));
             tooltip.setWrapText(true);
@@ -52,7 +60,6 @@ public class GameCardView extends VBox {
             Tooltip.install(this, tooltip);
         } catch (Exception ignored) { }
 
-        // Hover animations applicate al contenitore (this)
         this.setOnMouseEntered(e -> {
             this.setTranslateY(-10);
             this.setScaleX(1.1);
@@ -72,10 +79,21 @@ public class GameCardView extends VBox {
         this.setOnMouseClicked(e -> onClick.run());
     }
 
+    /**
+     * Returns the ImageView containing the card's graphic.
+     *
+     * @return The ImageView instance.
+     */
     public ImageView getCardImageView() {
         return cardImageView;
     }
 
+    /**
+     * Resolves the resource path for a card image based on its ID.
+     *
+     * @param id The card identifier.
+     * @return The resource path string.
+     */
     private String getCardPath(String id) {
         String subDir = id.startsWith("C_") ? "characters/" : id.startsWith("B_") ? "buildings/" : "events/";
         return "/it.polimi.ingsw.am02.images/cards/" + subDir + id + ".png";

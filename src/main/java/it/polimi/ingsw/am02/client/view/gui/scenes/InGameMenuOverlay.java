@@ -1,7 +1,7 @@
 package it.polimi.ingsw.am02.client.view.gui.scenes;
 
 import it.polimi.ingsw.am02.client.view.gui.GuiController;
-import it.polimi.ingsw.am02.client.view.gui.ImageLoader; // <-- IMPORTANTE: Importa l'ImageLoader
+import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
 import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,6 +17,10 @@ import javafx.util.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents the overlay for the in-game menu.
+ * This overlay allows players to resume the game, view rules, quit to lobby, or exit to desktop.
+ */
 public class InGameMenuOverlay {
 
     private Font tribalSmall;
@@ -26,6 +30,14 @@ public class InGameMenuOverlay {
     private List<Image> rulesPages = new ArrayList<>();
     private int currentPage = 0;
 
+    /**
+     * Builds the in-game menu overlay node.
+     *
+     * @param controller The GUI controller.
+     * @param onClose    Callback to close the overlay.
+     * @param rootStack  The root stack pane to add the rules overlay to.
+     * @return The constructed VBox representing the menu.
+     */
     public VBox buildNode(GuiController controller, Runnable onClose, StackPane rootStack) {
         try {
             tribalSmall = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 16);
@@ -33,7 +45,6 @@ public class InGameMenuOverlay {
 
             if (rulesPages.isEmpty()) {
                 for (int i = 0; i < 8; i++) {
-                    // FIX: Usa ImageLoader invece di new Image()
                     String path = "/it.polimi.ingsw.am02.images/rules/page" + i + ".png";
                     rulesPages.add(ImageLoader.getImage(path));
                 }
@@ -85,6 +96,9 @@ public class InGameMenuOverlay {
         return container;
     }
 
+    /**
+     * Builds the rules overlay for viewing game instructions.
+     */
     private void buildRulesOverlay() {
         rulesOverlay = new StackPane();
         rulesOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85);");
@@ -120,6 +134,9 @@ public class InGameMenuOverlay {
         rulesOverlay.getChildren().add(content);
     }
 
+    /**
+     * Displays the rules overlay.
+     */
     private void showRules() {
         currentPage = 0;
         updateRulesDisplay();
@@ -130,6 +147,11 @@ public class InGameMenuOverlay {
         ft.play();
     }
 
+    /**
+     * Navigates through the rules pages.
+     *
+     * @param dir The navigation direction (-1 for previous, 1 for next).
+     */
     private void navigateRules(int dir) {
         int next = currentPage + dir;
         if (next >= 0 && next < rulesPages.size()) {
@@ -138,12 +160,21 @@ public class InGameMenuOverlay {
         }
     }
 
+    /**
+     * Updates the rules image based on the current page.
+     */
     private void updateRulesDisplay() {
         if (!rulesPages.isEmpty()) {
             rulesImageView.setImage(rulesPages.get(currentPage));
         }
     }
 
+    /**
+     * Creates a menu button with the specified text.
+     *
+     * @param text The button text.
+     * @return The constructed Button.
+     */
     private Button createMenuButton(String text) {
         Button btn = new Button(text);
         btn.setPrefWidth(200);

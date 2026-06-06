@@ -47,7 +47,7 @@ ehthumbs.db
 ehthumbs_vista.db
 $RECYCLE.BIN/
 *.lnk
-
+*.bat
 # ==========================================
 # LOG FILES
 # ==========================================

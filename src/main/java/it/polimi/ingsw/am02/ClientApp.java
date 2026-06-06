@@ -33,9 +33,6 @@ public class ClientApp extends Application {
      * @param args command line arguments.
      */
     public static void main(String[] args) {
-        // Force UTF-8 output on all platforms (including Windows PowerShell)
-        System.setOut(new java.io.PrintStream(System.out, true, java.nio.charset.StandardCharsets.UTF_8));
-
         savedArgs = args;
         Scanner setupScanner = new Scanner(System.in);
 

@@ -8,8 +8,11 @@ import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 import it.polimi.ingsw.am02.common.messages.Message;
 import it.polimi.ingsw.am02.common.messages.commands.*;
+import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PingCommand;
+import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PongCommand;
 import it.polimi.ingsw.am02.common.messages.events.Event;
-import it.polimi.ingsw.am02.common.messages.events.game.PingEvent;
+import it.polimi.ingsw.am02.common.messages.events.heartbeat.PingEvent;
+import it.polimi.ingsw.am02.common.messages.events.heartbeat.PongEvent;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodecImpl;
 
@@ -31,18 +34,19 @@ import java.util.List;
  * written to the socket's output stream on the caller's thread; the stream is
  * backed by an auto-flush {@link PrintWriter} so no explicit flush is needed.
  *
- * <p>Keep-alive is monitored by a ping thread that checks whether a pong has
- * been received within {@code PING_TIMEOUT_MILLIS}; if not, it triggers the
- * automatic reconnection flow, mirroring the behaviour of
- * {@link it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy}.
+ * <p>Keep-alive uses a bidirectional ping-pong mechanism symmetric to RMI:
+ * the server pings the client ({@link PingEvent} → {@link PongCommand}) and
+ * the client pings the server ({@link PingCommand} → {@link PongEvent}).
+ * Each side resets its liveness timer only on receipt of the corresponding
+ * pong, not on generic traffic.
  */
 public class SocketServerProxy implements ServerProxy {
 
-    /** How often the ping thread checks liveness, in milliseconds. */
+    /** How often the ping thread fires, in milliseconds. */
     private static final long PING_INTERVAL_MILLIS = 5_000;
 
-    /** Maximum time allowed between two consecutive pong receipts, in milliseconds. */
-    private static final long PING_TIMEOUT_MILLIS  = 10_000;
+    /** Maximum time allowed since the last {@link PongEvent} before the connection is declared lost. */
+    private static final long PING_TIMEOUT_MILLIS = 10_000;
 
     private final String host;
     private final int port;
@@ -64,7 +68,10 @@ public class SocketServerProxy implements ServerProxy {
 
     private Thread pingThread;
 
-    /** Timestamp of the last received pong (or initial connection time). */
+    /**
+     * Timestamp of the last received {@link PongEvent}.
+     * Reset only on an explicit pong, not on generic server traffic.
+     */
     private volatile long lastPongReceivedAt = 0;
 
     /** Nickname last successfully registered; used to restore session after reconnection. */
@@ -106,7 +113,8 @@ public class SocketServerProxy implements ServerProxy {
     public void connect() throws Exception {
         intentionalDisconnect = false;
         socket = new Socket(host, port);
-        out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+        out = new PrintWriter(
+                new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
         connected = true;
         lastPongReceivedAt = System.currentTimeMillis();
 
@@ -132,16 +140,23 @@ public class SocketServerProxy implements ServerProxy {
     @Override
     public boolean isConnected() { return connected; }
 
+    // =========================================================
+    // READER LOOP
+    // =========================================================
+
     /**
      * Main loop of the reader thread.
      *
-     * <p>Reads newline-delimited messages from the server, updates the
-     * last-pong timestamp on every received line (any traffic counts as a
-     * sign of life), and dispatches {@link Event}s to the dispatcher.
-     * {@link PingEvent}s are answered synchronously before dispatch.
+     * <p>Dispatches incoming messages at the transport layer:
+     * <ul>
+     *   <li>{@link PingEvent} — answered immediately with {@link PongCommand};
+     *       does <em>not</em> reset the liveness timer</li>
+     *   <li>{@link PongEvent} — resets {@link #lastPongReceivedAt}; this is
+     *       the server's reply to our own {@link PingCommand}</li>
+     *   <li>all other {@link Event}s — forwarded to the dispatcher via IoC</li>
+     * </ul>
      *
-     * <p>If the loop exits due to an {@link IOException} and the disconnect
-     * was not intentional, {@link #handleConnectionLost()} is called.
+     * <p>If the loop exits unexpectedly, {@link #handleConnectionLost()} is called.
      */
     private void listenForEvents() {
         try (BufferedReader in = new BufferedReader(
@@ -150,11 +165,15 @@ public class SocketServerProxy implements ServerProxy {
             while ((line = in.readLine()) != null) {
                 if (intentionalDisconnect) break;
 
-                lastPongReceivedAt = System.currentTimeMillis();
                 Message msg = codec.decode(line);
 
                 if (msg instanceof PingEvent) {
                     send(new PongCommand());
+                    continue;
+                }
+
+                if (msg instanceof PongEvent) {
+                    lastPongReceivedAt = System.currentTimeMillis();
                     continue;
                 }
 
@@ -170,6 +189,61 @@ public class SocketServerProxy implements ServerProxy {
             }
         }
     }
+
+    // =========================================================
+    // PING THREAD
+    // =========================================================
+
+    /**
+     * Starts a new ping thread, stopping any previously running one first.
+     *
+     * <p>At every {@link #PING_INTERVAL_MILLIS} tick the thread:
+     * <ol>
+     *   <li>Sends a {@link PingCommand} to the server — the server replies
+     *       with a {@link PongEvent}, which resets {@link #lastPongReceivedAt}.</li>
+     *   <li>Checks whether the elapsed time since the last {@link PongEvent}
+     *       exceeds {@link #PING_TIMEOUT_MILLIS}; if so, calls
+     *       {@link #handleConnectionLost()}.</li>
+     * </ol>
+     */
+    private void startPingThread() {
+        stopPingThread();
+        pingThread = new Thread(() -> {
+            while (connected && !intentionalDisconnect) {
+                try {
+                    Thread.sleep(PING_INTERVAL_MILLIS);
+                    if (!connected || intentionalDisconnect) break;
+
+                    send(new PingCommand());
+
+                    long elapsed = System.currentTimeMillis() - lastPongReceivedAt;
+                    if (elapsed > PING_TIMEOUT_MILLIS) {
+                        handleConnectionLost();
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }, "SocketProxy-PingThread");
+        pingThread.setDaemon(true);
+        pingThread.start();
+    }
+
+    /**
+     * Interrupts and discards the current ping thread, if any.
+     */
+    private void stopPingThread() {
+        if (pingThread != null) {
+            pingThread.interrupt();
+            pingThread = null;
+        }
+    }
+
+    // =========================================================
+    // CONNECTION LOSS HANDLER
+    // =========================================================
 
     /**
      * Handles an unexpected loss of connectivity.
@@ -212,6 +286,10 @@ public class SocketServerProxy implements ServerProxy {
         }, "SocketProxy-ReconnectThread").start();
     }
 
+    // =========================================================
+    // OUTBOUND — send helper
+    // =========================================================
+
     /**
      * Serializes and sends a {@link Command} to the server.
      *
@@ -226,6 +304,10 @@ public class SocketServerProxy implements ServerProxy {
             out.flush();
         }
     }
+
+    // =========================================================
+    // ServerProxy — outbound API
+    // =========================================================
 
     /**
      * {@inheritDoc}
@@ -293,44 +375,5 @@ public class SocketServerProxy implements ServerProxy {
     @Override
     public void resolveActions(List<String> ids) {
         send(new ResolveActionsCommand("", ids));
-    }
-
-    /**
-     * Starts a new ping thread, stopping any previously running one first.
-     *
-     * <p>The thread fires every {@link #PING_INTERVAL_MILLIS} milliseconds and
-     * checks whether the time since {@link #lastPongReceivedAt} exceeds
-     * {@link #PING_TIMEOUT_MILLIS}. If so, {@link #handleConnectionLost()} is called.
-     */
-    private void startPingThread() {
-        stopPingThread();
-        pingThread = new Thread(() -> {
-            while (connected && !intentionalDisconnect) {
-                try {
-                    Thread.sleep(PING_INTERVAL_MILLIS);
-                    if (!connected || intentionalDisconnect) break;
-                    long elapsed = System.currentTimeMillis() - lastPongReceivedAt;
-                    if (elapsed > PING_TIMEOUT_MILLIS) {
-                        handleConnectionLost();
-                        break;
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        }, "SocketProxy-PingThread");
-        pingThread.setDaemon(true);
-        pingThread.start();
-    }
-
-    /**
-     * Interrupts and discards the current ping thread, if any.
-     */
-    private void stopPingThread() {
-        if (pingThread != null) {
-            pingThread.interrupt();
-            pingThread = null;
-        }
     }
 }

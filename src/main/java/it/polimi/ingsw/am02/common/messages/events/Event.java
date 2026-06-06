@@ -70,9 +70,8 @@ public sealed interface Event extends Message
      * {@link VirtualView} notification method.
      *
      * <p>Heartbeat subtypes ({@link PingEvent}, {@link PongEvent}) are
-     * intercepted before this method is called and their implementations are
-     * no-ops.
-     *
+     * intercepted before this method is called; invoking {@code apply} on them
+     * throws {@link UnsupportedOperationException}.
      * @param view the client-side view to notify
      */
     void apply(VirtualView view);

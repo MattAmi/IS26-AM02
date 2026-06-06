@@ -7,20 +7,23 @@ import it.polimi.ingsw.am02.common.interfaces.VirtualView;
  *
  * <p>The client replies with a
  * {@link it.polimi.ingsw.am02.common.messages.commands.heartbeat.PongCommand}.
- * Both directions are handled entirely at the transport layer
+ * Intercepted entirely at the transport layer
  * ({@link it.polimi.ingsw.am02.client.network.socket.SocketServerProxy});
- * {@link #apply} is therefore a no-op and is never reached in normal operation.
+ * {@link #apply} must never be reached in normal operation.
  */
 public record PingEvent() implements HeartbeatEvent {
 
     /**
-     * No-op: this event is intercepted and handled at the transport layer
-     * before {@code apply} is invoked.
+     * Must never be called: this event is intercepted at the transport layer
+     * before {@code apply} is invoked. If this method is reached, it indicates
+     * a bug in the dispatch logic.
      *
      * @param view unused
+     * @throws UnsupportedOperationException always
      */
     @Override
     public void apply(VirtualView view) {
-        // Heartbeat — handled at transport level before apply() is called.
+        throw new UnsupportedOperationException(
+                "PingEvent is handled at transport level and must never reach apply()");
     }
 }

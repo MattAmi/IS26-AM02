@@ -8,19 +8,22 @@ import it.polimi.ingsw.am02.common.interfaces.VirtualView;
  *
  * <p>Receipt of this event resets the client-side liveness timer in
  * {@link it.polimi.ingsw.am02.client.network.socket.SocketServerProxy}.
- * Handled at the transport layer before {@link #apply} is called;
- * {@link #apply} is therefore a no-op.
+ * Intercepted entirely at the transport layer; {@link #apply} must never
+ * be reached in normal operation.
  */
 public record PongEvent() implements HeartbeatEvent {
 
     /**
-     * No-op: this event is intercepted and handled at the transport layer
-     * before {@code apply} is invoked.
+     * Must never be called: this event is intercepted at the transport layer
+     * before {@code apply} is invoked. If this method is reached, it indicates
+     * a bug in the dispatch logic.
      *
      * @param view unused
+     * @throws UnsupportedOperationException always
      */
     @Override
     public void apply(VirtualView view) {
-        // Heartbeat — handled at transport level before apply() is called.
+        throw new UnsupportedOperationException(
+                "PongEvent is handled at transport level and must never reach apply()");
     }
 }

@@ -49,8 +49,8 @@ public sealed interface Command extends Message
      * free of any switch logic.
      *
      * <p>Heartbeat subtypes ({@link PingCommand}, {@link PongCommand}) are
-     * intercepted before this method is called and their implementations are
-     * no-ops.
+     * intercepted before this method is called; invoking {@code apply} on them
+     * throws {@link UnsupportedOperationException}.
      *
      * @param manager  the controller manager to dispatch to
      * @param clientId the identifier of the client that sent this command

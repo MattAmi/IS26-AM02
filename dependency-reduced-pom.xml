@@ -88,7 +88,6 @@
                 <transformer>
                   <mainClass>it.polimi.ingsw.am02.ClientApp</mainClass>
                 </transformer>
-                <transformer />
               </transformers>
             </configuration>
           </execution>
@@ -120,86 +119,74 @@
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-graphics</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>win</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-graphics</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>linux</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-graphics</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>mac</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-graphics</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>mac-aarch64</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-controls</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>win</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-controls</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>linux</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-controls</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>mac</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-controls</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>mac-aarch64</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-base</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>win</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-base</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>linux</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-base</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>mac</classifier>
-          <scope>compile</scope>
         </dependency>
         <dependency>
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-base</artifactId>
-          <version>21.0.6</version>
+          <version>${javafx.version}</version>
           <classifier>mac-aarch64</classifier>
-          <scope>compile</scope>
         </dependency>
       </dependencies>
     </profile>

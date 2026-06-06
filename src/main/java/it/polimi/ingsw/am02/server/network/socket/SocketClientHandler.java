@@ -7,13 +7,18 @@ import it.polimi.ingsw.am02.common.enumerations.*;
 import it.polimi.ingsw.am02.common.interfaces.VirtualControllerManager;
 import it.polimi.ingsw.am02.common.messages.Message;
 import it.polimi.ingsw.am02.common.messages.commands.*;
+import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PingCommand;
+import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PongCommand;
 import it.polimi.ingsw.am02.common.messages.events.Event;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
+import it.polimi.ingsw.am02.common.messages.events.heartbeat.PongEvent;
 import it.polimi.ingsw.am02.common.messages.events.lobby.*;
 import it.polimi.ingsw.am02.common.messages.events.error.*;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
 import it.polimi.ingsw.am02.server.network.ClientHandler;
+import it.polimi.ingsw.am02.common.messages.events.heartbeat.PingEvent;
+
 
 import java.io.*;
 import java.net.Socket;
@@ -147,6 +152,10 @@ public class SocketClientHandler implements ClientHandler {
     private void dispatch(Command cmd) {
         if (cmd instanceof PongCommand) {
             lastPongReceivedAt = System.currentTimeMillis();
+            return;
+        }
+        if (cmd instanceof PingCommand) {
+            eventQueue.add(new PongEvent());
             return;
         }
         if (cmd instanceof ReconnectCommand rc) {

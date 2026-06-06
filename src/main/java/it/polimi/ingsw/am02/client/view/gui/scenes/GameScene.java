@@ -55,6 +55,9 @@ public class GameScene {
     private VBox notificationPanel;
     private VBox logContainer;
 
+    private VBox forfeitBanner;
+    private Timeline forfeitCountdownTimeline;
+
     private final List<String> selected = new ArrayList<>();
     private final List<String> offlinePlayers = new ArrayList<>();
     private final List<String> knownCardsOnBoard = new ArrayList<>();
@@ -340,11 +343,8 @@ public class GameScene {
         TextFlow tf = new TextFlow(pText, mText);
         tf.setStyle("-fx-background-color: rgba(255,255,255,0.05); -fx-padding: 5; -fx-background-radius: 3;");
 
-        logContainer.getChildren().add(0, tf);
-
-        if (logContainer.getChildren().size() > 10) {
-            logContainer.getChildren().remove(10);
-        }
+        logContainer.getChildren().add(tf);
+        if (logContainer.getChildren().size() > 10) logContainer.getChildren().remove(0);
     }
 
     /**
@@ -850,6 +850,105 @@ public class GameScene {
      * @param n The player nickname.
      */
     public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
+
+    public void showForfeitBanner(long seconds) {
+        Platform.runLater(() -> {
+            if (forfeitCountdownTimeline != null) forfeitCountdownTimeline.stop();
+            if (forfeitBanner != null) baseStack.getChildren().remove(forfeitBanner);
+
+            Label icon = new Label("⚠");
+            icon.setStyle("-fx-font-size: 32; -fx-text-fill: #FFD700;");
+
+            Label titleLabel = new Label("YOU ARE THE ONLY ACTIVE PLAYER");
+            titleLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-weight: bold; -fx-font-size: 15;");
+            if (tribalFont != null) titleLabel.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));
+
+            Label countdownLabel = new Label("Win by forfeit in " + seconds + "s if no one reconnects.");
+            countdownLabel.setStyle("-fx-text-fill: white; -fx-font-size: 13;");
+            if (tribalFont != null) countdownLabel.setFont(Font.font(tribalFont.getFamily(), 13));
+
+            forfeitBanner = new VBox(8, icon, titleLabel, countdownLabel);
+            forfeitBanner.setAlignment(Pos.CENTER);
+            forfeitBanner.setStyle(
+                    "-fx-background-color: rgba(163, 29, 29, 0.92);" +
+                            "-fx-border-color: #FFD700;" +
+                            "-fx-border-width: 2;" +
+                            "-fx-border-radius: 10;" +
+                            "-fx-background-radius: 10;" +
+                            "-fx-padding: 20 35 20 35;"
+            );
+            forfeitBanner.setMaxSize(420, Region.USE_PREF_SIZE);
+            StackPane.setAlignment(forfeitBanner, Pos.CENTER);
+
+            final long[] remaining = {seconds};
+            forfeitCountdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+                remaining[0]--;
+                if (remaining[0] >= 0) countdownLabel.setText("Win by forfeit in " + remaining[0] + "s if no one reconnects.");
+            }));
+            forfeitCountdownTimeline.setCycleCount((int) seconds);
+
+            baseStack.getChildren().add(forfeitBanner);
+            forfeitBanner.setOpacity(0);
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), forfeitBanner);
+            fadeIn.setToValue(1.0);
+            fadeIn.setOnFinished(ev -> forfeitCountdownTimeline.play());
+            fadeIn.play();
+
+            addLogEntry("[!] ", "You are alone — forfeit win in " + seconds + "s if no one reconnects.", Color.web("#FF4444"));
+        });
+    }
+
+    public void dismissForfeitBanner() {
+        Platform.runLater(() -> {
+            if (forfeitCountdownTimeline != null) { forfeitCountdownTimeline.stop(); forfeitCountdownTimeline = null; }
+            if (forfeitBanner != null) {
+                VBox bannerRef = forfeitBanner;
+                forfeitBanner = null;
+                FadeTransition fadeOut = new FadeTransition(Duration.millis(400), bannerRef);
+                fadeOut.setToValue(0);
+                fadeOut.setOnFinished(e -> baseStack.getChildren().remove(bannerRef));
+                fadeOut.play();
+                addLogEntry("[!] ", "A player reconnected — forfeit countdown cancelled.", Color.web("#4CAF50"));
+            }
+        });
+    }
+
+    public void logPlayerReconnected(String nickname) {
+        Platform.runLater(() -> {
+            addLogEntry("[✓] ", nickname + " has reconnected!", Color.web("#4CAF50"));
+
+            Label icon = new Label("✓");
+            icon.setStyle("-fx-font-size: 28; -fx-text-fill: #4CAF50;");
+
+            Label msg = new Label(nickname.toUpperCase() + " HAS RECONNECTED!");
+            msg.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;");
+            if (tribalFont != null) msg.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 14));
+
+            VBox banner = new VBox(6, icon, msg);
+            banner.setAlignment(Pos.CENTER);
+            banner.setStyle(
+                    "-fx-background-color: rgba(30, 100, 30, 0.95);" +
+                            "-fx-border-color: #4CAF50;" +
+                            "-fx-border-width: 2;" +
+                            "-fx-border-radius: 10;" +
+                            "-fx-background-radius: 10;" +
+                            "-fx-padding: 18 35 18 35;"
+            );
+            banner.setMaxSize(380, Region.USE_PREF_SIZE);
+            StackPane.setAlignment(banner, Pos.CENTER);
+            banner.setOpacity(0);
+            baseStack.getChildren().add(banner);
+
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), banner);
+            fadeIn.setToValue(1.0);
+            PauseTransition hold = new PauseTransition(Duration.seconds(3));
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(500), banner);
+            fadeOut.setToValue(0);
+            fadeOut.setOnFinished(e -> baseStack.getChildren().remove(banner));
+
+            new SequentialTransition(fadeIn, hold, fadeOut).play();
+        });
+    }
 
     /**
      * Creates a group of card views with specific sizing and spacing.

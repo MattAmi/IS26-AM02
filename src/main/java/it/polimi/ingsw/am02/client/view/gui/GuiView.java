@@ -335,7 +335,10 @@ public class GuiView extends AbstractClientView {
     @Override
     public void onPlayerReconnected(String nickname) {
         GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.setPlayerOnline(nickname);
+        if (gs != null) {
+            gs.setPlayerOnline(nickname);
+            gs.logPlayerReconnected(nickname);
+        }
     }
 
     /**
@@ -404,12 +407,14 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGlobalTimerStarted(long seconds) {
-        // TODO: display forfeit countdown banner in the game scene
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.showForfeitBanner(seconds);
     }
 
     @Override
     public void onGlobalTimerCancelled() {
-        // TODO: dismiss forfeit countdown banner
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.dismissForfeitBanner();
     }
 
     @Override

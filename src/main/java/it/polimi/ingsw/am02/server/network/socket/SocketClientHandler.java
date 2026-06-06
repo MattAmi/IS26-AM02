@@ -10,15 +10,14 @@ import it.polimi.ingsw.am02.common.messages.commands.*;
 import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PingCommand;
 import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PongCommand;
 import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.error.*;
 import it.polimi.ingsw.am02.common.messages.events.game.*;
+import it.polimi.ingsw.am02.common.messages.events.heartbeat.PingEvent;
 import it.polimi.ingsw.am02.common.messages.events.heartbeat.PongEvent;
 import it.polimi.ingsw.am02.common.messages.events.lobby.*;
-import it.polimi.ingsw.am02.common.messages.events.error.*;
 import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
 import it.polimi.ingsw.am02.server.network.ClientHandler;
-import it.polimi.ingsw.am02.common.messages.events.heartbeat.PingEvent;
-
 
 import java.io.*;
 import java.net.Socket;
@@ -30,20 +29,33 @@ import java.util.concurrent.*;
 /**
  * Server-side handler for a single Socket-connected client.
  *
- * <p>Inbound: a reader loop deserializes JSON lines into {@link Command} records
- * and dispatches them via {@link Command#apply(VirtualControllerManager, String)},
- * implementing the Inversion of Control pattern symmetrically to
- * {@link Event#apply} on the client side. {@link Command} records are used solely
- * as the deserialization target; they are never passed downstream.
+ * <p><b>Inbound:</b> a reader loop deserializes JSON lines into {@link Command}
+ * records and dispatches them via {@link #dispatch(Command)}, implementing the
+ * Inversion of Control pattern symmetrically to {@link Event#apply} on the
+ * client side. {@link Command} records are used solely as the deserialization
+ * target; they are never passed downstream.
  *
- * <p>Outbound: each {@link it.polimi.ingsw.am02.common.interfaces.VirtualView} notification
- * constructs the corresponding {@link Event} record, enqueues it, and returns immediately.
- * A dedicated writer thread drains the queue and serializes events to the socket,
- * so {@link it.polimi.ingsw.am02.server.controller.GameController} never blocks on I/O
- * while holding its lock.
+ * <p><b>Outbound:</b> each {@link it.polimi.ingsw.am02.common.interfaces.VirtualView}
+ * notification constructs the corresponding {@link Event} record, enqueues it,
+ * and returns immediately. A dedicated writer thread drains the queue and
+ * serializes events to the socket, so
+ * {@link it.polimi.ingsw.am02.server.controller.GameController} never blocks
+ * on I/O while holding its lock.
  *
- * <p>Keep-alive is handled via periodic {@link PingEvent} sent by a scheduler;
- * disconnection is detected when the client stops sending {@link PongCommand} within the timeout.
+ * <p><b>Keep-alive — bidirectional ping-pong:</b> liveness is checked in both
+ * directions over the same TCP stream, mirroring the two independent RMI
+ * {@code ping()} calls used in the RMI transport.
+ * <ul>
+ *   <li><em>Server → client:</em> a {@link ScheduledExecutorService} enqueues
+ *       a {@link PingEvent} every {@value #PING_INTERVAL_SECONDS} seconds.
+ *       The client replies with a {@link PongCommand}, which resets
+ *       {@link #lastPongReceivedAt} in {@link #dispatch}. If no
+ *       {@link PongCommand} is received within {@value #PING_TIMEOUT_SECONDS}
+ *       seconds, {@link #disconnect()} is called.</li>
+ *   <li><em>Client → server:</em> the client sends periodic {@link PingCommand}s;
+ *       {@link #dispatch} intercepts them and enqueues a {@link PongEvent} in
+ *       reply. No controller involvement is required for either direction.</li>
+ * </ul>
  */
 public class SocketClientHandler implements ClientHandler {
 
@@ -57,7 +69,7 @@ public class SocketClientHandler implements ClientHandler {
     private volatile String clientId;
 
     private static final int PING_INTERVAL_SECONDS = 5;
-    private static final int PING_TIMEOUT_SECONDS = 10;
+    private static final int PING_TIMEOUT_SECONDS  = 10;
 
     /**
      * Creates a handler for the given socket, registers it with
@@ -149,6 +161,26 @@ public class SocketClientHandler implements ClientHandler {
     // COMMAND DISPATCH — IoC: each Command knows what to do
     // =========================================================
 
+    /**
+     * Dispatches an inbound {@link Command} at the transport layer.
+     *
+     * <p>Heartbeat commands are handled here and never forwarded to the
+     * controller:
+     * <ul>
+     *   <li>{@link PongCommand} — resets {@link #lastPongReceivedAt}, proving
+     *       the client is alive in response to a server-initiated
+     *       {@link PingEvent}.</li>
+     *   <li>{@link PingCommand} — enqueues a {@link PongEvent} in reply,
+     *       proving the server is alive in response to a client-initiated
+     *       ping.</li>
+     * </ul>
+     *
+     * <p>{@link ReconnectCommand} requires the handler reference and therefore
+     * uses a dedicated {@code apply} overload. All other commands delegate to
+     * {@link Command#apply(VirtualControllerManager, String)} via IoC.
+     *
+     * @param cmd the command received from the client
+     */
     private void dispatch(Command cmd) {
         if (cmd instanceof PongCommand) {
             lastPongReceivedAt = System.currentTimeMillis();
@@ -195,7 +227,8 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder, Map<String, Integer> initialFood,
+    public void notifyGameSetupCompleted(Map<String, Totem> totemByPlayer, List<String> turnOrder,
+                                         Map<String, Integer> initialFood,
                                          BoardSnapshot boardSnapshot) {
         eventQueue.add(new GameSetupCompletedEvent(totemByPlayer, turnOrder, initialFood, boardSnapshot));
     }
@@ -301,7 +334,9 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void notifyAutoPlayerTimerStarted(String nickname, long seconds) { eventQueue.add(new AutoPlayerTimerStartedEvent(nickname, seconds)); }
+    public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {
+        eventQueue.add(new AutoPlayerTimerStartedEvent(nickname, seconds));
+    }
 
     @Override
     public void notifyAutoPlayerInvoked(String nickname) {
@@ -319,9 +354,14 @@ public class SocketClientHandler implements ClientHandler {
     }
 
     @Override
-    public void notifyGlobalTimerStarted(long seconds) { eventQueue.add(new GlobalTimerStartedEvent(seconds)); }
+    public void notifyGlobalTimerStarted(long seconds) {
+        eventQueue.add(new GlobalTimerStartedEvent(seconds));
+    }
 
-    @Override public void notifyGlobalTimerCancelled() { eventQueue.add(new GlobalTimerCancelledEvent()); }
+    @Override
+    public void notifyGlobalTimerCancelled() {
+        eventQueue.add(new GlobalTimerCancelledEvent());
+    }
 
     // =========================================================
     // Lifecycle

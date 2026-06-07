@@ -1,0 +1,46 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== NewRoundState Entry ==
+
+note over S: onEntry(): notifyPhaseObservers(NEW_ROUND) before onEntryActions()
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+end
+note right S: No notifyPhaseChanged(NEW_ROUND) is emitted.
+
+== New Round Preparation ==
+
+note over S: executeNewRoundPreparation():\ncompletedRounds++; prepareNewRound(numPlayers)
+S ->> B: notifyBoardUpdated(newUpperRow, newLowerRow, discardedCards, movedToLowerRow, deckRemainingCount)
+
+== Branching Logic ==
+
+alt Era changed (areEraChangesToResolve == true)
+    note over S: setUpPlacementOrder()
+    S ->> B: notifyTurnOrderEstablished(turnOrder: List<String>)
+    note right S: transitionTo(NewEraState) — see diagram I
+
+else Game Over (completedRounds > NUM_ROUNDS)
+    alt Final Events present (areFinalEventsToResolve == true)
+        note right S: transitionTo(FinalEventsResolutionState) — see diagram K
+    else No Final Events
+        note right S: transitionTo(FinalScoringState) — see diagram L
+    end
+
+else Normal round (default)
+    note over S: setUpPlacementOrder()
+    S ->> B: notifyTurnOrderEstablished(turnOrder: List<String>)
+    note over S: transitionTo(TotemPlacementState)\nnotifyPhaseObservers(TOTEM_PLACEMENT)
+    loop for each active BuildingEffect (PhaseObserver)
+        S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+    end
+    S ->> B: notifyPhaseChanged(phase: TOTEM_PLACEMENT, currentPlayer: String, resolutionOrder: null)
+    note right S: See TotemPlacementState diagram (C)
+end
+@enduml

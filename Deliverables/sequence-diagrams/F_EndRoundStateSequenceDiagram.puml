@@ -1,0 +1,33 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== EndRoundState Entry ==
+
+note over S: onEntry(): notifyPhaseObservers(END_ROUND) before onEntryActions()
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+end
+
+S ->> B: notifyPhaseChanged(phase: END_ROUND, currentPlayer: null, resolutionOrder: null)
+
+== Branching Logic ==
+
+alt Branch 1: Extra Turn queued (extraTurnPlayerNickname != null)
+    note over S: isExtraTurnMode = true\ncurrentPlayer = extraTurnPlayerNickname\ninitializeExtraPlayerLimits(...)
+    S ->> B: notifyPlayerLimitsInitialized(nickname, remainingUpper, remainingLower)
+    S ->> B: notifyPhaseChanged(phase: ACTION_RESOLUTION, currentPlayer: String, resolutionOrder: null)
+    S ->> B: notifyExtraTurnStarted(nickname: String, remainingUpper: int, remainingLower: int)
+    note right S: transitionTo(ActionResolutionState)\n(PhaseObservers suppressed during extra turn) — see diagram J
+
+else Branch 2: Round Events to resolve (areRoundEventsToResolve == true)
+    note right S: transitionTo(EventResolutionState) — see diagram G
+
+else Branch 3: Default
+    note right S: transitionTo(NewRoundState) — see diagram H
+end
+@enduml

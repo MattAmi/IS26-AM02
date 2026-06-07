@@ -1,0 +1,44 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== FinalEventsResolutionState Entry ==
+
+note over S: onEntry(): notifyPhaseObservers(FINAL_EVENT_RESOLUTION) before onEntryActions()
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+end
+note right S: No notifyPhaseChanged(FINAL_EVENT_RESOLUTION) is emitted.
+
+== Final Events Resolution (sorted by ascending priority — upper + lower rows) ==
+
+loop for each final Event
+    group eventStart(type) on all EventObservers
+        opt an EventObserver produces deltas
+            S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+        end
+    end
+
+    S ->> B: notifyEventResolved(eventID: String, eventName: String)
+
+    group applyEventEffect(players, eventObservers) -> emitOutcome
+        loop for each affected Player (HUNT, CAVE_PAINTINGS, SHAMANIC_RITUAL, SUSTENANCE, ...)
+            S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+        end
+    end
+
+    group eventEnd(type) on all EventObservers
+        opt an EventObserver produces deltas
+            S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+        end
+    end
+end
+
+== Transition ==
+
+note right S: transitionTo(FinalScoringState) — see diagram L
+@enduml

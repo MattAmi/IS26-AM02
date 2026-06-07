@@ -1,0 +1,52 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Extra Player Client" as C
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== Booking (during a normal ActionResolution) ==
+
+note over S: A building effect (ExtraTurnEffect) calls\ngame.enqueueExtraTurn(nickname, upperPicks, lowerPicks)
+
+... the round continues until EndRoundState ...
+
+== Extra Turn Activation (in EndRoundState — see diagram F) ==
+
+S ->> B: notifyPhaseChanged(phase: END_ROUND, currentPlayer: null, resolutionOrder: null)
+note over S: isExtraTurnMode = true\ncurrentPlayer = extraTurnPlayerNickname\ninitializeExtraPlayerLimits(...)
+S ->> B: notifyPlayerLimitsInitialized(nickname, remainingUpper, remainingLower)
+S ->> B: notifyPhaseChanged(phase: ACTION_RESOLUTION, currentPlayer: String, resolutionOrder: null)
+S ->> B: notifyExtraTurnStarted(nickname: String, remainingUpper: int, remainingLower: int)
+note right S: transitionTo(ActionResolutionState)\n(PhaseObservers suppressed while isExtraTurnMode == true)
+
+== Extra Turn Action Resolution ==
+
+loop incremental resolveActions calls (processExtraActionSelection)
+    C -> S: resolveActions(selectedIDs: List<String>)
+    alt Success
+        loop for each selected card
+            S ->> B: notifyCardTaken(nickname, cardID, cardType, sourceRow)
+            opt card / building effect or food cost
+                S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+            end
+        end
+        S ->> B: notifyPlayerLimitsUpdated(nickname, remainingUpper, remainingLower)
+    else Failure (extra limits exceeded, insufficient food, invalid card)
+        S --> C: notifyError(message: String)
+    end
+end
+
+== Extra Turn End ==
+
+C -> S: moveTotem(tileID: 'T')
+alt Success
+    note over S: isExtraTurnMode = false\nextraTurnPlayerNickname = null\nclearExtraTurn()
+    S ->> B: notifyExtraTurnEnded(nickname: String)
+    note right S: if areRoundEventsToResolve -> EventResolutionState (G)\notherwise -> NewRoundState (H)
+else Failure (tileID != 'T', not your turn)
+    S --> C: notifyError(message: String)
+end
+@enduml

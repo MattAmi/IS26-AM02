@@ -1,0 +1,33 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+note over S, B: startFSM() -> transitionTo(SetUpState)
+
+== SetUpState Entry ==
+
+note over S: BaseState.onEntry(): notifyPhaseObservers(SETUP) BEFORE onEntryActions()\n(typically no BuildingEffects are active at setup)
+loop for each active BuildingEffect (PhaseObserver) — typically none at setup
+    S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+end
+
+note over S: onEntryActions():\ninitializeBoard()\nrandomizeInitialTurnOrder() (assigns initial food — no notification)\ncompletedRounds = 1\nbuildSnapshot()
+
+S ->> B: notifyGameSetupCompleted(totemByPlayer: Map<String,Totem>, turnOrder: List<String>, initialFood: Map<String,Integer>, boardSnapshot: BoardSnapshot)
+
+== Transition to TotemPlacementState ==
+
+note over S: transitionTo(TotemPlacementState)\nonEntry(): notifyPhaseObservers(TOTEM_PLACEMENT) BEFORE onEntryActions()
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+end
+
+S ->> B: notifyPhaseChanged(phase: TOTEM_PLACEMENT, currentPlayer: String, resolutionOrder: null)
+
+note right S: No notifyPhaseChanged(SETUP) is ever emitted.\nSee TotemPlacementState diagram (C).
+
+@enduml

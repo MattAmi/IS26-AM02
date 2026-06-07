@@ -1,0 +1,82 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Client (User)" as C
+participant "Server" as S
+participant "Lobby Members\n(same lobby)" as LM
+participant "Pre-Lobby Clients\n(lobby list screen)" as PL
+
+note over S, PL: All "notify..." calls to multiple recipients are broadcasts (pushGlobalCall);\nerrors (notifyError) are unicast to the requesting client only.
+
+== Connection ==
+
+C -> S: (TCP/RMI connect) handleClientConnected(view)
+S --> C: notifyAvailableLobbiesUpdated(lobbies: List<LobbyInfo>)
+
+== Lobby Creation ==
+
+C -> S: requestCreateLobby(numPlayers: int)
+alt 2 <= numPlayers <= 5
+    S --> C: notifyCurrentLobbyUpdated(lobby: LobbyInfo)
+    S ->> PL: notifyAvailableLobbiesUpdated(lobbies: List<LobbyInfo>)
+else Invalid capacity
+    S --> C: notifyError(message: String)
+end
+
+== Joining a Lobby ==
+
+C -> S: requestJoinLobby(lobbyID: String)
+alt Success
+    S ->> LM: notifyCurrentLobbyUpdated(lobby: LobbyInfo)
+    S --> C: notifyCurrentLobbyUpdated(lobby: LobbyInfo)
+    S ->> PL: notifyAvailableLobbiesUpdated(lobbies: List<LobbyInfo>)
+else Failure (not found / full / already started)
+    S --> C: notifyError(message: String)
+end
+
+== Username Selection (only while in a lobby) ==
+
+C -> S: requestSetUsername(username: String)
+alt Accepted (non-blank and not already taken in lobby)
+    S --> C: notifyUsernameResult(username: String, isValid: true, reason: null)
+    S ->> LM: notifyCurrentLobbyUpdated(lobby: LobbyInfo)
+else Rejected (blank / already taken)
+    S --> C: notifyUsernameResult(username: String, isValid: false, reason: String)
+end
+note over S: checkAndStart()
+
+== Totem Selection ==
+
+C -> S: requestSelectTotem(color: Totem)
+alt Success
+    S --> C: notifyCurrentLobbyUpdated(lobby: LobbyInfo)
+    S ->> LM: notifyCurrentLobbyUpdated(lobby: LobbyInfo)
+else Failure (no nickname yet / null / totem already taken)
+    S --> C: notifyError(message: String)
+end
+note over S: checkAndStart()
+
+== Automatic Game Start ==
+
+opt isReadyToStart()\n(full capacity + all nicknames + all totems selected)
+    note over S: started = true; startGame(...)
+    S ->> LM: notifyGameStarted(gameId: String)
+    S --> C: notifyGameStarted(gameId: String)
+    S ->> PL: notifyAvailableLobbiesUpdated(lobbies: List<LobbyInfo>)
+    note over S: model.startFSM() -> SetUpState (see diagram B)
+end
+
+== Leaving the Lobby ==
+
+C -> S: requestLeaveLobby()
+S --> C: notifyAvailableLobbiesUpdated(lobbies: List<LobbyInfo>)
+alt Lobby still has members
+    S ->> LM: notifyCurrentLobbyUpdated(lobby: LobbyInfo)
+else Lobby becomes empty
+    note over S: removeLobby(lobbyID)
+    S ->> PL: notifyAvailableLobbiesUpdated(lobbies: List<LobbyInfo>)
+end
+
+@enduml

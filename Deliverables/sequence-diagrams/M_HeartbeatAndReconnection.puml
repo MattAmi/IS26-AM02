@@ -1,0 +1,93 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Client (User)" as C
+participant "ClientHandler\n(Server transport)" as H
+participant "ControllerManager" as CM
+participant "GameController" as GC
+participant "Other Clients\n(Broadcast)" as B
+
+note over C, B: Socket: bidirectional ping-pong over the same TCP stream (every 5s, timeout 10s).\nPing/Pong messages are handled entirely in the transport layer and never reach the controller.\nRMI uses a symmetric mechanism with two independent ping() calls.
+
+== Keep-alive: Server -> Client ==
+
+loop every PING_INTERVAL (5s)
+    H ->> C: PingEvent
+    C -->> H: PongCommand
+    note over H: lastPongReceivedAt = now()
+end
+
+== Keep-alive: Client -> Server ==
+
+loop every PING_INTERVAL (5s)
+    C ->> H: PingCommand
+    H -->> C: PongEvent
+    note over C: lastPongReceivedAt = now()
+end
+
+== Disconnection Detection (server side) ==
+
+note over H: No PongCommand received within PING_TIMEOUT (10s)\n=> disconnect()
+H -> CM: handleDisconnection(clientId)
+CM -> GC: handlePlayerDisconnected(nickname)
+note over GC: connectionStatus[nickname] = DISCONNECTED
+GC ->> B: notifyPlayerDisconnected(nickname: String)
+
+alt The disconnected player is the current player
+    note over GC: startDisconnectedPlayerTimer (30s)
+    GC ->> B: notifyAutoPlayerTimerStarted(nickname: String, seconds: long)
+    opt per-player timer expired
+        note over GC: AutoPlayer.computeMove(...)
+        GC ->> B: notifyAutoPlayerInvoked(nickname: String)
+        note over GC: executes moveTotem / resolveActions on behalf of the player\n(produces normal game events — see diagrams C / D)
+    end
+end
+
+opt Only 1 active client remains
+    note over GC: startGlobalDisconnectionTimeout (120s)
+    GC ->> B: notifyGlobalTimerStarted(seconds: long)
+end
+
+== Reconnection (client side) ==
+
+note over C: handleConnectionLost():\nview.onConnectionLost(); retry every 5s
+C -> H: (new TCP/RMI connection) handleClientConnected(view)
+H -> CM: handleClientConnected(view) -> clientId
+H --> C: notifyAvailableLobbiesUpdated(lobbies: List<LobbyInfo>)
+
+C -> H: requestReconnect(nickname: String, gameId: String)
+note over H: ReconnectCommand.apply(manager, clientId, view)
+H -> CM: requestReconnect(clientId, view, nickname, gameId)
+
+alt Validation failed (game not found / nickname not registered / player not disconnected / server in replay mode)
+    CM --> C: notifyError(message: String)
+else Validation OK
+    CM -> GC: handlePlayerReconnected(nickname, newView)
+    note over GC: cancel per-player and global timers\nconnectionStatus[nickname] = RECONNECTING
+    GC ->> B: notifyPlayerReconnected(nickname: String)
+    opt global timer was active
+        GC ->> B: notifyGlobalTimerCancelled()
+    end
+
+    note over GC: Catch-up replay: drain globalEventHistory to newView
+    loop for each historical event (in order)
+        GC --> C: <historical event> (notifyPhaseChanged, notifyCardTaken, notifyPlayerResourceChanged, ...)
+    end
+    note over GC: connectionStatus[nickname] = CONNECTED
+
+    CM -> CM: rebindClient(oldClientId, newClientId, gameId, nickname)
+end
+
+== Forfeit / Recovery Failed (global timer expires after 120s) ==
+
+alt One surviving active client exists
+    note over GC: winner by forfeit = the sole active client
+    GC ->> B: notifyGameAborted(winner: String)
+else No active clients (recovery failed)
+    GC ->> B: notifyGameRecoveryFailed()
+end
+note over GC #Red: logGameEnded() + shutdown()
+
+@enduml

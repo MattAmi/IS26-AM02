@@ -1,0 +1,61 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Current Client" as C
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== ActionResolutionState Entry (performed during the preceding transition) ==
+
+note over S: notifyPhaseChanged(ACTION_RESOLUTION, currentPlayer, resolutionOrder)\n+ notifyPlayerLimitsInitialized\n+ notifyPhaseObservers(ACTION_RESOLUTION)\n(already shown in diagrams C / E)
+
+== Card Selection (resolveActions) — multiple incremental calls ==
+
+loop until pick obligation met
+    C -> S: resolveActions(selectedIDs: List<String>)
+
+    alt Success — processActionSelection()
+        opt Food reward from OfferTile (foodFromTile > 0)
+            S ->> B: notifyPlayerResourceChanged(nickname, FOOD, newValue, +foodFromTile)
+        end
+
+            loop for each selected card (in selection order)
+                alt Card is BUILDING
+                    S ->> B: notifyCardTaken(nickname, cardID, BUILDING, sourceRow)
+                    opt actualCost > 0
+                        S ->> B: notifyPlayerResourceChanged(nickname, FOOD, newValue, -actualCost)
+                    end
+                    note over S: insertBuilding() -> emitOutcome:\nonly the building's base PP delta (PP_BUILDINGS).\nThe active BuildingEffect is REGISTERED (as PhaseObserver /\nTribuObserver / EventObserver) but does NOT fire yet.
+                    opt building has base PP > 0
+                        S ->> B: notifyPlayerResourceChanged(nickname, PP_BUILDINGS, newValue, +pp)
+                    end
+                else Card is CHARACTER
+                    S ->> B: notifyCardTaken(nickname, cardID, CHARACTER, sourceRow)
+                    note over S: insertCharacter() -> emitOutcome:\n1. character's own immediate effect\n2. all registered TribuObservers reacting to this CharacterType\n   (building effects: full-set bonuses, Inventor-pair rewards, etc.)\nBoth are merged into a single emitOutcome() call.
+                    opt character effect and/or TribuObserver reactions produce deltas
+                        S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+                    end
+                end
+            end
+
+        S ->> B: notifyPlayerLimitsUpdated(nickname, remainingUpper, remainingLower)
+
+    else Failure (not your turn, card not found, event card, insufficient food, pick limit exceeded)
+        S --> C: notifyError(message: String)
+    end
+end
+
+== Return to TurnOrderTile (moveTotem 'T') ==
+
+C -> S: moveTotem(tileID: 'T')
+
+alt Success (canPlayerFinish == true)
+    note over S: movePlayerToTurnOrder(player)
+    S ->> B: notifyTotemReturned(nickname: String, turnOrderPosition: int)
+    note right S: transitionTo(EndPlayerTurnState) — see diagram E
+else Failure (tileID != 'T', not your turn, pick obligation not fulfilled)
+    S --> C: notifyError(message: String)
+end
+@enduml

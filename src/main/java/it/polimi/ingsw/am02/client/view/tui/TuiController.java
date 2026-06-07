@@ -8,10 +8,7 @@ import it.polimi.ingsw.am02.client.view.ClientView;
 import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import it.polimi.ingsw.am02.common.enumerations.Totem;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 /**
  * TUI-specific input handler that reads commands from standard input and
@@ -84,7 +81,10 @@ public class TuiController extends ClientController {
      * {@code reconnect}, {@code totem}, {@code totems}, {@code leave}, {@code move},
      * {@code resolve}, {@code summary}, {@code info}, {@code help}, {@code lobby},
      * {@code quit}. Any unrecognized token is treated as a bare card ID and
-     * forwarded to {@link #handleResolveActions} when it is the local player's turn.</p>
+     * forwarded to {@link #handleResolveActions} when it is the local player's turn.
+     * Numeric arguments ({@code create}, {@code join}) are parsed via
+     * {@link #parseNumericArg(String, String)}; invalid or missing values are
+     * rejected without propagating a sentinel.</p>
      *
      * @param input the raw, trimmed input line
      */
@@ -96,15 +96,11 @@ public class TuiController extends ClientController {
         switch (cmd) {
             case "nick" -> handleSetNickname(arg1);
 
-            case "create" -> {
-                int size = parseNumericArg(arg1, "Usage: create <size>");
-                if (size != -1) handleCreateLobby(size);
-            }
+            case "create" -> parseNumericArg(arg1, "Usage: create <size>")
+                    .ifPresent(this::handleCreateLobby);
 
-            case "join" -> {
-                int index = parseNumericArg(arg1, "Usage: join <index>");
-                if (index != -1) handleJoinLobby(index);
-            }
+            case "join" -> parseNumericArg(arg1, "Usage: join <index>")
+                    .ifPresent(this::handleJoinLobby);
 
             case "reconnect" -> {
                 if (args.length < 3) {
@@ -201,23 +197,24 @@ public class TuiController extends ClientController {
 
     /**
      * Attempts to parse {@code input} as an integer.
-     * Displays {@code usage} via the view and returns {@code -1} if the string
-     * is empty or not a valid integer.
+     * Displays {@code usage} via the view and returns {@link Optional#empty()}
+     * if the string is empty or not a valid integer.
      *
      * @param input the string token to parse
      * @param usage human-readable usage hint shown on parse failure
-     * @return the parsed integer, or {@code -1} on failure
+     * @return an {@link Optional} containing the parsed integer,
+     *         or {@link Optional#empty()} if parsing fails
      */
-    private int parseNumericArg(String input, String usage) {
+    private Optional<Integer> parseNumericArg(String input, String usage) {
+        if (input.isEmpty()) {
+            view.onError(usage);
+            return Optional.empty();
+        }
         try {
-            if (input.isEmpty()) {
-                view.onError(usage);
-                return -1;
-            }
-            return Integer.parseInt(input);
+            return Optional.of(Integer.parseInt(input));
         } catch (NumberFormatException e) {
             view.onError("Error: Argument must be a number.");
-            return -1;
+            return Optional.empty();
         }
     }
 }

@@ -1,0 +1,34 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+note over S, B: notifyTurnOrderEstablished was already sent in NewRoundState\nbefore this transition (see diagram H).
+
+== NewEraState Entry ==
+
+note over S: onEntry(): notifyPhaseObservers(NEW_ERA) before onEntryActions()
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+end
+
+S ->> B: notifyPhaseChanged(phase: NEW_ERA, currentPlayer: null, resolutionOrder: null)
+
+== New Era Preparation ==
+
+note over S: executeNewEraPreparation() -> updateRowsForNewEra()
+S ->> B: notifyEraChanged(newEra: Era, newUpperRowBuildings: List<String>, newLowerRowBuildings: List<String>, discardedBuildings: List<String>)
+
+== Transition to TotemPlacementState ==
+
+note over S: transitionTo(TotemPlacementState)\nnotifyPhaseObservers(TOTEM_PLACEMENT)
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+end
+S ->> B: notifyPhaseChanged(phase: TOTEM_PLACEMENT, currentPlayer: String, resolutionOrder: null)
+
+note right S: See TotemPlacementState diagram (C)
+@enduml

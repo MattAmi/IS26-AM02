@@ -1,0 +1,25 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== FinalScoringState Entry ==
+
+note over S: onEntry(): notifyPhaseObservers(END_GAME) before onEntryActions()
+loop for each active BuildingEffect (PhaseObserver) — e.g. end-game prestige bonuses
+    S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+end
+note right S: No notifyPhaseChanged(END_GAME) is emitted.
+
+== Final Score Calculation ==
+
+note over S: calculateFinalScores()\n(sums PP from Builders / Buildings / Inventors / Artists — internal update, no per-player notifications)\ndetermineWinner()
+note right S: The breakdown is included in finalRankings.
+
+S ->> B: notifyGameEnded(winners: List<String>, finalRankings: List<PlayerFinalScore>)
+
+note over S #Red: logGameEnded() + close() + shutdown()\nGame Ended
+@enduml

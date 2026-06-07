@@ -1,0 +1,42 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Current Client" as C
+participant "Server" as S
+participant "Broadcast (All Clients)" as B
+
+== TotemPlacementState Entry ==
+
+note over S: onEntry(): notifyPhaseObservers(TOTEM_PLACEMENT) before onEntryActions()
+loop for each active BuildingEffect (PhaseObserver)
+    S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+end
+S ->> B: notifyPhaseChanged(phase: TOTEM_PLACEMENT, currentPlayer: String, resolutionOrder: null)
+
+== TotemPlacement Interaction ==
+
+C -> S: moveTotem(tileID: char)
+
+alt Validation Success
+    S ->> B: notifyTotemPlaced(nickname: String, tileID: char)
+
+    alt Not all totems placed yet (checkAllTotemsPlaced == false)
+        note over S: nextPlayer()
+        S ->> B: notifyCurrentPlayerChanged(nextPlayer: String)
+    else All totems placed (checkAllTotemsPlaced == true)
+        note over S: setUpActionResolutionTurnOrder()
+        S ->> B: notifyPhaseChanged(phase: ACTION_RESOLUTION, currentPlayer: String, resolutionOrder: List<String>)
+        S ->> B: notifyPlayerLimitsInitialized(nickname: String, remainingUpper: int, remainingLower: int)
+        note over S: transitionTo(ActionResolutionState)\nnotifyPhaseObservers(ACTION_RESOLUTION)
+        loop for each active BuildingEffect (PhaseObserver)
+            S ->> B: notifyPlayerResourceChanged(nickname, resource, newValue, delta)
+        end
+        note right S: See ActionResolutionState diagram (D)
+    end
+
+else Validation Failure (not your turn, tile occupied / non-existent)
+    S --> C: notifyError(message: String)
+end
+@enduml

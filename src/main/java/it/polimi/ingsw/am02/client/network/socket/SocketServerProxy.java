@@ -342,7 +342,7 @@ public class SocketServerProxy implements ServerProxy {
     /** {@inheritDoc} */
     @Override
     public void requestLeaveLobby() {
-        send(new LeaveLobbyCommand(activeNickname != null ? activeNickname : ""));
+        send(new LeaveLobbyCommand());
     }
 
     /**

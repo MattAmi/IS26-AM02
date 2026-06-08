@@ -30,7 +30,6 @@ import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PongCommand;
         @JsonSubTypes.Type(value = CreateLobbyCommand.class,      name = "CreateLobby"),
         @JsonSubTypes.Type(value = JoinLobbyCommand.class,        name = "JoinLobby"),
         @JsonSubTypes.Type(value = SelectTotemCommand.class,      name = "SelectTotem"),
-        @JsonSubTypes.Type(value = StartGameCommand.class,        name = "StartGame"),
         @JsonSubTypes.Type(value = LeaveLobbyCommand.class,       name = "LeaveLobby"),
         @JsonSubTypes.Type(value = MoveTotemCommand.class,        name = "MoveTotemCommand"),
         @JsonSubTypes.Type(value = ResolveActionsCommand.class,   name = "ResolveActionsCommand"),

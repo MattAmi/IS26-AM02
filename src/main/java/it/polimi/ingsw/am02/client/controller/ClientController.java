@@ -65,14 +65,6 @@ public abstract class ClientController {
      */
     public void setServerProxy(ServerProxy proxy) { this.proxy = proxy; }
 
-    /**
-     * Replaces the {@link GameModel} reference used by this controller.
-     * Called by the network dispatcher when the game session changes.
-     *
-     * @param gameModel the new game model, or {@code null} to clear it
-     */
-    public void setGameModel(GameModel gameModel) { this.gameModel = gameModel; }
-
     // -------------------------------------------------------------------------
     // CONTEXT MANAGEMENT
     // -------------------------------------------------------------------------

@@ -87,17 +87,6 @@ public class ClientNetworkDispatcher implements VirtualView {
     }
 
     /**
-     * Convenience method to update both the active nickname and game ID in one call.
-     *
-     * @param nick the player's registered nickname
-     * @param gId  the ID of the active game
-     */
-    public void updateInternalState(String nick, String gId) {
-        this.activeNickname = nick;
-        this.activeGameId = gId;
-    }
-
-    /**
      * Lazily creates the {@link it.polimi.ingsw.am02.client.model.GameModel} if it
      * does not yet exist and {@link #activeNickname} is available.
      *

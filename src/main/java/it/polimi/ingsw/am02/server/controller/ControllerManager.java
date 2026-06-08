@@ -40,7 +40,7 @@ import java.util.stream.Stream;
  *
  * <p>All public methods that mutate shared state are {@code synchronized}.
  * In-game action methods ({@link #requestMoveTotem}, {@link #requestResolveActions})
- * are intentionally not synchronised because {@link GameController} provides
+ * are intentionally not synchronized because {@link GameController} provides
  * its own fine-grained locking.
  *
  * <p>Obtain the singleton via {@link #getInstance()}.
@@ -369,20 +369,6 @@ public class ControllerManager implements VirtualControllerManager {
         clientToNickname.remove(clientId);
         connectedClients.put(clientId, view);
         view.notifyAvailableLobbiesUpdated(getLobbyInfoList());
-    }
-
-    // =========================================================
-    // Lifecycle
-    // =========================================================
-
-    /**
-     * Shuts down all active game controllers and the recovery scheduler.
-     * Should be called on server shutdown.
-     */
-    public synchronized void shutdown() {
-        controllers.values().forEach(GameController::shutdown);
-        controllers.clear();
-        recoveryScheduler.shutdownNow();
     }
 
     // =========================================================

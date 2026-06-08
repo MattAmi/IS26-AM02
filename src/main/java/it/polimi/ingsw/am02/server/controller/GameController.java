@@ -194,11 +194,6 @@ public class GameController implements GameObserver {
         }
     }
 
-    /** Returns the {@link GameLogger} for this game. Package-private for use by {@link ControllerManager}. */
-    GameLogger getLogger() {
-        return gameLogger;
-    }
-
     // =========================================================
     // Disconnection / reconnection
     // =========================================================
@@ -772,16 +767,16 @@ public class GameController implements GameObserver {
      * Enters replay mode: all players are set to {@link ConnectionStatus#PENDING_RECONNECTION}
      * and logging is suppressed. Called by {@link ControllerManager} before replaying the NDJSON log.
      */
-    void enterReplayMode() {
+    synchronized void enterReplayMode() {
         this.replayMode = true;
-        connectionStatus.replaceAll((nick, status) -> ConnectionStatus.PENDING_RECONNECTION);
+        markAllPlayersPendingReconnection();
     }
 
     /**
      * Exits replay mode, re-enabling logging and allowing reconnections.
      * Called by {@link ControllerManager} after the NDJSON replay is complete.
      */
-    void exitReplayMode() {
+    synchronized void exitReplayMode() {
         this.replayMode = false;
     }
 }

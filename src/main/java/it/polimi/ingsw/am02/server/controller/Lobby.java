@@ -185,24 +185,6 @@ public class Lobby {
         }
     }
 
-    /**
-     * Dissolves the lobby: notifies all clients, returns them to the pre-lobby
-     * state, and removes the lobby from {@link ControllerManager}.
-     */
-    public synchronized void dissolve() {
-        broadcastLobbyDissolved();
-
-        new ArrayList<>(clientIds)
-                .forEach(id -> controllerManager.returnClientToPreLobby(id, views.get(id)));
-
-        clientIds.clear();
-        views.clear();
-        clientToNickname.clear();
-        chosenTotems.clear();
-
-        controllerManager.removeLobby(lobbyId);
-    }
-
     // Helper methods
     private void checkAndStart() {
         if (started || !isReadyToStart()) return;
@@ -241,10 +223,6 @@ public class Lobby {
     private void broadcastCurrentLobbyUpdated() {
         LobbyInfo info = toLobbyInfo();
         views.values().forEach(v -> v.notifyCurrentLobbyUpdated(info));
-    }
-
-    private void broadcastLobbyDissolved() {
-        views.values().forEach(v -> v.notifyLobbyDissolved(lobbyId));
     }
 
     /** @return the current number of clients in this lobby */

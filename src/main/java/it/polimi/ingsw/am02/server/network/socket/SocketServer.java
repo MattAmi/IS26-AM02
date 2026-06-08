@@ -37,7 +37,7 @@ public class SocketServer implements NetworkServer {
         try {
             serverSocket = new ServerSocket(port);
             running = true;
-            System.out.println("[SocketServer] In ascolto sulla porta " + port);
+            System.out.println("[READY] Socket server listening on port " + port);
             while (running) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("[SocketServer] New Connection: "

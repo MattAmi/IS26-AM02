@@ -47,6 +47,7 @@ public class ServerApp {
             Path logsDir = Paths.get("logs");
             manager.recoverGames(logsDir);
             System.out.println("[INFO] Persistence check completed.");
+            System.out.println("----------------------------------------");
 
             // --- START RMI ---
             NetworkServer rmiServer = NetworkServerFactory.create(NetworkType.RMI);
@@ -71,10 +72,6 @@ public class ServerApp {
             }, "NetworkServer-Socket");
             socketThread.setDaemon(true);
             socketThread.start();
-
-            System.out.println("[READY] RMI Server listening on port " + rmiPort);
-            System.out.println("[READY] Socket Server listening on port " + socketPort);
-            System.out.println("----------------------------------------");
 
             Thread.currentThread().join();
 

@@ -55,7 +55,7 @@ public class RmiServer implements NetworkServer {
             RmiServerFactory stub = (RmiServerFactory) UnicastRemoteObject.exportObject(factory, 1099);
             registry.rebind("AM02-GameServer", stub);
 
-            System.out.println("RMI Server started on port " + port);
+            System.out.println("[READY] RMI server listening on port " + port);
 
         } catch (Exception e) {
             System.err.println("RMI Server start error: " + e.getMessage());

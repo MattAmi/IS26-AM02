@@ -452,7 +452,7 @@ public class GameController implements GameObserver {
         }
     }
 
-    private void scheduleAutoPlayerMove(String nickname) {
+    private synchronized void scheduleAutoPlayerMove(String nickname) {
         long activeCount = connectionStatus.values().stream()
                 .filter(s -> s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)
                 .count();
@@ -757,7 +757,7 @@ public class GameController implements GameObserver {
      * @return {@code true} if the player's status is {@link ConnectionStatus#DISCONNECTED}
      *         or {@link ConnectionStatus#PENDING_RECONNECTION}
      */
-    public boolean isPlayerDisconnected(String nickname) {
+    public synchronized boolean isPlayerDisconnected(String nickname) {
         ConnectionStatus status = connectionStatus.get(nickname);
         return status == ConnectionStatus.DISCONNECTED
                 || status == ConnectionStatus.PENDING_RECONNECTION;

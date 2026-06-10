@@ -108,6 +108,10 @@ public class ControllerManager implements VirtualControllerManager {
             }
         } else if (clientToLobby.containsKey(clientId)) {
             leaveLobbyInternal(clientId);
+            // Connection lost, not a voluntary leave: returnClientToPreLobby has
+            // just re-registered the dead view in connectedClients — remove it,
+            // or it would leak and receive broadcasts forever.
+            connectedClients.remove(clientId);
         } else {
             connectedClients.remove(clientId);
         }

@@ -10,10 +10,7 @@ import it.polimi.ingsw.am02.common.enumerations.RowPosition;
 import it.polimi.ingsw.am02.server.model.card.BuildingDeck;
 import it.polimi.ingsw.am02.server.model.card.EventCard;
 import it.polimi.ingsw.am02.server.model.card.TribuDeck;
-import it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException;
-import it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableException;
-import it.polimi.ingsw.am02.server.model.exceptions.InsufficientFoodException;
-import it.polimi.ingsw.am02.server.model.exceptions.PickLimitExceededException;
+import it.polimi.ingsw.am02.server.model.exceptions.*;
 import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
 import it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter;
 import it.polimi.ingsw.am02.server.model.player.Player;
@@ -206,6 +203,16 @@ public class GameBoard {
     }
 
     private int[] countSelectedByRow(List<String> selectedIDs) {
+        // Server-side guard: the official client already blocks duplicates, but a
+        // modified client could submit the same ID twice and acquire one physical
+        // card multiple times (the second remove() would silently fail downstream).
+        Set<String> seen = new HashSet<>();
+        for (String cardID : selectedIDs) {
+            if (!seen.add(cardID)) {
+                throw new DuplicateCardSelectionException(cardID);
+            }
+        }
+
         int countUpper = 0;
         int countLower = 0;
 

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShamanicImmunityEffect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">ShamanicImmunityEffect.java</span></div><h1>ShamanicImmunityEffect.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.enumerations.EventType;
+import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
+
+/**
+ * Building effect that makes the owner's tribe immune to the minority penalty
+ * during the Shamanic Ritual event.
+ *
+ * &lt;p&gt;Registered as an {@link EventObserver}. Sets the immunity flag on the tribe
+ * in {@link #eventStart} and clears it in {@link #eventEnd}.
+ *
+ * &lt;p&gt;JSON key: {@code &quot;SHAMANIC_IMMUNITY&quot;}
+ */
+public class ShamanicImmunityEffect implements BuildingEffect, EventObserver {
+    final Player owner;
+
+    /**
+     * @param owner the player who owns this building
+     */
+<span class="fc" id="L25">    public ShamanicImmunityEffect(Player owner) {</span>
+<span class="fc" id="L26">        this.owner = owner;</span>
+<span class="fc" id="L27">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void accept(EffectVisitor v) {
+<span class="fc" id="L32">        v.visitEventObserver(this);</span>
+<span class="fc" id="L33">    }</span>
+
+    /**
+     * Grants immunity to the owner's tribe at the start of the Shamanic Ritual.
+     * Has no effect for other event types.
+     *
+     * @param eventType the event currently starting
+     * @return an empty {@link EffectOutcome} (immunity is a flag, not a resource delta)
+     */
+    @Override
+    public EffectOutcome eventStart(EventType eventType) {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if(eventType == EventType.SHAMANIC_RITUAL) {</span>
+<span class="fc" id="L45">            owner.getTribu().setImmuneToShamanicPenalty(true);</span>
+        }
+
+<span class="fc" id="L48">        return EffectOutcome.empty();</span>
+    }
+
+    /**
+     * Revokes immunity from the owner's tribe after the Shamanic Ritual resolves.
+     * Has no effect for other event types.
+     *
+     * @param eventType the event that just finished
+     * @return an empty {@link EffectOutcome}
+     */
+    @Override
+    public EffectOutcome eventEnd(EventType eventType) {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if(eventType == EventType.SHAMANIC_RITUAL) {</span>
+<span class="fc" id="L61">            owner.getTribu().setImmuneToShamanicPenalty(false);</span>
+        }
+
+<span class="fc" id="L64">        return EffectOutcome.empty();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

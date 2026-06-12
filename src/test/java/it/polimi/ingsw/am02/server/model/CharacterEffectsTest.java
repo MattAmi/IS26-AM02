@@ -12,6 +12,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Tests the immediate character placement effects ({@link GathererEffect},
+ * {@link ShamanEffect}, {@link NoEffect}), verifying that each updates the
+ * player's tribù state and reports the matching resource deltas.
+ */
 class CharacterEffectsTest {
 
     private Player player;
@@ -21,6 +26,7 @@ class CharacterEffectsTest {
         player = new Player("Alice", Totem.RED);
     }
 
+    /** Verifies the gatherer effect increases the tribù's food discount. */
     @Test
     void testGathererEffect() {
         GathererEffect effect = new GathererEffect(2);
@@ -31,6 +37,7 @@ class CharacterEffectsTest {
         assertEquals(2, outcome.resourceDeltas().get(0).delta());
     }
 
+    /** Verifies the shaman effect increases the tribù's shaman stars. */
     @Test
     void testShamanEffect() {
         ShamanEffect effect = new ShamanEffect(3);
@@ -41,6 +48,7 @@ class CharacterEffectsTest {
         assertEquals(3, outcome.resourceDeltas().get(0).delta());
     }
 
+    /** Verifies the no-op effect produces an empty outcome. */
     @Test
     void testNoEffect() {
         NoEffect effect = new NoEffect();

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameBoardTotemMovementTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">GameBoardTotemMovementTest.java</span></div><h1>GameBoardTotemMovementTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model;
+
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Tests the complete totem placement flow on GameBoard:
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@code movePlayerToOffer(Player, char)} — moving a totem onto an OfferTile&lt;/li&gt;
+ *   &lt;li&gt;{@code areAllTotemsPlaced()} — checking whether all totems have left the TurnOrderTile&lt;/li&gt;
+ *   &lt;li&gt;{@code getPlayersInResolutionOrder()} — retrieving players ordered left-to-right on the OfferTrack&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * Covers: normal placement, duplicate tile rejection, all-placed detection,
+ * resolution order matching placement order on the track.
+ */
+<span class="fc" id="L24">class GameBoardTotemMovementTest {</span>
+
+    private static final int NUM_PLAYERS = 3;
+
+    private GameBoard gameBoard;
+    private List&lt;Player&gt; players;
+    private GameRegistry registry;
+<span class="fc" id="L31">    private final it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter notifier = org.mockito.Mockito.mock(it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter.class);</span>
+<span class="fc" id="L32">    private final java.util.Random gameRandom = new java.util.Random(42);</span>
+
+    @BeforeEach
+    void setUp() {
+<span class="fc" id="L36">        TestHelper.ensureRegistryLoaded();</span>
+<span class="fc" id="L37">        registry = GameRegistry.getInstance();</span>
+
+        // Create the board for a 3-player game
+<span class="fc" id="L40">        gameBoard = new GameBoard(NUM_PLAYERS, notifier, gameRandom);</span>
+
+<span class="fc" id="L42">        players = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L44">        Player player1 = new Player(&quot;Matteo&quot;, Totem.WHITE);</span>
+<span class="fc" id="L45">        Player player2 = new Player(&quot;Raed&quot;, Totem.BLUE);</span>
+<span class="fc" id="L46">        Player player3 = new Player(&quot;Francesco&quot;, Totem.YELLOW);</span>
+
+<span class="fc" id="L48">        players.add(player1);</span>
+<span class="fc" id="L49">        players.add(player2);</span>
+<span class="fc" id="L50">        players.add(player3);</span>
+
+<span class="fc" id="L52">        gameBoard.setUpInitialTurnOrder(players);</span>
+<span class="fc" id="L53">    }</span>
+
+
+    //  movePlayerToOffer — happy path
+
+    /** Verifies a player can place a totem on a valid, free offer tile. */
+    @Test
+    void movePlayerToOfferFirstPlayerPlacedSuccessfully() {
+        // The OfferTrack for 3 players should have tiles B, C, D (letters in order).
+        // Tile IDs for 3 players: B='B', C='C', D='D'
+<span class="fc" id="L63">        assertDoesNotThrow(() -&gt; gameBoard.movePlayerToOffer(players.getFirst(), 'B'));</span>
+<span class="fc" id="L64">    }</span>
+
+    /** Verifies all three players can place totems on distinct tiles. */
+    @Test
+    void movePlayerToOfferAllThreePlayersOnDifferentTiles() {
+<span class="fc" id="L69">        gameBoard.movePlayerToOffer(players.get(0), 'B');</span>
+<span class="fc" id="L70">        gameBoard.movePlayerToOffer(players.get(1), 'C');</span>
+<span class="fc" id="L71">        assertDoesNotThrow(() -&gt; gameBoard.movePlayerToOffer(players.get(2), 'D'));</span>
+<span class="fc" id="L72">    }</span>
+
+
+    //  movePlayerToOffer — error cases
+
+    /** Verifies placing a totem on an already-occupied tile is rejected. */
+    @Test
+    void movePlayerToOffer_tileAlreadyOccupied_throwsException() {
+<span class="fc" id="L80">        gameBoard.movePlayerToOffer(players.get(0), 'B');</span>
+
+        // Second player tries the same tile — must be rejected
+<span class="fc" id="L83">        assertThrows(RuntimeException.class,</span>
+<span class="nc" id="L84">                () -&gt; gameBoard.movePlayerToOffer(players.get(1), 'B'));</span>
+<span class="fc" id="L85">    }</span>
+
+    /** Verifies placing a totem on a non-existent tile ID is rejected. */
+    @Test
+    void movePlayerToOfferInvalidTileIDThrowsException() {
+        // 'Z' does not correspond to any OfferTile for a 3-player game
+<span class="fc" id="L91">        assertThrows(RuntimeException.class,</span>
+<span class="nc" id="L92">                () -&gt; gameBoard.movePlayerToOffer(players.getFirst(), 'Z'));</span>
+<span class="fc" id="L93">    }</span>
+
+    //  areAllTotemsPlaced
+
+    /** Verifies the board reports not-all-placed before any totem is moved. */
+    @Test
+    void areAllTotemsPlacedNoTotemsPlacedYetReturnsFalse() {
+<span class="fc" id="L100">        assertFalse(gameBoard.areAllTotemsPlaced(),</span>
+                &quot;No totems moved yet — TurnOrderTile should not be empty&quot;);
+<span class="fc" id="L102">    }</span>
+
+    /** Verifies the board reports not-all-placed with only some totems moved. */
+    @Test
+    void areAllTotemsPlacedPartialPlacementReturnsFalse() {
+<span class="fc" id="L107">        gameBoard.movePlayerToOffer(players.get(0), 'B');</span>
+<span class="fc" id="L108">        gameBoard.movePlayerToOffer(players.get(1), 'C');</span>
+
+<span class="fc" id="L110">        assertFalse(gameBoard.areAllTotemsPlaced(),</span>
+                &quot;Only 2 of 3 totems placed — should return false&quot;);
+<span class="fc" id="L112">    }</span>
+
+    /** Verifies the board reports all-placed once every totem has been moved. */
+    @Test
+    void areAllTotemsPlacedAllPlacedReturnsTrue() {
+<span class="fc" id="L117">        gameBoard.movePlayerToOffer(players.get(0), 'B');</span>
+<span class="fc" id="L118">        gameBoard.movePlayerToOffer(players.get(1), 'C');</span>
+<span class="fc" id="L119">        gameBoard.movePlayerToOffer(players.get(2), 'D');</span>
+
+<span class="fc" id="L121">        assertTrue(gameBoard.areAllTotemsPlaced(),</span>
+                &quot;All 3 totems placed on OfferTrack — TurnOrderTile should be empty&quot;);
+<span class="fc" id="L123">    }</span>
+
+    //  getPlayersInResolutionOrder
+
+    /** Verifies resolution order follows left-to-right track position, not placement order. */
+    @Test
+    void getPlayersInResolutionOrderMatchesLeftToRightTrackOrder() {
+        // Place totems in non-alphabetical order: player1-&gt;D, player2-&gt;B, player3-&gt;C
+<span class="fc" id="L131">        gameBoard.movePlayerToOffer(players.get(0), 'D');</span>
+<span class="fc" id="L132">        gameBoard.movePlayerToOffer(players.get(1), 'B');</span>
+<span class="fc" id="L133">        gameBoard.movePlayerToOffer(players.get(2), 'C');</span>
+
+<span class="fc" id="L135">        List&lt;Player&gt; resolved = gameBoard.getPlayersInResolutionOrder();</span>
+
+<span class="fc" id="L137">        assertEquals(NUM_PLAYERS, resolved.size(),</span>
+                &quot;Resolution order must contain all players&quot;);
+
+        // Track order is B &lt; C &lt; D (left to right), so:
+        //   position 0 -&gt; player2 (on B)
+        //   position 1 -&gt; player3 (on C)
+        //   position 2 -&gt; player1 (on D)
+<span class="fc" id="L144">        assertEquals(players.get(1), resolved.get(0),</span>
+                &quot;Player on tile B should resolve first&quot;);
+<span class="fc" id="L146">        assertEquals(players.get(2), resolved.get(1),</span>
+                &quot;Player on tile C should resolve second&quot;);
+<span class="fc" id="L148">        assertEquals(players.get(0), resolved.get(2),</span>
+                &quot;Player on tile D should resolve third&quot;);
+<span class="fc" id="L150">    }</span>
+
+    /** Verifies that placing totems in track order yields that same resolution order. */
+    @Test
+    void getPlayersInResolutionOrderAlphabeticalPlacementPreservesOrder() {
+        // Place in alphabetical tile order: player1-&gt;B, player2-&gt;C, player3-&gt;D
+<span class="fc" id="L156">        gameBoard.movePlayerToOffer(players.get(0), 'B');</span>
+<span class="fc" id="L157">        gameBoard.movePlayerToOffer(players.get(1), 'C');</span>
+<span class="fc" id="L158">        gameBoard.movePlayerToOffer(players.get(2), 'D');</span>
+
+<span class="fc" id="L160">        List&lt;Player&gt; resolved = gameBoard.getPlayersInResolutionOrder();</span>
+
+<span class="fc" id="L162">        assertEquals(players.get(0), resolved.get(0));</span>
+<span class="fc" id="L163">        assertEquals(players.get(1), resolved.get(1));</span>
+<span class="fc" id="L164">        assertEquals(players.get(2), resolved.get(2));</span>
+<span class="fc" id="L165">    }</span>
+
+    //  Full flow: placement → check → resolution order
+
+    /** End-to-end flow: place all totems checking intermediate state, then verify resolution order. */
+    @Test
+    void fullPlacementFlowPlaceAllThenResolve() {
+        // Step 1: verify nobody is placed yet
+<span class="fc" id="L173">        assertFalse(gameBoard.areAllTotemsPlaced());</span>
+
+        // Step 2: place totems one by one, checking intermediate state
+<span class="fc" id="L176">        gameBoard.movePlayerToOffer(players.get(2), 'B');  // player3 picks first tile</span>
+<span class="fc" id="L177">        assertFalse(gameBoard.areAllTotemsPlaced());</span>
+
+<span class="fc" id="L179">        gameBoard.movePlayerToOffer(players.get(0), 'D');  // player1 picks last tile</span>
+<span class="fc" id="L180">        assertFalse(gameBoard.areAllTotemsPlaced());</span>
+
+<span class="fc" id="L182">        gameBoard.movePlayerToOffer(players.get(1), 'C');  // player2 fills the middle</span>
+<span class="fc" id="L183">        assertTrue(gameBoard.areAllTotemsPlaced(),</span>
+                &quot;After all 3 placements, TurnOrderTile must be empty&quot;);
+
+        // Step 3: verify resolution order is left-to-right on track (B, C, D)
+<span class="fc" id="L187">        List&lt;Player&gt; resolved = gameBoard.getPlayersInResolutionOrder();</span>
+<span class="fc" id="L188">        assertEquals(3, resolved.size());</span>
+<span class="fc" id="L189">        assertEquals(&quot;Francesco&quot;, resolved.get(0).getNickname(),</span>
+                &quot;Player on B resolves first&quot;);
+<span class="fc" id="L191">        assertEquals(&quot;Raed&quot;, resolved.get(1).getNickname(),</span>
+                &quot;Player on C resolves second&quot;);
+<span class="fc" id="L193">        assertEquals(&quot;Matteo&quot;, resolved.get(2).getNickname(),</span>
+                &quot;Player on D resolves third&quot;);
+<span class="fc" id="L195">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RmiClientHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.network.rmi</a> &gt; <span class="el_source">RmiClientHandler.java</span></div><h1>RmiClientHandler.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.network.rmi;
+
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.interfaces.VirtualControllerManager;
+import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
+import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
+import it.polimi.ingsw.am02.server.controller.ControllerManager;
+import it.polimi.ingsw.am02.server.network.ClientHandler;
+
+import java.rmi.RemoteException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * Server-side handler for a single RMI-connected client.
+ *
+ * &lt;p&gt;Inbound RMI calls (client → server) are executed directly on the RMI
+ * thread pool — no extra executor needed, because the client's outbound queue
+ * already breaks the synchronicity chain on the other end.
+ *
+ * &lt;p&gt;Outbound notifications (server → client) are queued as {@link RmiCall}
+ * lambdas and drained by a dedicated worker thread, so that
+ * {@link it.polimi.ingsw.am02.server.controller.GameController} never blocks
+ * on a slow or dead client while holding its lock.
+ *
+ * &lt;p&gt;Keep-alive is handled by a dedicated ping thread that fires at a fixed
+ * interval regardless of outbound traffic, matching the design of
+ * {@link it.polimi.ingsw.am02.server.network.socket.SocketClientHandler}.
+ */
+public class RmiClientHandler implements RmiServerRemote, ClientHandler {
+
+    /**
+     * Functional interface equivalent to {@code Consumer&lt;RmiClientRemote&gt;} but
+     * declaring {@link RemoteException}, allowing RMI method references in lambdas.
+     */
+    @FunctionalInterface
+    private interface RmiCall {
+        void invoke(RmiClientRemote stub) throws RemoteException;
+    }
+
+    private final VirtualControllerManager manager;
+    private final RmiClientRemote stub;
+    private final String clientId;
+
+<span class="nc" id="L50">    private final BlockingQueue&lt;RmiCall&gt; outboundQueue = new LinkedBlockingQueue&lt;&gt;();</span>
+    private final Thread outboundWorker;
+    private Thread pingThread;
+
+<span class="nc" id="L54">    private volatile boolean running = true;</span>
+<span class="nc" id="L55">    private final AtomicBoolean disconnected = new AtomicBoolean(false);</span>
+
+    private static final long POLL_TIMEOUT_SECONDS  = 2;
+    private static final long PING_INTERVAL_MILLIS  = 5_000;
+
+    /**
+     * Creates a handler for the given RMI client stub, registers it with
+     * {@link ControllerManager}, and starts the outbound worker and ping threads.
+     *
+     * @param stub the remote stub used to push notifications to the client
+     */
+<span class="nc" id="L66">    public RmiClientHandler(RmiClientRemote stub) {</span>
+<span class="nc" id="L67">        this.manager = ControllerManager.getInstance();</span>
+<span class="nc" id="L68">        this.stub = stub;</span>
+<span class="nc" id="L69">        this.clientId = manager.handleClientConnected(this);</span>
+<span class="nc" id="L70">        this.outboundWorker = new Thread(this::drainOutboundQueue, &quot;rmi-out-&quot; + clientId);</span>
+<span class="nc" id="L71">        this.outboundWorker.setDaemon(true);</span>
+<span class="nc" id="L72">        this.outboundWorker.start();</span>
+<span class="nc" id="L73">        startPingThread();</span>
+<span class="nc" id="L74">    }</span>
+
+    // =========================================================
+    // INTERNAL HELPERS
+    // =========================================================
+
+    /**
+     * Adds a call to the outbound queue. Uses {@link BlockingQueue#add} instead
+     * of {@code offer} to avoid the &quot;result ignored&quot; warning; with an unbounded
+     * {@link LinkedBlockingQueue} the queue can never be full, so
+     * {@link IllegalStateException} is unreachable in practice.
+     */
+    private void enqueue(RmiCall call) {
+<span class="nc" id="L87">        outboundQueue.add(call);</span>
+<span class="nc" id="L88">    }</span>
+
+    private void startPingThread() {
+<span class="nc" id="L91">        pingThread = new Thread(() -&gt; {</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            while (running) {</span>
+                try {
+<span class="nc" id="L94">                    Thread.sleep(PING_INTERVAL_MILLIS);</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                    if (running) stub.ping();</span>
+<span class="nc" id="L96">                } catch (InterruptedException e) {</span>
+<span class="nc" id="L97">                    Thread.currentThread().interrupt();</span>
+<span class="nc" id="L98">                    break;</span>
+<span class="nc" id="L99">                } catch (RemoteException e) {</span>
+<span class="nc" id="L100">                    System.err.println(&quot;[RmiClientHandler] Ping failed for client &quot;</span>
+<span class="nc" id="L101">                            + clientId + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L102">                    disconnect();</span>
+<span class="nc" id="L103">                    break;</span>
+<span class="nc" id="L104">                }</span>
+            }
+<span class="nc" id="L106">        }, &quot;rmi-ping-&quot; + clientId);</span>
+<span class="nc" id="L107">        pingThread.setDaemon(true);</span>
+<span class="nc" id="L108">        pingThread.start();</span>
+<span class="nc" id="L109">    }</span>
+
+    // =========================================================
+    // DRAIN LOOP — runs on outboundWorker thread
+    // =========================================================
+
+    /**
+     * Drains the outbound queue, executing each enqueued {@link RmiCall} in order.
+     * On {@link RemoteException} the client is considered unreachable and
+     * {@link #disconnect()} is called.
+     */
+    private void drainOutboundQueue() {
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        while (running) {</span>
+            try {
+<span class="nc" id="L123">                RmiCall call = outboundQueue.poll(POLL_TIMEOUT_SECONDS, TimeUnit.SECONDS);</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                if (call != null) {</span>
+<span class="nc" id="L125">                    call.invoke(stub);</span>
+                }
+<span class="nc" id="L127">            } catch (InterruptedException e) {</span>
+<span class="nc" id="L128">                Thread.currentThread().interrupt();</span>
+<span class="nc" id="L129">                break;</span>
+<span class="nc" id="L130">            } catch (RemoteException e) {</span>
+<span class="nc" id="L131">                System.err.println(&quot;[RmiClientHandler] Client &quot; + clientId</span>
+<span class="nc" id="L132">                        + &quot; unreachable: &quot; + e.getMessage());</span>
+<span class="nc" id="L133">                disconnect();</span>
+<span class="nc" id="L134">                break;</span>
+<span class="nc" id="L135">            }</span>
+        }
+<span class="nc" id="L137">    }</span>
+
+    // =========================================================
+    // VirtualView — outbound notifications (server → client)
+    // =========================================================
+
+    @Override
+    public void notifyUsernameResult(String username, boolean isValid, String reason) {
+<span class="nc" id="L145">        enqueue(s -&gt; s.notifyUsernameResult(username, isValid, reason));</span>
+<span class="nc" id="L146">    }</span>
+
+    @Override
+    public void notifyGameStarted(String gameId) {
+<span class="nc" id="L150">        enqueue(s -&gt; s.notifyGameStarted(gameId));</span>
+<span class="nc" id="L151">    }</span>
+
+    @Override
+    public void notifyAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; lobbies) {
+<span class="nc" id="L155">        enqueue(s -&gt; s.notifyAvailableLobbiesUpdated(lobbies));</span>
+<span class="nc" id="L156">    }</span>
+
+    @Override
+    public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {
+<span class="nc" id="L160">        enqueue(s -&gt; s.notifyCurrentLobbyUpdated(lobby));</span>
+<span class="nc" id="L161">    }</span>
+
+    @Override
+    public void notifyLobbyDissolved(String lobbyID) {
+<span class="nc" id="L165">        enqueue(s -&gt; s.notifyLobbyDissolved(lobbyID));</span>
+<span class="nc" id="L166">    }</span>
+
+    @Override
+    public void notifyGameSetupCompleted(Map&lt;String, Totem&gt; totemByPlayer,
+                                         List&lt;String&gt; turnOrder,
+                                         Map&lt;String, Integer&gt; initialFood,
+                                         BoardSnapshot boardSnapshot) {
+<span class="nc" id="L173">        enqueue(s -&gt; s.notifyGameSetupCompleted(totemByPlayer, turnOrder,</span>
+                initialFood, boardSnapshot));
+<span class="nc" id="L175">    }</span>
+
+    @Override
+    public void notifyPhaseChanged(PhaseType phase, String currentPlayer,
+                                   List&lt;String&gt; resolutionOrder) {
+<span class="nc" id="L180">        enqueue(s -&gt; s.notifyPhaseChanged(phase, currentPlayer, resolutionOrder));</span>
+<span class="nc" id="L181">    }</span>
+
+    @Override
+    public void notifyCurrentPlayerChanged(String nextPlayer) {
+<span class="nc" id="L185">        enqueue(s -&gt; s.notifyCurrentPlayerChanged(nextPlayer));</span>
+<span class="nc" id="L186">    }</span>
+
+    @Override
+    public void notifyTurnOrderEstablished(List&lt;String&gt; turnOrder) {
+<span class="nc" id="L190">        enqueue(s -&gt; s.notifyTurnOrderEstablished(turnOrder));</span>
+<span class="nc" id="L191">    }</span>
+
+    @Override
+    public void notifyBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow,
+                                   List&lt;String&gt; discardedCards, List&lt;String&gt; movedToLowerRow,
+                                   int deckRemainingCount) {
+<span class="nc" id="L197">        enqueue(s -&gt; s.notifyBoardUpdated(newUpperRow, newLowerRow, discardedCards,</span>
+                movedToLowerRow, deckRemainingCount));
+<span class="nc" id="L199">    }</span>
+
+    @Override
+    public void notifyEraChanged(Era newEra, List&lt;String&gt; newUpperRowBuildings,
+                                 List&lt;String&gt; newLowerRowBuildings,
+                                 List&lt;String&gt; discardedBuildings) {
+<span class="nc" id="L205">        enqueue(s -&gt; s.notifyEraChanged(newEra, newUpperRowBuildings,</span>
+                newLowerRowBuildings, discardedBuildings));
+<span class="nc" id="L207">    }</span>
+
+    @Override
+    public void notifyTotemPlaced(String nickname, char tileID) {
+<span class="nc" id="L211">        enqueue(s -&gt; s.notifyTotemPlaced(nickname, tileID));</span>
+<span class="nc" id="L212">    }</span>
+
+    @Override
+    public void notifyTotemReturned(String nickname, int turnOrderPosition) {
+<span class="nc" id="L216">        enqueue(s -&gt; s.notifyTotemReturned(nickname, turnOrderPosition));</span>
+<span class="nc" id="L217">    }</span>
+
+    @Override
+    public void notifyCardTaken(String nickname, String cardID, CardType cardType,
+                                RowPosition sourceRow) {
+<span class="nc" id="L222">        enqueue(s -&gt; s.notifyCardTaken(nickname, cardID, cardType, sourceRow));</span>
+<span class="nc" id="L223">    }</span>
+
+    @Override
+    public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper,
+                                              int remainingLower) {
+<span class="nc" id="L228">        enqueue(s -&gt; s.notifyPlayerLimitsInitialized(nickname, remainingUpper, remainingLower));</span>
+<span class="nc" id="L229">    }</span>
+
+    @Override
+    public void notifyPlayerLimitsUpdated(String nickname, int remainingUpper,
+                                          int remainingLower) {
+<span class="nc" id="L234">        enqueue(s -&gt; s.notifyPlayerLimitsUpdated(nickname, remainingUpper, remainingLower));</span>
+<span class="nc" id="L235">    }</span>
+
+    @Override
+    public void notifyPlayerResourceChanged(String nickname, ResourceType resource,
+                                            int newValue, int delta) {
+<span class="nc" id="L240">        enqueue(s -&gt; s.notifyPlayerResourceChanged(nickname, resource, newValue, delta));</span>
+<span class="nc" id="L241">    }</span>
+
+    @Override
+    public void notifyEventResolved(String eventID, String eventName) {
+<span class="nc" id="L245">        enqueue(s -&gt; s.notifyEventResolved(eventID, eventName));</span>
+<span class="nc" id="L246">    }</span>
+
+    @Override
+    public void notifyExtraTurnStarted(String nickname, int remainingUpper,
+                                       int remainingLower) {
+<span class="nc" id="L251">        enqueue(s -&gt; s.notifyExtraTurnStarted(nickname, remainingUpper, remainingLower));</span>
+<span class="nc" id="L252">    }</span>
+
+    @Override
+    public void notifyExtraTurnEnded(String nickname) {
+<span class="nc" id="L256">        enqueue(s -&gt; s.notifyExtraTurnEnded(nickname));</span>
+<span class="nc" id="L257">    }</span>
+
+    @Override
+    public void notifyGameEnded(List&lt;String&gt; winners, List&lt;PlayerFinalScore&gt; finalRankings) {
+<span class="nc" id="L261">        enqueue(s -&gt; s.notifyGameEnded(winners, finalRankings));</span>
+<span class="nc" id="L262">    }</span>
+
+    @Override
+    public void notifyError(String message) {
+<span class="nc" id="L266">        enqueue(s -&gt; s.notifyError(message));</span>
+<span class="nc" id="L267">    }</span>
+
+    @Override
+    public void notifyPlayerDisconnected(String nickname) {
+<span class="nc" id="L271">        enqueue(s -&gt; s.notifyPlayerDisconnected(nickname));</span>
+<span class="nc" id="L272">    }</span>
+
+    @Override
+    public void notifyPlayerReconnected(String nickname) {
+<span class="nc" id="L276">        enqueue(s -&gt; s.notifyPlayerReconnected(nickname));</span>
+<span class="nc" id="L277">    }</span>
+
+    @Override
+    public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {
+<span class="nc" id="L281">        enqueue(s -&gt; s.notifyAutoPlayerTimerStarted(nickname, seconds));</span>
+<span class="nc" id="L282">    }</span>
+
+    @Override
+    public void notifyAutoPlayerInvoked(String nickname) {
+<span class="nc" id="L286">        enqueue(s -&gt; s.notifyAutoPlayerInvoked(nickname));</span>
+<span class="nc" id="L287">    }</span>
+
+    @Override
+    public void notifyGameAborted(String winner) {
+<span class="nc" id="L291">        enqueue(s -&gt; s.notifyGameAborted(winner));</span>
+<span class="nc" id="L292">    }</span>
+
+    @Override
+    public void notifyGameRecoveryFailed() {
+<span class="nc" id="L296">        enqueue(RmiClientRemote::notifyGameRecoveryFailed);</span>
+<span class="nc" id="L297">    }</span>
+
+    @Override
+<span class="nc" id="L300">    public void notifyGlobalTimerStarted(long seconds) { enqueue(s -&gt; s.notifyGlobalTimerStarted(seconds)); }</span>
+
+    @Override
+<span class="nc" id="L303">    public void notifyGlobalTimerCancelled() { enqueue(RmiClientRemote::notifyGlobalTimerCancelled);}</span>
+
+    // =========================================================
+    // RmiServerRemote — inbound calls (client → server)
+    // Executed directly on the RMI thread pool — no executor wrapper.
+    // =========================================================
+
+    @Override
+    public void requestSetUsername(String username) throws RemoteException {
+<span class="nc" id="L312">        manager.requestSetUsername(clientId, username);</span>
+<span class="nc" id="L313">    }</span>
+
+    @Override
+    public void requestCreateLobby(int numPlayers) throws RemoteException {
+<span class="nc" id="L317">        manager.requestCreateLobby(clientId, numPlayers);</span>
+<span class="nc" id="L318">    }</span>
+
+    @Override
+    public void requestJoinLobby(String lobbyID) throws RemoteException {
+<span class="nc" id="L322">        manager.requestJoinLobby(clientId, lobbyID);</span>
+<span class="nc" id="L323">    }</span>
+
+    @Override
+    public void requestSelectTotem(Totem color) throws RemoteException {
+<span class="nc" id="L327">        manager.requestSelectTotem(clientId, color);</span>
+<span class="nc" id="L328">    }</span>
+
+    @Override
+    public void requestLeaveLobby() throws RemoteException {
+<span class="nc" id="L332">        manager.requestLeaveLobby(clientId);</span>
+<span class="nc" id="L333">    }</span>
+
+    @Override
+    public void requestReconnect(String nickname, String gameId) throws RemoteException {
+<span class="nc" id="L337">        manager.requestReconnect(clientId, this, nickname, gameId);</span>
+<span class="nc" id="L338">    }</span>
+
+    @Override
+    public void moveTotem(char tileID) throws RemoteException {
+<span class="nc" id="L342">        manager.requestMoveTotem(clientId, tileID);</span>
+<span class="nc" id="L343">    }</span>
+
+    @Override
+    public void resolveActions(List&lt;String&gt; selectedIDs) throws RemoteException {
+<span class="nc" id="L347">        manager.requestResolveActions(clientId, selectedIDs);</span>
+<span class="nc" id="L348">    }</span>
+
+    @Override
+    public void ping() throws RemoteException {
+        // Heartbeat from client to server: no logic needed.
+<span class="nc" id="L353">    }</span>
+
+    // =========================================================
+    // Lifecycle
+    // =========================================================
+
+    /**
+     * Stops all background threads, marks the client as disconnected, and
+     * notifies {@link ControllerManager}. Idempotent: repeated calls are no-ops,
+     * guaranteed by an {@link AtomicBoolean} guard.
+     */
+    @Override
+    public void disconnect() {
+<span class="nc bnc" id="L366" title="All 2 branches missed.">        if (!disconnected.compareAndSet(false, true)) return;</span>
+<span class="nc" id="L367">        running = false;</span>
+<span class="nc" id="L368">        outboundWorker.interrupt();</span>
+<span class="nc bnc" id="L369" title="All 2 branches missed.">        if (pingThread != null) pingThread.interrupt();</span>
+<span class="nc" id="L370">        manager.handleDisconnection(clientId);</span>
+<span class="nc" id="L371">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SocketServerProxy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.network.socket</a> &gt; <span class="el_source">SocketServerProxy.java</span></div><h1>SocketServerProxy.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.network.socket;
+
+import it.polimi.ingsw.am02.client.controller.ClientController;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.client.network.ClientNetworkDispatcher;
+import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.common.messages.Message;
+import it.polimi.ingsw.am02.common.messages.commands.*;
+import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PingCommand;
+import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PongCommand;
+import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.heartbeat.PingEvent;
+import it.polimi.ingsw.am02.common.messages.events.heartbeat.PongEvent;
+import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
+import it.polimi.ingsw.am02.common.serialization.JsonMessageCodecImpl;
+
+import java.io.*;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+/**
+ * Socket-based proxy on the client side.
+ *
+ * &lt;p&gt;&lt;b&gt;Inbound&lt;/b&gt; (server → client): a dedicated reader thread listens on
+ * the TCP stream, decodes each newline-delimited JSON message, and dispatches
+ * it to the {@link ClientNetworkDispatcher} via the IoC
+ * {@link Event#apply(it.polimi.ingsw.am02.common.interfaces.VirtualView)} pattern.
+ * {@link PingEvent}s are answered immediately with a {@link PongCommand}.
+ *
+ * &lt;p&gt;&lt;b&gt;Outbound&lt;/b&gt; (client → server): {@link Command}s are serialized and
+ * written to the socket's output stream on the caller's thread; the stream is
+ * backed by an auto-flush {@link PrintWriter} so no explicit flush is needed.
+ *
+ * &lt;p&gt;Keep-alive uses a bidirectional ping-pong mechanism symmetric to RMI:
+ * the server pings the client ({@link PingEvent} → {@link PongCommand}) and
+ * the client pings the server ({@link PingCommand} → {@link PongEvent}).
+ * Each side resets its liveness timer only on receipt of the corresponding
+ * pong, not on generic traffic.
+ */
+public class SocketServerProxy implements ServerProxy {
+
+    /** How often the ping thread fires, in milliseconds. */
+    private static final long PING_INTERVAL_MILLIS = 5_000;
+
+    /** Maximum time allowed since the last {@link PongEvent} before the connection is declared lost. */
+    private static final long PING_TIMEOUT_MILLIS = 10_000;
+
+    private final String host;
+    private final int port;
+    private final LobbyModel lobbyModel;
+    private final ClientView view;
+<span class="nc" id="L55">    private final JsonMessageCodec codec = new JsonMessageCodecImpl();</span>
+
+    private ClientController clientController;
+    private ClientNetworkDispatcher dispatcher;
+
+    private Socket socket;
+    private PrintWriter out;
+
+<span class="nc" id="L63">    private volatile boolean connected = false;</span>
+<span class="nc" id="L64">    private volatile boolean attemptingReconnection = false;</span>
+
+    /** Set by {@link #disconnect()} to prevent background threads from reconnecting. */
+<span class="nc" id="L67">    private volatile boolean intentionalDisconnect = false;</span>
+
+    private Thread pingThread;
+
+    /**
+     * Timestamp of the last received {@link PongEvent}.
+     * Reset only on an explicit pong, not on generic server traffic.
+     */
+<span class="nc" id="L75">    private volatile long lastPongReceivedAt = 0;</span>
+
+    /** Nickname last successfully registered; used to restore session after reconnection. */
+    private String activeNickname;
+
+    /** Game ID currently joined; used to rejoin after reconnection. */
+    private String activeGameId;
+
+    /**
+     * Creates a Socket proxy ready to be wired and connected.
+     *
+     * @param host       the server hostname or IP address
+     * @param port       the server TCP port
+     * @param lobbyModel the lobby model that receives pre-game notifications
+     * @param view       the client view used to signal connection-state changes
+     */
+<span class="nc" id="L91">    public SocketServerProxy(String host, int port, LobbyModel lobbyModel, ClientView view) {</span>
+<span class="nc" id="L92">        this.host = host;</span>
+<span class="nc" id="L93">        this.port = port;</span>
+<span class="nc" id="L94">        this.lobbyModel = lobbyModel;</span>
+<span class="nc" id="L95">        this.view = view;</span>
+<span class="nc" id="L96">    }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Also registers a callback on the dispatcher so that
+     * {@link #activeGameId} is updated whenever a game-started notification arrives.
+     */
+    @Override
+    public void setClientController(ClientController controller) {
+<span class="nc" id="L106">        this.clientController = controller;</span>
+<span class="nc" id="L107">        this.dispatcher = new ClientNetworkDispatcher(controller, lobbyModel);</span>
+<span class="nc" id="L108">        this.dispatcher.setOnGameStarted(id -&gt; this.activeGameId = id);</span>
+<span class="nc" id="L109">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void connect() throws Exception {
+<span class="nc" id="L114">        intentionalDisconnect = false;</span>
+<span class="nc" id="L115">        socket = new Socket(host, port);</span>
+<span class="nc" id="L116">        out = new PrintWriter(</span>
+<span class="nc" id="L117">                new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);</span>
+<span class="nc" id="L118">        connected = true;</span>
+<span class="nc" id="L119">        lastPongReceivedAt = System.currentTimeMillis();</span>
+
+<span class="nc" id="L121">        Thread readerThread = new Thread(this::listenForEvents, &quot;SocketProxy-Reader&quot;);</span>
+<span class="nc" id="L122">        readerThread.setDaemon(true);</span>
+<span class="nc" id="L123">        readerThread.start();</span>
+
+<span class="nc" id="L125">        startPingThread();</span>
+<span class="nc" id="L126">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void disconnect() {
+<span class="nc" id="L131">        intentionalDisconnect = true;</span>
+<span class="nc" id="L132">        connected = false;</span>
+<span class="nc" id="L133">        activeGameId = null;</span>
+
+<span class="nc" id="L135">        stopPingThread();</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        try { if (socket != null) socket.close(); } catch (IOException ignored) {}</span>
+<span class="nc" id="L137">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+<span class="nc" id="L141">    public boolean isConnected() { return connected; }</span>
+
+    // =========================================================
+    // READER LOOP
+    // =========================================================
+
+    /**
+     * Main loop of the reader thread.
+     *
+     * &lt;p&gt;Dispatches incoming messages at the transport layer:
+     * &lt;ul&gt;
+     *   &lt;li&gt;{@link PingEvent} — answered immediately with {@link PongCommand};
+     *       does &lt;em&gt;not&lt;/em&gt; reset the liveness timer&lt;/li&gt;
+     *   &lt;li&gt;{@link PongEvent} — resets {@link #lastPongReceivedAt}; this is
+     *       the server's reply to our own {@link PingCommand}&lt;/li&gt;
+     *   &lt;li&gt;all other {@link Event}s — forwarded to the dispatcher via IoC&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * &lt;p&gt;If the loop exits unexpectedly, {@link #handleConnectionLost()} is called.
+     */
+    private void listenForEvents() {
+<span class="nc" id="L162">        try (BufferedReader in = new BufferedReader(</span>
+<span class="nc" id="L163">                new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {</span>
+            String line;
+<span class="nc bnc" id="L165" title="All 2 branches missed.">            while ((line = in.readLine()) != null) {</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                if (intentionalDisconnect) break;</span>
+
+<span class="nc" id="L168">                Message msg = codec.decode(line);</span>
+
+<span class="nc bnc" id="L170" title="All 2 branches missed.">                if (msg instanceof PingEvent) {</span>
+<span class="nc" id="L171">                    send(new PongCommand());</span>
+<span class="nc" id="L172">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                if (msg instanceof PongEvent) {</span>
+<span class="nc" id="L176">                    lastPongReceivedAt = System.currentTimeMillis();</span>
+<span class="nc" id="L177">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                if (msg instanceof Event event) {</span>
+<span class="nc" id="L181">                    event.apply(dispatcher);</span>
+                }
+<span class="nc" id="L183">            }</span>
+<span class="nc" id="L184">        } catch (IOException ignored) {</span>
+            // Socket closed externally.
+        } finally {
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if (!intentionalDisconnect) {</span>
+<span class="nc" id="L188">                handleConnectionLost();</span>
+            }
+        }
+<span class="nc" id="L191">    }</span>
+
+    // =========================================================
+    // PING THREAD
+    // =========================================================
+
+    /**
+     * Starts a new ping thread, stopping any previously running one first.
+     *
+     * &lt;p&gt;At every {@link #PING_INTERVAL_MILLIS} tick the thread:
+     * &lt;ol&gt;
+     *   &lt;li&gt;Sends a {@link PingCommand} to the server — the server replies
+     *       with a {@link PongEvent}, which resets {@link #lastPongReceivedAt}.&lt;/li&gt;
+     *   &lt;li&gt;Checks whether the elapsed time since the last {@link PongEvent}
+     *       exceeds {@link #PING_TIMEOUT_MILLIS}; if so, calls
+     *       {@link #handleConnectionLost()}.&lt;/li&gt;
+     * &lt;/ol&gt;
+     */
+    private void startPingThread() {
+<span class="nc" id="L210">        stopPingThread();</span>
+<span class="nc" id="L211">        pingThread = new Thread(() -&gt; {</span>
+<span class="nc bnc" id="L212" title="All 4 branches missed.">            while (connected &amp;&amp; !intentionalDisconnect) {</span>
+                try {
+<span class="nc" id="L214">                    Thread.sleep(PING_INTERVAL_MILLIS);</span>
+<span class="nc bnc" id="L215" title="All 4 branches missed.">                    if (!connected || intentionalDisconnect) break;</span>
+
+<span class="nc" id="L217">                    send(new PingCommand());</span>
+
+<span class="nc" id="L219">                    long elapsed = System.currentTimeMillis() - lastPongReceivedAt;</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">                    if (elapsed &gt; PING_TIMEOUT_MILLIS) {</span>
+<span class="nc" id="L221">                        handleConnectionLost();</span>
+<span class="nc" id="L222">                        break;</span>
+                    }
+<span class="nc" id="L224">                } catch (InterruptedException e) {</span>
+<span class="nc" id="L225">                    Thread.currentThread().interrupt();</span>
+<span class="nc" id="L226">                    break;</span>
+<span class="nc" id="L227">                }</span>
+            }
+<span class="nc" id="L229">        }, &quot;SocketProxy-PingThread&quot;);</span>
+<span class="nc" id="L230">        pingThread.setDaemon(true);</span>
+<span class="nc" id="L231">        pingThread.start();</span>
+<span class="nc" id="L232">    }</span>
+
+    /**
+     * Interrupts and discards the current ping thread, if any.
+     */
+    private void stopPingThread() {
+<span class="nc bnc" id="L238" title="All 2 branches missed.">        if (pingThread != null) {</span>
+<span class="nc" id="L239">            pingThread.interrupt();</span>
+<span class="nc" id="L240">            pingThread = null;</span>
+        }
+<span class="nc" id="L242">    }</span>
+
+    // =========================================================
+    // CONNECTION LOSS HANDLER
+    // =========================================================
+
+    /**
+     * Handles an unexpected loss of connectivity.
+     *
+     * &lt;p&gt;Marks the connection as down, notifies the view, and spawns a
+     * reconnection thread that retries every 5 seconds. Once reconnected,
+     * replays the login and game-rejoin sequence using {@link #activeNickname}
+     * and {@link #activeGameId}.
+     *
+     * &lt;p&gt;Synchronized to prevent concurrent executions (reader thread vs.
+     * ping timeout).
+     */
+    private synchronized void handleConnectionLost() {
+<span class="nc bnc" id="L260" title="All 4 branches missed.">        if (attemptingReconnection || intentionalDisconnect) return;</span>
+<span class="nc" id="L261">        connected = false;</span>
+<span class="nc" id="L262">        attemptingReconnection = true;</span>
+
+<span class="nc" id="L264">        stopPingThread();</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">        try { if (socket != null) socket.close(); } catch (IOException ignored) {}</span>
+<span class="nc" id="L266">        view.onConnectionLost();</span>
+
+<span class="nc" id="L268">        new Thread(() -&gt; {</span>
+<span class="nc bnc" id="L269" title="All 4 branches missed.">            while (!connected &amp;&amp; !intentionalDisconnect) {</span>
+                try {
+<span class="nc" id="L271">                    Thread.sleep(5_000);</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">                    try { if (socket != null) socket.close(); } catch (IOException ignored) {}</span>
+
+<span class="nc" id="L274">                    connect();</span>
+
+<span class="nc bnc" id="L276" title="All 4 branches missed.">                    if (activeNickname != null &amp;&amp; activeGameId != null) {</span>
+<span class="nc" id="L277">                        requestReconnect(activeNickname, activeGameId);</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">                    } else if (activeNickname != null) {</span>
+<span class="nc" id="L279">                        requestSetUsername(activeNickname);</span>
+<span class="nc" id="L280">                        view.onReturnToLobby();</span>
+                    }
+<span class="nc" id="L282">                    view.onConnectionRestored();</span>
+<span class="nc" id="L283">                    attemptingReconnection = false;</span>
+<span class="nc" id="L284">                } catch (Exception ignored) {}</span>
+            }
+<span class="nc" id="L286">        }, &quot;SocketProxy-ReconnectThread&quot;).start();</span>
+<span class="nc" id="L287">    }</span>
+
+    // =========================================================
+    // OUTBOUND — send helper
+    // =========================================================
+
+    /**
+     * Serializes and sends a {@link Command} to the server.
+     *
+     * &lt;p&gt;No-op if the output stream is not yet available or if an intentional
+     * disconnect is in progress.
+     *
+     * @param command the command to send
+     */
+    private void send(Command command) {
+<span class="nc bnc" id="L302" title="All 4 branches missed.">        if (out != null &amp;&amp; !intentionalDisconnect) {</span>
+<span class="nc" id="L303">            out.println(codec.encode(command));</span>
+<span class="nc" id="L304">            out.flush();</span>
+        }
+<span class="nc" id="L306">    }</span>
+
+    // =========================================================
+    // ServerProxy — outbound API
+    // =========================================================
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Also caches the username in {@link #activeNickname} for use by the
+     * reconnection loop.
+     */
+    @Override
+    public void requestSetUsername(String username) {
+<span class="nc" id="L320">        this.activeNickname = username;</span>
+<span class="nc" id="L321">        send(new SetUsernameCommand(username));</span>
+<span class="nc" id="L322">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void requestCreateLobby(int numPlayers) {
+<span class="nc" id="L327">        send(new CreateLobbyCommand(numPlayers));</span>
+<span class="nc" id="L328">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void requestJoinLobby(String lobbyID) {
+<span class="nc" id="L333">        send(new JoinLobbyCommand(lobbyID));</span>
+<span class="nc" id="L334">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void requestSelectTotem(Totem color) {
+<span class="nc" id="L339">        send(new SelectTotemCommand(color));</span>
+<span class="nc" id="L340">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void requestLeaveLobby() {
+<span class="nc" id="L345">        send(new LeaveLobbyCommand());</span>
+<span class="nc" id="L346">    }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Also updates {@link #activeNickname}, {@link #activeGameId}, and the
+     * dispatcher's internal state so that the reconnection loop can replay
+     * this call after a network failure.
+     */
+    @Override
+    public void requestReconnect(String nickname, String gameId) {
+<span class="nc" id="L357">        this.activeNickname = nickname;</span>
+<span class="nc" id="L358">        this.activeGameId = gameId;</span>
+
+<span class="nc bnc" id="L360" title="All 2 branches missed.">        if (this.dispatcher != null) {</span>
+<span class="nc" id="L361">            this.dispatcher.updateActiveNickname(nickname);</span>
+<span class="nc" id="L362">            this.dispatcher.updateActiveGameId(gameId);</span>
+        }
+
+<span class="nc" id="L365">        send(new ReconnectCommand(nickname, gameId));</span>
+<span class="nc" id="L366">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void moveTotem(char tileID) {
+<span class="nc" id="L371">        send(new MoveTotemCommand(&quot;&quot;, tileID));</span>
+<span class="nc" id="L372">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void resolveActions(List&lt;String&gt; ids) {
+<span class="nc" id="L377">        send(new ResolveActionsCommand(&quot;&quot;, ids));</span>
+<span class="nc" id="L378">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

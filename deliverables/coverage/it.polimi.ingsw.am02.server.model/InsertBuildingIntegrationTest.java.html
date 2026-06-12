@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InsertBuildingIntegrationTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">InsertBuildingIntegrationTest.java</span></div><h1>InsertBuildingIntegrationTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model;
+
+import it.polimi.ingsw.am02.server.model.buildingeffects.FlatPrestigeBonusEffect;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Level 3 integration tests: Tribu.insertBuilding with a real Game.
+ * Verifies the full pipeline: GameRegistry → BuildingFactory → BuildingEffect
+ * → RegistrationVisitor → storage in Tribu → effect activation.
+ *
+ * Only Game.getPlayerByNickname needs to be package-private.
+ * Phase notifications are tested by calling onPhaseChange directly
+ * on the effect (same approach as unit tests, but with real objects).
+ */
+<span class="fc" id="L27">class InsertBuildingIntegrationTest {</span>
+
+    private static GameRegistry registry;
+    private static final String BUILDING_ID = &quot;B_021&quot;; // FLAT_ENDGAME_PP
+    private static final long seed = 42L;
+
+    private Game game;
+    private Player player1;
+    private Player player2;
+    private Tribu tribu1;
+    private Tribu tribu2;
+
+    @BeforeEach
+    void setUp() {
+<span class="fc" id="L41">        TestHelper.ensureRegistryLoaded();</span>
+<span class="fc" id="L42">        registry = GameRegistry.getInstance();</span>
+<span class="fc" id="L43">        List&lt;String&gt; nicknames = List.of(&quot;Matteo&quot;, &quot;Raed&quot;);</span>
+<span class="fc" id="L44">        Map&lt;String, Totem&gt; mappa = Map.of(&quot;Matteo&quot;, Totem.WHITE, &quot;Raed&quot;, Totem.BLUE);</span>
+
+<span class="fc" id="L46">        game = new Game(&quot;000&quot;, nicknames, mappa, seed);</span>
+
+        // Only method that needs to be package-private in Game
+<span class="fc" id="L49">        player1 = game.getPlayerByNickname(&quot;Matteo&quot;);</span>
+<span class="fc" id="L50">        player2 = game.getPlayerByNickname(&quot;Raed&quot;);</span>
+<span class="fc" id="L51">        tribu1 = player1.getTribu();</span>
+<span class="fc" id="L52">        tribu2 = player2.getTribu();</span>
+<span class="fc" id="L53">    }</span>
+
+    // Test 1: insertBuilding creates and stores the correct effect
+
+    /** Verifies inserting a building creates and stores the matching effect in the tribù. */
+    @Test
+    void insertBuildingCreatesEffectInTribu() {
+<span class="fc" id="L60">        assertTrue(tribu1.getActiveBuildingEffects().isEmpty());</span>
+
+<span class="fc" id="L62">        tribu1.insertBuilding(BUILDING_ID, player1, game);</span>
+
+<span class="fc" id="L64">        List&lt;BuildingEffect&gt; effects = tribu1.getActiveBuildingEffects();</span>
+<span class="fc" id="L65">        assertEquals(1, effects.size());</span>
+<span class="fc" id="L66">        assertInstanceOf(FlatPrestigeBonusEffect.class, effects.getFirst());</span>
+
+<span class="fc" id="L68">        int insertedPPBuildings = tribu1.getTotalPPBuildings();</span>
+<span class="fc" id="L69">        assertEquals(0, insertedPPBuildings);</span>
+<span class="fc" id="L70">    }</span>
+
+    // Test 2: Effect activation via direct onPhaseChange
+
+    /** Verifies the END_GAME phase activates the stored effect and raises the tribù's prestige. */
+    @Test
+    void endGamePhaseTriggersFlatPrestigeBonus() {
+<span class="fc" id="L77">        tribu1.insertBuilding(BUILDING_ID, player1, game);</span>
+
+        // Retrieve the concrete effect from Tribu
+<span class="fc" id="L80">        PhaseObserver effect = (PhaseObserver) tribu1.getActiveBuildingEffects().getFirst();</span>
+
+<span class="fc" id="L82">        int ppBefore = tribu1.getPrestigePoints();</span>
+
+        // Call directly — same approach as the unit test with mocks,
+        // but here Tribu is real, so we check actual PP change
+<span class="fc" id="L86">        effect.onPhaseChange(PhaseType.END_GAME);</span>
+
+<span class="fc" id="L88">        int ppAfter = tribu1.getPrestigePoints();</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        assertTrue(ppAfter &gt; ppBefore,</span>
+                &quot;PP should increase. Before: &quot; + ppBefore + &quot;, After: &quot; + ppAfter);
+<span class="fc" id="L91">    }</span>
+
+    // Test 3: Wrong phase does NOT trigger the effect
+
+    /** Verifies non-END_GAME phases leave the prestige unchanged. */
+    @Test
+    void nonEndGamePhaseDoesNotTriggerEffect() {
+<span class="fc" id="L98">        tribu1.insertBuilding(BUILDING_ID, player1, game);</span>
+
+<span class="fc" id="L100">        PhaseObserver effect = (PhaseObserver) tribu1.getActiveBuildingEffects().get(0);</span>
+
+<span class="fc" id="L102">        int ppBefore = tribu1.getPrestigePoints();</span>
+
+<span class="fc" id="L104">        effect.onPhaseChange(PhaseType.ACTION_RESOLUTION);</span>
+<span class="fc" id="L105">        effect.onPhaseChange(PhaseType.END_ROUND);</span>
+<span class="fc" id="L106">        effect.onPhaseChange(PhaseType.NEW_ROUND);</span>
+
+<span class="fc" id="L108">        assertEquals(ppBefore, tribu1.getPrestigePoints(),</span>
+                &quot;PP should not change for non-END_GAME phases&quot;);
+<span class="fc" id="L110">    }</span>
+
+    // Test 4: No memory sharing between players
+
+    /** Verifies one player's building effect affects only its owner, not other players. */
+    @Test
+    void buildingEffectIsIsolatedToOwner() {
+        // 1. Setup: insert the building for player1 and record initial scores
+<span class="fc" id="L118">        tribu1.insertBuilding(BUILDING_ID, player1, game);</span>
+<span class="fc" id="L119">        int p1Before = tribu1.getPrestigePoints();</span>
+<span class="fc" id="L120">        int p2Before = tribu2.getPrestigePoints();</span>
+
+        // 2. Verify that player 2 has NO active effects
+<span class="fc" id="L123">        assertTrue(tribu2.getActiveBuildingEffects().isEmpty(),</span>
+                &quot;Player 2 should not have any active effects.&quot;);
+
+        // 3. Retrieve and trigger player 1's effect
+<span class="fc" id="L127">        BuildingEffect effect1 = tribu1.getActiveBuildingEffects().getFirst();</span>
+<span class="fc" id="L128">        ((PhaseObserver) effect1).onPhaseChange(PhaseType.END_GAME);</span>
+
+        // 4. Assertions: Player 1 is updated, Player 2 remains unchanged
+<span class="fc" id="L131">        assertNotEquals(p1Before, tribu1.getPrestigePoints(),</span>
+                &quot;Player 1's score should have changed.&quot;);
+
+<span class="fc" id="L134">        assertEquals(p2Before, tribu2.getPrestigePoints(),</span>
+                &quot;Player 2's score should NOT have changed.&quot;);
+<span class="fc" id="L136">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

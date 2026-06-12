@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TurnOrderTile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.tile</a> &gt; <span class="el_source">TurnOrderTile.java</span></div><h1>TurnOrderTile.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.tile;
+
+import it.polimi.ingsw.am02.common.dto.TurnOrderSlotInfo;
+import it.polimi.ingsw.am02.server.model.GameRegistry;
+import it.polimi.ingsw.am02.server.model.player.Player;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * The turn-order tile: a fixed-size array of player positions that determines
+ * the order in which players place their totems in the next round.
+ *
+ * &lt;p&gt;Each position carries a food bonus (positive) or food penalty (negative).
+ * If a player cannot pay a food penalty, they lose prestige points instead.
+ */
+public class TurnOrderTile {
+
+    private final int numPlayers;
+    private final Player[] playerPositions;
+    private final int[] foodBonuses;
+    private final int[] prestigePointsMalus;
+
+    /**
+     * Creates a turn-order tile by cloning the template registered in {@link GameRegistry}
+     * for the given player count.
+     *
+     * @param numPlayers the number of players (must match a registered template)
+     */
+<span class="fc" id="L31">    public TurnOrderTile(int numPlayers) {</span>
+
+<span class="fc" id="L33">        TurnOrderTile templateTurnOrderTile = GameRegistry.getInstance().getTurnOrderTile(numPlayers);</span>
+<span class="fc" id="L34">        this.numPlayers = numPlayers;</span>
+<span class="fc" id="L35">        this.playerPositions = new Player[numPlayers];</span>
+<span class="fc" id="L36">        this.foodBonuses = templateTurnOrderTile.foodBonuses.clone();</span>
+<span class="fc" id="L37">        this.prestigePointsMalus = templateTurnOrderTile.prestigePointsMalus.clone();</span>
+<span class="fc" id="L38">    }</span>
+
+    /**
+     * Creates a turn-order tile directly from explicit bonus and malus lists.
+     * Used by {@link TurnOrderTilesFactory} during JSON deserialisation.
+     *
+     * @param numPlayers          the number of players
+     * @param foodBonuses         food reward (positive) or penalty (negative) per position
+     * @param prestigePointsMalus prestige-point penalty per position (stored as negative values)
+     */
+<span class="fc" id="L48">    public TurnOrderTile(int numPlayers, List&lt;Integer&gt; foodBonuses, List&lt;Integer&gt; prestigePointsMalus) {</span>
+
+<span class="fc" id="L50">        this.numPlayers = numPlayers;</span>
+<span class="fc" id="L51">        this.playerPositions = new Player[numPlayers];</span>
+<span class="fc" id="L52">        this.foodBonuses = foodBonuses.stream().mapToInt(Integer::intValue).toArray();</span>
+<span class="fc" id="L53">        this.prestigePointsMalus = prestigePointsMalus.stream().mapToInt(Integer::intValue).toArray();</span>
+<span class="fc" id="L54">    }</span>
+
+    /** @return the number of player slots on this tile */
+    public int getNumPlayers() {
+<span class="fc" id="L58">        return numPlayers;</span>
+    }
+
+    /**
+     * Places the given player in the first available (null) slot.
+     *
+     * @param player the player to register
+     * @return the slot index assigned to the player (0-based)
+     */
+    public int registerPlayer(Player player) {
+
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        for(int i = 0; i &lt; playerPositions.length; i++) {</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            if (playerPositions[i] == null) {</span>
+<span class="fc" id="L71">                playerPositions[i] = player;</span>
+<span class="fc" id="L72">                return i;</span>
+            }
+        }
+<span class="nc" id="L75">        return 0;</span>
+    }
+
+    /**
+     * Removes the given player from their current slot, freeing it.
+     *
+     * @param player the player to remove
+     */
+    public void removePlayer(Player player) {
+
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        for(int i = 0; i &lt; playerPositions.length; i++) {</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">            if (playerPositions[i] == player) {</span>
+<span class="fc" id="L87">                playerPositions[i] = null;</span>
+<span class="fc" id="L88">                return;</span>
+            }
+        }
+<span class="nc" id="L91">    }</span>
+
+    /** @return {@code true} if all player slots are empty */
+    public boolean isEmpty() {
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        for (Player playerPosition : playerPositions) {</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (playerPosition != null) {</span>
+<span class="fc" id="L98">                return false;</span>
+            }
+        }
+<span class="fc" id="L101">        return true;</span>
+    }
+
+    /**
+     * Applies end-of-turn food bonuses and penalties for the given player
+     * based on their position on the tile.
+     * If a food penalty cannot be fully paid in food, prestige points are deducted instead.
+     *
+     * @param player the player whose end-of-turn rewards are being resolved
+     * @return a {@link TurnOrderRewardResult} summarising what was gained and lost
+     */
+    public TurnOrderRewardResult applyRewards(Player player) {
+
+<span class="fc" id="L114">        int playerIndex = -1;</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">        for (int i = 0; i &lt; playerPositions.length; i++) {</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">            if (playerPositions[i] == player) {</span>
+<span class="fc" id="L117">                playerIndex = i;</span>
+<span class="fc" id="L118">                break;</span>
+            }
+        }
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        if (playerIndex == -1) {</span>
+<span class="nc" id="L122">            return TurnOrderRewardResult.empty();</span>
+        }
+
+<span class="fc" id="L125">        int foodBonus = foodBonuses[playerIndex];</span>
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (foodBonus &gt; 0) {</span>
+<span class="fc" id="L128">            player.getTribu().addFoodPoints(foodBonus);</span>
+<span class="fc" id="L129">            return new TurnOrderRewardResult(foodBonus, 0, 0);</span>
+        }
+
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        if (foodBonus == 0) {</span>
+<span class="nc" id="L133">            return TurnOrderRewardResult.empty();</span>
+        }
+
+<span class="fc" id="L136">        int foodToPay = -foodBonus;</span>
+<span class="fc" id="L137">        int currentFood = player.getTribu().getFoodPoints();</span>
+
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (currentFood &gt;= foodToPay) {</span>
+<span class="fc" id="L140">            player.getTribu().addFoodPoints(foodBonus);</span>
+<span class="fc" id="L141">            return new TurnOrderRewardResult(0, foodToPay, 0);</span>
+        } else {
+<span class="fc" id="L143">            int ppPenalty = -prestigePointsMalus[playerIndex];  // store as positive</span>
+<span class="fc" id="L144">            player.getTribu().addPrestigePoints(prestigePointsMalus[playerIndex]);</span>
+<span class="fc" id="L145">            return new TurnOrderRewardResult(0, 0, ppPenalty);</span>
+        }
+    }
+
+    /** @return the number of players currently registered on this tile */
+    public int getPlayerCount() {
+
+<span class="fc" id="L152">        int playerCount = 0;</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        for (Player playerPosition : playerPositions) {</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            if (playerPosition != null) {</span>
+<span class="fc" id="L155">                playerCount++;</span>
+            }
+        }
+
+<span class="fc" id="L159">        return playerCount;</span>
+    }
+
+    /**
+     * @return an ordered list of players currently on the tile, from slot 0 to the last slot
+     *         (null slots are skipped)
+     */
+    public List&lt;Player&gt; getOrderedPlayers() {
+
+<span class="fc" id="L168">        List&lt;Player&gt; orderedPlayers = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        for (Player playerPosition : playerPositions) {</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">            if (playerPosition != null) {</span>
+<span class="fc" id="L172">                orderedPlayers.add(playerPosition);</span>
+            }
+        }
+<span class="fc" id="L175">        return orderedPlayers;</span>
+    }
+
+    /**
+     * Returns the food value associated with the given player's current position.
+     *
+     * @param player the player to look up
+     * @return the food bonus (positive) or penalty (negative) for the player's slot,
+     *         or {@code 0} if the player is not on this tile
+     */
+    public int getFoodForPlayer(Player player) {
+
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        for (int i = 0; i &lt; playerPositions.length; i++) {</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">            if (playerPositions[i] == player) {</span>
+<span class="fc" id="L189">                return foodBonuses[i];</span>
+            }
+        }
+<span class="fc" id="L192">        return 0;</span>
+    }
+
+
+<span class="fc" id="L196">    public record TurnOrderRewardResult(int foodGained, int foodPenalty, int ppPenalty) {</span>
+
+        public static TurnOrderRewardResult empty() {
+<span class="fc" id="L199">            return new TurnOrderRewardResult(0, 0, 0);</span>
+        }
+    }
+
+    /**
+     * Builds an immutable snapshot of all slots for client transmission.
+     *
+     * @return an unmodifiable list of {@link TurnOrderSlotInfo} DTOs, one per slot
+     */
+    public List&lt;TurnOrderSlotInfo&gt; toSlotSnapshot() {
+<span class="fc" id="L209">        List&lt;TurnOrderSlotInfo&gt; slots = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        for (int i = 0; i &lt; numPlayers; i++) {</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            String occupant = (playerPositions[i] != null) ? playerPositions[i].getNickname() : null;</span>
+<span class="fc" id="L212">            slots.add(new TurnOrderSlotInfo(occupant, foodBonuses[i], prestigePointsMalus[i]));</span>
+        }
+<span class="fc" id="L214">        return Collections.unmodifiableList(slots);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

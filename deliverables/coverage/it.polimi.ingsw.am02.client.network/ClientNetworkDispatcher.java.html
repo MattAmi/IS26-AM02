@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClientNetworkDispatcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.network</a> &gt; <span class="el_source">ClientNetworkDispatcher.java</span></div><h1>ClientNetworkDispatcher.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.network;
+
+import it.polimi.ingsw.am02.client.controller.ClientController;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Unified entry point for all inbound server notifications on the client side.
+ *
+ * &lt;p&gt;Implements {@link VirtualView} so that it can be used both as the target of
+ * direct RMI calls (via {@link it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy})
+ * and as the argument of {@code Event#apply(VirtualView)} (Socket path).
+ * In both cases every {@code notifyXxx} call ends up here and is forwarded to
+ * either {@link LobbyModel} or the {@link it.polimi.ingsw.am02.client.model.GameModel}
+ * owned by the {@link ClientController}, depending on the current game phase.
+ *
+ * &lt;p&gt;The dispatcher also tracks {@link #activeNickname} and {@link #activeGameId}
+ * to support lazy {@link it.polimi.ingsw.am02.client.model.GameModel} creation
+ * ({@link #ensureGameModel()}) and session restoration after reconnection.
+ */
+public class ClientNetworkDispatcher implements VirtualView {
+
+    private final ClientController clientController;
+    private final LobbyModel lobbyModel;
+
+    /**
+     * Optional callback invoked the first time {@link #notifyGameStarted} is called.
+     * Used by {@link it.polimi.ingsw.am02.client.network.socket.SocketServerProxy}
+     * to keep its {@code activeGameId} field in sync.
+     */
+<span class="nc" id="L38">    private java.util.function.Consumer&lt;String&gt; onGameStarted = id -&gt; {};</span>
+
+    /** Last validated nickname; used to bootstrap the GameModel on reconnection. */
+    private String activeNickname;
+
+    /** Game ID currently active; set on {@link #notifyGameStarted}. */
+    private String activeGameId;
+
+    /**
+     * Creates a dispatcher wired to the given controller and lobby model.
+     *
+     * @param clientController the controller that owns the active client model
+     * @param lobbyModel       the lobby model that receives pre-game notifications
+     */
+<span class="nc" id="L52">    public ClientNetworkDispatcher(ClientController clientController, LobbyModel lobbyModel) {</span>
+<span class="nc" id="L53">        this.clientController = clientController;</span>
+<span class="nc" id="L54">        this.lobbyModel = lobbyModel;</span>
+<span class="nc" id="L55">    }</span>
+
+    /**
+     * Registers a callback that is invoked once, when {@link #notifyGameStarted}
+     * is first received.
+     *
+     * &lt;p&gt;Intended for the Socket proxy, which needs to cache the game ID on its own.
+     *
+     * @param callback a consumer that receives the game ID string
+     */
+    public void setOnGameStarted(java.util.function.Consumer&lt;String&gt; callback) {
+<span class="nc" id="L66">        this.onGameStarted = callback;</span>
+<span class="nc" id="L67">    }</span>
+
+    /**
+     * Updates the cached active nickname.
+     * Called by the proxy after a successful reconnection handshake.
+     *
+     * @param nickname the player's registered nickname
+     */
+    public void updateActiveNickname(String nickname) {
+<span class="nc" id="L76">        this.activeNickname = nickname;</span>
+<span class="nc" id="L77">    }</span>
+
+    /**
+     * Updates the cached active game ID.
+     * Called by the proxy after a successful reconnection handshake.
+     *
+     * @param gameId the ID of the game the player has rejoined
+     */
+    public void updateActiveGameId(String gameId) {
+<span class="nc" id="L86">        this.activeGameId = gameId;</span>
+<span class="nc" id="L87">    }</span>
+
+    /**
+     * Lazily creates the {@link it.polimi.ingsw.am02.client.model.GameModel} if it
+     * does not yet exist and {@link #activeNickname} is available.
+     *
+     * &lt;p&gt;This handles the case where a game-phase notification arrives before the
+     * UI has explicitly triggered the Lobby→Game context switch (e.g. during
+     * reconnection drain).
+     */
+    private void ensureGameModel() {
+<span class="nc bnc" id="L98" title="All 4 branches missed.">        if (clientController.getGameModel() == null &amp;&amp; activeNickname != null) {</span>
+<span class="nc" id="L99">            clientController.onGameModelRequired(activeNickname);</span>
+
+<span class="nc bnc" id="L101" title="All 4 branches missed.">            if (activeGameId != null &amp;&amp; clientController.getGameModel() != null) {</span>
+<span class="nc" id="L102">                clientController.getGameModel().setGameId(activeGameId);</span>
+            }
+        }
+<span class="nc" id="L105">    }</span>
+
+    // ------------------------------------------------------------------
+    // Lobby notifications
+    // ------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyUsernameResult(String username, boolean isValid, String reason) {
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (isValid) this.activeNickname = username;</span>
+<span class="nc" id="L115">        lobbyModel.updateUsernameResult(username, isValid, reason);</span>
+<span class="nc" id="L116">    }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Also fires the {@link #onGameStarted} callback and ensures the
+     * {@link it.polimi.ingsw.am02.client.model.GameModel} is created before
+     * forwarding the event.
+     */
+    @Override
+    public void notifyGameStarted(String gameId) {
+<span class="nc" id="L127">        this.activeGameId = gameId;</span>
+<span class="nc" id="L128">        onGameStarted.accept(gameId);</span>
+<span class="nc" id="L129">        ensureGameModel();</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L131">            clientController.getGameModel().updateGameStarted(gameId);</span>
+        }
+<span class="nc" id="L133">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; lobbies) {
+<span class="nc" id="L138">        lobbyModel.updateAvailableLobbies(lobbies);</span>
+<span class="nc" id="L139">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {
+<span class="nc" id="L144">        lobbyModel.updateCurrentLobby(lobby);</span>
+<span class="nc" id="L145">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyLobbyDissolved(String lobbyID) {
+<span class="nc" id="L150">        lobbyModel.updateLobbyDissolved();</span>
+<span class="nc" id="L151">    }</span>
+
+    // ------------------------------------------------------------------
+    // Lifecycle notifications
+    // ------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGameSetupCompleted(Map&lt;String, Totem&gt; totemByPlayer,
+                                         List&lt;String&gt; turnOrder,
+                                         Map&lt;String, Integer&gt; initialFood,
+                                         BoardSnapshot boardSnapshot) {
+<span class="nc" id="L163">        ensureGameModel();</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L165">            clientController.getGameModel().updateGameSetupCompleted(totemByPlayer, turnOrder, initialFood, boardSnapshot);</span>
+        }
+<span class="nc" id="L167">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List&lt;String&gt; resolutionOrder) {
+<span class="nc" id="L172">        ensureGameModel();</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L174">            clientController.getGameModel().updateCurrentPhase(phase, currentPlayer, resolutionOrder);</span>
+        }
+<span class="nc" id="L176">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyCurrentPlayerChanged(String nextPlayer) {
+<span class="nc" id="L181">        ensureGameModel();</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L183">            clientController.getGameModel().updateCurrentPlayer(nextPlayer);</span>
+        }
+<span class="nc" id="L185">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyTurnOrderEstablished(List&lt;String&gt; turnOrder) {
+<span class="nc" id="L190">        ensureGameModel();</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L192">            clientController.getGameModel().updateTurnOrder(turnOrder);</span>
+        }
+<span class="nc" id="L194">    }</span>
+
+    // ------------------------------------------------------------------
+    // Board notifications
+    // ------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyBoardUpdated(List&lt;String&gt; upper, List&lt;String&gt; lower,
+                                   List&lt;String&gt; disc, List&lt;String&gt; moved, int deck) {
+<span class="nc" id="L204">        ensureGameModel();</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L206">            clientController.getGameModel().updateBoard(upper, lower, deck);</span>
+        }
+<span class="nc" id="L208">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyEraChanged(Era era, List&lt;String&gt; upper,
+                                 List&lt;String&gt; lower, List&lt;String&gt; disc) {
+<span class="nc" id="L214">        ensureGameModel();</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L216">            clientController.getGameModel().updateEra(era, upper, lower);</span>
+        }
+<span class="nc" id="L218">    }</span>
+
+    // ------------------------------------------------------------------
+    // Player action notifications
+    // ------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyTotemPlaced(String nickname, char tileID) {
+<span class="nc" id="L227">        ensureGameModel();</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L229">            clientController.getGameModel().updateTotemPlaced(nickname, tileID);</span>
+        }
+<span class="nc" id="L231">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyTotemReturned(String nick, int pos) {
+<span class="nc" id="L236">        ensureGameModel();</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L238">            clientController.getGameModel().updateTotemReturned(nick, pos);</span>
+        }
+<span class="nc" id="L240">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyCardTaken(String nickname, String cardID,
+                                CardType cardType, RowPosition sourceRow) {
+<span class="nc" id="L246">        ensureGameModel();</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L248">            clientController.getGameModel().updateCardTaken(nickname, cardID, cardType, sourceRow);</span>
+        }
+<span class="nc" id="L250">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerLimitsInitialized(String nick, int u, int l) {
+<span class="nc" id="L255">        ensureGameModel();</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L257">            clientController.getGameModel().updatePlayerLimitsInitialized(nick, u, l);</span>
+        }
+<span class="nc" id="L259">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerLimitsUpdated(String nick, int u, int l) {
+<span class="nc" id="L264">        ensureGameModel();</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L266">            clientController.getGameModel().updatePlayerLimits(nick, u, l);</span>
+        }
+<span class="nc" id="L268">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerResourceChanged(String nick, ResourceType r, int v, int d) {
+<span class="nc" id="L273">        ensureGameModel();</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L275">            clientController.getGameModel().updatePlayerResource(nick, r, v);</span>
+        }
+<span class="nc" id="L277">    }</span>
+
+    // ------------------------------------------------------------------
+    // Event / turn notifications
+    // ------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyEventResolved(String id, String name) {
+<span class="nc" id="L286">        ensureGameModel();</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L288">            clientController.getGameModel().updateEventResolved(id, name);</span>
+        }
+<span class="nc" id="L290">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyExtraTurnStarted(String nick, int u, int l) {
+<span class="nc" id="L295">        ensureGameModel();</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L297">            clientController.getGameModel().updateExtraTurnStarted(nick, u, l);</span>
+        }
+<span class="nc" id="L299">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyExtraTurnEnded(String nick) {
+<span class="nc" id="L304">        ensureGameModel();</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L306">            clientController.getGameModel().updateExtraTurnEnded(nick);</span>
+        }
+<span class="nc" id="L308">    }</span>
+
+    // ------------------------------------------------------------------
+    // Game-end notifications
+    // ------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGameEnded(List&lt;String&gt; w, List&lt;PlayerFinalScore&gt; r) {
+<span class="nc" id="L317">        ensureGameModel();</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L319">            clientController.getGameModel().updateGameEnded(w, r);</span>
+        }
+<span class="nc" id="L321">    }</span>
+
+    // ------------------------------------------------------------------
+    // Connection / error notifications
+    // ------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;If no {@link it.polimi.ingsw.am02.client.model.GameModel} is active,
+     * the error is forwarded to the {@link LobbyModel} instead and
+     * {@link #activeGameId} is cleared to prevent stale rejoin attempts.
+     */
+    @Override
+    public void notifyError(String message) {
+<span class="nc bnc" id="L336" title="All 2 branches missed.">        if (clientController.getGameModel() == null) {</span>
+<span class="nc" id="L337">            this.activeGameId = null;</span>
+<span class="nc" id="L338">            lobbyModel.updateError(message);</span>
+        } else {
+<span class="nc" id="L340">            clientController.getGameModel().updateError(message);</span>
+        }
+<span class="nc" id="L342">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerDisconnected(String nick) {
+<span class="nc" id="L347">        ensureGameModel();</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L349">            clientController.getGameModel().updatePlayerDisconnected(nick);</span>
+        }
+<span class="nc" id="L351">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerReconnected(String nick) {
+<span class="nc" id="L356">        ensureGameModel();</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L358">            clientController.getGameModel().updatePlayerReconnected(nick);</span>
+        }
+<span class="nc" id="L360">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyAutoPlayerTimerStarted(String nick, long seconds) {
+<span class="nc" id="L365">        ensureGameModel();</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L367">            clientController.getGameModel().updateAutoPlayerTimerStarted(nick, seconds);</span>
+        }
+<span class="nc" id="L369">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyAutoPlayerInvoked(String nick) {
+<span class="nc" id="L374">        ensureGameModel();</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L376">            clientController.getGameModel().updateAutoPlayerInvoked(nick);</span>
+        }
+<span class="nc" id="L378">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGameAborted(String winner) {
+<span class="nc" id="L383">        ensureGameModel();</span>
+<span class="nc bnc" id="L384" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L385">            clientController.getGameModel().updateGameAborted(winner);</span>
+        }
+<span class="nc" id="L387">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGameRecoveryFailed() {
+<span class="nc" id="L392">        ensureGameModel();</span>
+<span class="nc bnc" id="L393" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L394">            clientController.getGameModel().updateGameRecoveryFailed();</span>
+        }
+<span class="nc" id="L396">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGlobalTimerStarted(long seconds) {
+<span class="nc" id="L401">        ensureGameModel();</span>
+<span class="nc bnc" id="L402" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L403">            clientController.getGameModel().updateGlobalTimerStarted(seconds);</span>
+        }
+<span class="nc" id="L405">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGlobalTimerCancelled() {
+<span class="nc" id="L410">        ensureGameModel();</span>
+<span class="nc bnc" id="L411" title="All 2 branches missed.">        if (clientController.getGameModel() != null) {</span>
+<span class="nc" id="L412">            clientController.getGameModel().updateGlobalTimerCancelled();</span>
+        }
+<span class="nc" id="L414">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -19,6 +19,12 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests {@link GameBoard#processActionSelection} and the related pick/finish
+ * logic on a fully started {@link Game}. Verifies character/building/event card
+ * selection rules, food cost handling, pick-limit enforcement, player-finish
+ * conditions and the transactional integrity of failed selections.
+ */
 class GameBoardActionResolutionTest {
 
     private GameRegistry registry;
@@ -170,10 +176,12 @@ class GameBoardActionResolutionTest {
 
     //  Tests
 
+    /** Selecting character cards, which have no food cost. */
     @Nested
     @DisplayName("processActionSelection — character cards (no cost)")
     class CharacterCardTests {
 
+        /** Verifies a character card can be taken from the upper row and is removed from it. */
         @Test
         @DisplayName("Taking a valid character card from the upper row succeeds")
         void takeCharacterFromUpperRow() {
@@ -190,6 +198,7 @@ class GameBoardActionResolutionTest {
 
         }
 
+        /** Verifies a character card can be taken from the lower row and is removed from it. */
         @Test
         @DisplayName("Taking a valid character card from the lower row succeeds")
         void takeCharacterFromLowerRow() {
@@ -205,10 +214,12 @@ class GameBoardActionResolutionTest {
         }
     }
 
+    /** Event cards cannot be selected by a player. */
     @Nested
     @DisplayName("processActionSelection — event cards (must throw)")
     class EventCardTests {
 
+        /** Verifies selecting an event card throws {@link EventCardNotTakeableException}. */
         @Test
         @DisplayName("Attempting to take an event card throws an exception")
         void takeEventCardThrows() {
@@ -233,10 +244,12 @@ class GameBoardActionResolutionTest {
         }
     }
 
+    /** Buying building cards, validating their food cost. */
     @Nested
     @DisplayName("processActionSelection — building cards (cost validation)")
     class BuildingCardTests {
 
+        /** Verifies a building purchase succeeds and deducts the discounted cost from food. */
         @Test
         @DisplayName("Purchasing a building with sufficient food succeeds and deducts cost")
         void purchaseBuildingWithEnoughFood() {
@@ -268,6 +281,7 @@ class GameBoardActionResolutionTest {
                     "Building should be removed from upperRowBuildings after purchase");
         }
 
+        /** Verifies an unaffordable building throws {@link InsufficientFoodException} with no state change. */
         @Test
         @DisplayName("Purchasing a building with insufficient food throws an exception")
         void purchaseBuildingWithInsufficientFood() {
@@ -306,10 +320,12 @@ class GameBoardActionResolutionTest {
         }
     }
 
+    /** Enforcement of the per-tile pick limits and unknown card IDs. */
     @Nested
     @DisplayName("processActionSelection — pick limit enforcement")
     class PickLimitTests {
 
+        /** Verifies exceeding the upper-row pick limit throws {@link PickLimitExceededException}. */
         @Test
         @DisplayName("Exceeding upper row pick limit throws an exception")
         void exceedUpperRowLimit() {
@@ -337,6 +353,7 @@ class GameBoardActionResolutionTest {
             );
         }
 
+        /** Verifies exceeding the lower-row pick limit throws {@link PickLimitExceededException}. */
         @Test
         @DisplayName("Exceeding lower row pick limit throws an exception")
         void exceedLowerRowLimit() {
@@ -361,6 +378,7 @@ class GameBoardActionResolutionTest {
             );
         }
 
+        /** Verifies selecting a card absent from every row throws {@link CardNotFoundException}. */
         @Test
         @DisplayName("Card ID not found in any row throws an exception")
         void cardNotFoundInAnyRow() {
@@ -373,10 +391,12 @@ class GameBoardActionResolutionTest {
         }
     }
 
+    /** Correct decrement of the tile's remaining-pick counters after a selection. */
     @Nested
     @DisplayName("Decrement picks and remaining counters")
     class DecrementPicksTests {
 
+        /** Verifies taking one upper-row card decrements the remaining upper picks by one. */
         @Test
         @DisplayName("After taking one character from upper row, remaining upper decrements by 1")
         void decrementUpperAfterOnePick() {
@@ -394,6 +414,7 @@ class GameBoardActionResolutionTest {
                     "remainingUpper should decrement by 1 after taking one upper row card");
         }
 
+        /** Verifies taking one lower-row card decrements the remaining lower picks by one. */
         @Test
         @DisplayName("After taking one character from lower row, remaining lower decrements by 1")
         void decrementLowerAfterOnePick() {
@@ -411,6 +432,7 @@ class GameBoardActionResolutionTest {
                     "remainingLower should decrement by 1 after taking one lower row card");
         }
 
+        /** Verifies buying an upper-row building consumes an upper pick but not a lower pick. */
         @Test
         @DisplayName("Taking a building decrements card pick counters")
         void buildingDecrementsCardPickCounters() {
@@ -439,10 +461,12 @@ class GameBoardActionResolutionTest {
         }
     }
 
+    /** The conditions under which a player may end their action phase. */
     @Nested
     @DisplayName("canPlayerFinish / isSatisfied")
     class CanPlayerFinishTests {
 
+        /** Verifies a player cannot finish while picks remain on their tile. */
         @Test
         @DisplayName("Player cannot finish if remaining picks are not zero")
         void cannotFinishWithRemainingPicks() {
@@ -457,6 +481,7 @@ class GameBoardActionResolutionTest {
             }
         }
 
+        /** Verifies a player can finish once all upper and lower picks are exhausted. */
         @Test
         @DisplayName("Player can finish after exhausting all picks")
         void canFinishAfterExhaustingPicks() {
@@ -486,10 +511,12 @@ class GameBoardActionResolutionTest {
         }
     }
 
+    /** Initial computation of a player's pick allowances at the start of resolution. */
     @Nested
     @DisplayName("initializePlayerLimits")
     class InitializePlayerLimitsTests {
 
+        /** Verifies remaining picks never exceed the number of cards actually in each row. */
         @Test
         @DisplayName("Limits are capped by actual row sizes")
         void limitsAreCappedByRowSizes() {
@@ -503,6 +530,7 @@ class GameBoardActionResolutionTest {
                     "remainingLower should not exceed the number of cards in lowerRow");
         }
 
+        /** Verifies remaining picks never exceed the tile's allowed pick counts. */
         @Test
         @DisplayName("Limits are capped by the tile's allowed picks")
         void limitsAreCappedByTileAllowance() {
@@ -514,6 +542,7 @@ class GameBoardActionResolutionTest {
                     "remainingLower should not exceed the tile's allowedLower");
         }
 
+        /** Verifies the effective limit equals the minimum of allowed picks and row size. */
         @Test
         @DisplayName("Effective limit equals min(allowed, rowSize)")
         void effectiveLimitIsMin() {
@@ -529,10 +558,12 @@ class GameBoardActionResolutionTest {
         }
     }
 
+    /** A failed selection must roll back atomically, leaving no partial side effects. */
     @Nested
     @DisplayName("Transactional integrity — failed validation has no side effects")
     class TransactionalIntegrityTests {
 
+        /** Verifies a rejected event selection leaves food, picks and rows unchanged. */
         @Test
         @DisplayName("Failed event selection leaves all state unchanged")
         void failedEventSelectionNoSideEffects() {
@@ -569,6 +600,7 @@ class GameBoardActionResolutionTest {
                     "lowerRow size should remain unchanged after failed selection");
         }
 
+        /** Verifies a rejected building purchase leaves food and the building row unchanged. */
         @Test
         @DisplayName("Failed building purchase (insufficient food) leaves all state unchanged")
         void failedBuildingPurchaseNoSideEffects() {

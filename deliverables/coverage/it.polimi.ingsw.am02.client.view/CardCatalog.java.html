@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CardCatalog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view</a> &gt; <span class="el_source">CardCatalog.java</span></div><h1>CardCatalog.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.polimi.ingsw.am02.common.ResourcePaths;
+
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Client-side singleton that loads all card definitions from the JSON resource files
+ * and provides formatted string representations for use in both the TUI and the GUI.
+ *
+ * &lt;p&gt;Card definitions are loaded once at class-initialization time from three JSON files:
+ * {@code Characters.json}, {@code Events.json}, and {@code Buildings.json}.
+ * All cards are indexed by their {@code cardID} field for O(1) lookup.
+ *
+ * &lt;p&gt;This class is the client-side equivalent of
+ * {@link it.polimi.ingsw.am02.server.model.GameRegistry} for display purposes only;
+ * it performs no game-rule logic.
+ *
+ * &lt;p&gt;Obtain the singleton via {@link #getInstance()}.
+ */
+public class CardCatalog {
+
+<span class="nc" id="L27">    private static final CardCatalog INSTANCE = new CardCatalog();</span>
+<span class="nc" id="L28">    private final Map&lt;String, JsonNode&gt; cards = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L29">    private final ObjectMapper mapper = new ObjectMapper();</span>
+
+<span class="nc" id="L31">    private CardCatalog() {</span>
+<span class="nc" id="L32">        loadJson(ResourcePaths.CHARACTERS);</span>
+<span class="nc" id="L33">        loadJson(ResourcePaths.BUILDINGS);</span>
+<span class="nc" id="L34">        loadJson(ResourcePaths.EVENTS);</span>
+<span class="nc" id="L35">    }</span>
+
+    /** @return the singleton instance */
+<span class="nc" id="L38">    public static CardCatalog getInstance() { return INSTANCE; }</span>
+
+    private void loadJson(String resourcePath) {
+<span class="nc" id="L41">        try (InputStream is = CardCatalog.class.getResourceAsStream(resourcePath)) {</span>
+<span class="nc" id="L42">            JsonNode root = mapper.readTree(is);</span>
+<span class="nc" id="L43">            root.forEach(card -&gt; cards.put(card.get(&quot;cardID&quot;).asText(), card));</span>
+<span class="nc" id="L44">        } catch (Exception e) {</span>
+<span class="nc" id="L45">            System.err.println(&quot;[CardCatalog] Failed to load &quot; + resourcePath);</span>
+<span class="nc" id="L46">        }</span>
+<span class="nc" id="L47">    }</span>
+
+
+
+    /**
+     * Returns a compact single-line description of the card for board/hand display.
+     * Format varies by card type:
+     * &lt;ul&gt;
+     *   &lt;li&gt;Characters — ID, era, type, and the most relevant stat&lt;/li&gt;
+     *   &lt;li&gt;Buildings  — ID, era, cost, base PP, and a short effect summary&lt;/li&gt;
+     *   &lt;li&gt;Events     — ID, era, type, final flag, and key numeric parameters&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @param cardId the card identifier (e.g. {@code &quot;C_001&quot;}, {@code &quot;B_020&quot;}, {@code &quot;E_005&quot;})
+     * @return a formatted single-line string, or {@code &quot;[cardId]&quot;} if the ID is unknown
+     */
+    public String format(String cardId) {
+<span class="nc" id="L64">        JsonNode c = cards.get(cardId);</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (c == null) return &quot;[&quot; + cardId + &quot;]&quot;;</span>
+
+<span class="nc" id="L67">        String era = c.get(&quot;era&quot;).asText();</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (cardId.startsWith(&quot;C_&quot;)) return formatCharacter(c, era);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (cardId.startsWith(&quot;B_&quot;)) return formatBuilding(c, era);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (cardId.startsWith(&quot;E_&quot;)) return formatEvent(c, era);</span>
+<span class="nc" id="L72">        return &quot;[&quot; + cardId + &quot;]&quot;;</span>
+    }
+
+    private String formatCharacter(JsonNode c, String era) {
+<span class="nc" id="L76">        String id = c.get(&quot;cardID&quot;).asText();</span>
+<span class="nc" id="L77">        String type = c.get(&quot;type&quot;).asText();</span>
+<span class="nc" id="L78">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L79">        sb.append(id).append(&quot;  [Era &quot;).append(era).append(&quot;] &quot;).append(type);</span>
+
+<span class="nc bnc" id="L81" title="All 6 branches missed.">        switch (type) {</span>
+<span class="nc" id="L82">            case &quot;INVENTOR&quot; -&gt; sb.append(&quot; (&quot;).append(c.get(&quot;invention&quot;).asText()).append(&quot;)&quot;);</span>
+<span class="nc" id="L83">            case &quot;BUILDER&quot;  -&gt; sb.append(&quot;  -&quot;).append(c.get(&quot;buildingDiscount&quot;).asInt())</span>
+<span class="nc" id="L84">                    .append(&quot; cost  PP:&quot;).append(c.get(&quot;prestigePoints&quot;).asInt());</span>
+<span class="nc" id="L85">            case &quot;GATHERER&quot; -&gt; sb.append(&quot;  -&quot;).append(c.get(&quot;foodDiscount&quot;).asInt()).append(&quot; food&quot;);</span>
+<span class="nc" id="L86">            case &quot;SHAMAN&quot;   -&gt; sb.append(&quot;  ★&quot;).append(c.get(&quot;shamanStars&quot;).asInt());</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">            case &quot;HUNTER&quot;   -&gt; { if (c.get(&quot;hasGigot&quot;).asBoolean()) sb.append(&quot;  +gigot&quot;); }</span>
+            case &quot;ARTIST&quot;   -&gt; {}
+        }
+<span class="nc" id="L90">        return sb.toString();</span>
+    }
+
+    private String formatBuilding(JsonNode c, String era) {
+<span class="nc" id="L94">        String id = c.get(&quot;cardID&quot;).asText();</span>
+<span class="nc" id="L95">        int cost = c.get(&quot;buildingCost&quot;).asInt();</span>
+<span class="nc" id="L96">        int pp   = c.get(&quot;buildingPp&quot;).asInt();</span>
+
+<span class="nc" id="L98">        String effectType = c.path(&quot;effectType&quot;).asText();</span>
+<span class="nc" id="L99">        JsonNode params = c.path(&quot;effectParams&quot;);</span>
+
+        String shortEffect;
+<span class="nc bnc" id="L102" title="All 13 branches missed.">        switch (effectType) {</span>
+            case &quot;EVENT_CHARACTER_BONUS&quot; -&gt;
+<span class="nc" id="L104">                    shortEffect = params.path(&quot;eventType&quot;).asText() + &quot; bonus for &quot; + params.path(&quot;characterType&quot;).asText();</span>
+
+            case &quot;ENDGAME_CHARACTER_PP&quot; -&gt;
+<span class="nc" id="L107">                    shortEffect = &quot;+&quot; + params.path(&quot;bonusPP&quot;).asInt() + &quot; PP per &quot; + params.path(&quot;characterType&quot;).asText();</span>
+
+            case &quot;PP_MULTIPLIER_PER_TYPE&quot; -&gt;
+<span class="nc" id="L110">                    shortEffect = &quot;x&quot; + params.path(&quot;multiplier&quot;).asInt() + &quot; PP for &quot; + params.path(&quot;characterType&quot;).asText();</span>
+
+            case &quot;EXTRA_SHAMAN_STARS&quot; -&gt;
+<span class="nc" id="L113">                    shortEffect = &quot;+&quot; + params.path(&quot;bonusStars&quot;).asInt() + &quot; ★&quot;;</span>
+
+            case &quot;INVENTOR_PAIR_FOOD_REWARD&quot; -&gt;
+<span class="nc" id="L116">                    shortEffect = &quot;+&quot; + params.path(&quot;foodReward&quot;).asInt() + &quot; Food per INVENTOR pair&quot;;</span>
+
+            case &quot;FULL_SET_FOOD_REWARD&quot; -&gt;
+<span class="nc" id="L119">                    shortEffect = &quot;+&quot; + params.path(&quot;foodReward&quot;).asInt() + &quot; Food per Set(6)&quot;;</span>
+
+            case &quot;ENDGAME_FULL_SET_PP&quot; -&gt;
+<span class="nc" id="L122">                    shortEffect = &quot;+&quot; + params.path(&quot;bonusPP&quot;).asInt() + &quot; PP per Set(6)&quot;;</span>
+
+            case &quot;SHAMANIC_WIN_MULTIPLIER&quot; -&gt;
+<span class="nc" id="L125">                    shortEffect = &quot;x&quot; + params.path(&quot;multiplier&quot;).asInt() + &quot; Shamanic Win PP&quot;;</span>
+
+            case &quot;SHAMANIC_IMMUNITY&quot; -&gt;
+<span class="nc" id="L128">                    shortEffect = &quot;Shamanic Minority Immunity&quot;;</span>
+
+            case &quot;TURN_ORDER_FOOD_BONUS&quot; -&gt;
+<span class="nc" id="L131">                    shortEffect = &quot;+1 Food from Turn Order slot&quot;;</span>
+
+            case &quot;EXTRA_TURN&quot; -&gt;
+<span class="nc" id="L134">                    shortEffect = &quot;+1 Pick at End of Round&quot;;</span>
+
+            case &quot;ENDGAME_FLAT_PP&quot; -&gt;
+<span class="nc" id="L137">                    shortEffect = &quot;+&quot; + params.path(&quot;bonusPP&quot;).asInt() + &quot; Flat PP&quot;;</span>
+
+            default -&gt;
+<span class="nc" id="L140">                    shortEffect = effectType; // Fallback di sicurezza</span>
+        }
+
+<span class="nc" id="L143">        return String.format(&quot;%-5s [Era %s] BUILDING  cost:%-2d  PP:%-2d  (%s)&quot;,</span>
+<span class="nc" id="L144">                id, era, cost, pp, shortEffect);</span>
+    }
+
+    private String formatEvent(JsonNode c, String era) {
+<span class="nc" id="L148">        String id = c.get(&quot;cardID&quot;).asText();</span>
+<span class="nc" id="L149">        String type = c.get(&quot;type&quot;).asText();</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        boolean isFinal = c.get(&quot;isFinal&quot;).asInt() == 1;</span>
+<span class="nc" id="L151">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L152">        sb.append(id).append(&quot;  [Era &quot;).append(era).append(&quot;] &quot;).append(type);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (isFinal) sb.append(&quot; [FINAL]&quot;);</span>
+
+<span class="nc bnc" id="L155" title="All 5 branches missed.">        switch (type) {</span>
+<span class="nc" id="L156">            case &quot;HUNT&quot;            -&gt; sb.append(&quot;  food/hunter:&quot;).append(c.get(&quot;foodPerHunter&quot;).asInt())</span>
+<span class="nc" id="L157">                    .append(&quot;  PP/hunter:&quot;).append(c.get(&quot;ppPerHunter&quot;).asInt());</span>
+<span class="nc" id="L158">            case &quot;SUSTENANCE&quot;      -&gt; sb.append(&quot;  penalty/unfed:&quot;).append(c.get(&quot;penaltyPerUnfed&quot;).asInt());</span>
+<span class="nc" id="L159">            case &quot;SHAMANIC_RITUAL&quot; -&gt; sb.append(&quot;  maj:+&quot;).append(c.get(&quot;majorityBonus&quot;).asInt())</span>
+<span class="nc" id="L160">                    .append(&quot;  min:-&quot;).append(c.get(&quot;minorityMalus&quot;).asInt());</span>
+<span class="nc" id="L161">            case &quot;CAVE_PAINTINGS&quot;  -&gt; sb.append(&quot;  min:&quot;).append(c.get(&quot;minArtists&quot;).asInt())</span>
+<span class="nc" id="L162">                    .append(&quot;  +&quot;).append(c.get(&quot;bonusPerArtist&quot;).asInt())</span>
+<span class="nc" id="L163">                    .append(&quot;/artist  malus:-&quot;).append(c.get(&quot;ppMalusIfFailed&quot;).asInt());</span>
+        }
+<span class="nc" id="L165">        return sb.toString();</span>
+    }
+
+    // -----------------------------------------------------------------------
+// Summary Card (TUI 'summary' command)
+// -----------------------------------------------------------------------
+
+    /**
+     * Returns the text content of the Summary Card — a fixed reference panel
+     * summarizing round events and end-game scoring rules.
+     * Used by the TUI {@code summary} command and mirrored by the GUI's
+     * {@code SummaryCardOverlay}.
+     *
+     * @return a multi-line ASCII-box string
+     */
+    public String getSummaryCardText() {
+<span class="nc" id="L181">        return &quot;&quot;&quot;</span>
+                ╔══════════════════════════════════════════════════════════════╗
+                ║                    MESOS — SUMMARY CARD                      ║
+                ╠══════════════════════════════════════════════════════════════╣
+                ║  ROUND EVENTS (resolved at end of each round)                ║
+                ║                                                              ║
+                ║  [SHAMANIC RITUAL] ★ above threshold → +? PP                 ║
+                ║                    ★ below threshold → -? PP                 ║
+                ║                                                              ║
+                ║  [HUNT]             gain 1 Food + ? PP × Hunters             ║
+                ║                                                              ║
+                ║  [CAVE PAINTINGS]   0–? Shamans → -? PP                      ║
+                ║                     ?+ Shamans → ? PP × Shamans              ║
+                ║                                                              ║
+                ║  [SUSTENANCE]       pay 1 Food per tribe member              ║
+                ║                     OR lose ? PP × tribe members             ║
+                ║                     (resolved last)                          ║
+                ╠══════════════════════════════════════════════════════════════╣
+                ║  FINAL SCORING  (end of game, after round 10)                ║
+                ║                                                              ║
+                ║  Builders   → PP as printed on each Builder card             ║
+                ║  Inventors  → number of Inventors                            ║
+                ║               × number of different invention icons          ║
+                ║  Artists    → 10 PP per every 2 Artists in your tribe        ║
+                ║  Buildings  → PP printed on card                             ║
+                ║               + any end-game effect bonuses                  ║
+                ╠══════════════════════════════════════════════════════════════╣
+                ║  TIEBREAKER: most Food wins. Still tied → shared victory.    ║
+                ╚══════════════════════════════════════════════════════════════╝
+            &quot;&quot;&quot;;
+    }
+
+    // Full cards description (TUI 'info' command / GUI tooltip)
+
+    /**
+     * Returns the full multi-line rule description of the card, suitable for a
+     * detail tooltip in the GUI or the TUI {@code info} command.
+     *
+     * @param cardId the card identifier
+     * @return a multi-line description string, or an error message if the ID is unknown
+     */
+    public String getFullDescription(String cardId) {
+<span class="nc" id="L223">        JsonNode c = cards.get(cardId);</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (c == null) return &quot;Unknown Card ID: [&quot; + cardId + &quot;]&quot;;</span>
+
+<span class="nc" id="L226">        String era = c.path(&quot;era&quot;).asText();</span>
+
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        if (cardId.startsWith(&quot;C_&quot;)) return getFullCharacterDesc(c, era);</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (cardId.startsWith(&quot;B_&quot;)) return getFullBuildingDesc(c, era);</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        if (cardId.startsWith(&quot;E_&quot;)) return getFullEventDesc(c, era);</span>
+
+<span class="nc" id="L232">        return &quot;No description available for: &quot; + cardId;</span>
+    }
+
+    private String getFullCharacterDesc(JsonNode c, String era) {
+<span class="nc" id="L236">        String id = c.get(&quot;cardID&quot;).asText();</span>
+<span class="nc" id="L237">        String type = c.get(&quot;type&quot;).asText();</span>
+<span class="nc" id="L238">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L240">        sb.append(String.format(&quot;=== [%s] %s (Era %s) ===\n&quot;, id, type, era));</span>
+
+<span class="nc bnc" id="L242" title="All 7 branches missed.">        switch (type) {</span>
+            case &quot;INVENTOR&quot; -&gt; {
+<span class="nc" id="L244">                sb.append(&quot;Invention: &quot;).append(c.path(&quot;invention&quot;).asText()).append(&quot;\n&quot;);</span>
+<span class="nc" id="L245">                sb.append(&quot;Effect: At the end of the game, Inventors provide Prestige Points equal to the number of Inventors in your tribe multiplied by the number of different Invention icons you have.&quot;);</span>
+<span class="nc" id="L246">            }</span>
+            case &quot;BUILDER&quot; -&gt; {
+<span class="nc" id="L248">                sb.append(&quot;Building Discount: -&quot;).append(c.path(&quot;buildingDiscount&quot;).asInt()).append(&quot; Food\n&quot;);</span>
+<span class="nc" id="L249">                sb.append(&quot;Prestige Points: &quot;).append(c.path(&quot;prestigePoints&quot;).asInt()).append(&quot;\n&quot;);</span>
+<span class="nc" id="L250">                sb.append(&quot;Effect: Reduces the Food cost of every Building card you take. Provides the indicated PP at the end of the game.&quot;);</span>
+<span class="nc" id="L251">            }</span>
+            case &quot;GATHERER&quot; -&gt; {
+<span class="nc" id="L253">                sb.append(&quot;Food Discount: -&quot;).append(c.path(&quot;foodDiscount&quot;).asInt()).append(&quot; Food\n&quot;);</span>
+<span class="nc" id="L254">                sb.append(&quot;Effect: During the Sustenance Event, they provide a discount of 3 Food tokens on the total you would have to pay.&quot;);</span>
+<span class="nc" id="L255">            }</span>
+            case &quot;ARTIST&quot; -&gt; {
+<span class="nc" id="L257">                sb.append(&quot;Effect: Used to gain or avoid losing Prestige Points during the Cave Paintings Event. At the end of the game, you gain 10 PP for every 2 Artists in your tribe.&quot;);</span>
+<span class="nc" id="L258">            }</span>
+            case &quot;SHAMAN&quot; -&gt; {
+<span class="nc" id="L260">                sb.append(&quot;Shaman Stars: &quot;).append(c.path(&quot;shamanStars&quot;).asInt()).append(&quot;\n&quot;);</span>
+<span class="nc" id="L261">                sb.append(&quot;Effect: During the Shamanic Ritual Event, having the majority of these icons provides PP; having the minority results in losing PP.&quot;);</span>
+<span class="nc" id="L262">            }</span>
+            case &quot;HUNTER&quot; -&gt; {
+<span class="nc bnc" id="L264" title="All 2 branches missed.">                sb.append(&quot;Has Gigot Icon: &quot;).append(c.path(&quot;hasGigot&quot;).asBoolean() ? &quot;Yes (+1 Food when played)&quot; : &quot;No&quot;).append(&quot;\n&quot;);</span>
+<span class="nc" id="L265">                sb.append(&quot;Effect: During the Hunt Event, you take Food and gain PP based on the number of Hunters in your tribe.&quot;);</span>
+            }
+        }
+<span class="nc" id="L268">        return sb.toString();</span>
+    }
+
+    private String getFullEventDesc(JsonNode c, String era) {
+<span class="nc" id="L272">        String id = c.get(&quot;cardID&quot;).asText();</span>
+<span class="nc" id="L273">        String type = c.get(&quot;type&quot;).asText();</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        boolean isFinal = c.path(&quot;isFinal&quot;).asInt() == 1;</span>
+
+<span class="nc" id="L276">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L277">        sb.append(String.format(&quot;=== [%s] EVENT: %s (Era %s)%s ===\n&quot;,</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">                id, type, era, isFinal ? &quot; [FINAL]&quot; : &quot;&quot;));</span>
+
+<span class="nc bnc" id="L280" title="All 5 branches missed.">        switch (type) {</span>
+            case &quot;HUNT&quot; -&gt; {
+<span class="nc" id="L282">                sb.append(&quot;Effect: Take &quot;).append(c.path(&quot;foodPerHunter&quot;).asInt())</span>
+<span class="nc" id="L283">                        .append(&quot; Food token and gain &quot;).append(c.path(&quot;ppPerHunter&quot;).asInt())</span>
+<span class="nc" id="L284">                        .append(&quot; Prestige Points for each Hunter in your tribe.&quot;);</span>
+<span class="nc" id="L285">            }</span>
+            case &quot;SUSTENANCE&quot; -&gt; {
+<span class="nc" id="L287">                sb.append(&quot;Effect: Pay 1 Food token for each Character card in your tribe. You lose &quot;)</span>
+<span class="nc" id="L288">                        .append(c.path(&quot;penaltyPerUnfed&quot;).asInt())</span>
+<span class="nc" id="L289">                        .append(&quot; Prestige Points for each Character card you couldn't feed.&quot;);</span>
+<span class="nc" id="L290">            }</span>
+            case &quot;SHAMANIC_RITUAL&quot; -&gt; {
+<span class="nc" id="L292">                sb.append(&quot;Effect: The player with the most Shaman stars gains &quot;)</span>
+<span class="nc" id="L293">                        .append(c.path(&quot;majorityBonus&quot;).asInt()).append(&quot; PP. The player with the fewest loses &quot;)</span>
+<span class="nc" id="L294">                        .append(c.path(&quot;minorityMalus&quot;).asInt()).append(&quot; PP.&quot;);</span>
+<span class="nc" id="L295">            }</span>
+            case &quot;CAVE_PAINTINGS&quot; -&gt; {
+<span class="nc" id="L297">                sb.append(&quot;Requirement: At least &quot;).append(c.path(&quot;minArtists&quot;).asInt()).append(&quot; Artist(s).\n&quot;);</span>
+<span class="nc" id="L298">                sb.append(&quot;Effect: If you meet the requirement, gain &quot;).append(c.path(&quot;bonusPerArtist&quot;).asInt())</span>
+<span class="nc" id="L299">                        .append(&quot; PP for each Artist. If you fail, you lose &quot;).append(c.path(&quot;ppMalusIfFailed&quot;).asInt()).append(&quot; PP.&quot;);</span>
+            }
+        }
+<span class="nc" id="L302">        return sb.toString();</span>
+    }
+
+    private String getFullBuildingDesc(JsonNode c, String era) {
+<span class="nc" id="L306">        String id = c.get(&quot;cardID&quot;).asText();</span>
+<span class="nc" id="L307">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L308">        sb.append(String.format(&quot;=== [%s] BUILDING (Era %s) ===\n&quot;, id, era));</span>
+<span class="nc" id="L309">        sb.append(&quot;Cost: &quot;).append(c.path(&quot;buildingCost&quot;).asInt()).append(&quot; Food\n&quot;);</span>
+<span class="nc" id="L310">        sb.append(&quot;Base PP: &quot;).append(c.path(&quot;buildingPp&quot;).asInt()).append(&quot;\n&quot;);</span>
+
+<span class="nc" id="L312">        String effectType = c.path(&quot;effectType&quot;).asText();</span>
+<span class="nc" id="L313">        JsonNode params = c.path(&quot;effectParams&quot;); // .path() avoids NullPointerException if field is missing</span>
+
+<span class="nc" id="L315">        sb.append(&quot;Effect: &quot;);</span>
+<span class="nc bnc" id="L316" title="All 13 branches missed.">        switch (effectType) {</span>
+            case &quot;TURN_ORDER_FOOD_BONUS&quot; -&gt;
+<span class="nc" id="L318">                    sb.append(&quot;When you move your Totem back to the Turn Order tile on a space with a Food bonus, immediately take 1 additional Food token.&quot;);</span>
+            case &quot;INVENTOR_PAIR_FOOD_REWARD&quot; -&gt;
+<span class="nc" id="L320">                    sb.append(&quot;Every time you obtain a pair of identical Inventors, take &quot;)</span>
+<span class="nc" id="L321">                            .append(params.path(&quot;foodReward&quot;).asInt()).append(&quot; Food tokens.&quot;);</span>
+            case &quot;FULL_SET_FOOD_REWARD&quot; -&gt;
+<span class="nc" id="L323">                    sb.append(&quot;Every time you complete a set of 6 different Character cards, take &quot;)</span>
+<span class="nc" id="L324">                            .append(params.path(&quot;foodReward&quot;).asInt()).append(&quot; Food tokens.&quot;);</span>
+            case &quot;EVENT_CHARACTER_BONUS&quot; -&gt; {
+<span class="nc" id="L326">                String eType = params.path(&quot;eventType&quot;).asText();</span>
+<span class="nc" id="L327">                String cType = params.path(&quot;characterType&quot;).asText();</span>
+<span class="nc bnc" id="L328" title="All 2 branches missed.">                if (&quot;SUSTENANCE&quot;.equals(eType)) {</span>
+<span class="nc" id="L329">                    sb.append(&quot;During the Sustenance Event, you have a discount of &quot;)</span>
+<span class="nc" id="L330">                            .append(params.path(&quot;foodDiscount&quot;).asInt())</span>
+<span class="nc" id="L331">                            .append(&quot; Food token on the total for each &quot;).append(cType).append(&quot; in your tribe.&quot;);</span>
+<span class="nc bnc" id="L332" title="All 2 branches missed.">                } else if (&quot;CAVE_PAINTINGS&quot;.equals(eType)) {</span>
+<span class="nc" id="L333">                    sb.append(&quot;During the Cave Paintings Event, take &quot;)</span>
+<span class="nc" id="L334">                            .append(params.path(&quot;foodReward&quot;).asInt())</span>
+<span class="nc" id="L335">                            .append(&quot; Food token for each &quot;).append(cType).append(&quot; in your tribe.&quot;);</span>
+<span class="nc bnc" id="L336" title="All 2 branches missed.">                } else if (&quot;HUNT&quot;.equals(eType)) {</span>
+<span class="nc" id="L337">                    sb.append(&quot;During the Hunt Event, take &quot;)</span>
+<span class="nc" id="L338">                            .append(params.path(&quot;foodReward&quot;).asInt()).append(&quot; Food token and gain &quot;)</span>
+<span class="nc" id="L339">                            .append(params.path(&quot;prestigeReward&quot;).asInt()).append(&quot; additional PP for each &quot;).append(cType).append(&quot;.&quot;);</span>
+                }
+<span class="nc" id="L341">            }</span>
+            case &quot;ENDGAME_CHARACTER_PP&quot; -&gt;
+<span class="nc" id="L343">                    sb.append(&quot;At the end of the game, gain &quot;)</span>
+<span class="nc" id="L344">                            .append(params.path(&quot;bonusPP&quot;).asInt()).append(&quot; PP for each &quot;)</span>
+<span class="nc" id="L345">                            .append(params.path(&quot;characterType&quot;).asText()).append(&quot; in your tribe.&quot;);</span>
+            case &quot;ENDGAME_FULL_SET_PP&quot; -&gt;
+<span class="nc" id="L347">                    sb.append(&quot;At the end of the game, gain &quot;)</span>
+<span class="nc" id="L348">                            .append(params.path(&quot;bonusPP&quot;).asInt())</span>
+<span class="nc" id="L349">                            .append(&quot; PP for each set of 6 different Character cards in your tribe.&quot;);</span>
+            case &quot;PP_MULTIPLIER_PER_TYPE&quot; -&gt;
+<span class="nc" id="L351">                    sb.append(&quot;At the end of the game, gain double (x&quot;)</span>
+<span class="nc" id="L352">                            .append(params.path(&quot;multiplier&quot;).asInt())</span>
+<span class="nc" id="L353">                            .append(&quot;) the Prestige Points indicated on the &quot;)</span>
+<span class="nc" id="L354">                            .append(params.path(&quot;characterType&quot;).asText()).append(&quot; cards in your tribe.&quot;);</span>
+            case &quot;EXTRA_SHAMAN_STARS&quot; -&gt;
+<span class="nc" id="L356">                    sb.append(&quot;During the Shamanic Ritual Event, your tribe has &quot;)</span>
+<span class="nc" id="L357">                            .append(params.path(&quot;bonusStars&quot;).asInt()).append(&quot; additional star icons.&quot;);</span>
+            case &quot;SHAMANIC_WIN_MULTIPLIER&quot; -&gt;
+<span class="nc" id="L359">                    sb.append(&quot;During the Shamanic Ritual Event, if you have more star icons than any other player, gain double (x&quot;)</span>
+<span class="nc" id="L360">                            .append(params.path(&quot;multiplier&quot;).asInt()).append(&quot;) the indicated PP.&quot;);</span>
+            case &quot;SHAMANIC_IMMUNITY&quot; -&gt;
+<span class="nc" id="L362">                    sb.append(&quot;During the Shamanic Ritual Event, you do not lose Prestige Points if you have fewer star icons than all other players.&quot;);</span>
+            case &quot;EXTRA_TURN&quot; -&gt;
+<span class="nc" id="L364">                    sb.append(&quot;After resolving all actions, you can take &quot;)</span>
+<span class="nc" id="L365">                            .append(params.path(&quot;extraUpperPicks&quot;).asInt())</span>
+<span class="nc" id="L366">                            .append(&quot; Character or Building card from the top row (paying its cost).&quot;);</span>
+            case &quot;ENDGAME_FLAT_PP&quot; -&gt;
+<span class="nc" id="L368">                    sb.append(&quot;At the end of the game, gain &quot;)</span>
+<span class="nc" id="L369">                            .append(params.path(&quot;bonusPP&quot;).asInt()).append(&quot; Prestige Points.&quot;);</span>
+<span class="nc" id="L370">            default -&gt; sb.append(&quot;Unknown effect.&quot;);</span>
+        }
+
+<span class="nc" id="L373">        return sb.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

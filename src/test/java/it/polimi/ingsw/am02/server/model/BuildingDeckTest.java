@@ -14,10 +14,16 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests {@link BuildingDeck} setup, verifying that the number of building cards
+ * dealt per {@link Era} matches the rules for each supported player count. Uses a
+ * mocked {@link GameRegistry} to supply deterministic card data.
+ */
 public class BuildingDeckTest {
 
     private final Random gameRandom = new Random(42);
 
+    /** Verifies the per-era building counts for a 2-player game. */
     @Test
     public void testBuildingDeck_SetupFor2Players() {
         GameRegistry mockRegistry = Mockito.mock(GameRegistry.class);
@@ -36,6 +42,7 @@ public class BuildingDeckTest {
         }
     }
 
+    /** Verifies the per-era building counts for a 3-player game. */
     @Test
     public void testBuildingDeck_SetupFor3Players() {
         GameRegistry mockRegistry = Mockito.mock(GameRegistry.class);
@@ -54,6 +61,7 @@ public class BuildingDeckTest {
         }
     }
 
+    /** Verifies the per-era building counts for a 4-player game. */
     @Test
     public void testBuildingDeck_SetupFor4Players() {
         GameRegistry mockRegistry = Mockito.mock(GameRegistry.class);
@@ -72,6 +80,7 @@ public class BuildingDeckTest {
         }
     }
 
+    /** Verifies the per-era building counts for a 5-player game. */
     @Test
     public void testBuildingDeck_SetupFor5Players() {
         GameRegistry mockRegistry = Mockito.mock(GameRegistry.class);

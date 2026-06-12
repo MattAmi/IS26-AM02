@@ -1,0 +1,553 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ControllerManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.controller</a> &gt; <span class="el_source">ControllerManager.java</span></div><h1>ControllerManager.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.controller;
+
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.common.interfaces.VirtualControllerManager;
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
+import it.polimi.ingsw.am02.common.messages.commands.*;
+import it.polimi.ingsw.am02.server.controller.persistence.*;
+import it.polimi.ingsw.am02.server.model.Game;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Stream;
+
+/**
+ * Application-level singleton that manages the full lifecycle of all
+ * lobbies and game sessions on the server.
+ *
+ * &lt;p&gt;Responsibilities:
+ * &lt;ul&gt;
+ *   &lt;li&gt;Maintains four routing maps (clientId → lobby, game, nickname; game → nickname map)
+ *       so that any incoming command can be dispatched to the right {@link Lobby}
+ *       or {@link GameController} in O(1).&lt;/li&gt;
+ *   &lt;li&gt;Accepts clients from network handlers via {@link #handleClientConnected}
+ *       and routes their commands to the correct destination.&lt;/li&gt;
+ *   &lt;li&gt;Orchestrates lobby creation, joining, nickname selection, totem selection,
+ *       and lobby dissolution.&lt;/li&gt;
+ *   &lt;li&gt;Starts a game when a lobby is full ({@link #startGame}); tears it down
+ *       when it ends ({@link #removeGameController}).&lt;/li&gt;
+ *   &lt;li&gt;Handles player reconnection: re-binds the new clientId and delegates
+ *       to {@link GameController#handlePlayerReconnected}.&lt;/li&gt;
+ *   &lt;li&gt;Recovers interrupted games from NDJSON log files on server startup
+ *       ({@link #recoverGames}), with a configurable reconnection window
+ *       before orphaned games are discarded.&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;All public methods that mutate shared state are {@code synchronized}.
+ * In-game action methods ({@link #requestMoveTotem}, {@link #requestResolveActions})
+ * are intentionally not synchronized because {@link GameController} provides
+ * its own fine-grained locking.
+ *
+ * &lt;p&gt;Obtain the singleton via {@link #getInstance()}.
+ */
+public class ControllerManager implements VirtualControllerManager {
+
+<span class="nc" id="L50">    private static final ControllerManager INSTANCE = new ControllerManager();</span>
+
+    // Internal maps (all keyed by clientId, except gameNicknameToClient)
+    private final Map&lt;String, VirtualView&gt; connectedClients;
+    private final Map&lt;String, Lobby&gt; lobbies;
+    private final Map&lt;String, GameController&gt; controllers;
+    private final Map&lt;String, String&gt; clientToLobby;
+    private final Map&lt;String, String&gt; clientToGame;
+    private final Map&lt;String, String&gt; clientToNickname;
+    private final Map&lt;String, Map&lt;String, String&gt;&gt; gameNicknameToClient;
+
+    private static final long RECOVERY_WINDOW_SECONDS = 300;
+    private final ScheduledExecutorService recoveryScheduler;
+
+<span class="nc" id="L64">    private final Map&lt;String, ScheduledFuture&lt;?&gt;&gt; pendingRecoveryTasks = new ConcurrentHashMap&lt;&gt;();</span>
+
+<span class="nc" id="L66">    private ControllerManager() {</span>
+<span class="nc" id="L67">        this.connectedClients = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L68">        this.lobbies = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L69">        this.controllers = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L70">        this.clientToLobby = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L71">        this.clientToGame = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L72">        this.clientToNickname = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L73">        this.gameNicknameToClient = new ConcurrentHashMap&lt;&gt;();</span>
+
+<span class="nc" id="L75">        this.recoveryScheduler = Executors.newSingleThreadScheduledExecutor(r -&gt; {</span>
+<span class="nc" id="L76">            Thread t = new Thread(r, &quot;ControllerManager-RecoveryScheduler&quot;);</span>
+<span class="nc" id="L77">            t.setDaemon(true);</span>
+<span class="nc" id="L78">            return t;</span>
+        });
+<span class="nc" id="L80">    }</span>
+
+    /** @return the singleton instance */
+    public static ControllerManager getInstance() {
+<span class="nc" id="L84">        return INSTANCE;</span>
+    }
+
+    // =========================================================
+    // Connection / disconnection entry points (called by network layer)
+    // =========================================================
+
+    @Override
+    public synchronized String handleClientConnected(VirtualView view) {
+<span class="nc" id="L93">        String clientId = UUID.randomUUID().toString();</span>
+<span class="nc" id="L94">        connectedClients.put(clientId, view);</span>
+<span class="nc" id="L95">        view.notifyAvailableLobbiesUpdated(getLobbyInfoList());</span>
+<span class="nc" id="L96">        log(&quot;Client connected: &quot; + clientId);</span>
+<span class="nc" id="L97">        return clientId;</span>
+    }
+
+    @Override
+    public synchronized void handleDisconnection(String clientId) {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (clientToGame.containsKey(clientId)) {</span>
+<span class="nc" id="L103">            String gameId = clientToGame.get(clientId);</span>
+<span class="nc" id="L104">            String nickname = clientToNickname.get(clientId);</span>
+<span class="nc" id="L105">            GameController controller = controllers.get(gameId);</span>
+<span class="nc bnc" id="L106" title="All 4 branches missed.">            if (controller != null &amp;&amp; nickname != null) {</span>
+<span class="nc" id="L107">                controller.handlePlayerDisconnected(nickname);</span>
+            }
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        } else if (clientToLobby.containsKey(clientId)) {</span>
+<span class="nc" id="L110">            leaveLobbyInternal(clientId);</span>
+            // Connection lost, not a voluntary leave: returnClientToPreLobby has
+            // just re-registered the dead view in connectedClients — remove it,
+            // or it would leak and receive broadcasts forever.
+<span class="nc" id="L114">            connectedClients.remove(clientId);</span>
+        } else {
+<span class="nc" id="L116">            connectedClients.remove(clientId);</span>
+        }
+<span class="nc" id="L118">    }</span>
+
+    @Override
+    public synchronized void requestReconnect(String clientId, VirtualView newView,
+                                              String nickname, String gameId) {
+<span class="nc" id="L123">        GameController controller = controllers.get(gameId);</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (controller == null) {</span>
+<span class="nc" id="L125">            newView.notifyError(&quot;Game not found or already ended: &quot; + gameId);</span>
+<span class="nc" id="L126">            return;</span>
+        }
+
+<span class="nc" id="L129">        Map&lt;String, String&gt; nicknameMap = gameNicknameToClient.get(gameId);</span>
+<span class="nc bnc" id="L130" title="All 4 branches missed.">        if (nicknameMap == null || !nicknameMap.containsKey(nickname)) {</span>
+<span class="nc" id="L131">            newView.notifyError(&quot;Nickname not registered in this game: &quot; + nickname);</span>
+<span class="nc" id="L132">            return;</span>
+        }
+
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (!controller.isPlayerDisconnected(nickname)) {</span>
+<span class="nc" id="L136">            newView.notifyError(&quot;Player &quot; + nickname + &quot; is not disconnected&quot;);</span>
+<span class="nc" id="L137">            return;</span>
+        }
+
+        try {
+<span class="nc" id="L141">            controller.handlePlayerReconnected(nickname, newView);</span>
+<span class="nc" id="L142">        } catch (IllegalStateException e) {</span>
+<span class="nc" id="L143">            newView.notifyError(e.getMessage());</span>
+<span class="nc" id="L144">            return;</span>
+<span class="nc" id="L145">        }</span>
+
+<span class="nc" id="L147">        rebindClient(nicknameMap.get(nickname), clientId, gameId, nickname);</span>
+<span class="nc" id="L148">    }</span>
+
+    private void rebindClient(String oldClientId, String newClientId, String gameId, String nickname) {
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (oldClientId != null) {</span>
+<span class="nc" id="L152">            clientToGame.remove(oldClientId);</span>
+<span class="nc" id="L153">            clientToNickname.remove(oldClientId);</span>
+<span class="nc" id="L154">            connectedClients.remove(oldClientId);</span>
+        }
+
+<span class="nc" id="L157">        gameNicknameToClient.get(gameId).put(nickname, newClientId);</span>
+<span class="nc" id="L158">        clientToGame.put(newClientId, gameId);</span>
+<span class="nc" id="L159">        clientToNickname.put(newClientId, nickname);</span>
+
+<span class="nc" id="L161">        log(&quot;Rebound &quot; + nickname + &quot; in game &quot; + gameId + &quot; (clientId: &quot; + newClientId + &quot;)&quot;);</span>
+<span class="nc" id="L162">    }</span>
+
+    // =========================================================
+    // Lobby management
+    // =========================================================
+
+    @Override
+    public synchronized void requestCreateLobby(String clientId, int numPlayers) {
+<span class="nc" id="L170">        VirtualView view = connectedClients.get(clientId);</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (view == null) {</span>
+<span class="nc" id="L172">            log(&quot;requestCreateLobby: unknown clientId &quot; + clientId);</span>
+<span class="nc" id="L173">            return;</span>
+        }
+
+<span class="nc bnc" id="L176" title="All 4 branches missed.">        if (numPlayers &lt; 2 || numPlayers &gt; 5) {</span>
+<span class="nc" id="L177">            view.notifyError(&quot;Lobbies must contain between 2 and 5 players.&quot;);</span>
+<span class="nc" id="L178">            return;</span>
+        }
+
+<span class="nc" id="L181">        String lobbyId = UUID.randomUUID().toString();</span>
+<span class="nc" id="L182">        Lobby lobby = new Lobby(lobbyId, numPlayers, this);</span>
+<span class="nc" id="L183">        lobbies.put(lobbyId, lobby);</span>
+
+<span class="nc" id="L185">        connectedClients.remove(clientId);</span>
+<span class="nc" id="L186">        clientToLobby.put(clientId, lobbyId);</span>
+
+<span class="nc" id="L188">        lobby.addClient(clientId, view);</span>
+<span class="nc" id="L189">        broadcastToPreLobbyClients();</span>
+<span class="nc" id="L190">    }</span>
+
+    @Override
+    public synchronized void requestJoinLobby(String clientId, String lobbyId) {
+<span class="nc" id="L194">        VirtualView view = connectedClients.get(clientId);</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (view == null) {</span>
+<span class="nc" id="L196">            log(&quot;requestJoinLobby: unknown clientId &quot; + clientId);</span>
+<span class="nc" id="L197">            return;</span>
+        }
+
+<span class="nc" id="L200">        Lobby lobby = lobbies.get(lobbyId);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (lobby == null) {</span>
+<span class="nc" id="L202">            view.notifyError(&quot;Lobby not found: &quot; + lobbyId);</span>
+<span class="nc" id="L203">            return;</span>
+        }
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (lobby.isFull()) {</span>
+<span class="nc" id="L206">            view.notifyError(&quot;Lobby is full&quot;);</span>
+<span class="nc" id="L207">            return;</span>
+        }
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (lobby.hasStarted()) {</span>
+<span class="nc" id="L210">            view.notifyError(&quot;Lobby has already started&quot;);</span>
+<span class="nc" id="L211">            return;</span>
+        }
+
+<span class="nc" id="L214">        connectedClients.remove(clientId);</span>
+<span class="nc" id="L215">        clientToLobby.put(clientId, lobbyId);</span>
+<span class="nc" id="L216">        lobby.addClient(clientId, view);</span>
+<span class="nc" id="L217">        broadcastToPreLobbyClients();</span>
+<span class="nc" id="L218">    }</span>
+
+    @Override
+    public synchronized void requestSetUsername(String clientId, String nickname) {
+<span class="nc" id="L222">        String lobbyId = clientToLobby.get(clientId);</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        if (lobbyId == null) {</span>
+<span class="nc" id="L224">            VirtualView view = connectedClients.get(clientId);</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">            if (view != null) view.notifyError(&quot;You are not in any lobby&quot;);</span>
+<span class="nc" id="L226">            return;</span>
+        }
+
+<span class="nc bnc" id="L229" title="All 4 branches missed.">        if (nickname == null || nickname.isBlank()) {</span>
+<span class="nc" id="L230">            VirtualView view = getViewForClient(clientId);</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            if (view != null)</span>
+<span class="nc" id="L232">                view.notifyUsernameResult(nickname, false, &quot;Nickname cannot be empty&quot;);</span>
+<span class="nc" id="L233">            return;</span>
+        }
+
+<span class="nc" id="L236">        Lobby lobby = lobbies.get(lobbyId);</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        if (lobby == null) return;</span>
+
+<span class="nc" id="L239">        boolean accepted = lobby.requestNickname(clientId, nickname);</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">        if (accepted) {</span>
+<span class="nc" id="L241">            clientToNickname.put(clientId, nickname);</span>
+        }
+<span class="nc" id="L243">    }</span>
+
+    @Override
+    public synchronized void requestSelectTotem(String clientId, Totem totem) {
+<span class="nc" id="L247">        String lobbyId = clientToLobby.get(clientId);</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">        if (lobbyId == null) {</span>
+<span class="nc" id="L249">            VirtualView view = connectedClients.get(clientId);</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">            if (view != null) view.notifyError(&quot;You are not in any lobby&quot;);</span>
+<span class="nc" id="L251">            return;</span>
+        }
+<span class="nc" id="L253">        Lobby lobby = lobbies.get(lobbyId);</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">        if (lobby == null) return;</span>
+<span class="nc" id="L255">        lobby.selectTotem(clientId, totem);</span>
+<span class="nc" id="L256">    }</span>
+
+    @Override
+    public synchronized void requestLeaveLobby(String clientId) {
+<span class="nc" id="L260">        leaveLobbyInternal(clientId);</span>
+<span class="nc" id="L261">    }</span>
+
+    // =========================================================
+    // In-game actions
+    // =========================================================
+
+    @Override
+    public void requestMoveTotem(String clientId, char tileId) {
+<span class="nc" id="L269">        String nickname = clientToNickname.get(clientId);</span>
+<span class="nc" id="L270">        String gameId = clientToGame.get(clientId);</span>
+<span class="nc bnc" id="L271" title="All 4 branches missed.">        if (nickname == null || gameId == null) return;</span>
+
+<span class="nc" id="L273">        GameController controller = controllers.get(gameId);</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        if (controller == null) return;</span>
+
+<span class="nc" id="L276">        controller.executeMoveTotem(nickname, tileId);</span>
+<span class="nc" id="L277">    }</span>
+
+    @Override
+    public void requestResolveActions(String clientId, List&lt;String&gt; selectedIds) {
+<span class="nc" id="L281">        String nickname = clientToNickname.get(clientId);</span>
+<span class="nc" id="L282">        String gameId = clientToGame.get(clientId);</span>
+<span class="nc bnc" id="L283" title="All 4 branches missed.">        if (nickname == null || gameId == null) return;</span>
+
+<span class="nc" id="L285">        GameController controller = controllers.get(gameId);</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">        if (controller == null) return;</span>
+
+<span class="nc" id="L288">        controller.executeResolveActions(nickname, selectedIds);</span>
+<span class="nc" id="L289">    }</span>
+
+    // =========================================================
+    // Callbacks from Lobby
+    // =========================================================
+
+    /**
+     * Called by {@link Lobby} when all slots are filled and every player has selected
+     * a nickname and totem. Creates the {@link it.polimi.ingsw.am02.server.model.Game},
+     * sets up the {@link GameLogger}, constructs a {@link GameController}, and starts the FSM.
+     *
+     * @param gameId       the lobby ID reused as the game ID
+     * @param clientIds    ordered list of client IDs (index matches {@code nicknames})
+     * @param nicknames    ordered list of player nicknames
+     * @param views        mapping from client ID to {@link VirtualView}
+     * @param chosenTotems mapping from nickname to chosen totem
+     */
+    public synchronized void startGame(String gameId,
+                                       List&lt;String&gt; clientIds,
+                                       List&lt;String&gt; nicknames,
+                                       Map&lt;String, VirtualView&gt; views,
+                                       Map&lt;String, Totem&gt; chosenTotems) {
+
+<span class="nc" id="L312">        views.values().forEach(v -&gt; v.notifyGameStarted(gameId));</span>
+
+<span class="nc" id="L314">        lobbies.remove(gameId);</span>
+<span class="nc" id="L315">        clientIds.forEach(clientToLobby::remove);</span>
+
+<span class="nc" id="L317">        Map&lt;String, String&gt; nicknameToClient = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">        for (int i = 0; i &lt; clientIds.size(); i++) {</span>
+<span class="nc" id="L319">            nicknameToClient.put(nicknames.get(i), clientIds.get(i));</span>
+        }
+<span class="nc" id="L321">        gameNicknameToClient.put(gameId, nicknameToClient);</span>
+
+<span class="nc" id="L323">        Map&lt;String, VirtualView&gt; nicknameToView = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">        for (int i = 0; i &lt; clientIds.size(); i++) {</span>
+<span class="nc" id="L325">            nicknameToView.put(nicknames.get(i), views.get(clientIds.get(i)));</span>
+        }
+
+<span class="nc" id="L328">        clientIds.forEach(id -&gt; clientToGame.put(id, gameId));</span>
+
+<span class="nc" id="L330">        long seed = new Random().nextLong();</span>
+<span class="nc" id="L331">        Game model = new Game(gameId, nicknames, chosenTotems, seed);</span>
+
+        GameLogger gameLogger;
+        try {
+<span class="nc" id="L335">            CommandLogger fileLogger = new CommandLogger(gameId);</span>
+<span class="nc" id="L336">            fileLogger.logGameInit(gameId, seed, nicknames, chosenTotems);</span>
+<span class="nc" id="L337">            gameLogger = fileLogger;</span>
+<span class="nc" id="L338">        } catch (IOException e) {</span>
+<span class="nc" id="L339">            System.err.println(&quot;[ControllerManager] Failed to create CommandLogger, &quot;</span>
+<span class="nc" id="L340">                    + &quot;persistence disabled: &quot; + e.getMessage());</span>
+<span class="nc" id="L341">            gameLogger = new NoOpCommandLogger();</span>
+<span class="nc" id="L342">        }</span>
+
+<span class="nc" id="L344">        GameController controller = new GameController(gameId, model, nicknameToView, gameLogger);</span>
+<span class="nc" id="L345">        controller.setGameEndedCallback(() -&gt; removeGameController(gameId));</span>
+<span class="nc" id="L346">        controllers.put(gameId, controller);</span>
+
+<span class="nc" id="L348">        broadcastToPreLobbyClients();</span>
+<span class="nc" id="L349">        model.startFSM();</span>
+        //model.injectBuildingForTesting(&quot;Matteo&quot;, &quot;B_020&quot;); FOR TESTING
+<span class="nc" id="L351">    }</span>
+
+    /**
+     * Called by {@link Lobby} when the last player leaves an empty lobby.
+     * Removes the lobby and broadcasts the updated lobby list to pre-lobby clients.
+     *
+     * @param lobbyId the identifier of the lobby to remove
+     */
+    public synchronized void removeLobby(String lobbyId) {
+<span class="nc" id="L360">        lobbies.remove(lobbyId);</span>
+<span class="nc" id="L361">        broadcastToPreLobbyClients();</span>
+<span class="nc" id="L362">    }</span>
+
+    /**
+     * Moves a client from a lobby back to the pre-lobby state.
+     * Sends the current lobby list to the returning client.
+     *
+     * @param clientId the client being returned
+     * @param view     the client's {@link VirtualView}
+     */
+    public synchronized void returnClientToPreLobby(String clientId, VirtualView view) {
+<span class="nc" id="L372">        clientToLobby.remove(clientId);</span>
+<span class="nc" id="L373">        clientToNickname.remove(clientId);</span>
+<span class="nc" id="L374">        connectedClients.put(clientId, view);</span>
+<span class="nc" id="L375">        view.notifyAvailableLobbiesUpdated(getLobbyInfoList());</span>
+<span class="nc" id="L376">    }</span>
+
+    // =========================================================
+    // Helper methods
+    // =========================================================
+
+    private void leaveLobbyInternal(String clientId) {
+<span class="nc" id="L383">        String lobbyId = clientToLobby.get(clientId);</span>
+<span class="nc bnc" id="L384" title="All 2 branches missed.">        if (lobbyId == null) return;</span>
+<span class="nc" id="L385">        Lobby lobby = lobbies.get(lobbyId);</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">        if (lobby == null) return;</span>
+<span class="nc" id="L387">        lobby.removeClient(clientId);</span>
+<span class="nc" id="L388">    }</span>
+
+    private synchronized void removeGameController(String gameId) {
+<span class="nc bnc" id="L391" title="All 2 branches missed.">        if (controllers.remove(gameId) == null) return;</span>
+<span class="nc" id="L392">        gameNicknameToClient.remove(gameId);</span>
+<span class="nc" id="L393">        clientToGame.entrySet().removeIf(e -&gt; gameId.equals(e.getValue()));</span>
+<span class="nc" id="L394">        log(&quot;Game removed: &quot; + gameId);</span>
+        try {
+<span class="nc" id="L396">            Path logFilePath = Path.of(&quot;logs&quot;, gameId + &quot;.ndjson&quot;);</span>
+
+            // deleteIfExists è perfetto: se per qualche motivo il file non c'è, non fa crashare il server
+<span class="nc" id="L399">            boolean deleted = Files.deleteIfExists(logFilePath);</span>
+<span class="nc bnc" id="L400" title="All 2 branches missed.">            if (deleted) {</span>
+<span class="nc" id="L401">                log(&quot;Log file deleted successfully: &quot; + logFilePath.getFileName());</span>
+            }
+<span class="nc" id="L403">        } catch (IOException e) {</span>
+<span class="nc" id="L404">            System.err.println(&quot;[ControllerManager] Could not delete log file for game &quot; + gameId + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L405">        }</span>
+<span class="nc" id="L406">        broadcastToPreLobbyClients();</span>
+<span class="nc" id="L407">    }</span>
+
+    private void broadcastToPreLobbyClients() {
+<span class="nc" id="L410">        List&lt;LobbyInfo&gt; currentLobbies = getLobbyInfoList();</span>
+<span class="nc" id="L411">        connectedClients.values().forEach(v -&gt; v.notifyAvailableLobbiesUpdated(currentLobbies));</span>
+<span class="nc" id="L412">    }</span>
+
+    private List&lt;LobbyInfo&gt; getLobbyInfoList() {
+<span class="nc" id="L415">        return lobbies.values().stream()</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                .filter(lobby -&gt; lobby.getPlayerCount() &gt; 0)</span>
+<span class="nc" id="L417">                .map(Lobby::toLobbyInfo)</span>
+<span class="nc" id="L418">                .toList();</span>
+    }
+
+    private VirtualView getViewForClient(String clientId) {
+<span class="nc" id="L422">        VirtualView v = connectedClients.get(clientId);</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        if (v != null) return v;</span>
+<span class="nc" id="L424">        String lobbyId = clientToLobby.get(clientId);</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">        if (lobbyId == null) return null;</span>
+<span class="nc" id="L426">        Lobby lobby = lobbies.get(lobbyId);</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">        if (lobby == null) return null;</span>
+<span class="nc" id="L428">        return lobby.getView(clientId);</span>
+    }
+
+    // =========================================================
+    // Recovery system
+    // =========================================================
+
+    /**
+     * Starts recovery of any interrupted game sessions found in the given directory.
+     * For each {@code .ndjson} file that does not end with a {@code GAME_ENDED} record,
+     * replays the command log to restore the game state and waits
+     * {@value #RECOVERY_WINDOW_SECONDS} seconds for players to reconnect before
+     * discarding the session.
+     *
+     * @param logsDirectory the directory containing NDJSON log files (e.g. {@code Path.of(&quot;logs&quot;)})
+     */
+    public synchronized void recoverGames(Path logsDirectory) {
+<span class="nc bnc" id="L445" title="All 2 branches missed.">        if (!Files.isDirectory(logsDirectory)) {</span>
+<span class="nc" id="L446">            logRecovery(&quot;No logs directory — starting fresh.&quot;);</span>
+<span class="nc" id="L447">            return;</span>
+        }
+
+        List&lt;Path&gt; candidates;
+<span class="nc" id="L451">        try (Stream&lt;Path&gt; stream = Files.list(logsDirectory)) {</span>
+<span class="nc" id="L452">            candidates = stream</span>
+<span class="nc" id="L453">                    .filter(p -&gt; p.toString().endsWith(&quot;.ndjson&quot;))</span>
+<span class="nc" id="L454">                    .filter(this::isInterrupted)</span>
+<span class="nc" id="L455">                    .toList();</span>
+<span class="nc" id="L456">        } catch (IOException e) {</span>
+<span class="nc" id="L457">            System.err.println(&quot;[ControllerManager:Recovery] Cannot list logs: &quot; + e.getMessage());</span>
+<span class="nc" id="L458">            return;</span>
+<span class="nc" id="L459">        }</span>
+
+<span class="nc" id="L461">        logRecovery(candidates.size() + &quot; game(s) to recover.&quot;);</span>
+<span class="nc bnc" id="L462" title="All 2 branches missed.">        for (Path logFile : candidates) {</span>
+            try {
+<span class="nc" id="L464">                recoverSingleGame(logFile);</span>
+<span class="nc" id="L465">                logRecovery(&quot;Recovered: &quot; + logFile.getFileName());</span>
+<span class="nc" id="L466">            } catch (Exception e) {</span>
+<span class="nc" id="L467">                System.err.println(&quot;[ControllerManager:Recovery] Failed: &quot; + logFile.getFileName()</span>
+<span class="nc" id="L468">                        + &quot; — &quot; + e.getMessage());</span>
+<span class="nc" id="L469">                quarantine(logFile, logsDirectory);</span>
+<span class="nc" id="L470">            }</span>
+<span class="nc" id="L471">        }</span>
+<span class="nc" id="L472">    }</span>
+
+    private boolean isInterrupted(Path logFile) {
+<span class="nc" id="L475">        try (Stream&lt;String&gt; lines = Files.lines(logFile)) {</span>
+<span class="nc" id="L476">            return lines</span>
+<span class="nc bnc" id="L477" title="All 2 branches missed.">                    .filter(l -&gt; !l.isBlank())</span>
+<span class="nc" id="L478">                    .reduce((a, b) -&gt; b)</span>
+<span class="nc bnc" id="L479" title="All 2 branches missed.">                    .map(last -&gt; !last.contains(&quot;\&quot;type\&quot;:\&quot;GAME_ENDED\&quot;&quot;))</span>
+<span class="nc" id="L480">                    .orElse(false);</span>
+<span class="nc" id="L481">        } catch (IOException e) {</span>
+<span class="nc" id="L482">            return false;</span>
+        }
+    }
+
+    private void recoverSingleGame(Path logFile) throws IOException {
+<span class="nc" id="L487">        CommandLogReader reader = new CommandLogReader(logFile);</span>
+<span class="nc" id="L488">        GameInitRecord init = reader.readGameInit();</span>
+
+<span class="nc" id="L490">        Game model = new Game(init.gameId(), init.nicknames(), init.chosenTotems(), init.seed());</span>
+
+<span class="nc" id="L492">        Map&lt;String, VirtualView&gt; noOpViews = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L493">        Map&lt;String, String&gt; nicknameToClient = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L494" title="All 2 branches missed.">        for (String nick : init.nicknames()) {</span>
+<span class="nc" id="L495">            noOpViews.put(nick, VirtualView.noOp());</span>
+<span class="nc" id="L496">            nicknameToClient.put(nick, null);</span>
+<span class="nc" id="L497">        }</span>
+
+<span class="nc" id="L499">        gameNicknameToClient.put(init.gameId(), nicknameToClient);</span>
+
+<span class="nc" id="L501">        CommandLogger appender = new CommandLogger(init.gameId());</span>
+
+<span class="nc" id="L503">        GameController controller = new GameController(init.gameId(), model, noOpViews, appender);</span>
+<span class="nc" id="L504">        controller.setGameEndedCallback(() -&gt; removeGameController(init.gameId()));</span>
+<span class="nc" id="L505">        controllers.put(init.gameId(), controller);</span>
+
+<span class="nc" id="L507">        controller.enterReplayMode();</span>
+<span class="nc" id="L508">        model.startFSM();</span>
+<span class="nc bnc" id="L509" title="All 2 branches missed.">        for (CommandRecord rec : reader.readCommands()) {</span>
+<span class="nc" id="L510">            controller.handle(rec.command(), rec.nickname());</span>
+<span class="nc" id="L511">        }</span>
+<span class="nc" id="L512">        controller.exitReplayMode();</span>
+
+<span class="nc" id="L514">        String gameId = init.gameId();</span>
+
+<span class="nc" id="L516">        ScheduledFuture&lt;?&gt; stale = pendingRecoveryTasks.remove(gameId);</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">        if (stale != null) stale.cancel(false);</span>
+
+<span class="nc" id="L519">        ScheduledFuture&lt;?&gt; task = recoveryScheduler.schedule(() -&gt; {</span>
+<span class="nc" id="L520">            synchronized (ControllerManager.this) {</span>
+<span class="nc" id="L521">                pendingRecoveryTasks.remove(gameId);</span>
+<span class="nc" id="L522">                GameController c = controllers.get(gameId);</span>
+<span class="nc bnc" id="L523" title="All 4 branches missed.">                if (c != null &amp;&amp; c.areAllPlayersPendingReconnection()) {</span>
+<span class="nc" id="L524">                    logRecovery(&quot;No players reconnected for game &quot; + gameId + &quot; — removing.&quot;);</span>
+<span class="nc" id="L525">                    removeGameController(gameId);</span>
+                }
+<span class="nc" id="L527">            }</span>
+<span class="nc" id="L528">        }, RECOVERY_WINDOW_SECONDS, TimeUnit.SECONDS);</span>
+
+<span class="nc" id="L530">        pendingRecoveryTasks.put(gameId, task);</span>
+<span class="nc" id="L531">    }</span>
+
+    private void quarantine(Path logFile, Path logsDirectory) {
+        try {
+<span class="nc" id="L535">            Path dest = logsDirectory.resolve(&quot;corrupted&quot;);</span>
+<span class="nc" id="L536">            Files.createDirectories(dest);</span>
+<span class="nc" id="L537">            Files.move(logFile, dest.resolve(logFile.getFileName()),</span>
+                    StandardCopyOption.REPLACE_EXISTING);
+<span class="nc" id="L539">        } catch (IOException e) {</span>
+<span class="nc" id="L540">            System.err.println(&quot;[ControllerManager:Recovery] Cannot quarantine &quot;</span>
+<span class="nc" id="L541">                    + logFile.getFileName() + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L542">        }</span>
+<span class="nc" id="L543">    }</span>
+
+    private void log(String msg) {
+<span class="nc" id="L546">        System.out.println(&quot;[ControllerManager] &quot; + msg);</span>
+<span class="nc" id="L547">    }</span>
+
+    private void logRecovery(String msg) {
+<span class="nc" id="L550">        System.out.println(&quot;[ControllerManager:Recovery] &quot; + msg);</span>
+<span class="nc" id="L551">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

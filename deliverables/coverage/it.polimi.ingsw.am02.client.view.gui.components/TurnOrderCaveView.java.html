@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TurnOrderCaveView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.components</a> &gt; <span class="el_source">TurnOrderCaveView.java</span></div><h1>TurnOrderCaveView.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.components;
+
+import it.polimi.ingsw.am02.client.model.GameModel;
+import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
+import it.polimi.ingsw.am02.common.dto.TurnOrderSlotInfo;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+import java.util.List;
+
+/**
+ * Graphical representation of the turn order cave in the GUI.
+ * This class displays the cave tile and the totems in their respective slots.
+ */
+public class TurnOrderCaveView extends StackPane {
+
+    /**
+     * Configuration object for defining the layout of the cave based on player count.
+     */
+    private static class CaveLayoutConfig {
+        final double topPadding;
+        final double spacing;
+        final double totemHeight;
+
+<span class="nc" id="L30">        CaveLayoutConfig(double topPadding, double spacing, double totemHeight) {</span>
+<span class="nc" id="L31">            this.topPadding = topPadding;</span>
+<span class="nc" id="L32">            this.spacing = spacing;</span>
+<span class="nc" id="L33">            this.totemHeight = totemHeight;</span>
+<span class="nc" id="L34">        }</span>
+    }
+
+    /**
+     * Returns the layout configuration for a specific number of players.
+     *
+     * @param numPlayers The number of players in the game.
+     * @return The CaveLayoutConfig instance.
+     */
+    private CaveLayoutConfig getLayoutForPlayers(int numPlayers) {
+
+        // If a specific tile looks slightly off in the future, just tweak its case!
+<span class="nc bnc" id="L46" title="All 4 branches missed.">        return switch (numPlayers) {</span>
+<span class="nc" id="L47">            case 5 -&gt; new CaveLayoutConfig(10, 5, 22); // 25 - (3*4)</span>
+<span class="nc" id="L48">            case 4 -&gt; new CaveLayoutConfig(20, 5, 22); // 25 - (2*4)</span>
+<span class="nc" id="L49">            case 3 -&gt; new CaveLayoutConfig(25, 5, 22); // 25 - (1*4)</span>
+<span class="nc" id="L50">            default -&gt; new CaveLayoutConfig(33, 5, 22); // 25 - (0*4)</span>
+        };
+    }
+
+    /**
+     * Constructs a new TurnOrderCaveView.
+     *
+     * @param numPlayers The number of players in the game.
+     * @param slots      The list of turn order slots information.
+     * @param model      The game model to retrieve player totems.
+     */
+<span class="nc" id="L61">    public TurnOrderCaveView(int numPlayers, List&lt;TurnOrderSlotInfo&gt; slots, GameModel model) {</span>
+
+<span class="nc" id="L63">        int playersCount = Math.max(2, Math.min(numPlayers, 5));</span>
+
+<span class="nc" id="L65">        CaveLayoutConfig config = getLayoutForPlayers(playersCount);</span>
+
+<span class="nc" id="L67">        ImageView caveBg = new ImageView(ImageLoader.getImage(&quot;/images/cards/turn_order_tiles/tile_turn_&quot; + playersCount + &quot;p.png&quot;));</span>
+<span class="nc" id="L68">        caveBg.setFitHeight(150);</span>
+<span class="nc" id="L69">        caveBg.setPreserveRatio(true);</span>
+<span class="nc" id="L70">        this.getChildren().add(caveBg);</span>
+
+<span class="nc" id="L72">        VBox totemSlots = new VBox(config.spacing);</span>
+<span class="nc" id="L73">        totemSlots.setAlignment(Pos.TOP_CENTER);</span>
+
+<span class="nc" id="L75">        totemSlots.setPadding(new Insets(config.topPadding, 0, 0, 0));</span>
+
+<span class="nc" id="L77">        totemSlots.setPrefHeight(150);</span>
+<span class="nc" id="L78">        totemSlots.setMaxHeight(150);</span>
+
+<span class="nc" id="L80">        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();</span>
+<span class="nc" id="L81">        clip.setArcWidth(10);</span>
+<span class="nc" id="L82">        clip.setArcHeight(10);</span>
+
+<span class="nc" id="L84">        clip.setWidth(caveBg.getBoundsInLocal().getWidth());</span>
+<span class="nc" id="L85">        clip.setHeight(caveBg.getBoundsInLocal().getHeight());</span>
+
+<span class="nc" id="L87">        caveBg.boundsInLocalProperty().addListener((obs, oldVal, newVal) -&gt; {</span>
+<span class="nc" id="L88">            clip.setWidth(newVal.getWidth());</span>
+<span class="nc" id="L89">            clip.setHeight(newVal.getHeight());</span>
+<span class="nc" id="L90">        });</span>
+<span class="nc" id="L91">        caveBg.setClip(clip);</span>
+
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (slots != null) {</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            for (TurnOrderSlotInfo slot : slots) {</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                if (slot.occupantNickname() != null) {</span>
+<span class="nc" id="L96">                    Totem totem = model.getTotem(slot.occupantNickname());</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                    if (totem != null) {</span>
+<span class="nc" id="L98">                        String path = &quot;/images/totems/totem_&quot; + totem.name().toLowerCase() + &quot;.png&quot;;</span>
+<span class="nc" id="L99">                        ImageView tView = new ImageView(ImageLoader.getImage(path));</span>
+
+<span class="nc" id="L101">                        tView.setFitHeight(config.totemHeight);</span>
+<span class="nc" id="L102">                        tView.setPreserveRatio(true);</span>
+<span class="nc" id="L103">                        tView.setStyle(&quot;-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 3, 0, 0, 1);&quot;);</span>
+
+<span class="nc" id="L105">                        totemSlots.getChildren().add(tView);</span>
+                    }
+<span class="nc" id="L107">                } else {</span>
+<span class="nc" id="L108">                    Region spacer = new Region();</span>
+<span class="nc" id="L109">                    spacer.setPrefHeight(config.totemHeight);</span>
+<span class="nc" id="L110">                    spacer.setMinHeight(config.totemHeight);</span>
+<span class="nc" id="L111">                    totemSlots.getChildren().add(spacer);</span>
+                }
+<span class="nc" id="L113">            }</span>
+        }
+
+<span class="nc" id="L116">        this.getChildren().add(totemSlots);</span>
+<span class="nc" id="L117">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

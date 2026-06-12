@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RmiServerProxy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.network.rmi</a> &gt; <span class="el_source">RmiServerProxy.java</span></div><h1>RmiServerProxy.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.network.rmi;
+
+import it.polimi.ingsw.am02.client.controller.ClientController;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.client.network.ClientNetworkDispatcher;
+import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.NetworkDefaults;
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
+import it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory;
+import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
+
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * RMI proxy on the client side.
+ *
+ * &lt;p&gt;&lt;b&gt;Inbound&lt;/b&gt; (server → client): the server calls {@link RmiClientRemote}
+ * methods directly on this object via the RMI thread pool; each call is
+ * forwarded synchronously to the {@link ClientNetworkDispatcher}.
+ *
+ * &lt;p&gt;&lt;b&gt;Outbound&lt;/b&gt; (client → server): calls from the UI thread are enqueued
+ * into a {@link BlockingQueue} and drained by a dedicated worker thread, so
+ * the UI never blocks on a slow or unreachable server.
+ *
+ * &lt;p&gt;Keep-alive is handled by a dedicated ping thread that fires at a fixed
+ * interval regardless of outbound traffic, matching the design of
+ * {@link it.polimi.ingsw.am02.client.network.socket.SocketServerProxy}.
+ */
+public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, RmiClientRemote {
+
+    // ------------------------------------------------------------------
+    // Outbound infrastructure
+    // ------------------------------------------------------------------
+
+    /**
+     * A {@link Runnable}-like interface whose single method may throw
+     * {@link RemoteException}, enabling RMI method references to be stored
+     * as lambdas in the outbound queue.
+     */
+    @FunctionalInterface
+    private interface RemoteAction {
+        void run() throws RemoteException;
+    }
+
+    /** Unbounded queue of outbound actions waiting to be sent to the server. */
+<span class="nc" id="L56">    private final BlockingQueue&lt;RemoteAction&gt; outboundQueue = new LinkedBlockingQueue&lt;&gt;();</span>
+
+    /** Dedicated thread that drains {@link #outboundQueue} sequentially. */
+    private final Thread outboundWorker;
+
+    /** Dedicated thread that sends periodic pings regardless of outbound traffic. */
+    private Thread pingThread;
+
+    /** {@code false} once {@link #disconnect()} has been called. */
+<span class="nc" id="L65">    private volatile boolean running = true;</span>
+
+    /** Guards against multiple concurrent calls to {@link #handleNetworkFailure}. */
+<span class="nc" id="L68">    private final AtomicBoolean disconnected = new AtomicBoolean(false);</span>
+
+    /** Maximum time the outbound worker waits for the next queued action. */
+    private static final long POLL_TIMEOUT_SECONDS = 2;
+
+    /** Interval between consecutive pings, in milliseconds. */
+    private static final long PING_INTERVAL_MILLIS = 5_000;
+
+    // ------------------------------------------------------------------
+    // Connection state
+    // ------------------------------------------------------------------
+
+    private final String host;
+    private final int port;
+    private final LobbyModel lobbyModel;
+    private final ClientView clientView;
+
+    private volatile RmiServerRemote serverStub;
+    private ClientController clientController;
+    private ClientNetworkDispatcher dispatcher;
+
+<span class="nc" id="L89">    private volatile boolean connected = false;</span>
+<span class="nc" id="L90">    private volatile boolean attemptingReconnection = false;</span>
+
+    /** Set to {@code true} by {@link #disconnect()} to suppress reconnection attempts. */
+<span class="nc" id="L93">    private volatile boolean intentionalDisconnect = false;</span>
+
+    /** Nickname last successfully registered with the server; used for reconnection. */
+<span class="nc" id="L96">    private String activeNickname = null;</span>
+
+    /** Game ID currently joined; used for reconnection. */
+<span class="nc" id="L99">    private String activeGameId   = null;</span>
+
+    // ------------------------------------------------------------------
+    // Constructor
+    // ------------------------------------------------------------------
+
+    /**
+     * Creates an RMI proxy ready to be wired and connected.
+     *
+     * &lt;p&gt;The outbound worker thread is started immediately; no connection is
+     * established until {@link #connect()} is called.
+     *
+     * @param host       the server hostname or IP address
+     * @param port       the RMI registry port
+     * @param lobbyModel the lobby model that receives pre-game notifications
+     * @param clientView the view used to signal connection-state changes
+     * @throws RemoteException if the {@link UnicastRemoteObject} constructor fails
+     */
+    public RmiServerProxy(String host, int port, LobbyModel lobbyModel,
+                          ClientView clientView) throws RemoteException {
+<span class="nc" id="L119">        super();</span>
+<span class="nc" id="L120">        this.host       = host;</span>
+<span class="nc" id="L121">        this.port       = port;</span>
+<span class="nc" id="L122">        this.lobbyModel = lobbyModel;</span>
+<span class="nc" id="L123">        this.clientView = clientView;</span>
+
+<span class="nc" id="L125">        this.outboundWorker = new Thread(this::drainOutboundQueue, &quot;rmi-client-out&quot;);</span>
+<span class="nc" id="L126">        this.outboundWorker.setDaemon(true);</span>
+<span class="nc" id="L127">        this.outboundWorker.start();</span>
+<span class="nc" id="L128">    }</span>
+
+    // ------------------------------------------------------------------
+    // Outbound drain loop
+    // ------------------------------------------------------------------
+
+    /**
+     * Main loop of the outbound worker thread.
+     *
+     * &lt;p&gt;Polls {@link #outboundQueue} with a timeout so the thread can
+     * terminate cleanly when {@link #running} is set to {@code false}.
+     * Any {@link RemoteException} thrown by an action triggers
+     * {@link #handleNetworkFailure}.
+     */
+    private void drainOutboundQueue() {
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        while (running) {</span>
+            try {
+<span class="nc" id="L145">                RemoteAction action = outboundQueue.poll(POLL_TIMEOUT_SECONDS, TimeUnit.SECONDS);</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                if (action != null) {</span>
+<span class="nc" id="L147">                    action.run();</span>
+                }
+<span class="nc" id="L149">            } catch (InterruptedException e) {</span>
+<span class="nc" id="L150">                Thread.currentThread().interrupt();</span>
+<span class="nc" id="L151">                break;</span>
+<span class="nc" id="L152">            } catch (RemoteException e) {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                if (connected) {</span>
+<span class="nc" id="L154">                    handleNetworkFailure(e);</span>
+                }
+<span class="nc" id="L156">            }</span>
+        }
+<span class="nc" id="L158">    }</span>
+
+    /**
+     * Adds an outbound action to the queue.
+     *
+     * &lt;p&gt;{@link BlockingQueue#add} is used instead of {@code offer}/{@code put}
+     * because the queue is unbounded; {@link IllegalStateException} is unreachable.
+     *
+     * @param action the remote call to enqueue
+     */
+    private void enqueue(RemoteAction action) {
+<span class="nc" id="L169">        outboundQueue.add(action);</span>
+<span class="nc" id="L170">    }</span>
+
+    // ------------------------------------------------------------------
+    // Ping
+    // ------------------------------------------------------------------
+
+    /**
+     * Starts a new ping thread, stopping any previously running one first.
+     *
+     * &lt;p&gt;The thread fires at {@link #PING_INTERVAL_MILLIS} intervals
+     * and triggers {@link #handleNetworkFailure} on {@link RemoteException}.
+     */
+    private void startPingThread() {
+<span class="nc" id="L183">        stopPingThread();</span>
+<span class="nc" id="L184">        pingThread = new Thread(() -&gt; {</span>
+<span class="nc bnc" id="L185" title="All 4 branches missed.">            while (connected &amp;&amp; !intentionalDisconnect) {</span>
+                try {
+<span class="nc" id="L187">                    Thread.sleep(PING_INTERVAL_MILLIS);</span>
+<span class="nc bnc" id="L188" title="All 4 branches missed.">                    if (connected &amp;&amp; !intentionalDisconnect) serverStub.ping();</span>
+<span class="nc" id="L189">                } catch (InterruptedException e) {</span>
+<span class="nc" id="L190">                    Thread.currentThread().interrupt();</span>
+<span class="nc" id="L191">                    break;</span>
+<span class="nc" id="L192">                } catch (RemoteException e) {</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                    if (connected) handleNetworkFailure(e);</span>
+<span class="nc" id="L194">                    break;</span>
+<span class="nc" id="L195">                }</span>
+            }
+<span class="nc" id="L197">        }, &quot;rmi-client-ping&quot;);</span>
+<span class="nc" id="L198">        pingThread.setDaemon(true);</span>
+<span class="nc" id="L199">        pingThread.start();</span>
+<span class="nc" id="L200">    }</span>
+
+    /**
+     * Interrupts and discards the current ping thread, if any.
+     */
+    private void stopPingThread() {
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (pingThread != null) {</span>
+<span class="nc" id="L207">            pingThread.interrupt();</span>
+<span class="nc" id="L208">            pingThread = null;</span>
+        }
+<span class="nc" id="L210">    }</span>
+
+    // ------------------------------------------------------------------
+    // Lifecycle
+    // ------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public void setClientController(ClientController controller) {
+<span class="nc" id="L219">        this.clientController = controller;</span>
+<span class="nc" id="L220">        this.dispatcher = new ClientNetworkDispatcher(controller, lobbyModel);</span>
+<span class="nc" id="L221">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void connect() throws Exception {
+<span class="nc" id="L226">        intentionalDisconnect = false;</span>
+
+        try {
+<span class="nc" id="L229">            UnicastRemoteObject.exportObject(this, 0);</span>
+<span class="nc" id="L230">        } catch (RemoteException ignored) {</span>
+            // Already exported on a previous connect() call — safe to ignore.
+<span class="nc" id="L232">        }</span>
+
+<span class="nc" id="L234">        RmiServerFactory factory = (RmiServerFactory)</span>
+<span class="nc" id="L235">                java.rmi.registry.LocateRegistry.getRegistry(host, port)</span>
+<span class="nc" id="L236">                        .lookup(NetworkDefaults.RMI_REGISTRY_NAME);</span>
+
+<span class="nc" id="L238">        this.serverStub = factory.registerClient(this);</span>
+<span class="nc" id="L239">        this.connected  = true;</span>
+<span class="nc" id="L240">        startPingThread();</span>
+<span class="nc" id="L241">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void disconnect() {
+<span class="nc" id="L246">        intentionalDisconnect = true;</span>
+<span class="nc" id="L247">        this.connected   = false;</span>
+<span class="nc" id="L248">        this.activeGameId = null;</span>
+
+<span class="nc" id="L250">        running = false;</span>
+<span class="nc" id="L251">        outboundWorker.interrupt();</span>
+<span class="nc" id="L252">        stopPingThread();</span>
+
+        try {
+<span class="nc" id="L255">            UnicastRemoteObject.unexportObject(this, true);</span>
+<span class="nc" id="L256">        } catch (Exception ignored) {}</span>
+<span class="nc" id="L257">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+<span class="nc" id="L261">    public boolean isConnected() { return connected; }</span>
+
+    // ------------------------------------------------------------------
+    // Network-failure handler
+    // ------------------------------------------------------------------
+
+    /**
+     * Handles an unexpected loss of connectivity.
+     *
+     * &lt;p&gt;Marks the connection as down, notifies the view, and spawns a
+     * reconnection thread that retries every 5 seconds. Once the connection
+     * is re-established the thread replays the login and game-rejoin sequence
+     * using {@link #activeNickname} and {@link #activeGameId}.
+     *
+     * &lt;p&gt;Synchronized to prevent concurrent executions triggered by both the
+     * outbound worker and the ping thread.
+     *
+     * @param e the exception that caused the failure (used for logging purposes)
+     */
+    private synchronized void handleNetworkFailure(Exception e) {
+<span class="nc bnc" id="L281" title="All 4 branches missed.">        if (attemptingReconnection || intentionalDisconnect) return;</span>
+
+<span class="nc" id="L283">        this.connected              = false;</span>
+<span class="nc" id="L284">        this.attemptingReconnection = true;</span>
+<span class="nc" id="L285">        clientView.onConnectionLost();</span>
+
+<span class="nc" id="L287">        new Thread(() -&gt; {</span>
+<span class="nc bnc" id="L288" title="All 4 branches missed.">            while (!connected &amp;&amp; !intentionalDisconnect) {</span>
+                try {
+<span class="nc" id="L290">                    Thread.sleep(5_000);</span>
+<span class="nc" id="L291">                    connect();</span>
+<span class="nc" id="L292">                    clientView.onConnectionRestored();</span>
+
+<span class="nc bnc" id="L294" title="All 4 branches missed.">                    if (activeNickname != null &amp;&amp; activeGameId != null) {</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">                        if (dispatcher != null) {</span>
+<span class="nc" id="L296">                            dispatcher.updateActiveNickname(activeNickname);</span>
+<span class="nc" id="L297">                            dispatcher.updateActiveGameId(activeGameId);</span>
+                        }
+<span class="nc" id="L299">                        enqueue(() -&gt; serverStub.requestReconnect(activeNickname, activeGameId));</span>
+<span class="nc bnc" id="L300" title="All 2 branches missed.">                    } else if (activeNickname != null) {</span>
+<span class="nc" id="L301">                        enqueue(() -&gt; serverStub.requestSetUsername(activeNickname));</span>
+                    }
+
+<span class="nc" id="L304">                    attemptingReconnection = false;</span>
+<span class="nc" id="L305">                } catch (Exception ignored) {</span>
+                    // Server still offline — retry silently.
+<span class="nc" id="L307">                }</span>
+            }
+<span class="nc" id="L309">        }, &quot;rmi-client-reconnect&quot;).start();</span>
+<span class="nc" id="L310">    }</span>
+
+    // ------------------------------------------------------------------
+    // Outbound — client → server
+    // ------------------------------------------------------------------
+
+    /** {@inheritDoc} */
+    @Override
+    public void requestSetUsername(String username) {
+<span class="nc" id="L319">        enqueue(() -&gt; serverStub.requestSetUsername(username));</span>
+<span class="nc" id="L320">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void requestCreateLobby(int numPlayers) {
+<span class="nc" id="L325">        enqueue(() -&gt; serverStub.requestCreateLobby(numPlayers));</span>
+<span class="nc" id="L326">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void requestJoinLobby(String lobbyID) {
+<span class="nc" id="L331">        enqueue(() -&gt; serverStub.requestJoinLobby(lobbyID));</span>
+<span class="nc" id="L332">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void requestSelectTotem(Totem totem) {
+<span class="nc" id="L337">        enqueue(() -&gt; serverStub.requestSelectTotem(totem));</span>
+<span class="nc" id="L338">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void requestLeaveLobby() {
+<span class="nc" id="L343">        enqueue(() -&gt; serverStub.requestLeaveLobby());</span>
+<span class="nc" id="L344">    }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Also updates {@link #activeNickname} and {@link #activeGameId} so that
+     * the automatic reconnection loop can replay this call after a network failure.
+     */
+    @Override
+    public void requestReconnect(String nickname, String gameId) {
+<span class="nc" id="L354">        this.activeNickname = nickname;</span>
+<span class="nc" id="L355">        this.activeGameId   = gameId;</span>
+
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (dispatcher != null) {</span>
+<span class="nc" id="L358">            dispatcher.updateActiveNickname(nickname);</span>
+<span class="nc" id="L359">            dispatcher.updateActiveGameId(gameId);</span>
+        }
+
+<span class="nc" id="L362">        enqueue(() -&gt; serverStub.requestReconnect(nickname, gameId));</span>
+<span class="nc" id="L363">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void moveTotem(char tileID) {
+<span class="nc" id="L368">        enqueue(() -&gt; serverStub.moveTotem(tileID));</span>
+<span class="nc" id="L369">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void resolveActions(List&lt;String&gt; selectedIDs) {
+<span class="nc" id="L374">        enqueue(() -&gt; serverStub.resolveActions(selectedIDs));</span>
+<span class="nc" id="L375">    }</span>
+
+    // ------------------------------------------------------------------
+    // Inbound — server → client
+    // ------------------------------------------------------------------
+
+    /**
+     * Heartbeat called by the server at regular intervals.
+     * No-op on the client side; the fact that the call succeeded is
+     * sufficient proof that the connection is alive.
+     */
+    @Override
+<span class="nc" id="L387">    public void ping() throws RemoteException { /* heartbeat — no-op */ }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Also caches the validated username in {@link #activeNickname} for
+     * use by the automatic reconnection loop.
+     */
+    @Override
+    public void notifyUsernameResult(String u, boolean v, String r) throws RemoteException {
+<span class="nc bnc" id="L397" title="All 2 branches missed.">        if (v) this.activeNickname = u;</span>
+<span class="nc" id="L398">        dispatcher.notifyUsernameResult(u, v, r);</span>
+<span class="nc" id="L399">    }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Also caches the game ID in {@link #activeGameId} so that the
+     * automatic reconnection loop can rejoin the correct game.
+     */
+    @Override
+    public void notifyGameStarted(String id) throws RemoteException {
+<span class="nc" id="L409">        this.activeGameId = id;</span>
+<span class="nc" id="L410">        dispatcher.notifyGameStarted(id);</span>
+<span class="nc" id="L411">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; l) throws RemoteException {
+<span class="nc" id="L416">        dispatcher.notifyAvailableLobbiesUpdated(l);</span>
+<span class="nc" id="L417">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyCurrentLobbyUpdated(LobbyInfo l) throws RemoteException {
+<span class="nc" id="L422">        dispatcher.notifyCurrentLobbyUpdated(l);</span>
+<span class="nc" id="L423">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyLobbyDissolved(String id) throws RemoteException {
+<span class="nc" id="L428">        dispatcher.notifyLobbyDissolved(id);</span>
+<span class="nc" id="L429">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGameSetupCompleted(Map&lt;String, Totem&gt; totemByPlayer,
+                                         List&lt;String&gt; t, Map&lt;String, Integer&gt; f,
+                                         BoardSnapshot b) throws RemoteException {
+<span class="nc" id="L436">        dispatcher.notifyGameSetupCompleted(totemByPlayer, t, f, b);</span>
+<span class="nc" id="L437">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPhaseChanged(PhaseType p, String c, List&lt;String&gt; r) throws RemoteException {
+<span class="nc" id="L442">        dispatcher.notifyPhaseChanged(p, c, r);</span>
+<span class="nc" id="L443">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyCurrentPlayerChanged(String n) throws RemoteException {
+<span class="nc" id="L448">        dispatcher.notifyCurrentPlayerChanged(n);</span>
+<span class="nc" id="L449">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyTurnOrderEstablished(List&lt;String&gt; t) throws RemoteException {
+<span class="nc" id="L454">        dispatcher.notifyTurnOrderEstablished(t);</span>
+<span class="nc" id="L455">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyBoardUpdated(List&lt;String&gt; u, List&lt;String&gt; l,
+                                   List&lt;String&gt; d, List&lt;String&gt; m,
+                                   int dr) throws RemoteException {
+<span class="nc" id="L462">        dispatcher.notifyBoardUpdated(u, l, d, m, dr);</span>
+<span class="nc" id="L463">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyEraChanged(Era e, List&lt;String&gt; u,
+                                 List&lt;String&gt; l, List&lt;String&gt; d) throws RemoteException {
+<span class="nc" id="L469">        dispatcher.notifyEraChanged(e, u, l, d);</span>
+<span class="nc" id="L470">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyTotemPlaced(String n, char t) throws RemoteException {
+<span class="nc" id="L475">        dispatcher.notifyTotemPlaced(n, t);</span>
+<span class="nc" id="L476">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyTotemReturned(String n, int p) throws RemoteException {
+<span class="nc" id="L481">        dispatcher.notifyTotemReturned(n, p);</span>
+<span class="nc" id="L482">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyCardTaken(String n, String c,
+                                CardType t, RowPosition s) throws RemoteException {
+<span class="nc" id="L488">        dispatcher.notifyCardTaken(n, c, t, s);</span>
+<span class="nc" id="L489">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerLimitsInitialized(String n, int u, int l) throws RemoteException {
+<span class="nc" id="L494">        dispatcher.notifyPlayerLimitsInitialized(n, u, l);</span>
+<span class="nc" id="L495">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerLimitsUpdated(String n, int u, int l) throws RemoteException {
+<span class="nc" id="L500">        dispatcher.notifyPlayerLimitsUpdated(n, u, l);</span>
+<span class="nc" id="L501">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerResourceChanged(String n, ResourceType r,
+                                            int v, int d) throws RemoteException {
+<span class="nc" id="L507">        dispatcher.notifyPlayerResourceChanged(n, r, v, d);</span>
+<span class="nc" id="L508">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyEventResolved(String i, String n) throws RemoteException {
+<span class="nc" id="L513">        dispatcher.notifyEventResolved(i, n);</span>
+<span class="nc" id="L514">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyExtraTurnStarted(String n, int u, int l) throws RemoteException {
+<span class="nc" id="L519">        dispatcher.notifyExtraTurnStarted(n, u, l);</span>
+<span class="nc" id="L520">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyExtraTurnEnded(String n) throws RemoteException {
+<span class="nc" id="L525">        dispatcher.notifyExtraTurnEnded(n);</span>
+<span class="nc" id="L526">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGameEnded(List&lt;String&gt; w,
+                                List&lt;PlayerFinalScore&gt; r) throws RemoteException {
+<span class="nc" id="L532">        dispatcher.notifyGameEnded(w, r);</span>
+<span class="nc" id="L533">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyError(String m) throws RemoteException {
+<span class="nc" id="L538">        dispatcher.notifyError(m);</span>
+<span class="nc" id="L539">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerDisconnected(String n) throws RemoteException {
+<span class="nc" id="L544">        dispatcher.notifyPlayerDisconnected(n);</span>
+<span class="nc" id="L545">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyPlayerReconnected(String n) throws RemoteException {
+<span class="nc" id="L550">        dispatcher.notifyPlayerReconnected(n);</span>
+<span class="nc" id="L551">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyAutoPlayerTimerStarted(String n, long seconds) throws RemoteException {
+<span class="nc" id="L556">        dispatcher.notifyAutoPlayerTimerStarted(n, seconds);</span>
+<span class="nc" id="L557">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyAutoPlayerInvoked(String n) throws RemoteException {
+<span class="nc" id="L562">        dispatcher.notifyAutoPlayerInvoked(n);</span>
+<span class="nc" id="L563">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGameAborted(String w) throws RemoteException {
+<span class="nc" id="L568">        dispatcher.notifyGameAborted(w);</span>
+<span class="nc" id="L569">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGameRecoveryFailed() throws RemoteException {
+<span class="nc" id="L574">        dispatcher.notifyGameRecoveryFailed();</span>
+<span class="nc" id="L575">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGlobalTimerStarted(long seconds) throws RemoteException {
+<span class="nc" id="L580">        dispatcher.notifyGlobalTimerStarted(seconds);</span>
+<span class="nc" id="L581">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void notifyGlobalTimerCancelled() throws RemoteException {
+<span class="nc" id="L586">        dispatcher.notifyGlobalTimerCancelled();</span>
+<span class="nc" id="L587">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

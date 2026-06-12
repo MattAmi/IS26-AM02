@@ -1,0 +1,611 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.model</a> &gt; <span class="el_source">GameModel.java</span></div><h1>GameModel.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.model;
+
+import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.dto.*;
+import it.polimi.ingsw.am02.common.enumerations.*;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Holds the complete client-side projection of an ongoing game session.
+ *
+ * &lt;p&gt;Each {@code update*} method corresponds to a specific server notification.
+ * The method applies the delta to the local state and then fans out the update
+ * to all registered {@link it.polimi.ingsw.am02.client.view.ClientView} observers,
+ * which may include both the GUI and the TUI simultaneously.
+ *
+ * &lt;p&gt;All public methods are {@code synchronized} on the model's own monitor,
+ * so views running on different threads can safely read state at any time.
+ */
+public class GameModel {
+
+    private final String myNickname;
+    private String gameId;
+    private PhaseType currentPhase;
+    private String currentPlayer;
+    private Map&lt;String, Totem&gt; totemByPlayer;
+<span class="fc" id="L28">    private Era currentEra = Era.I;</span>
+<span class="fc" id="L29">    private List&lt;String&gt; turnOrder = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L30">    private List&lt;String&gt; upperRow = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L31">    private List&lt;String&gt; lowerRow = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L32">    private List&lt;String&gt; upperRowBuildings = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L33">    private List&lt;String&gt; lowerRowBuildings = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L34">    private List&lt;OfferTileInfo&gt; offerTiles = new ArrayList&lt;&gt;();</span>
+    private int deckRemainingCount;
+<span class="fc" id="L36">    private final Map&lt;String, Integer&gt; foodByPlayer = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L37">    private final Map&lt;String, Integer&gt; ppByPlayer = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L38">    private final Map&lt;String, Character&gt; totemPositions = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L39">    private final Map&lt;String, Integer&gt; turnOrderPositions = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L40">    private final Map&lt;String, Integer&gt; remainingUpper = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L41">    private final Map&lt;String, Integer&gt; remainingLower = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L42">    private final Map&lt;String, List&lt;String&gt;&gt; charactersByPlayer = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L43">    private final Map&lt;String, List&lt;String&gt;&gt; buildingsByPlayer = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L44">    private List&lt;String&gt; winners = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L45">    private List&lt;PlayerFinalScore&gt; finalRankings = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L46">    private boolean gameEnded = false;</span>
+    private String lastErrorMessage;
+    private String lastEventResolved;
+<span class="fc" id="L49">    private List&lt;TurnOrderSlotInfo&gt; turnOrderSlots = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L51">    private final List&lt;ClientView&gt; clientViews = new ArrayList&lt;&gt;();</span>
+
+    /**
+     * Creates a new, empty game model for the given player.
+     *
+     * @param myNickname the nickname of the local player
+     */
+<span class="fc" id="L58">    public GameModel(String myNickname) {</span>
+<span class="fc" id="L59">        this.myNickname = myNickname;</span>
+<span class="fc" id="L60">    }</span>
+
+    // OBSERVERS
+
+    /**
+     * Registers a {@link it.polimi.ingsw.am02.client.view.ClientView} to receive
+     * future game updates. No-op if already registered.
+     *
+     * @param observer the view to add
+     */
+    public synchronized void addObserver(ClientView observer) {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (!clientViews.contains(observer)) {</span>
+<span class="fc" id="L72">            clientViews.add(observer);</span>
+        }
+<span class="fc" id="L74">    }</span>
+
+    /**
+     * Removes a previously registered observer.
+     *
+     * @param clientView the view to remove
+     */
+<span class="fc" id="L81">    public synchronized void removeObserver(ClientView clientView) { clientViews.remove(clientView); }</span>
+
+    // DOMAIN UPDATES
+
+    /**
+     * Applies a game-started notification: stores the game ID, resets the
+     * {@code gameEnded} flag, and notifies all views.
+     *
+     * @param gameID the identifier of the started game
+     */
+    public synchronized void updateGameStarted(String gameID) {
+<span class="fc" id="L92">        this.gameId = gameID;</span>
+<span class="fc" id="L93">        this.gameEnded = false;</span>
+<span class="fc" id="L94">        clientViews.forEach(o -&gt; o.onGameStarted(gameID));</span>
+<span class="fc" id="L95">    }</span>
+
+    /**
+     * Applies the initial game-setup snapshot: populates all board and player
+     * collections from the server snapshot and notifies all views.
+     *
+     * @param totemByPlayer map from nickname to assigned totem
+     * @param turnOrder     the initial player placement order
+     * @param initialFood   starting food per player
+     * @param boardSnapshot the full initial board state, or {@code null}
+     */
+    public synchronized void updateGameSetupCompleted(Map&lt;String, Totem&gt; totemByPlayer,
+                                                      List&lt;String&gt; turnOrder,
+                                                      Map&lt;String, Integer&gt; initialFood,
+                                                      BoardSnapshot boardSnapshot) {
+<span class="fc" id="L110">        this.totemByPlayer = new LinkedHashMap&lt;&gt;(totemByPlayer);</span>
+<span class="fc" id="L111">        this.turnOrder = new ArrayList&lt;&gt;(turnOrder);</span>
+
+<span class="fc" id="L113">        this.upperRow.clear();</span>
+<span class="fc" id="L114">        this.lowerRow.clear();</span>
+<span class="fc" id="L115">        this.upperRowBuildings.clear();</span>
+<span class="fc" id="L116">        this.lowerRowBuildings.clear();</span>
+<span class="fc" id="L117">        this.foodByPlayer.clear();</span>
+<span class="fc" id="L118">        this.ppByPlayer.clear();</span>
+<span class="fc" id="L119">        this.charactersByPlayer.clear();</span>
+<span class="fc" id="L120">        this.buildingsByPlayer.clear();</span>
+<span class="fc" id="L121">        this.remainingUpper.clear();</span>
+<span class="fc" id="L122">        this.remainingLower.clear();</span>
+<span class="fc" id="L123">        this.turnOrderSlots.clear();</span>
+<span class="fc" id="L124">        this.currentEra = Era.I;</span>
+
+<span class="fc" id="L126">        this.foodByPlayer.putAll(initialFood);</span>
+<span class="fc" id="L127">        initialFood.keySet().forEach(n -&gt; ppByPlayer.put(n, 0));</span>
+
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (boardSnapshot != null) {</span>
+<span class="fc" id="L130">            this.upperRow = new ArrayList&lt;&gt;(boardSnapshot.upperRowCards());</span>
+<span class="fc" id="L131">            this.lowerRow = new ArrayList&lt;&gt;(boardSnapshot.lowerRowCards());</span>
+<span class="fc" id="L132">            this.upperRowBuildings = new ArrayList&lt;&gt;(boardSnapshot.upperRowBuildings());</span>
+<span class="fc" id="L133">            this.lowerRowBuildings = new ArrayList&lt;&gt;(boardSnapshot.lowerRowBuildings());</span>
+<span class="fc" id="L134">            this.offerTiles = new ArrayList&lt;&gt;(boardSnapshot.offerTiles());</span>
+<span class="fc" id="L135">            this.deckRemainingCount = boardSnapshot.tribuDeckSize();</span>
+<span class="fc" id="L136">            this.turnOrderSlots = new ArrayList&lt;&gt;(boardSnapshot.turnOrderSlots());</span>
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            for (OfferTileInfo tile : boardSnapshot.offerTiles()) {</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">                if (tile.occupantNickname() != null) {</span>
+<span class="fc" id="L140">                    remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());</span>
+<span class="fc" id="L141">                    remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());</span>
+                }
+<span class="fc" id="L143">            }</span>
+        }
+
+<span class="fc" id="L146">        clientViews.forEach(o -&gt; o.onGameSetupCompleted(turnOrder, initialFood, boardSnapshot));</span>
+<span class="fc" id="L147">    }</span>
+
+    /**
+     * Applies a phase transition: updates the current phase, optionally the
+     * active player and resolution order, re-syncs pick limits when entering
+     * {@link it.polimi.ingsw.am02.common.enumerations.PhaseType#ACTION_RESOLUTION},
+     * and notifies all views.
+     *
+     * @param phase           the new game phase
+     * @param currentPlayer   the active player's nickname, or {@code null} if unchanged
+     * @param resolutionOrder the updated resolution order, or {@code null} if unchanged
+     */
+    public synchronized void updateCurrentPhase(PhaseType phase, String currentPlayer,
+                                                List&lt;String&gt; resolutionOrder) {
+<span class="fc" id="L161">        this.currentPhase = phase;</span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">        if (currentPlayer != null) this.currentPlayer = currentPlayer;</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        if (resolutionOrder != null) this.turnOrder = new ArrayList&lt;&gt;(resolutionOrder);</span>
+
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        if (phase == PhaseType.ACTION_RESOLUTION) {</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            for (OfferTileInfo tile : offerTiles) {</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">                if (tile.occupantNickname() != null) {</span>
+<span class="fc" id="L168">                    remainingUpper.put(tile.occupantNickname(), tile.upperChoosable());</span>
+<span class="fc" id="L169">                    remainingLower.put(tile.occupantNickname(), tile.lowerChoosable());</span>
+                }
+<span class="fc" id="L171">            }</span>
+        }
+
+<span class="fc" id="L174">        clientViews.forEach(o -&gt; o.onPhaseChanged(phase, currentPlayer, resolutionOrder));</span>
+<span class="fc" id="L175">    }</span>
+
+    /**
+     * Applies a current-player change and notifies all views.
+     *
+     * @param nextPlayer the nickname of the new active player
+     */
+    public synchronized void updateCurrentPlayer(String nextPlayer) {
+<span class="fc" id="L183">        this.currentPlayer = nextPlayer;</span>
+<span class="fc" id="L184">        clientViews.forEach(o -&gt; o.onCurrentPlayerChanged(nextPlayer));</span>
+<span class="fc" id="L185">    }</span>
+
+    /**
+     * Applies a turn order establishment and notifies views.
+     *
+     * @param turnOrder the new turn order
+     */
+    public synchronized void updateTurnOrder(List&lt;String&gt; turnOrder) {
+<span class="fc" id="L193">        this.turnOrder = new ArrayList&lt;&gt;(turnOrder);</span>
+<span class="fc" id="L194">        clientViews.forEach(o -&gt; o.onTurnOrderEstablished(turnOrder));</span>
+<span class="fc" id="L195">    }</span>
+
+    /**
+     * Applies a totem placement: updates totem positions, offer tiles, turn
+     * order slots, and notifies views.
+     *
+     * @param nickname the player who placed the totem
+     * @param tileID   the ID of the tile the totem was placed on
+     */
+    public synchronized void updateTotemPlaced(String nickname, char tileID) {
+<span class="fc" id="L205">        totemPositions.put(nickname, tileID);</span>
+
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        for (int i = 0; i &lt; turnOrderSlots.size(); i++) {</span>
+<span class="fc" id="L208">            TurnOrderSlotInfo slot = turnOrderSlots.get(i);</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">            if (nickname.equals(slot.occupantNickname())) {</span>
+<span class="fc" id="L210">                turnOrderSlots.set(i, new TurnOrderSlotInfo(null, slot.foodBonus(), slot.prestigePointsMalus()));</span>
+<span class="fc" id="L211">                break;</span>
+            }
+        }
+
+<span class="fc" id="L215">        this.offerTiles = offerTiles.stream()</span>
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">                .map(t -&gt; t.tileID() == tileID</span>
+<span class="fc" id="L217">                        ? new OfferTileInfo(t.tileID(), t.foodBonus(),</span>
+<span class="fc" id="L218">                        t.upperChoosable(), t.lowerChoosable(), nickname)</span>
+<span class="nc" id="L219">                        : t)</span>
+<span class="fc" id="L220">                .collect(Collectors.toCollection(ArrayList::new));</span>
+
+<span class="fc" id="L222">        clientViews.forEach(o -&gt; o.onTotemPlaced(nickname, tileID));</span>
+<span class="fc" id="L223">        clientViews.forEach(o -&gt; o.onOfferTilesUpdated(offerTiles));</span>
+<span class="fc" id="L224">    }</span>
+
+    /**
+     * Applies a totem return: clears the totem's offer tile position, updates
+     * the turn order slot, and notifies views.
+     *
+     * @param nickname          the player whose totem was returned
+     * @param turnOrderPosition the slot index the totem was returned to
+     */
+    public synchronized void updateTotemReturned(String nickname, int turnOrderPosition) {
+<span class="fc" id="L234">        totemPositions.remove(nickname);</span>
+<span class="fc" id="L235">        turnOrderPositions.put(nickname, turnOrderPosition);</span>
+
+<span class="fc" id="L237">        int idx = turnOrderPosition;</span>
+<span class="pc bpc" id="L238" title="2 of 4 branches missed.">        if (idx &gt;= 0 &amp;&amp; idx &lt; turnOrderSlots.size()) {</span>
+<span class="fc" id="L239">            TurnOrderSlotInfo old = turnOrderSlots.get(idx);</span>
+<span class="fc" id="L240">            turnOrderSlots.set(idx, new TurnOrderSlotInfo(nickname, old.foodBonus(), old.prestigePointsMalus()));</span>
+        }
+
+<span class="fc" id="L243">        this.offerTiles = offerTiles.stream()</span>
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">                .map(t -&gt; nickname.equals(t.occupantNickname())</span>
+<span class="fc" id="L245">                        ? new OfferTileInfo(t.tileID(), t.foodBonus(),</span>
+<span class="fc" id="L246">                        t.upperChoosable(), t.lowerChoosable(), null)</span>
+<span class="nc" id="L247">                        : t)</span>
+<span class="fc" id="L248">                .collect(Collectors.toCollection(ArrayList::new));</span>
+
+<span class="fc" id="L250">        clientViews.forEach(o -&gt; o.onTotemReturned(nickname, turnOrderPosition));</span>
+<span class="fc" id="L251">        clientViews.forEach(o -&gt; o.onOfferTilesUpdated(offerTiles));</span>
+<span class="fc" id="L252">    }</span>
+
+    /**
+     * Applies a board update: replaces both card rows and the deck count,
+     * then notifies views.
+     *
+     * @param newUpperRow        the new upper row card IDs
+     * @param newLowerRow        the new lower row card IDs
+     * @param deckRemainingCount the updated deck size
+     */
+    public synchronized void updateBoard(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow,
+                                         int deckRemainingCount) {
+<span class="fc" id="L264">        this.upperRow = new ArrayList&lt;&gt;(newUpperRow);</span>
+<span class="fc" id="L265">        this.lowerRow = new ArrayList&lt;&gt;(newLowerRow);</span>
+<span class="fc" id="L266">        this.deckRemainingCount = deckRemainingCount;</span>
+<span class="fc" id="L267">        clientViews.forEach(o -&gt; o.onBoardUpdated(newUpperRow, newLowerRow, deckRemainingCount));</span>
+<span class="fc" id="L268">    }</span>
+
+    /**
+     * Applies an era change: updates the current era, replaces both building rows,
+     * and notifies views.
+     *
+     * @param newEra               the new era
+     * @param newUpperRowBuildings the updated upper row building IDs
+     * @param newLowerRowBuildings the updated lower row building IDs
+     */
+    public synchronized void updateEra(Era newEra, List&lt;String&gt; newUpperRowBuildings,
+                                       List&lt;String&gt; newLowerRowBuildings) {
+<span class="fc" id="L280">        this.currentEra = newEra;</span>
+<span class="fc" id="L281">        this.upperRowBuildings = new ArrayList&lt;&gt;(newUpperRowBuildings);</span>
+<span class="fc" id="L282">        this.lowerRowBuildings = new ArrayList&lt;&gt;(newLowerRowBuildings);</span>
+<span class="fc" id="L283">        clientViews.forEach(o -&gt; o.onEraChanged(newEra, newUpperRowBuildings, newLowerRowBuildings));</span>
+<span class="fc" id="L284">    }</span>
+
+    /**
+     * Applies initial pick limits for a player and notifies views.
+     *
+     * @param nickname      the player
+     * @param remainingUpper remaining picks from the upper row
+     * @param remainingLower remaining picks from the lower row
+     */
+    public synchronized void updatePlayerLimitsInitialized(String nickname,
+                                                           int remainingUpper,
+                                                           int remainingLower) {
+<span class="fc" id="L296">        this.remainingUpper.put(nickname, remainingUpper);</span>
+<span class="fc" id="L297">        this.remainingLower.put(nickname, remainingLower);</span>
+<span class="fc" id="L298">        clientViews.forEach(o -&gt; o.onPlayerLimitsInitialized(nickname, remainingUpper, remainingLower));</span>
+<span class="fc" id="L299">    }</span>
+
+    /**
+     * Applies updated pick limits for a player and notifies views.
+     *
+     * @param nickname      the player
+     * @param remainingUpper remaining picks from the upper row
+     * @param remainingLower remaining picks from the lower row
+     */
+    public synchronized void updatePlayerLimits(String nickname,
+                                                int remainingUpper,
+                                                int remainingLower) {
+<span class="fc" id="L311">        this.remainingUpper.put(nickname, remainingUpper);</span>
+<span class="fc" id="L312">        this.remainingLower.put(nickname, remainingLower);</span>
+<span class="fc" id="L313">        clientViews.forEach(o -&gt; o.onPlayerLimitsUpdated(nickname, remainingUpper, remainingLower));</span>
+<span class="fc" id="L314">    }</span>
+
+    /**
+     * Applies a resource change for a player: updates food or PP maps
+     * and notifies views.
+     *
+     * @param nickname the player
+     * @param resource the resource type that changed
+     * @param newValue the updated value
+     */
+    public synchronized void updatePlayerResource(String nickname, ResourceType resource,
+                                                  int newValue) {
+<span class="fc bfc" id="L326" title="All 2 branches covered.">        if (resource == ResourceType.FOOD) {</span>
+<span class="fc" id="L327">            foodByPlayer.put(nickname, newValue);</span>
+<span class="pc bpc" id="L328" title="1 of 2 branches missed.">        } else if (resource == ResourceType.PRESTIGE_POINTS) {</span>
+<span class="fc" id="L329">            ppByPlayer.put(nickname, newValue);</span>
+        }
+<span class="fc" id="L331">        clientViews.forEach(o -&gt; o.onPlayerResourceChanged(nickname, resource, newValue));</span>
+<span class="fc" id="L332">    }</span>
+
+    /**
+     * Applies a card-taken event: removes the card from the appropriate row,
+     * adds it to the player's collection, and notifies views.
+     *
+     * @param nickname  the player who took the card
+     * @param cardID    the card identifier
+     * @param cardType  whether it is a character or building card
+     * @param sourceRow the row it was taken from
+     */
+    public synchronized void updateCardTaken(String nickname, String cardID,
+                                             CardType cardType, RowPosition sourceRow) {
+<span class="fc bfc" id="L345" title="All 2 branches covered.">        List&lt;String&gt; row = (cardType == CardType.BUILDING)</span>
+<span class="fc bfc" id="L346" title="All 2 branches covered.">                ? (sourceRow == RowPosition.UPPER ? upperRowBuildings : lowerRowBuildings)</span>
+<span class="fc bfc" id="L347" title="All 2 branches covered.">                : (sourceRow == RowPosition.UPPER ? upperRow : lowerRow);</span>
+<span class="fc" id="L348">        row.remove(cardID);</span>
+        Map&lt;String, List&lt;String&gt;&gt; target =
+<span class="fc bfc" id="L350" title="All 2 branches covered.">                (cardType == CardType.BUILDING) ? buildingsByPlayer : charactersByPlayer;</span>
+<span class="fc" id="L351">        target.computeIfAbsent(nickname, k -&gt; new ArrayList&lt;&gt;()).add(cardID);</span>
+<span class="fc" id="L352">        clientViews.forEach(o -&gt; o.onCardTaken(nickname, cardID, cardType, sourceRow));</span>
+<span class="fc" id="L353">    }</span>
+
+    /**
+     * Notifies views that the AutoPlayer grace timer has started for the given player.
+     *
+     * @param nickname the disconnected player for whom the timer is running
+     * @param seconds  the duration of the grace period in seconds
+     */
+    public synchronized void updateAutoPlayerTimerStarted(String nickname, long seconds) {
+<span class="fc" id="L362">        clientViews.forEach(o -&gt; o.onAutoPlayerTimerStarted(nickname, seconds));</span>
+<span class="fc" id="L363">    }</span>
+
+    /**
+     * Notifies views that the auto-player was invoked for the given player.
+     *
+     * @param nickname the player replaced by the auto-player
+     */
+    public synchronized void updateAutoPlayerInvoked(String nickname) {
+<span class="fc" id="L371">        clientViews.forEach(o -&gt; o.onAutoPlayerInvoked(nickname));</span>
+<span class="fc" id="L372">    }</span>
+
+    /**
+     * Applies an event resolution: stores the last resolved event name
+     * and notifies views.
+     *
+     * @param eventID   the identifier of the resolved event card
+     * @param eventName the display name of the resolved event
+     */
+    public synchronized void updateEventResolved(String eventID, String eventName) {
+<span class="fc" id="L382">        this.lastEventResolved = eventName;</span>
+<span class="fc" id="L383">        clientViews.forEach(v -&gt; v.onEventResolved(eventID, eventName));</span>
+<span class="fc" id="L384">    }</span>
+
+    /**
+     * Applies an extra-turn start: updates pick limits for the player
+     * and notifies views.
+     *
+     * @param nickname      the player receiving the extra turn
+     * @param remainingUpper remaining upper-row picks for the extra turn
+     * @param remainingLower remaining lower-row picks for the extra turn
+     */
+    public synchronized void updateExtraTurnStarted(String nickname,
+                                                    int remainingUpper,
+                                                    int remainingLower) {
+<span class="fc" id="L397">        this.remainingUpper.put(nickname, remainingUpper);</span>
+<span class="fc" id="L398">        this.remainingLower.put(nickname, remainingLower);</span>
+<span class="fc" id="L399">        clientViews.forEach(o -&gt; o.onExtraTurnStarted(nickname, remainingUpper, remainingLower));</span>
+<span class="fc" id="L400">    }</span>
+
+    /**
+     * Applies an extra-turn end and notifies views.
+     *
+     * @param nickname the player whose extra turn ended
+     */
+    public synchronized void updateExtraTurnEnded(String nickname) {
+<span class="fc" id="L408">        clientViews.forEach(o -&gt; o.onExtraTurnEnded(nickname));</span>
+<span class="fc" id="L409">    }</span>
+
+    /**
+     * Applies a game-ended event: stores winners and final rankings,
+     * marks the game as ended, and notifies views.
+     *
+     * @param winners       the list of winning players
+     * @param finalRankings the final score ranking
+     */
+    public synchronized void updateGameEnded(List&lt;String&gt; winners,
+                                             List&lt;PlayerFinalScore&gt; finalRankings) {
+<span class="fc" id="L420">        this.winners = new ArrayList&lt;&gt;(winners);</span>
+<span class="fc" id="L421">        this.finalRankings = new ArrayList&lt;&gt;(finalRankings);</span>
+<span class="fc" id="L422">        this.gameEnded = true;</span>
+<span class="fc" id="L423">        clientViews.forEach(o -&gt; o.onGameEnded(winners, finalRankings));</span>
+<span class="fc" id="L424">    }</span>
+
+    /**
+     * Applies a player-disconnected event: stores a diagnostic message
+     * and notifies views.
+     *
+     * @param nickname the disconnected player
+     */
+    public synchronized void updatePlayerDisconnected(String nickname) {
+<span class="fc" id="L433">        this.lastErrorMessage = &quot;Player disconnected: &quot; + nickname;</span>
+<span class="fc" id="L434">        clientViews.forEach(o -&gt; o.onPlayerDisconnected(nickname));</span>
+<span class="fc" id="L435">    }</span>
+
+    /**
+     * Applies a game-aborted event: marks the game as ended and notifies views.
+     *
+     * @param lastManStanding the nickname of the remaining player, or {@code null}
+     */
+    public synchronized void updateGameAborted(String lastManStanding) {
+<span class="fc" id="L443">        this.gameEnded = true;</span>
+<span class="fc" id="L444">        clientViews.forEach(o -&gt; o.onGameAborted(lastManStanding));</span>
+<span class="fc" id="L445">    }</span>
+
+    /**
+     * Applies a game-recovery-failed event: marks the game as ended
+     * and notifies views.
+     */
+    public synchronized void updateGameRecoveryFailed() {
+<span class="fc" id="L452">        this.gameEnded = true;</span>
+<span class="fc" id="L453">        clientViews.forEach(o -&gt; o.onGameRecoveryFailed());</span>
+<span class="fc" id="L454">    }</span>
+
+    /**
+     * Applies a player-reconnected event and notifies views.
+     *
+     * @param nickname the reconnected player
+     */
+    public synchronized void updatePlayerReconnected(String nickname) {
+<span class="fc" id="L462">        clientViews.forEach(o -&gt; o.onPlayerReconnected(nickname));</span>
+<span class="fc" id="L463">    }</span>
+
+    /**
+     * Applies an error event: stores the message and notifies views.
+     *
+     * @param errorMessage the error message from the server
+     */
+    public synchronized void updateError(String errorMessage) {
+<span class="fc" id="L471">        this.lastErrorMessage = errorMessage;</span>
+<span class="fc" id="L472">        clientViews.forEach(o -&gt; o.onError(errorMessage));</span>
+<span class="fc" id="L473">    }</span>
+
+    /**
+     * Notifies views that the global forfeit timer has been armed on the server.
+     *
+     * @param seconds the duration of the forfeit countdown, in seconds
+     */
+    public synchronized void updateGlobalTimerStarted(long seconds) {
+<span class="nc" id="L481">        clientViews.forEach(v -&gt; v.onGlobalTimerStarted(seconds));</span>
+<span class="nc" id="L482">    }</span>
+
+    /**
+     * Notifies views that the global forfeit timer has been cancelled on the server.
+     */
+    public synchronized void updateGlobalTimerCancelled() {
+<span class="nc" id="L488">        clientViews.forEach(v -&gt; v.onGlobalTimerCancelled());</span>
+<span class="nc" id="L489">    }</span>
+
+    // GETTERS
+
+    /** @return the local player's nickname */
+<span class="fc" id="L494">    public synchronized String getMyNickname() { return myNickname; }</span>
+
+    /** @return the game's unique identifier, or {@code null} before the game starts */
+<span class="fc" id="L497">    public synchronized String getGameId() { return gameId; }</span>
+
+    /** @return the current game phase, or {@code null} before setup completes */
+<span class="fc" id="L500">    public synchronized PhaseType getCurrentPhase() { return currentPhase; }</span>
+
+    /** @return the nickname of the currently active player, or {@code null} if not in an action phase */
+<span class="fc" id="L503">    public synchronized String getCurrentPlayer() { return currentPlayer; }</span>
+
+    /** @return an immutable copy of the current player order */
+<span class="fc" id="L506">    public synchronized List&lt;String&gt; getTurnOrder() { return List.copyOf(turnOrder); }</span>
+
+    /** @return an immutable copy of the upper character/event card row */
+<span class="fc" id="L509">    public synchronized List&lt;String&gt; getUpperRow() { return List.copyOf(upperRow); }</span>
+
+    /** @return an immutable copy of the lower character/event card row */
+<span class="fc" id="L512">    public synchronized List&lt;String&gt; getLowerRow() { return List.copyOf(lowerRow); }</span>
+
+    /** @return an immutable copy of the upper building market row */
+<span class="fc" id="L515">    public synchronized List&lt;String&gt; getUpperRowBuildings() { return List.copyOf(upperRowBuildings); }</span>
+
+    /** @return an immutable copy of the lower building market row */
+<span class="fc" id="L518">    public synchronized List&lt;String&gt; getLowerRowBuildings() { return List.copyOf(lowerRowBuildings); }</span>
+
+    /** @return an immutable copy of the current offer tile states */
+<span class="fc" id="L521">    public synchronized List&lt;OfferTileInfo&gt; getOfferTiles() { return List.copyOf(offerTiles); }</span>
+
+    /** @return an immutable copy of the food-per-player map */
+<span class="fc" id="L524">    public synchronized Map&lt;String, Integer&gt; getFoodByPlayer() { return Map.copyOf(foodByPlayer); }</span>
+
+    /** @return an immutable copy of the prestige-points-per-player map */
+<span class="fc" id="L527">    public synchronized Map&lt;String, Integer&gt; getPpByPlayer() { return Map.copyOf(ppByPlayer); }</span>
+
+    /**
+     * @return an immutable copy of the totem-position map
+     *         (nickname → offer tile ID, or empty if the totem is on the turn-order tile)
+     */
+<span class="fc" id="L533">    public synchronized Map&lt;String, Character&gt; getTotemPositions() { return Map.copyOf(totemPositions); }</span>
+
+    /** @return an immutable copy of the turn-order-slot-index map (nickname → slot index) */
+<span class="fc" id="L536">    public synchronized Map&lt;String, Integer&gt; getTurnOrderPositions() { return Map.copyOf(turnOrderPositions); }</span>
+
+    /** @return an immutable copy of the remaining-upper-picks map (nickname → count) */
+<span class="fc" id="L539">    public synchronized Map&lt;String, Integer&gt; getRemainingUpper() { return Map.copyOf(remainingUpper); }</span>
+
+    /** @return an immutable copy of the remaining-lower-picks map (nickname → count) */
+<span class="fc" id="L542">    public synchronized Map&lt;String, Integer&gt; getRemainingLower() { return Map.copyOf(remainingLower); }</span>
+
+    /**
+     * @return an unmodifiable map from nickname to an immutable list of character card IDs
+     *         owned by that player
+     */
+    public synchronized Map&lt;String, List&lt;String&gt;&gt; getCharactersByPlayer() {
+<span class="fc" id="L549">        Map&lt;String, List&lt;String&gt;&gt; copy = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L550">        charactersByPlayer.forEach((k, v) -&gt; copy.put(k, List.copyOf(v)));</span>
+<span class="fc" id="L551">        return Collections.unmodifiableMap(copy);</span>
+    }
+
+    /**
+     * @return an unmodifiable map from nickname to an immutable list of building card IDs
+     *         owned by that player
+     */
+    public synchronized Map&lt;String, List&lt;String&gt;&gt; getBuildingsByPlayer() {
+<span class="fc" id="L559">        Map&lt;String, List&lt;String&gt;&gt; copy = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L560">        buildingsByPlayer.forEach((k, v) -&gt; copy.put(k, List.copyOf(v)));</span>
+<span class="fc" id="L561">        return Collections.unmodifiableMap(copy);</span>
+    }
+
+    /** @return an immutable list of winning player nicknames (empty until the game ends) */
+<span class="fc" id="L565">    public synchronized List&lt;String&gt; getWinners() { return List.copyOf(winners); }</span>
+
+    /** @return an immutable list of final-score breakdowns (empty until the game ends) */
+<span class="fc" id="L568">    public synchronized List&lt;PlayerFinalScore&gt; getFinalRankings() { return List.copyOf(finalRankings); }</span>
+
+    /** @return the number of cards remaining in the tribe deck */
+<span class="fc" id="L571">    public synchronized int getDeckRemainingCount() { return deckRemainingCount; }</span>
+
+    /** @return {@code true} if the game has ended (normally or by abort) */
+<span class="fc" id="L574">    public synchronized boolean isGameEnded() { return gameEnded; }</span>
+
+    /** @return the display name of the most recently resolved event, or {@code null} */
+<span class="fc" id="L577">    public synchronized String getLastEventResolved() { return lastEventResolved; }</span>
+
+    /** @return the most recent error message received from the server, or {@code null} */
+<span class="fc" id="L580">    public synchronized String getLastErrorMessage() { return lastErrorMessage; }</span>
+
+    /**
+     * @return {@code true} if a game session is currently active
+     *         (game ID is set and the game has not ended)
+     */
+<span class="pc bpc" id="L586" title="1 of 4 branches missed.">    public synchronized boolean isInGame() { return gameId != null &amp;&amp; !gameEnded; }</span>
+
+    /** @return an immutable copy of the current turn-order tile slot states */
+<span class="fc" id="L589">    public synchronized List&lt;TurnOrderSlotInfo&gt; getTurnOrderSlots() { return List.copyOf(turnOrderSlots); }</span>
+
+    /**
+     * Overrides the stored game ID.
+     * Used during reconnection to update the model before events are replayed.
+     *
+     * @param gameId the new game identifier
+     */
+<span class="fc" id="L597">    public synchronized void setGameId(String gameId) { this.gameId = gameId; }</span>
+
+    /**
+     * Returns the totem color assigned to the given player.
+     *
+     * @param nickname the player's nickname
+     * @return their {@link it.polimi.ingsw.am02.common.enumerations.Totem},
+     *         or {@code null} if the game has not started or the nickname is unknown
+     */
+<span class="pc bpc" id="L606" title="1 of 2 branches missed.">    public synchronized Totem getTotem(String nickname) { return totemByPlayer != null ? totemByPlayer.get(nickname) : null; }</span>
+
+    /** @return the current game era (defaults to {@link it.polimi.ingsw.am02.common.enumerations.Era#I}) */
+<span class="fc" id="L609">    public synchronized Era getCurrentEra() { return currentEra; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

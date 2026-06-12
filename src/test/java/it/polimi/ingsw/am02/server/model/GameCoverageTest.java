@@ -16,6 +16,12 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * White-box tests for the {@link Game} finite-state machine. Using reflection to
+ * instantiate and drive each inner FSM state with a mocked {@link GameBoard},
+ * verifies the entry actions and the moves each state accepts or rejects with
+ * {@link InvalidMoveException}.
+ */
 public class GameCoverageTest {
 
     private Game game;
@@ -99,6 +105,7 @@ public class GameCoverageTest {
         invokeMethod(instance, "resolveActions", new Class<?>[]{String.class, List.class}, nickname, selectedIDs);
     }
 
+    /** Verifies EventResolutionState runs its entry actions and rejects player moves. */
     @Test
     void testEventResolutionState() throws Exception {
         Object state = createInnerClassInstance("EventResolutionState");
@@ -107,6 +114,7 @@ public class GameCoverageTest {
         assertThrows(InvalidMoveException.class, () -> invokeResolveActions(state, "p1", Collections.emptyList()));
     }
 
+    /** Verifies FinalEventsResolutionState runs its entry actions and rejects player moves. */
     @Test
     void testFinalEventsResolutionState() throws Exception {
         Object state = createInnerClassInstance("FinalEventsResolutionState");
@@ -115,6 +123,7 @@ public class GameCoverageTest {
         assertThrows(InvalidMoveException.class, () -> invokeResolveActions(state, "p1", Collections.emptyList()));
     }
 
+    /** Verifies FinalScoringState runs its entry actions and rejects player moves. */
     @Test
     void testFinalScoringState() throws Exception {
         Object state = createInnerClassInstance("FinalScoringState");
@@ -123,6 +132,7 @@ public class GameCoverageTest {
         assertThrows(InvalidMoveException.class, () -> invokeResolveActions(state, "p1", Collections.emptyList()));
     }
 
+    /** Verifies NewEraState runs its entry actions and rejects player moves. */
     @Test
     void testNewEraState() throws Exception {
         Object state = createInnerClassInstance("NewEraState");
@@ -131,6 +141,10 @@ public class GameCoverageTest {
         assertThrows(InvalidMoveException.class, () -> invokeResolveActions(state, "p1", Collections.emptyList()));
     }
 
+    /**
+     * Verifies ActionResolutionState handles action resolution, extra-turn mode and
+     * the various end-of-turn ('T') transitions depending on round events and finish state.
+     */
     @Test
     void testActionResolutionState() throws Exception {
         Object state = createInnerClassInstance("ActionResolutionState");
@@ -166,6 +180,7 @@ public class GameCoverageTest {
         assertThrows(Exception.class, () -> invokeMoveTotem(state, "p1", 'T'));
     }
 
+    /** Verifies NewRoundState entry actions across era change, final events and round limits. */
     @Test
     void testNewRoundState() throws Exception {
         Object state = createInnerClassInstance("NewRoundState");
@@ -190,6 +205,7 @@ public class GameCoverageTest {
         assertDoesNotThrow(() -> invokeMethod(state, "onEntryActions"));
     }
 
+    /** Verifies EndRoundState entry actions for extra-turn, round-event and plain-round paths. */
     @Test
     void testEndRoundState() throws Exception {
         Object state = createInnerClassInstance("EndRoundState");

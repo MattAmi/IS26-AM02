@@ -14,6 +14,11 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests {@link GameBoard} round and era transition logic, verifying that tribù
+ * rows are refreshed, the tribù deck is drained correctly and the proper
+ * notifications are emitted to the {@link GameEventEmitter}.
+ */
 class GameBoardTransitionsTest {
 
     private GameBoard gameBoard;
@@ -26,6 +31,10 @@ class GameBoardTransitionsTest {
         gameBoard = new GameBoard(2, notifier, gameRandom);
     }
 
+    /**
+     * Verifies that {@code prepareNewRound} draws the expected number of tribù
+     * cards from the deck and notifies the listeners of the board update.
+     */
     @Test
     void prepareNewRound_updatesRowsAndDecrementsDeck() {
         int initialDeckSize = gameBoard.buildSnapshot().tribuDeckSize();
@@ -37,6 +46,9 @@ class GameBoardTransitionsTest {
         verify(notifier).notifyBoardUpdated(any(), any(), any(), any(), anyInt());
     }
 
+    /**
+     * Verifies that advancing to a new era triggers an era-changed notification.
+     */
     @Test
     void updateRowsForNewEra_handlesEraTransitions() {
         // But we can check if it calls notifyEraChanged

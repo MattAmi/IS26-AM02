@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfferTile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.tile</a> &gt; <span class="el_source">OfferTile.java</span></div><h1>OfferTile.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.tile;
+
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
+import it.polimi.ingsw.am02.server.model.player.Player;
+
+/**
+ * Represents a single offer tile on the offer track.
+ * Each tile has a unique identifier, pick limits for the upper and lower card rows,
+ * a food reward granted on first action resolution, and a minimum player count.
+ *
+ * &lt;p&gt;A tile can be occupied by at most one player at a time.
+ */
+public class OfferTile {
+
+    private final char tileID;
+    private final int minPlayers;
+    private final int gainedFood;
+    private final int numUpperChoosable;
+    private final int numLowerChoosable;
+    private Player occupyingPlayer;
+    private int remainingUpper;
+    private int remainingLower;
+    private boolean isFoodResolved;
+
+    /**
+     * @param tileID             the unique single-character identifier for this tile (e.g. {@code 'A'})
+     * @param minPlayers         minimum player count required for this tile to be in play
+     * @param gainedFood         food points granted to the player on their first action from this tile
+     * @param numUpperChoosable  maximum cards the player may pick from the upper row
+     * @param numLowerChoosable  maximum cards the player may pick from the lower row
+     */
+<span class="fc" id="L32">    public OfferTile(char tileID, int minPlayers, int gainedFood, int numUpperChoosable, int numLowerChoosable) {</span>
+
+<span class="fc" id="L34">        this.tileID = tileID;</span>
+<span class="fc" id="L35">        this.minPlayers = minPlayers;</span>
+<span class="fc" id="L36">        this.gainedFood = gainedFood;</span>
+<span class="fc" id="L37">        this.numUpperChoosable = numUpperChoosable;</span>
+<span class="fc" id="L38">        this.numLowerChoosable = numLowerChoosable;</span>
+<span class="fc" id="L39">        this.isFoodResolved = false;</span>
+<span class="fc" id="L40">    }</span>
+
+    /** @return the tile's single-character identifier */
+    public char getTileID() {
+<span class="fc" id="L44">        return tileID;</span>
+    }
+
+    /** @return the minimum player count for this tile to be active */
+    public int getMinPlayers() {
+<span class="fc" id="L49">        return minPlayers;</span>
+    }
+
+    /** @return the food points granted on first action from this tile */
+    public int getGainedFood() {
+<span class="fc" id="L54">        return gainedFood;</span>
+    }
+
+    /** @return the maximum number of cards the player may pick from the upper row */
+<span class="fc" id="L58">    public int getNumUpperChoosable() { return numUpperChoosable; }</span>
+
+    /** @return the maximum number of cards the player may pick from the lower row */
+    public int getNumLowerChoosable() {
+<span class="fc" id="L62">        return numLowerChoosable;</span>
+    }
+
+    /**
+     * Places a player on this tile.
+     *
+     * @param player the player to assign to this tile
+     */
+<span class="fc" id="L70">    public void acceptPlayer(Player player) { this.occupyingPlayer = player; }</span>
+
+    /**
+     * Removes the given player from this tile and resets the food-resolved flag.
+     *
+     * @param player the player to remove
+     */
+    public void removePlayer(Player player) {
+<span class="fc" id="L78">        this.occupyingPlayer = null;</span>
+<span class="fc" id="L79">        this.isFoodResolved = false;</span>
+<span class="fc" id="L80">    }</span>
+
+    /** @return {@code true} if a player is currently occupying this tile */
+    public boolean isOccupied() {
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        return this.occupyingPlayer != null;</span>
+    }
+
+    /** @return the player currently occupying this tile, or {@code null} if empty */
+<span class="fc" id="L88">    public Player getOccupyingPlayer() { return occupyingPlayer; }</span>
+
+    /**
+     * Sets the effective remaining pick counts for the current turn,
+     * already capped against the actual number of available cards.
+     *
+     * @param effectiveUpperChoosable the effective upper-row picks remaining
+     * @param effectiveLowerChoosable the effective lower-row picks remaining
+     */
+    public void setRemainingPicks(int effectiveUpperChoosable, int effectiveLowerChoosable) {
+<span class="fc" id="L98">        this.remainingUpper = effectiveUpperChoosable;</span>
+<span class="fc" id="L99">        this.remainingLower = effectiveLowerChoosable;</span>
+<span class="fc" id="L100">    }</span>
+
+    /** @return the number of upper-row picks still available this turn */
+    public int getRemainingUpper() {
+<span class="fc" id="L104">        return remainingUpper;</span>
+    }
+
+    /** @return the number of lower-row picks still available this turn */
+    public int getRemainingLower() {
+<span class="fc" id="L109">        return remainingLower;</span>
+    }
+
+    /**
+     * Decrements the remaining pick counts after a card-selection action.
+     *
+     * @param upperTaken the number of upper-row cards just taken
+     * @param lowerTaken the number of lower-row cards just taken
+     */
+    public void decrementPicks(int upperTaken, int lowerTaken) {
+<span class="fc" id="L119">        remainingUpper -= upperTaken;</span>
+<span class="fc" id="L120">        remainingLower -= lowerTaken;</span>
+<span class="fc" id="L121">    }</span>
+
+    /**
+     * @return {@code true} if both upper and lower remaining picks have reached zero
+     */
+<span class="fc bfc" id="L126" title="All 4 branches covered.">    public boolean isSatisfied() { return (remainingUpper == 0 &amp;&amp; remainingLower == 0); }</span>
+
+    /**
+     * Grants the tile's food reward to the player on the first call, then marks the reward
+     * as already resolved so it is not granted again in the same turn.
+     *
+     * @param player the player to receive the food reward
+     * @return the amount of food granted, or {@code 0} if the reward was already resolved
+     */
+    public int resolveFoodOffer(Player player) {
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (isFoodResolved) {</span>
+<span class="fc" id="L137">            return 0;</span>
+        }
+
+<span class="fc" id="L140">        player.getTribu().addFoodPoints(gainedFood);</span>
+<span class="fc" id="L141">        isFoodResolved = true;</span>
+
+<span class="fc" id="L143">        return gainedFood;</span>
+    }
+
+    /**
+     * Converts this tile's current state to a DTO for client transmission.
+     *
+     * @return an {@link OfferTileInfo} snapshot of this tile
+     */
+    public OfferTileInfo toInfo() {
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        String occupantNickname = (occupyingPlayer == null) ? null : occupyingPlayer.getNickname();</span>
+<span class="fc" id="L153">        return new OfferTileInfo(tileID, gainedFood, numUpperChoosable, numLowerChoosable, occupantNickname);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,739 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameBoard.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">GameBoard.java</span></div><h1>GameBoard.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model;
+
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
+import it.polimi.ingsw.am02.common.enumerations.CardType;
+import it.polimi.ingsw.am02.common.enumerations.Era;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.common.enumerations.RowPosition;
+import it.polimi.ingsw.am02.server.model.card.BuildingDeck;
+import it.polimi.ingsw.am02.server.model.card.EventCard;
+import it.polimi.ingsw.am02.server.model.card.TribuDeck;
+import it.polimi.ingsw.am02.server.model.exceptions.*;
+import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
+import it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
+import it.polimi.ingsw.am02.server.model.tile.OfferTrack;
+import it.polimi.ingsw.am02.server.model.tile.TurnOrderTile;
+
+import java.util.*;
+import java.util.stream.Stream;
+
+/**
+ * Manages the shared physical state of the game board: the two card rows (upper / lower),
+ * the building market rows, the offer track, the turn-order tile, and the two decks.
+ *
+ * &lt;p&gt;All mutating operations emit notifications through the injected {@link GameEventEmitter}.
+ * {@code GameBoard} is owned by {@link Game} and should not be accessed directly by network layers.
+ */
+public class GameBoard {
+
+    private final List&lt;String&gt; upperRow;
+    private final List&lt;String&gt; upperRowBuildings;
+    private final List&lt;String&gt; lowerRow;
+    private final List&lt;String&gt; lowerRowBuildings;
+    private TurnOrderTile turnOrderTile;
+    private OfferTrack offerTrack;
+    private TribuDeck tribuDeck;
+    private BuildingDeck buildingDeck;
+    private Era currentEra;
+    private boolean eraChangedFlag;
+<span class="fc" id="L44">    private final int[] initialFoodBonuses = {2, 3, 3, 4, 4};</span>
+    private Player extraTurnPlayer;
+    private int extraTurnRemainingUpper;
+    private int extraTurnRemainingLower;
+    private final List&lt;EventObserver&gt; eventObservers;
+    private final GameEventEmitter notifier;
+
+
+    /**
+     * Constructs and fully initializes the game board for the given player count.
+     * Draws the initial card rows from the freshly built decks.
+     *
+     * @param numPlayers  the number of players in the game (2–5)
+     * @param notifier    the event emitter used to broadcast board changes; must not be {@code null}
+     * @param gameRandom  the seeded random source shared with the rest of the game
+     * @throws NullPointerException if {@code notifier} is {@code null}
+     */
+<span class="fc" id="L61">    public GameBoard(int numPlayers, GameEventEmitter notifier, Random gameRandom) {</span>
+<span class="fc" id="L62">        this.upperRow = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L63">        this.lowerRow = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L64">        this.upperRowBuildings = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L65">        this.lowerRowBuildings = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L67">        this.currentEra = Era.I;</span>
+<span class="fc" id="L68">        this.eraChangedFlag = false;</span>
+
+<span class="fc" id="L70">        this.extraTurnPlayer = null;</span>
+<span class="fc" id="L71">        this.extraTurnRemainingUpper = 0;</span>
+<span class="fc" id="L72">        this.extraTurnRemainingLower = 0;</span>
+
+<span class="fc" id="L74">        this.setUpGameBoard(numPlayers, gameRandom);</span>
+<span class="fc" id="L75">        this.setUpInitialRows(numPlayers);</span>
+<span class="fc" id="L76">        this.eventObservers = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L78">        this.notifier = Objects.requireNonNull(notifier, &quot;GameEventEmitter must not be null&quot;);</span>
+<span class="fc" id="L79">    }</span>
+
+    private void setUpGameBoard(int numPlayers, Random gameRandom) {
+<span class="fc" id="L82">        this.offerTrack = new OfferTrack(numPlayers);</span>
+<span class="fc" id="L83">        this.turnOrderTile = new TurnOrderTile(numPlayers);</span>
+<span class="fc" id="L84">        this.tribuDeck = new TribuDeck(numPlayers, gameRandom);</span>
+<span class="fc" id="L85">        this.buildingDeck = new BuildingDeck(numPlayers, gameRandom);</span>
+<span class="fc" id="L86">    }</span>
+
+    private void setUpInitialRows(int numPlayers) {
+
+<span class="fc" id="L90">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="fc bfc" id="L92" title="All 4 branches covered.">        while (lowerRow.size() &lt; (numPlayers + 1) &amp;&amp; !tribuDeck.isEmpty()) {</span>
+<span class="fc" id="L93">            String cardID = tribuDeck.draw();</span>
+<span class="fc" id="L94">            checkAndUpdateEra(cardID);</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">            if (registry.isEvent(cardID)) {</span>
+<span class="fc" id="L96">                this.upperRow.add(cardID);</span>
+            } else {
+<span class="fc" id="L98">                this.lowerRow.add(cardID);</span>
+            }
+<span class="fc" id="L100">        }</span>
+
+<span class="fc bfc" id="L102" title="All 4 branches covered.">        while (upperRow.size() &lt; (numPlayers + 4) &amp;&amp; !tribuDeck.isEmpty()) {</span>
+<span class="fc" id="L103">            String cardID = tribuDeck.draw();</span>
+<span class="fc" id="L104">            checkAndUpdateEra(cardID);</span>
+<span class="fc" id="L105">            this.upperRow.add(cardID);</span>
+<span class="fc" id="L106">        }</span>
+
+<span class="fc" id="L108">        List&lt;String&gt; buildingsI = buildingDeck.getBuildingsForEra(Era.I);</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if (buildingsI != null) {</span>
+<span class="fc" id="L110">            upperRowBuildings.addAll(buildingsI);</span>
+        }
+<span class="fc" id="L112">    }</span>
+
+    private Era getCardEra(String cardID) {
+
+<span class="fc" id="L116">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if(registry.isCharacter(cardID)) {</span>
+<span class="fc" id="L119">            return registry.getCharacter(cardID).getEra();</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        } else if (registry.isEvent(cardID)) {</span>
+<span class="fc" id="L121">            return registry.getEvent(cardID).getEra();</span>
+        } else {
+<span class="nc" id="L123">            return registry.getBuilding(cardID).getEra();</span>
+        }
+
+    }
+
+    private void checkAndUpdateEra(String cardID) {
+
+<span class="fc" id="L130">        Era cardEra = getCardEra(cardID);</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        if (cardEra != currentEra) {</span>
+<span class="nc" id="L132">            currentEra = cardEra;</span>
+<span class="nc" id="L133">            eraChangedFlag = true;</span>
+        }
+<span class="fc" id="L135">    }</span>
+
+    /**
+     * Places each player on the turn-order tile in the given order and grants initial food bonuses.
+     * Must be called once immediately after board construction.
+     *
+     * @param orderedPlayers players in randomized starting order (index 0 = first player)
+     */
+    public void setUpInitialTurnOrder(List&lt;Player&gt; orderedPlayers) {
+
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        for(int i = 0; i &lt; orderedPlayers.size(); i++) {</span>
+<span class="fc" id="L146">            Player player = orderedPlayers.get(i);</span>
+<span class="fc" id="L147">            turnOrderTile.registerPlayer(player);</span>
+<span class="fc" id="L148">            player.getTribu().addFoodPoints(initialFoodBonuses[i]);</span>
+        }
+<span class="fc" id="L150">    }</span>
+
+    /**
+     * Moves a player's totem from the turn-order tile onto the specified offer tile,
+     * then fires a {@code totemPlaced} notification.
+     *
+     * @param player the player performing the move
+     * @param tileID the target offer tile identifier
+     */
+    public void movePlayerToOffer(Player player, char tileID) {
+<span class="fc" id="L160">        offerTrack.occupyTile(player, tileID);</span>
+<span class="fc" id="L161">        turnOrderTile.removePlayer(player);</span>
+
+        // Notify observers that a totem has been placed
+<span class="fc" id="L164">        notifier.notifyTotemPlaced(player.getNickname(), tileID);</span>
+<span class="fc" id="L165">    }</span>
+
+    /**
+     * @return an ordered list of players currently on the offer track,
+     *         sorted by tile ID (ascending), for action-resolution turn order
+     */
+    public List&lt;Player&gt; getPlayersInResolutionOrder() {
+<span class="fc" id="L172">        return offerTrack.getOrderedPlayers();</span>
+    }
+
+    /**
+     * @return {@code true} if all player totems have been placed on the offer track
+     *         (i.e. the turn-order tile is empty)
+     */
+    public boolean areAllTotemsPlaced() {
+<span class="fc" id="L180">        return turnOrderTile.isEmpty();</span>
+    }
+
+    /**
+     * Initializes the remaining pick counts for the given player based on their offer tile
+     * and the number of cards actually available in each row.
+     * Fires a {@code playerLimitsInitialized} notification.
+     *
+     * @param player the player whose limits are being set up
+     */
+    public void initializePlayerLimits(Player player) {
+<span class="fc" id="L191">        OfferTile currentTile = offerTrack.getTileByPlayer(player);</span>
+
+<span class="fc" id="L193">        int availableUpper = upperRow.size() + upperRowBuildings.size();</span>
+<span class="fc" id="L194">        int availableLower = lowerRow.size() + lowerRowBuildings.size();</span>
+
+<span class="fc" id="L196">        int effectiveUpper = Math.min(currentTile.getNumUpperChoosable(), availableUpper);</span>
+<span class="fc" id="L197">        int effectiveLower = Math.min(currentTile.getNumLowerChoosable(), availableLower);</span>
+
+<span class="fc" id="L199">        currentTile.setRemainingPicks(effectiveUpper, effectiveLower);</span>
+
+        // Notify observers that the player's resource limits have been initialized
+<span class="fc" id="L202">        notifier.notifyPlayerLimitsInitialized(player.getNickname(), effectiveUpper, effectiveLower);</span>
+<span class="fc" id="L203">    }</span>
+
+    private int[] countSelectedByRow(List&lt;String&gt; selectedIDs) {
+        // Server-side guard: the official client already blocks duplicates, but a
+        // modified client could submit the same ID twice and acquire one physical
+        // card multiple times (the second remove() would silently fail downstream).
+<span class="fc" id="L209">        Set&lt;String&gt; seen = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        for (String cardID : selectedIDs) {</span>
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">            if (!seen.add(cardID)) {</span>
+<span class="nc" id="L212">                throw new DuplicateCardSelectionException(cardID);</span>
+            }
+<span class="fc" id="L214">        }</span>
+
+<span class="fc" id="L216">        int countUpper = 0;</span>
+<span class="fc" id="L217">        int countLower = 0;</span>
+
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        for (String cardID : selectedIDs) {</span>
+<span class="fc bfc" id="L220" title="All 4 branches covered.">            if (!upperRow.contains(cardID) &amp;&amp; !lowerRow.contains(cardID)</span>
+<span class="pc bpc" id="L221" title="1 of 4 branches missed.">                    &amp;&amp; !upperRowBuildings.contains(cardID) &amp;&amp; !lowerRowBuildings.contains(cardID)) {</span>
+<span class="fc" id="L222">                throw new CardNotFoundException(cardID);</span>
+
+<span class="fc bfc" id="L224" title="All 4 branches covered.">            } else if (upperRow.contains(cardID) || upperRowBuildings.contains(cardID)) {</span>
+<span class="fc" id="L225">                countUpper++;</span>
+<span class="pc bpc" id="L226" title="3 of 4 branches missed.">            } else if (lowerRow.contains(cardID) || lowerRowBuildings.contains(cardID)) {</span>
+<span class="fc" id="L227">                countLower++;</span>
+            }
+<span class="fc" id="L229">        }</span>
+
+<span class="fc" id="L231">        return new int[]{countUpper, countLower};</span>
+    }
+
+    private Map&lt;String, Integer&gt; validateAndComputeCosts(List&lt;String&gt; selectedIDs, Player player) {
+<span class="fc" id="L235">        GameRegistry registry = GameRegistry.getInstance();</span>
+<span class="fc" id="L236">        Map&lt;String, Integer&gt; buildingCosts = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L237">        int totalBuildingCost = 0;</span>
+
+<span class="fc bfc" id="L239" title="All 2 branches covered.">        for (String cardID : selectedIDs) {</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">            if (registry.isEvent(cardID)) {</span>
+<span class="fc" id="L241">                throw new EventCardNotTakeableException(cardID);</span>
+
+<span class="fc bfc" id="L243" title="All 2 branches covered.">            } else if (registry.isBuilding(cardID)) {</span>
+<span class="fc" id="L244">                int actualCost = computeActualBuildingCost(cardID, player);</span>
+<span class="fc" id="L245">                buildingCosts.put(cardID, actualCost);</span>
+<span class="fc" id="L246">                totalBuildingCost += actualCost;</span>
+            }
+<span class="fc" id="L248">        }</span>
+
+<span class="fc bfc" id="L250" title="All 2 branches covered.">        if (totalBuildingCost &gt; player.getTribu().getFoodPoints()) {</span>
+<span class="fc" id="L251">            throw new InsufficientFoodException(totalBuildingCost, player.getTribu().getFoodPoints());</span>
+        }
+
+<span class="fc" id="L254">        return buildingCosts;</span>
+    }
+
+    private void executeCardAcquisition(List&lt;String&gt; selectedIDs, Player player, Game game,
+                                        Map&lt;String, Integer&gt; buildingCosts) {
+
+<span class="fc" id="L260">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="fc bfc" id="L262" title="All 2 branches covered.">        for (String cardID : selectedIDs) {</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">            if (registry.isBuilding(cardID)) {</span>
+<span class="fc" id="L264">                int actualCost = buildingCosts.get(cardID);</span>
+
+                RowPosition sourceRow;
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">                if (upperRowBuildings.remove(cardID)) {</span>
+<span class="fc" id="L268">                    sourceRow = RowPosition.UPPER;</span>
+                } else {
+<span class="nc" id="L270">                    lowerRowBuildings.remove(cardID);</span>
+<span class="nc" id="L271">                    sourceRow = RowPosition.LOWER;</span>
+                }
+
+<span class="fc" id="L274">                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.BUILDING, sourceRow);</span>
+
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">                if (actualCost &gt; 0) {</span>
+<span class="fc" id="L277">                    player.getTribu().addFoodPoints(-actualCost);</span>
+<span class="fc" id="L278">                    notifier.notifyPlayerResourceChanged(</span>
+<span class="fc" id="L279">                            player.getNickname(),</span>
+                            ResourceType.FOOD,
+<span class="fc" id="L281">                            player.getTribu().getFoodPoints(),</span>
+                            -actualCost);
+                }
+
+<span class="fc" id="L285">                EffectOutcome buildingOutcome = player.getTribu().insertBuilding(cardID, player, game);</span>
+<span class="fc" id="L286">                notifier.emitOutcome(buildingOutcome);</span>
+
+<span class="fc" id="L288">            } else {</span>
+                RowPosition sourceRow;
+<span class="fc bfc" id="L290" title="All 2 branches covered.">                if (upperRow.remove(cardID)) {</span>
+<span class="fc" id="L291">                    sourceRow = RowPosition.UPPER;</span>
+                } else {
+<span class="fc" id="L293">                    lowerRow.remove(cardID);</span>
+<span class="fc" id="L294">                    sourceRow = RowPosition.LOWER;</span>
+                }
+<span class="fc" id="L296">                notifier.notifyCardTaken(player.getNickname(), cardID, CardType.CHARACTER, sourceRow);</span>
+
+<span class="fc" id="L298">                EffectOutcome characterOutcome = player.getTribu().insertCharacter(cardID, player);</span>
+<span class="fc" id="L299">                notifier.emitOutcome(characterOutcome);</span>
+            }
+<span class="fc" id="L301">        }</span>
+<span class="fc" id="L302">    }</span>
+
+    private int computeActualBuildingCost(String cardID, Player player) {
+<span class="fc" id="L305">        int buildingCost = GameRegistry.getInstance().getBuilding(cardID).getBuildingCost();</span>
+<span class="fc" id="L306">        int buildingDiscount = player.getTribu().getBuildingDiscount();</span>
+
+<span class="fc" id="L308">        return Math.max(0, buildingCost - buildingDiscount);</span>
+    }
+
+    /**
+     * Validates and executes a card-selection action for the given player during their turn.
+     * Applies food rewards from the offer tile on first call, deducts building costs,
+     * transfers cards to the player's tribe, and fires the appropriate notifications.
+     *
+     * @param player      the player performing the action
+     * @param selectedIDs list of card IDs the player wishes to acquire
+     * @param game        the current game instance, forwarded to building-effect factories
+     * @throws CardNotFoundException       if a selected card is not on the board
+     * @throws EventCardNotTakeableException if a selected card is an event card
+     * @throws InsufficientFoodException   if the player cannot afford the selected buildings
+     * @throws PickLimitExceededException  if the selection exceeds the player's remaining pick limits
+     */
+    public void processActionSelection(Player player, List&lt;String&gt; selectedIDs, Game game) {
+
+<span class="fc" id="L326">        OfferTile currentTile = offerTrack.getTileByPlayer(player);</span>
+
+<span class="fc" id="L328">        int[] counts = countSelectedByRow(selectedIDs);</span>
+
+<span class="fc bfc" id="L330" title="All 4 branches covered.">        if (counts[0] &gt; currentTile.getRemainingUpper() || counts[1] &gt; currentTile.getRemainingLower()) {</span>
+<span class="fc" id="L331">            throw new PickLimitExceededException(</span>
+<span class="fc" id="L332">                    &quot;Upper limit exceeded: &quot; + counts[0] + &quot;/&quot; + currentTile.getRemainingUpper() +</span>
+<span class="fc" id="L333">                            &quot;, Lower limit exceeded: &quot; + counts[1] + &quot;/&quot; + currentTile.getRemainingLower()</span>
+            );
+        }
+
+<span class="fc" id="L337">        Map&lt;String, Integer&gt; buildingCosts = validateAndComputeCosts(selectedIDs, player);</span>
+
+<span class="fc" id="L339">        int foodFromTile = currentTile.resolveFoodOffer(player);</span>
+<span class="pc bpc" id="L340" title="1 of 2 branches missed.">        if (foodFromTile &gt; 0) {</span>
+<span class="nc" id="L341">            notifier.notifyPlayerResourceChanged(</span>
+<span class="nc" id="L342">                    player.getNickname(),</span>
+                    ResourceType.FOOD,
+<span class="nc" id="L344">                    player.getTribu().getFoodPoints(),</span>
+                    foodFromTile);
+        }
+
+<span class="fc" id="L348">        executeCardAcquisition(selectedIDs, player, game, buildingCosts);</span>
+
+<span class="fc" id="L350">        currentTile.decrementPicks(counts[0], counts[1]);</span>
+
+<span class="fc" id="L352">        notifier.notifyPlayerLimitsUpdated(</span>
+<span class="fc" id="L353">                player.getNickname(),</span>
+<span class="fc" id="L354">                currentTile.getRemainingUpper(),</span>
+<span class="fc" id="L355">                currentTile.getRemainingLower());</span>
+<span class="fc" id="L356">    }</span>
+
+    /**
+     * Determines whether the given player is allowed to end their turn.
+     * A player may end if all mandatory picks are satisfied, or if no characters
+     * remain available in a row the player is still obliged to pick from.
+     *
+     * @param player the player requesting to end their turn
+     * @return {@code true} if the player may legally end their turn
+     */
+    public boolean canPlayerFinish(Player player) {
+<span class="fc" id="L367">        OfferTile currentTile = offerTrack.getTileByPlayer(player);</span>
+
+<span class="fc bfc" id="L369" title="All 2 branches covered.">        if (currentTile.isSatisfied()) {</span>
+<span class="fc" id="L370">            return true;</span>
+        }
+
+<span class="fc" id="L373">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="fc" id="L375">        boolean hasCharacterInUpper = upperRow.stream().anyMatch(registry::isCharacter);</span>
+<span class="fc" id="L376">        boolean hasCharacterInLower = lowerRow.stream().anyMatch(registry::isCharacter);</span>
+
+<span class="pc bpc" id="L378" title="1 of 4 branches missed.">        boolean forcedByUpper = currentTile.getRemainingUpper() &gt; 0 &amp;&amp; hasCharacterInUpper;</span>
+<span class="pc bpc" id="L379" title="1 of 4 branches missed.">        boolean forcedByLower = currentTile.getRemainingLower() &gt; 0 &amp;&amp; hasCharacterInLower;</span>
+
+<span class="pc bpc" id="L381" title="1 of 4 branches missed.">        return !forcedByUpper &amp;&amp; !forcedByLower;</span>
+    }
+
+    /**
+     * Moves a player's totem from their offer tile back to the turn-order tile,
+     * claiming the earliest free position. Fires a {@code totemReturned} notification.
+     *
+     * @param player the player returning their totem
+     */
+    public void movePlayerToTurnOrder(Player player) {
+<span class="fc" id="L391">        OfferTile currentTile = offerTrack.getTileByPlayer(player);</span>
+<span class="fc" id="L392">        currentTile.removePlayer(player);</span>
+<span class="fc" id="L393">        int position = turnOrderTile.registerPlayer(player);</span>
+
+        // Notify observers that a totem has been returned to the TurnOrderTile
+<span class="fc" id="L396">        notifier.notifyTotemReturned(player.getNickname(), position);</span>
+<span class="fc" id="L397">    }</span>
+
+    /**
+     * Applies end-of-turn food bonuses and penalties defined by the player's
+     * position on the turn-order tile. Fires resource-change notifications for each delta.
+     *
+     * @param player the player whose end-of-turn rewards are being resolved
+     */
+    public void applyTurnOrderRewards(Player player) {
+<span class="fc" id="L406">        TurnOrderTile.TurnOrderRewardResult result = turnOrderTile.applyRewards(player);</span>
+<span class="fc" id="L407">        String nickname = player.getNickname();</span>
+<span class="fc" id="L408">        Tribu tribu = player.getTribu();</span>
+
+        // Notify observers of resource updates (gains and penalties)
+<span class="fc bfc" id="L411" title="All 2 branches covered.">        if (result.foodGained() &gt; 0) {</span>
+<span class="fc" id="L412">            notifier.notifyPlayerResourceChanged(nickname, ResourceType.FOOD, tribu.getFoodPoints(), result.foodGained());</span>
+        }
+<span class="fc bfc" id="L414" title="All 2 branches covered.">        if (result.foodPenalty() &gt; 0) {</span>
+<span class="fc" id="L415">            notifier.notifyPlayerResourceChanged(nickname, ResourceType.FOOD, tribu.getFoodPoints(), -result.foodPenalty());</span>
+        }
+<span class="pc bpc" id="L417" title="1 of 2 branches missed.">        if (result.ppPenalty() &gt; 0) {</span>
+<span class="nc" id="L418">            notifier.notifyPlayerResourceChanged(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), -result.ppPenalty());</span>
+        }
+<span class="fc" id="L420">    }</span>
+
+    /** @return the number of players whose totems are currently on the turn-order tile */
+    public int getPlayersOnTurnOrderCount() {
+<span class="fc" id="L424">        return turnOrderTile.getPlayerCount();</span>
+    }
+
+    /**
+     * @return {@code true} if there is at least one non-final event card visible in the lower row
+     */
+    public boolean hasRoundEvents() {
+<span class="fc" id="L431">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="fc bfc" id="L433" title="All 2 branches covered.">        for(String cardID : lowerRow) {</span>
+<span class="pc bpc" id="L434" title="3 of 4 branches missed.">            if(registry.isEvent(cardID) &amp;&amp; !registry.getEvent(cardID).isFinal()) {</span>
+<span class="nc" id="L435">                return true;</span>
+            }
+<span class="fc" id="L437">        }</span>
+<span class="fc" id="L438">        return false;</span>
+    }
+
+    /**
+     * Resolves all non-final event cards currently in the lower row, in priority order.
+     * Each event's outcome is emitted via the notifier.
+     *
+     * @param players the list of all players (all are affected by events)
+     */
+    public void resolveRoundEvents(List&lt;Player&gt; players) {
+
+<span class="fc" id="L449">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="fc" id="L451">        List&lt;EventCard&gt; sortedEvents = lowerRow.stream()</span>
+<span class="fc" id="L452">                .filter(registry::isEvent)</span>
+<span class="fc" id="L453">                .map(registry::getEvent)</span>
+<span class="fc bfc" id="L454" title="All 2 branches covered.">                .filter(event -&gt; !event.isFinal())</span>
+<span class="fc" id="L455">                .sorted(Comparator.comparingInt(EventCard::getPriority))</span>
+<span class="fc" id="L456">                .toList();</span>
+
+<span class="fc bfc" id="L458" title="All 2 branches covered.">        for (EventCard event : sortedEvents) {</span>
+<span class="fc" id="L459">            processAndNotifyEvent(event, players);</span>
+<span class="fc" id="L460">        }</span>
+<span class="fc" id="L461">    }</span>
+
+    /**
+     * @return {@code true} if the most recently drawn card belongs to a different era
+     *         than the previous one (signals an era transition)
+     */
+    public boolean hasEraChanged() {
+<span class="fc" id="L468">        return eraChangedFlag;</span>
+    }
+
+
+    /**
+     * Prepares the board for a new round: discards the lower row, shifts the upper row
+     * down, draws new cards from the tribe deck to refill the upper row, and fires a
+     * {@code boardUpdated} notification with the full diff.
+     *
+     * @param numPlayers the number of players (determines how many cards to draw)
+     */
+    public void prepareNewRound(int numPlayers) {
+<span class="fc" id="L480">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="fc" id="L482">        List&lt;String&gt; discardedCards = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L483">        List&lt;String&gt; movedToLowerRow = new ArrayList&lt;&gt;();</span>
+
+
+<span class="fc" id="L486">        discardedCards.addAll(lowerRow);</span>
+<span class="fc" id="L487">        lowerRow.clear();</span>
+
+<span class="fc bfc" id="L489" title="All 2 branches covered.">        for (String cardID : upperRow) {</span>
+<span class="fc" id="L490">            lowerRow.add(cardID);</span>
+<span class="fc" id="L491">            movedToLowerRow.add(cardID);</span>
+<span class="fc" id="L492">        }</span>
+<span class="fc" id="L493">        upperRow.clear();</span>
+<span class="fc" id="L494">        eraChangedFlag = false;</span>
+
+<span class="fc bfc" id="L496" title="All 2 branches covered.">        for (int i = 0; i &lt; (numPlayers + 4); i++) {</span>
+<span class="fc bfc" id="L497" title="All 2 branches covered.">            if (tribuDeck.isEmpty())</span>
+<span class="fc" id="L498">                break;</span>
+<span class="fc" id="L499">            String cardID = tribuDeck.draw();</span>
+<span class="fc" id="L500">            Era cardEra = getCardEra(cardID);</span>
+
+<span class="fc bfc" id="L502" title="All 2 branches covered.">            if (cardEra != currentEra) {</span>
+<span class="fc" id="L503">                currentEra = cardEra;</span>
+<span class="fc" id="L504">                eraChangedFlag = true;</span>
+            }
+<span class="fc" id="L506">            upperRow.add(cardID);</span>
+        }
+
+        // Notify observers of the board state update, including card movements and deck size
+<span class="fc" id="L510">        notifier.notifyBoardUpdated(</span>
+<span class="fc" id="L511">                List.copyOf(upperRow),</span>
+<span class="fc" id="L512">                List.copyOf(lowerRow),</span>
+                discardedCards,
+                movedToLowerRow,
+<span class="fc" id="L515">                tribuDeck.getRemainingSize()</span>
+        );
+<span class="fc" id="L517">    }</span>
+
+    /**
+     * @return players in the order they should place their totems for the upcoming round,
+     *         derived from their current positions on the turn-order tile
+     */
+    public List&lt;Player&gt; getPlayersInPlacementOrder() {
+<span class="fc" id="L524">        return turnOrderTile.getOrderedPlayers();</span>
+    }
+
+    /**
+     * Updates the building market rows when a new era begins.
+     * Moves upper-row buildings to the lower row and draws new buildings for the current era.
+     * Discards lower-row buildings when entering Era III.
+     * Fires an {@code eraChanged} notification.
+     */
+    public void updateRowsForNewEra() {
+<span class="fc" id="L534">        List&lt;String&gt; discardedBuildings = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L536" title="All 2 branches covered.">        if (currentEra == Era.III) {</span>
+<span class="fc" id="L537">            discardedBuildings.addAll(lowerRowBuildings);</span>
+<span class="fc" id="L538">            lowerRowBuildings.clear();</span>
+        }
+
+<span class="fc bfc" id="L541" title="All 4 branches covered.">        if (currentEra == Era.II || currentEra == Era.III) {</span>
+<span class="fc" id="L542">            lowerRowBuildings.addAll(upperRowBuildings);</span>
+<span class="fc" id="L543">            upperRowBuildings.clear();</span>
+
+<span class="fc" id="L545">            List&lt;String&gt; newBuildings = buildingDeck.getBuildingsForEra(currentEra);</span>
+<span class="fc" id="L546">            upperRowBuildings.addAll(newBuildings);</span>
+        }
+
+<span class="fc" id="L549">        eraChangedFlag = false;</span>
+
+        // Notify observers of the era change and the updated building market
+<span class="fc" id="L552">        notifier.notifyEraChanged(</span>
+                currentEra,
+<span class="fc" id="L554">                List.copyOf(upperRowBuildings),</span>
+<span class="fc" id="L555">                List.copyOf(lowerRowBuildings),</span>
+                discardedBuildings
+        );
+<span class="fc" id="L558">    }</span>
+
+    /**
+     * @return {@code true} if there is at least one final event card in either visible row
+     */
+    public boolean hasFinalEvents() {
+<span class="nc" id="L564">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="nc bnc" id="L566" title="All 2 branches missed.">        for (String cardID : upperRow) {</span>
+<span class="nc bnc" id="L567" title="All 4 branches missed.">            if (registry.isEvent(cardID) &amp;&amp; registry.getEvent(cardID).isFinal()) {</span>
+<span class="nc" id="L568">                return true;</span>
+            }
+<span class="nc" id="L570">        }</span>
+
+<span class="nc bnc" id="L572" title="All 2 branches missed.">        for (String cardID : lowerRow) {</span>
+<span class="nc bnc" id="L573" title="All 4 branches missed.">            if (registry.isEvent(cardID) &amp;&amp; registry.getEvent(cardID).isFinal()) {</span>
+<span class="nc" id="L574">                return true;</span>
+            }
+<span class="nc" id="L576">        }</span>
+<span class="nc" id="L577">        return false;</span>
+    }
+
+    /**
+     * Resolves all final event cards visible in both rows, in priority order.
+     *
+     * @param players the list of all players
+     */
+    public void resolveFinalEvents(List&lt;Player&gt; players) {
+<span class="fc" id="L586">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="fc" id="L588">        Stream&lt;String&gt; allVisibleIds = Stream.concat(upperRow.stream(), lowerRow.stream());</span>
+<span class="fc" id="L589">        List&lt;EventCard&gt; sortedFinalEvents = allVisibleIds</span>
+<span class="fc" id="L590">                .filter(registry::isEvent)</span>
+<span class="fc" id="L591">                .map(registry::getEvent)</span>
+<span class="fc" id="L592">                .filter(EventCard::isFinal)</span>
+<span class="fc" id="L593">                .sorted(Comparator.comparingInt(EventCard::getPriority))</span>
+<span class="fc" id="L594">                .toList();</span>
+
+<span class="fc bfc" id="L596" title="All 2 branches covered.">        for (EventCard event : sortedFinalEvents) {</span>
+<span class="fc" id="L597">            processAndNotifyEvent(event, players);</span>
+<span class="fc" id="L598">        }</span>
+<span class="fc" id="L599">    }</span>
+
+    private void processAndNotifyEvent(EventCard event, List&lt;Player&gt; players) {
+<span class="fc bfc" id="L602" title="All 2 branches covered.">        for(EventObserver observer: eventObservers) {</span>
+<span class="fc" id="L603">            notifier.emitOutcome(observer.eventStart(event.getType()));</span>
+<span class="fc" id="L604">        }</span>
+
+<span class="fc" id="L606">        notifier.notifyEventResolved(event.getID(), event.getType().toString());</span>
+<span class="fc" id="L607">        notifier.emitOutcome(event.applyEventEffect(players, eventObservers));</span>
+
+<span class="fc bfc" id="L609" title="All 2 branches covered.">        for(EventObserver observer: eventObservers) {</span>
+<span class="fc" id="L610">            notifier.emitOutcome(observer.eventEnd(event.getType()));</span>
+<span class="fc" id="L611">        }</span>
+<span class="fc" id="L612">    }</span>
+
+    /**
+     * Initializes the pick limits for a player's extra turn, capped by the actual
+     * number of cards available in each row. Fires a {@code playerLimitsInitialized} notification.
+     *
+     * @param player      the player receiving the extra turn
+     * @param upperPicks  the maximum number of upper-row picks for the extra turn
+     * @param lowerPicks  the maximum number of lower-row picks for the extra turn
+     */
+    public void initializeExtraPlayerLimits(Player player, int upperPicks, int lowerPicks) {
+<span class="nc" id="L623">        this.extraTurnPlayer = player;</span>
+
+<span class="nc" id="L625">        int availableUpper = upperRow.size() + upperRowBuildings.size();</span>
+<span class="nc" id="L626">        int availableLower = lowerRow.size() + lowerRowBuildings.size();</span>
+
+<span class="nc" id="L628">        this.extraTurnRemainingUpper = Math.min(upperPicks, availableUpper);</span>
+<span class="nc" id="L629">        this.extraTurnRemainingLower = Math.min(lowerPicks, availableLower);</span>
+
+        // Initializes and broadcasts the turn limits for a specific player
+<span class="nc" id="L632">        notifier.notifyPlayerLimitsInitialized(</span>
+<span class="nc" id="L633">                player.getNickname(),</span>
+                extraTurnRemainingUpper,
+                extraTurnRemainingLower);
+<span class="nc" id="L636">    }</span>
+
+    /**
+     * Validates and executes a card-selection action during a player's extra turn.
+     * Behaves like {@link #processActionSelection} but uses the extra-turn pick counters.
+     *
+     * @param player      the player performing the extra-turn action
+     * @param selectedIDs list of card IDs the player wishes to acquire
+     * @param game        the current game instance
+     * @throws IllegalArgumentException   if the selection exceeds extra-turn pick limits
+     * @throws CardNotFoundException      if a selected card is not on the board
+     * @throws InsufficientFoodException  if the player cannot afford the selected buildings
+     */
+    public void processExtraActionSelection(Player player, List&lt;String&gt; selectedIDs, Game game) {
+<span class="nc" id="L650">        int[] counts = countSelectedByRow(selectedIDs);</span>
+
+<span class="nc bnc" id="L652" title="All 4 branches missed.">        if (counts[0] &gt; extraTurnRemainingUpper || counts[1] &gt; extraTurnRemainingLower) {</span>
+<span class="nc" id="L653">            throw new IllegalArgumentException(</span>
+                    &quot;extra turn: upper=&quot; + counts[0] + &quot;/&quot; + extraTurnRemainingUpper +
+                            &quot;, lower=&quot; + counts[1] + &quot;/&quot; + extraTurnRemainingLower
+            );
+        }
+
+<span class="nc" id="L659">        Map&lt;String, Integer&gt; buildingCosts = validateAndComputeCosts(selectedIDs, player);</span>
+<span class="nc" id="L660">        executeCardAcquisition(selectedIDs, player, game, buildingCosts);</span>
+
+<span class="nc" id="L662">        extraTurnRemainingUpper -= counts[0];</span>
+<span class="nc" id="L663">        extraTurnRemainingLower -= counts[1];</span>
+
+<span class="nc" id="L665">        notifier.notifyPlayerLimitsUpdated(</span>
+<span class="nc" id="L666">                player.getNickname(),</span>
+                extraTurnRemainingUpper,
+                extraTurnRemainingLower);
+<span class="nc" id="L669">    }</span>
+
+    /**
+     * Resets all extra-turn state after the extra turn has ended.
+     */
+    public void clearExtraTurn() {
+<span class="nc" id="L675">        this.extraTurnPlayer = null;</span>
+<span class="nc" id="L676">        this.extraTurnRemainingUpper = 0;</span>
+<span class="nc" id="L677">        this.extraTurnRemainingLower = 0;</span>
+<span class="nc" id="L678">    }</span>
+
+    /**
+     * Grants one bonus food point to the given player if their turn-order position
+     * provides a positive food reward, as a side effect of a building effect.
+     *
+     * @param player the player who may receive the bonus
+     */
+    public void applyExtraTurnOrderBonus(Player player) {
+<span class="nc" id="L687">        int baseBonus = turnOrderTile.getFoodForPlayer(player);</span>
+
+<span class="nc bnc" id="L689" title="All 2 branches missed.">        if (baseBonus &gt; 0) {</span>
+<span class="nc" id="L690">            player.getTribu().addFoodPoints(1);</span>
+        }
+<span class="nc" id="L692">    }</span>
+
+    /**
+     * Registers an {@link EventObserver} that will be notified before, during,
+     * and after each event resolution.
+     *
+     * @param effect the observer to attach
+     */
+    public void attachEventObserver(EventObserver effect) {
+<span class="fc" id="L701">        eventObservers.add(effect);</span>
+<span class="fc" id="L702">    }</span>
+
+
+
+    // FOR TESTING
+<span class="fc" id="L707">    TurnOrderTile getTurnOrderTile() { return turnOrderTile; } // For testing</span>
+<span class="fc" id="L708">    List&lt;String&gt; getUpperRow() { return upperRow; } // For testing</span>
+<span class="fc" id="L709">    List&lt;String&gt; getLowerRow() { return lowerRow; } // For testing</span>
+<span class="fc" id="L710">    List&lt;String&gt; getUpperRowBuildings() { return upperRowBuildings; } // For testing</span>
+<span class="fc" id="L711">    List&lt;String&gt; getLowerRowBuildings() { return lowerRowBuildings; } // For testing</span>
+<span class="fc" id="L712">    OfferTrack getOfferTrack() { return  offerTrack; } // For testing</span>
+
+    /**
+     * Builds and returns an immutable snapshot of the current board state,
+     * suitable for sending to clients as a DTO.
+     *
+     * @return a {@link BoardSnapshot} reflecting the current rows, building market,
+     *         offer track, turn-order tile, and remaining deck size
+     */
+    public BoardSnapshot buildSnapshot() {
+<span class="fc" id="L722">        List&lt;OfferTileInfo&gt; offerTiles = offerTrack.getTilesInfo();</span>
+
+<span class="fc" id="L724">        List&lt;String&gt; turnOrderPositions = turnOrderTile.getOrderedPlayers().stream()</span>
+<span class="fc" id="L725">                .map(Player::getNickname)</span>
+<span class="fc" id="L726">                .toList();</span>
+
+<span class="fc" id="L728">        return new BoardSnapshot(</span>
+<span class="fc" id="L729">                List.copyOf(upperRow),</span>
+<span class="fc" id="L730">                List.copyOf(lowerRow),</span>
+<span class="fc" id="L731">                List.copyOf(upperRowBuildings),</span>
+<span class="fc" id="L732">                List.copyOf(lowerRowBuildings),</span>
+                offerTiles,
+<span class="fc" id="L734">                turnOrderTile.toSlotSnapshot(),</span>
+<span class="fc" id="L735">                tribuDeck.getRemainingSize()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

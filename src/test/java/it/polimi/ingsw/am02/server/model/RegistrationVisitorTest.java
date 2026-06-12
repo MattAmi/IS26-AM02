@@ -12,6 +12,11 @@ import org.mockito.Mockito;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests the {@link RegistrationVisitor}, verifying that each observer type is
+ * attached to the correct subject: phase observers to the {@link Game}, tribù
+ * observers to the {@link Tribu} and event observers to the {@link GameBoard}.
+ */
 class RegistrationVisitorTest {
 
     private Game game;
@@ -28,6 +33,7 @@ class RegistrationVisitorTest {
         visitor = new RegistrationVisitor(game, tribu);
     }
 
+    /** Verifies a phase observer is registered on the game. */
     @Test
     void testVisitPhaseObserver() {
         PhaseObserver observer = Mockito.mock(PhaseObserver.class);
@@ -35,6 +41,7 @@ class RegistrationVisitorTest {
         verify(game).attachPhaseObserver(observer);
     }
 
+    /** Verifies a tribù observer is registered on the tribù. */
     @Test
     void testVisitTribuObserver() {
         TribuObserver observer = Mockito.mock(TribuObserver.class);
@@ -42,6 +49,7 @@ class RegistrationVisitorTest {
         verify(tribu).attachTribuObserver(observer);
     }
 
+    /** Verifies an event observer is registered on the game board. */
     @Test
     void testVisitEventObserver() {
         EventObserver observer = Mockito.mock(EventObserver.class);

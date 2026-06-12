@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BuildingFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.effect</a> &gt; <span class="el_source">BuildingFactory.java</span></div><h1>BuildingFactory.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.effect;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import it.polimi.ingsw.am02.server.model.Game;
+import it.polimi.ingsw.am02.server.model.buildingeffects.*;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.enumerations.EventType;
+import it.polimi.ingsw.am02.server.model.player.Player;
+
+/**
+ * Static factory that instantiates the correct {@link BuildingEffect} implementation
+ * for a given effect type string and its JSON parameters.
+ *
+ * &lt;p&gt;Each case in the switch corresponds to one entry in {@code Buildings.json}.
+ */
+<span class="nc" id="L16">public class BuildingFactory {</span>
+
+    /**
+     * Creates the active {@link BuildingEffect} for a building card.
+     *
+     * @param effectType   the effect type string from the building's JSON definition
+     * @param effectParams the JSON parameters for the effect
+     * @param owner        the player who owns the building
+     * @param game         the current {@link Game} instance (needed for phase/event observer registration)
+     * @return the instantiated {@link BuildingEffect}, or {@code null} if {@code effectType} is {@code null}
+     *         or unrecognized
+     */
+    public static BuildingEffect createActiveEffect(String effectType, JsonNode effectParams, Player owner, Game game) {
+
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (effectType == null) {</span>
+<span class="fc" id="L31">            return null;</span>
+        }
+
+<span class="fc bfc" id="L34" title="All 13 branches covered.">        return switch (effectType) {</span>
+
+            // TribuObserver effects
+
+<span class="fc" id="L38">            case &quot;FULL_SET_FOOD_REWARD&quot; -&gt; new FullSetFoodRewardEffect(</span>
+                    owner,
+<span class="fc" id="L40">                    effectParams.get(&quot;foodReward&quot;).asInt()</span>
+            );
+
+<span class="fc" id="L43">            case &quot;INVENTOR_PAIR_FOOD_REWARD&quot; -&gt; new InventorPairRewardEffect(</span>
+                    owner,
+<span class="fc" id="L45">                    effectParams.get(&quot;foodReward&quot;).asInt()</span>
+            );
+
+            // EventObserver effects
+
+<span class="fc" id="L50">            case &quot;EVENT_CHARACTER_BONUS&quot; -&gt; new EventCharacterBonusEffect(</span>
+                    owner,
+<span class="fc" id="L52">                    EventType.valueOf(effectParams.get(&quot;eventType&quot;).asText()),</span>
+<span class="fc" id="L53">                    CharacterType.valueOf(effectParams.get(&quot;characterType&quot;).asText()),</span>
+<span class="fc" id="L54">                    effectParams.get(&quot;foodReward&quot;).asInt(),</span>
+<span class="fc" id="L55">                    effectParams.get(&quot;prestigeReward&quot;).asInt(),</span>
+<span class="fc" id="L56">                    effectParams.get(&quot;foodDiscount&quot;).asInt()</span>
+            );
+
+<span class="fc" id="L59">            case &quot;EXTRA_SHAMAN_STARS&quot; -&gt; new ShamanicExtraIconsEffect(</span>
+                    owner,
+<span class="fc" id="L61">                    effectParams.get(&quot;bonusStars&quot;).asInt()</span>
+            );
+
+<span class="fc" id="L64">            case &quot;SHAMANIC_IMMUNITY&quot; -&gt; new ShamanicImmunityEffect(owner);</span>
+
+<span class="fc" id="L66">            case &quot;SHAMANIC_WIN_MULTIPLIER&quot; -&gt; new ShamanicWinMultiplierEffect(</span>
+                    owner,
+<span class="fc" id="L68">                    effectParams.get(&quot;multiplier&quot;).asInt()</span>
+            );
+
+            // PhaseObserver effects
+
+<span class="fc" id="L73">            case &quot;TURN_ORDER_FOOD_BONUS&quot; -&gt; new TurnOrderFoodBonusEffect(</span>
+                    owner,
+                    game
+            );
+
+<span class="fc" id="L78">            case &quot;ENDGAME_CHARACTER_PP&quot; -&gt; new EndGameCharacterPrestigeEffect(</span>
+                    owner,
+<span class="fc" id="L80">                    CharacterType.valueOf(effectParams.get(&quot;characterType&quot;).asText()),</span>
+<span class="fc" id="L81">                    effectParams.get(&quot;bonusPP&quot;).asInt()</span>
+            );
+
+<span class="fc" id="L84">            case &quot;ENDGAME_FULL_SET_PP&quot; -&gt; new EndGameFullSetPPEffect(</span>
+                    owner,
+<span class="fc" id="L86">                    effectParams.get(&quot;bonusPP&quot;).asInt()</span>
+            );
+
+<span class="fc" id="L89">            case &quot;PP_MULTIPLIER_PER_TYPE&quot; -&gt; new PrestigePointMultiplierPerTypeEffect(</span>
+                    owner,
+<span class="fc" id="L91">                    CharacterType.valueOf(effectParams.get(&quot;characterType&quot;).asText()),</span>
+<span class="fc" id="L92">                    effectParams.get(&quot;multiplier&quot;).asInt()</span>
+            );
+
+<span class="fc" id="L95">            case &quot;ENDGAME_FLAT_PP&quot; -&gt; new FlatPrestigeBonusEffect(</span>
+                    owner,
+<span class="fc" id="L97">                    effectParams.get(&quot;bonusPP&quot;).asInt()</span>
+            );
+
+<span class="fc" id="L100">            case &quot;EXTRA_TURN&quot; -&gt; new ExtraTurnEffect(</span>
+                    owner,
+                    game,
+<span class="fc" id="L103">                    effectParams.get(&quot;extraUpperPicks&quot;).asInt(),</span>
+<span class="fc" id="L104">                    effectParams.get(&quot;extraLowerPicks&quot;).asInt()</span>
+            );
+
+            default -&gt; {
+<span class="fc" id="L108">                System.err.println(&quot;Unknown effect type: &quot; + effectType);</span>
+<span class="fc" id="L109">                yield null;</span>
+            }
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

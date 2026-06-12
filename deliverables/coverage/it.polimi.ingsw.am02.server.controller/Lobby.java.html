@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Lobby.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.controller</a> &gt; <span class="el_source">Lobby.java</span></div><h1>Lobby.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.controller;
+
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
+
+import java.util.*;
+
+/**
+ * Represents a pre-game lobby in which players gather before the match starts.
+ *
+ * &lt;p&gt;A lobby is created by {@link ControllerManager} and holds up to
+ * {@code expectedPlayers} clients. It tracks nickname selection and totem
+ * selection independently. The game starts automatically once every slot is
+ * filled with a valid nickname and a chosen totem, via
+ * {@link ControllerManager#startGame}.
+ *
+ * &lt;p&gt;All public methods are {@code synchronized} on the lobby's own monitor.
+ */
+public class Lobby {
+
+    private final String lobbyId;
+    private final int expectedPlayers;
+    private final ControllerManager controllerManager;
+
+    private final List&lt;String&gt; clientIds;
+    private final Map&lt;String, VirtualView&gt; views;
+    private final Map&lt;String, String&gt; clientToNickname;
+    private final Map&lt;String, Totem&gt; chosenTotems;
+
+    private boolean started;
+
+    /**
+     * @param lobbyId           unique identifier for this lobby (reused as the game ID)
+     * @param expectedPlayers   total number of players required to start (2–5)
+     * @param controllerManager reference to the singleton controller manager,
+     *                          used to trigger game start and return clients on leave
+     */
+<span class="nc" id="L39">    public Lobby(String lobbyId, int expectedPlayers, ControllerManager controllerManager) {</span>
+<span class="nc" id="L40">        this.lobbyId = lobbyId;</span>
+<span class="nc" id="L41">        this.expectedPlayers = expectedPlayers;</span>
+<span class="nc" id="L42">        this.controllerManager = controllerManager;</span>
+<span class="nc" id="L43">        this.started = false;</span>
+
+<span class="nc" id="L45">        this.clientIds = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L46">        this.views = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L47">        this.clientToNickname = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L48">        this.chosenTotems = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L49">    }</span>
+
+    // Package-private accessors (used by ControllerManager)
+<span class="nc bnc" id="L52" title="All 2 branches missed.">    boolean isFull() { return clientIds.size() == expectedPlayers; }</span>
+<span class="nc" id="L53">    boolean hasStarted() { return started; }</span>
+<span class="nc" id="L54">    VirtualView getView(String clientId) { return views.get(clientId); }</span>
+
+    /**
+     * Builds and returns an immutable snapshot of this lobby's current state.
+     *
+     * @return a {@link it.polimi.ingsw.am02.common.dto.LobbyInfo} reflecting the
+     *         current nicknames and chosen totems
+     */
+    synchronized LobbyInfo toLobbyInfo() {
+<span class="nc" id="L63">        List&lt;String&gt; nicknameList = clientIds.stream()</span>
+<span class="nc" id="L64">                .map(id -&gt; clientToNickname.getOrDefault(id, &quot;&quot;))</span>
+<span class="nc" id="L65">                .toList();</span>
+
+<span class="nc" id="L67">        Map&lt;String, Totem&gt; nicknameToTotem = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        for (String id : clientIds) {</span>
+<span class="nc" id="L69">            String nick = clientToNickname.get(id);</span>
+<span class="nc" id="L70">            Totem totem = chosenTotems.get(id);</span>
+<span class="nc bnc" id="L71" title="All 4 branches missed.">            if (nick != null &amp;&amp; totem != null) {</span>
+<span class="nc" id="L72">                nicknameToTotem.put(nick, totem);</span>
+            }
+<span class="nc" id="L74">        }</span>
+<span class="nc" id="L75">        return new LobbyInfo(lobbyId, expectedPlayers, nicknameList, nicknameToTotem);</span>
+    }
+
+    // Lifecycle
+    /**
+     * Adds a client to the lobby and broadcasts the updated lobby state.
+     * No-op if the lobby is already full or has started.
+     *
+     * @param clientId the client's unique identifier
+     * @param view     the client's {@link it.polimi.ingsw.am02.common.interfaces.VirtualView}
+     */
+    public synchronized void addClient(String clientId, VirtualView view) {
+<span class="nc bnc" id="L87" title="All 4 branches missed.">        if (isFull() || started) return;</span>
+
+<span class="nc" id="L89">        clientIds.add(clientId);</span>
+<span class="nc" id="L90">        views.put(clientId, view);</span>
+<span class="nc" id="L91">        broadcastCurrentLobbyUpdated();</span>
+<span class="nc" id="L92">    }</span>
+
+    /**
+     * Processes a nickname request from a client.
+     * Rejects the request if the nickname is blank or already taken in this lobby.
+     * Triggers {@link #checkAndStart()} after a successful assignment.
+     *
+     * @param clientId the requesting client
+     * @param nickname the desired nickname
+     * @return {@code true} if the nickname was accepted, {@code false} otherwise
+     */
+    public synchronized boolean requestNickname(String clientId, String nickname) {
+<span class="nc" id="L104">        VirtualView view = views.get(clientId);</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (view == null) return false;</span>
+
+<span class="nc bnc" id="L107" title="All 4 branches missed.">        if (nickname == null || nickname.isBlank()) {</span>
+<span class="nc" id="L108">            view.notifyUsernameResult(nickname, false, &quot;Nickname cannot be empty&quot;);</span>
+<span class="nc" id="L109">            return false;</span>
+        }
+
+<span class="nc" id="L112">        boolean alreadyTaken = clientToNickname.values().stream()</span>
+<span class="nc" id="L113">                .anyMatch(existing -&gt; existing.equals(nickname));</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (alreadyTaken) {</span>
+<span class="nc" id="L115">            view.notifyUsernameResult(nickname, false, &quot;Nickname already taken in this lobby&quot;);</span>
+<span class="nc" id="L116">            return false;</span>
+        }
+
+<span class="nc" id="L119">        clientToNickname.put(clientId, nickname);</span>
+<span class="nc" id="L120">        view.notifyUsernameResult(nickname, true, null);</span>
+<span class="nc" id="L121">        broadcastCurrentLobbyUpdated();</span>
+
+<span class="nc" id="L123">        checkAndStart();</span>
+<span class="nc" id="L124">        return true;</span>
+    }
+
+    /**
+     * Processes a totem selection from a client.
+     * Rejects the request if the client has no nickname yet or the totem is already taken.
+     * Triggers {@link #checkAndStart()} after a successful selection.
+     *
+     * @param clientId the requesting client
+     * @param totem    the desired totem colour
+     */
+    public synchronized void selectTotem(String clientId, Totem totem) {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (!clientIds.contains(clientId)) return;</span>
+<span class="nc" id="L137">        VirtualView view = views.get(clientId);</span>
+
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (!clientToNickname.containsKey(clientId)) {</span>
+<span class="nc" id="L140">            view.notifyError(&quot;You must choose a nickname before selecting a totem.&quot;);</span>
+<span class="nc" id="L141">            return;</span>
+        }
+
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        if (totem == null) {</span>
+<span class="nc" id="L145">            view.notifyError(&quot;Invalid totem selection&quot;);</span>
+<span class="nc" id="L146">            return;</span>
+        }
+
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        for (Map.Entry&lt;String, Totem&gt; entry : chosenTotems.entrySet()) {</span>
+<span class="nc bnc" id="L150" title="All 4 branches missed.">            if (entry.getValue() == totem &amp;&amp; !entry.getKey().equals(clientId)) {</span>
+<span class="nc" id="L151">                String takenByNickname = clientToNickname.getOrDefault(entry.getKey(), entry.getKey());</span>
+<span class="nc" id="L152">                view.notifyError(&quot;Totem already taken by &quot; + takenByNickname);</span>
+<span class="nc" id="L153">                return;</span>
+            }
+<span class="nc" id="L155">        }</span>
+
+<span class="nc" id="L157">        chosenTotems.put(clientId, totem);</span>
+<span class="nc" id="L158">        broadcastCurrentLobbyUpdated();</span>
+
+<span class="nc" id="L160">        checkAndStart();</span>
+<span class="nc" id="L161">    }</span>
+
+    /**
+     * Removes a client from the lobby and returns them to the pre-lobby state.
+     * Dissolves the lobby if it becomes empty.
+     *
+     * @param clientId the client leaving the lobby
+     */
+    public synchronized void removeClient(String clientId) {
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (!clientIds.contains(clientId)) return;</span>
+
+<span class="nc" id="L172">        VirtualView leavingView = views.get(clientId);</span>
+
+<span class="nc" id="L174">        clientIds.remove(clientId);</span>
+<span class="nc" id="L175">        views.remove(clientId);</span>
+<span class="nc" id="L176">        clientToNickname.remove(clientId);</span>
+<span class="nc" id="L177">        chosenTotems.remove(clientId);</span>
+
+<span class="nc" id="L179">        controllerManager.returnClientToPreLobby(clientId, leavingView);</span>
+
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (clientIds.isEmpty()) {</span>
+<span class="nc" id="L182">            controllerManager.removeLobby(lobbyId);</span>
+        } else {
+<span class="nc" id="L184">            broadcastCurrentLobbyUpdated();</span>
+        }
+<span class="nc" id="L186">    }</span>
+
+    // Helper methods
+    private void checkAndStart() {
+<span class="nc bnc" id="L190" title="All 4 branches missed.">        if (started || !isReadyToStart()) return;</span>
+
+<span class="nc" id="L192">        started = true;</span>
+
+<span class="nc" id="L194">        List&lt;String&gt; orderedClientIds = List.copyOf(clientIds);</span>
+<span class="nc" id="L195">        List&lt;String&gt; orderedNicknames = clientIds.stream()</span>
+<span class="nc" id="L196">                .map(clientToNickname::get)</span>
+<span class="nc" id="L197">                .toList();</span>
+
+<span class="nc" id="L199">        Map&lt;String, Totem&gt; nicknameToTotem = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        for (String id : clientIds) {</span>
+<span class="nc" id="L201">            nicknameToTotem.put(clientToNickname.get(id), chosenTotems.get(id));</span>
+<span class="nc" id="L202">        }</span>
+
+<span class="nc" id="L204">        Map&lt;String, VirtualView&gt; viewsCopy = new LinkedHashMap&lt;&gt;(views);</span>
+
+<span class="nc" id="L206">        controllerManager.startGame(</span>
+                lobbyId,
+                orderedClientIds,
+                orderedNicknames,
+                viewsCopy,
+                nicknameToTotem
+        );
+<span class="nc" id="L213">    }</span>
+
+    private boolean isReadyToStart() {
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        return clientIds.size() == expectedPlayers</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                &amp;&amp; clientToNickname.size() == expectedPlayers</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                &amp;&amp; chosenTotems.size() == expectedPlayers;</span>
+    }
+
+    // --- Metodi di Broadcast granulari ---
+
+    private void broadcastCurrentLobbyUpdated() {
+<span class="nc" id="L224">        LobbyInfo info = toLobbyInfo();</span>
+<span class="nc" id="L225">        views.values().forEach(v -&gt; v.notifyCurrentLobbyUpdated(info));</span>
+<span class="nc" id="L226">    }</span>
+
+    /** @return the current number of clients in this lobby */
+<span class="nc" id="L229">    public int getPlayerCount() { return views.size(); }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -9,6 +9,11 @@ import org.mockito.Mockito;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Supplementary tests for {@link Tribu}, covering the shamanic-immunity and
+ * last-event-bonus flags and the end-to-end building insertion that stores the
+ * effect and accumulates the building's prestige points.
+ */
 class TribuCoverageTest {
 
     private Tribu tribu;
@@ -23,6 +28,7 @@ class TribuCoverageTest {
         Mockito.when(player.getNickname()).thenReturn("Bob");
     }
 
+    /** Verifies the immunity flag and last-event-bonus value are stored and retrievable. */
     @Test
     void testImmunityAndLastEventBonus() {
         tribu.setImmuneToShamanicPenalty(true);
@@ -32,6 +38,7 @@ class TribuCoverageTest {
         assertEquals(10, tribu.getLastEventBonusReceived());
     }
 
+    /** Verifies inserting a real building stores its effect and adds its prestige points. */
     @Test
     void testInsertBuilding() {
         // Ensure GameRegistry is loaded so we can find real cards or use reflection to inject a mock

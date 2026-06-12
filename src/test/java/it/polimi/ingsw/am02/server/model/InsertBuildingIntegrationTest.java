@@ -54,6 +54,7 @@ class InsertBuildingIntegrationTest {
 
     // Test 1: insertBuilding creates and stores the correct effect
 
+    /** Verifies inserting a building creates and stores the matching effect in the tribù. */
     @Test
     void insertBuildingCreatesEffectInTribu() {
         assertTrue(tribu1.getActiveBuildingEffects().isEmpty());
@@ -70,6 +71,7 @@ class InsertBuildingIntegrationTest {
 
     // Test 2: Effect activation via direct onPhaseChange
 
+    /** Verifies the END_GAME phase activates the stored effect and raises the tribù's prestige. */
     @Test
     void endGamePhaseTriggersFlatPrestigeBonus() {
         tribu1.insertBuilding(BUILDING_ID, player1, game);
@@ -90,6 +92,7 @@ class InsertBuildingIntegrationTest {
 
     // Test 3: Wrong phase does NOT trigger the effect
 
+    /** Verifies non-END_GAME phases leave the prestige unchanged. */
     @Test
     void nonEndGamePhaseDoesNotTriggerEffect() {
         tribu1.insertBuilding(BUILDING_ID, player1, game);
@@ -108,6 +111,7 @@ class InsertBuildingIntegrationTest {
 
     // Test 4: No memory sharing between players
 
+    /** Verifies one player's building effect affects only its owner, not other players. */
     @Test
     void buildingEffectIsIsolatedToOwner() {
         // 1. Setup: insert the building for player1 and record initial scores

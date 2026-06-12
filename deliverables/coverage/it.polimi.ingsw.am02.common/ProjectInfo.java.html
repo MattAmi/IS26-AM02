@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProjectInfo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.common</a> &gt; <span class="el_source">ProjectInfo.java</span></div><h1>ProjectInfo.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.common;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+public final class ProjectInfo {
+    public static final String GROUP      = &quot;Group AM02&quot;;
+    public static final String COURSE     = &quot;Software Engineering - Final Project&quot;;
+    public static final String UNIVERSITY = &quot;Politecnico di Milano&quot;;
+    public static final String PROFESSOR  = &quot;Prof. Alessandro Margara&quot;;
+    public static final String YEAR       = &quot;A.Y. 2025/2026&quot;;
+
+    public static final Map&lt;String, String&gt; MEMBERS;
+
+    static {
+<span class="nc" id="L17">        Map&lt;String, String&gt; membersMap = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L18">        membersMap.put(&quot;Raed Abbas&quot;,        &quot;10929713&quot;);</span>
+<span class="nc" id="L19">        membersMap.put(&quot;Matteo Amico&quot;,      &quot;10906267&quot;);</span>
+<span class="nc" id="L20">        membersMap.put(&quot;Husnain Arshed&quot;,    &quot;10973025&quot;);</span>
+<span class="nc" id="L21">        membersMap.put(&quot;Francesco Bagnuolo&quot;,&quot;10963509&quot;);</span>
+<span class="nc" id="L22">        MEMBERS = Collections.unmodifiableMap(membersMap);</span>
+<span class="nc" id="L23">    }</span>
+
+    private ProjectInfo() {}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

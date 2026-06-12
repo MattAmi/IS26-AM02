@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NewEraOverlay.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">NewEraOverlay.java</span></div><h1>NewEraOverlay.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
+
+import it.polimi.ingsw.am02.common.enumerations.Era;
+import javafx.animation.*;
+import javafx.geometry.Pos;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.effect.BlurType;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
+import javafx.util.Duration;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+/**
+ * Represents an animated overlay displayed when a new era begins.
+ * This overlay features a fire particle effect and a pulsing era title.
+ */
+<span class="nc" id="L30">public class NewEraOverlay {</span>
+
+    private static final int CANVAS_W = 1400;
+    private static final int CANVAS_H = 900;
+    private static final int PARTICLE_COUNT = 220;
+
+<span class="nc" id="L36">    private final List&lt;FireParticle&gt; particles = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L37">    private final Random rng = new Random();</span>
+    private AnimationTimer fireTimer;
+
+    /**
+     * Inner class representing a single fire particle in the animation.
+     */
+    private static class FireParticle {
+        double x, y, vx, vy, life, maxLife, size;
+        int type; // 0=core, 1=ember, 2=smoke
+
+<span class="nc" id="L47">        FireParticle() { reset(0, 0, true, new Random()); }</span>
+
+        /**
+         * Resets a particle to its initial state at the specified origin.
+         *
+         * @param originX The X-coordinate of the fire origin.
+         * @param originY The Y-coordinate of the fire origin.
+         * @param initial Whether this is the initial reset during particle creation.
+         * @param rng     The Random instance for variation.
+         */
+        void reset(double originX, double originY, boolean initial, Random rng) {
+<span class="nc" id="L58">            x = originX + (rng.nextDouble() - 0.5) * 340;</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">            y = initial ? originY - rng.nextDouble() * CANVAS_H * 0.6 : originY + 10;</span>
+<span class="nc" id="L60">            double speed = 0.8 + rng.nextDouble() * 2.2;</span>
+<span class="nc" id="L61">            double angle  = -Math.PI / 2 + (rng.nextDouble() - 0.5) * 1.1;</span>
+<span class="nc" id="L62">            vx = Math.cos(angle) * speed;</span>
+<span class="nc" id="L63">            vy = Math.sin(angle) * speed;</span>
+<span class="nc" id="L64">            maxLife = 0.6 + rng.nextDouble() * 1.4;</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            life = initial ? rng.nextDouble() * maxLife : maxLife;</span>
+<span class="nc" id="L66">            size = 4 + rng.nextDouble() * 14;</span>
+<span class="nc bnc" id="L67" title="All 4 branches missed.">            type = rng.nextDouble() &lt; 0.05 ? 2 : (rng.nextDouble() &lt; 0.25 ? 1 : 0);</span>
+<span class="nc" id="L68">        }</span>
+    }
+
+    /**
+     * Builds the new era overlay node.
+     *
+     * @param era    The new era that has begun.
+     * @param onDone Callback to execute when the animation finishes.
+     * @return The constructed StackPane representing the overlay.
+     */
+    public StackPane buildNode(Era era, Runnable onDone) {
+<span class="nc" id="L79">        Canvas fireCanvas = new Canvas(CANVAS_W, CANVAS_H);</span>
+<span class="nc" id="L80">        fireCanvas.setMouseTransparent(true);</span>
+
+<span class="nc" id="L82">        Text eraText = new Text(eraRoman(era));</span>
+<span class="nc" id="L83">        eraText.setFont(Font.font(&quot;Georgia&quot;, FontWeight.BOLD, 130));</span>
+<span class="nc" id="L84">        eraText.setFill(Color.TRANSPARENT);</span>
+<span class="nc" id="L85">        eraText.setStroke(Color.TRANSPARENT);</span>
+<span class="nc" id="L86">        eraText.setTextAlignment(TextAlignment.CENTER);</span>
+<span class="nc" id="L87">        DropShadow eraGlow = new DropShadow(BlurType.GAUSSIAN, Color.color(1, 0.4, 0, 1), 40, 0.6, 0, 0);</span>
+<span class="nc" id="L88">        eraText.setEffect(eraGlow);</span>
+
+<span class="nc" id="L90">        Text subtitle = new Text(&quot;NEW ERA HAS BEGUN&quot;);</span>
+<span class="nc" id="L91">        subtitle.setFont(Font.font(&quot;Georgia&quot;, FontWeight.BOLD, 36));</span>
+<span class="nc" id="L92">        subtitle.setFill(Color.color(1, 0.85, 0.3, 0));</span>
+<span class="nc" id="L93">        subtitle.setTextAlignment(TextAlignment.CENTER);</span>
+<span class="nc" id="L94">        DropShadow subGlow = new DropShadow(BlurType.GAUSSIAN, Color.color(1, 0.5, 0, 0.9), 20, 0.5, 0, 0);</span>
+<span class="nc" id="L95">        subtitle.setEffect(subGlow);</span>
+
+<span class="nc" id="L97">        VBox textBox = new VBox(6, eraText, subtitle);</span>
+<span class="nc" id="L98">        textBox.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L99">        textBox.setMouseTransparent(true);</span>
+
+<span class="nc" id="L101">        StackPane root = new StackPane(fireCanvas, textBox);</span>
+<span class="nc" id="L102">        root.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L103">        root.setStyle(&quot;-fx-background-color: transparent;&quot;);</span>
+
+<span class="nc" id="L105">        double originX = CANVAS_W / 2.0;</span>
+<span class="nc" id="L106">        double originY = CANVAS_H * 0.72;</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        for (int i = 0; i &lt; PARTICLE_COUNT; i++) {</span>
+<span class="nc" id="L108">            FireParticle p = new FireParticle();</span>
+<span class="nc" id="L109">            p.reset(originX, originY, true, rng);</span>
+<span class="nc" id="L110">            particles.add(p);</span>
+        }
+
+<span class="nc" id="L113">        fireTimer = new AnimationTimer() {</span>
+            @Override public void handle(long now) {
+<span class="nc" id="L115">                renderFire(fireCanvas.getGraphicsContext2D(), originX, originY);</span>
+<span class="nc" id="L116">            }</span>
+        };
+
+<span class="nc" id="L119">        Timeline eraReveal = new Timeline(</span>
+<span class="nc" id="L120">                new KeyFrame(Duration.millis(0),</span>
+<span class="nc" id="L121">                        new KeyValue(eraText.fillProperty(),        Color.color(1, 0.2, 0, 0)),</span>
+<span class="nc" id="L122">                        new KeyValue(eraText.strokeProperty(),      Color.color(1, 0.6, 0, 0)),</span>
+<span class="nc" id="L123">                        new KeyValue(eraText.strokeWidthProperty(), 0)</span>
+                ),
+<span class="nc" id="L125">                new KeyFrame(Duration.millis(700),</span>
+<span class="nc" id="L126">                        new KeyValue(eraText.fillProperty(),        Color.color(1, 0.55, 0, 1)),</span>
+<span class="nc" id="L127">                        new KeyValue(eraText.strokeProperty(),      Color.color(1, 0.85, 0.1, 1)),</span>
+<span class="nc" id="L128">                        new KeyValue(eraText.strokeWidthProperty(), 2)</span>
+                )
+        );
+
+<span class="nc" id="L132">        Timeline eraPulse = new Timeline(</span>
+<span class="nc" id="L133">                new KeyFrame(Duration.ZERO,        new KeyValue(eraGlow.radiusProperty(), 35)),</span>
+<span class="nc" id="L134">                new KeyFrame(Duration.millis(700),  new KeyValue(eraGlow.radiusProperty(), 65)),</span>
+<span class="nc" id="L135">                new KeyFrame(Duration.millis(1400), new KeyValue(eraGlow.radiusProperty(), 35))</span>
+        );
+<span class="nc" id="L137">        eraPulse.setCycleCount(Animation.INDEFINITE);</span>
+<span class="nc" id="L138">        eraPulse.setAutoReverse(true);</span>
+
+<span class="nc" id="L140">        FadeTransition subFade = new FadeTransition(Duration.millis(500), subtitle);</span>
+<span class="nc" id="L141">        subFade.setFromValue(0); subFade.setToValue(1);</span>
+
+<span class="nc" id="L143">        ScaleTransition scaleIn = new ScaleTransition(Duration.millis(600), textBox);</span>
+<span class="nc" id="L144">        scaleIn.setFromX(0.4); scaleIn.setFromY(0.4);</span>
+<span class="nc" id="L145">        scaleIn.setToX(1.0);   scaleIn.setToY(1.0);</span>
+<span class="nc" id="L146">        scaleIn.setInterpolator(Interpolator.SPLINE(0.2, 0.9, 0.4, 1.0));</span>
+
+<span class="nc" id="L148">        TranslateTransition shake = new TranslateTransition(Duration.millis(60), textBox);</span>
+<span class="nc" id="L149">        shake.setFromX(0); shake.setToX(8);</span>
+<span class="nc" id="L150">        shake.setCycleCount(6); shake.setAutoReverse(true);</span>
+
+<span class="nc" id="L152">        FadeTransition fadeOut = new FadeTransition(Duration.millis(600), root);</span>
+<span class="nc" id="L153">        fadeOut.setFromValue(1); fadeOut.setToValue(0);</span>
+<span class="nc" id="L154">        fadeOut.setOnFinished(e -&gt; {</span>
+<span class="nc" id="L155">            fireTimer.stop();</span>
+<span class="nc" id="L156">            particles.clear();</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            if (onDone != null) onDone.run();</span>
+<span class="nc" id="L158">        });</span>
+
+<span class="nc" id="L160">        new SequentialTransition(</span>
+<span class="nc" id="L161">                new PauseTransition(Duration.millis(1)),</span>
+                new ParallelTransition(eraReveal, scaleIn),
+<span class="nc" id="L163">                new PauseTransition(Duration.millis(200)),</span>
+                subFade,
+<span class="nc" id="L165">                new PauseTransition(Duration.millis(1800)),</span>
+                shake,
+                fadeOut
+<span class="nc" id="L168">        ).play();</span>
+
+<span class="nc" id="L170">        eraPulse.play();</span>
+<span class="nc" id="L171">        fireTimer.start();</span>
+<span class="nc" id="L172">        return root;</span>
+    }
+
+    /**
+     * Renders the fire particles on the provided graphics context.
+     *
+     * @param gc      The GraphicsContext to draw on.
+     * @param originX The X-coordinate of the fire origin.
+     * @param originY The Y-coordinate of the fire origin.
+     */
+    private void renderFire(GraphicsContext gc, double originX, double originY) {
+<span class="nc" id="L183">        gc.clearRect(0, 0, CANVAS_W, CANVAS_H);</span>
+
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        for (FireParticle p : particles) {</span>
+<span class="nc" id="L186">            p.life -= 0.012;</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if (p.life &lt;= 0) { p.reset(originX, originY, false, rng); continue; }</span>
+
+<span class="nc" id="L189">            double t = 1.0 - (p.life / p.maxLife);</span>
+<span class="nc" id="L190">            p.vy -= 0.04;</span>
+<span class="nc" id="L191">            p.vx += (rng.nextDouble() - 0.5) * 0.12;</span>
+<span class="nc" id="L192">            p.x  += p.vx;</span>
+<span class="nc" id="L193">            p.y  += p.vy;</span>
+<span class="nc" id="L194">            double alpha = Math.sin(t * Math.PI);</span>
+
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (p.type == 2) {</span>
+<span class="nc" id="L197">                double r = p.size * (1 + t * 2);</span>
+<span class="nc" id="L198">                gc.setFill(Color.rgb(80, 70, 60, alpha * 0.25));</span>
+<span class="nc" id="L199">                gc.fillOval(p.x - r, p.y - r, r * 2, r * 2);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            } else if (p.type == 1) {</span>
+<span class="nc" id="L201">                double r = p.size * 0.35 * (1 - t * 0.5);</span>
+<span class="nc" id="L202">                gc.setFill(Color.rgb(255, 240, 180, alpha));</span>
+<span class="nc" id="L203">                gc.fillOval(p.x - r, p.y - r, r * 2, r * 2);</span>
+<span class="nc" id="L204">            } else {</span>
+<span class="nc" id="L205">                Color c = fireColor(t);</span>
+<span class="nc" id="L206">                double r = p.size * (1 - t * 0.6);</span>
+<span class="nc" id="L207">                gc.setFill(Color.color(c.getRed(), c.getGreen(), c.getBlue(), alpha * 0.9));</span>
+<span class="nc" id="L208">                gc.fillOval(p.x - r, p.y - r, r * 2, r * 2);</span>
+<span class="nc" id="L209">                gc.setFill(Color.color(c.getRed(), c.getGreen() * 0.5, 0, alpha * 0.25));</span>
+<span class="nc" id="L210">                gc.fillOval(p.x - r * 1.8, p.y - r * 1.8, r * 3.6, r * 3.6);</span>
+            }
+<span class="nc" id="L212">        }</span>
+
+<span class="nc" id="L214">        gc.setFill(new RadialGradient(0, 0, originX / CANVAS_W, originY / CANVAS_H, 0.35, true,</span>
+                CycleMethod.NO_CYCLE,
+<span class="nc" id="L216">                new Stop(0.0, Color.color(1.0, 0.4, 0.0, 0.30)),</span>
+<span class="nc" id="L217">                new Stop(0.5, Color.color(1.0, 0.1, 0.0, 0.10)),</span>
+                new Stop(1.0, Color.TRANSPARENT)));
+<span class="nc" id="L219">        gc.fillRect(0, 0, CANVAS_W, CANVAS_H);</span>
+<span class="nc" id="L220">    }</span>
+
+    /**
+     * Calculates the color of a fire particle based on its life stage.
+     *
+     * @param t The normalized life stage (0 to 1).
+     * @return The calculated Color.
+     */
+    private Color fireColor(double t) {
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (t &lt; 0.3)  { double f = t / 0.3;         return Color.color(1.0, 1.0 - f*0.3, 1.0 - f,       1.0); }</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        if (t &lt; 0.65) { double f = (t - 0.3) / 0.35; return Color.color(1.0, 0.7 - f*0.4, 0.0,           1.0); }</span>
+<span class="nc" id="L231">        else          { double f = (t - 0.65) / 0.35; return Color.color(1.0 - f*0.5, 0.3 - f*0.25, 0.0, 1.0); }</span>
+    }
+
+    /**
+     * Returns the Roman numeral representation of the era.
+     *
+     * @param era The Era enum value.
+     * @return The Roman numeral string.
+     */
+    private String eraRoman(Era era) {
+<span class="nc bnc" id="L241" title="All 3 branches missed.">        return switch (era) { case I -&gt; &quot;ERA I&quot;; case II -&gt; &quot;ERA II&quot;; case III -&gt; &quot;ERA III&quot;; };</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

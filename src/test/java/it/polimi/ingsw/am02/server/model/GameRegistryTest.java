@@ -8,8 +8,14 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Smoke test for the {@link GameRegistry} singleton, verifying that characters,
+ * events, buildings, offer tiles and turn-order tiles load and that the type
+ * lookups and accessors behave correctly for both valid and unknown IDs.
+ */
 class GameRegistryTest {
 
+    /** Verifies the registry loads all card collections and lookups handle known and unknown IDs. */
     @Test
     void testGameRegistryLoaded() {
         GameRegistry registry = GameRegistry.getInstance();

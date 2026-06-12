@@ -133,6 +133,7 @@ class FullRoundIntegrationTest {
         game.startFSM();
     }
 
+    /** Verifies startFSM broadcasts setup completion and enters the TOTEM_PLACEMENT phase. */
     @Test
     void fullRound_setupCompletedAndTotemPlacementStarted() {
         // After startFSM(): SetUpState fires GameSetupCompletedEvent,
@@ -149,6 +150,7 @@ class FullRoundIntegrationTest {
         assertEquals(2, game.getTurnOrder().size());
     }
 
+    /** Verifies that once both totems are placed the game enters ACTION_RESOLUTION and initializes pick limits. */
     @Test
     void fullRound_bothPlayersPlaceTotems_thenActionResolutionStarts() {
         List<String> order = game.getTurnOrder(); // random, but deterministic within this run
@@ -177,6 +179,7 @@ class FullRoundIntegrationTest {
                 "PlayerLimitsInitializedEvent should have been fired");
     }
 
+    /** Verifies a full round: both players resolve actions and return their totems, advancing the game past ACTION_RESOLUTION. */
     @Test
     void fullRound_eachPlayerResolvesAndReturnsTotem_thenEndRoundReached() {
         List<String> placementOrder = game.getTurnOrder();

@@ -1,0 +1,3 @@
+# Generated JaCoCo coverage report: store verbatim, no EOL conversion.
+# Avoids LF/CRLF normalization warnings on a non-diffable deliverable.
+deliverables/coverage/** -text

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShamanicImmunityEffectTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">ShamanicImmunityEffectTest.java</span></div><h1>ShamanicImmunityEffectTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.EventType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
+
+/**
+ * Unit tests for the {@link ShamanicImmunityEffect} class.
+ * Ensures that the effect properly grants and revokes immunity to the player's Tribu
+ * exclusively during the SHAMANIC_RITUAL event, and correctly implements the visitor pattern.
+ */
+<span class="fc" id="L24">class ShamanicImmunityEffectTest {</span>
+
+    private Player mockPlayer;
+    private Tribu mockTribu;
+    private EffectVisitor mockVisitor;
+    private ShamanicImmunityEffect effect;
+
+    @BeforeEach
+    void setUp() {
+        // Arrange: Initialize mocks and the effect instance before each test
+<span class="fc" id="L34">        mockPlayer = Mockito.mock(Player.class);</span>
+<span class="fc" id="L35">        mockTribu = Mockito.mock(Tribu.class);</span>
+<span class="fc" id="L36">        mockVisitor = Mockito.mock(EffectVisitor.class);</span>
+
+<span class="fc" id="L38">        when(mockPlayer.getTribu()).thenReturn(mockTribu);</span>
+
+<span class="fc" id="L40">        effect = new ShamanicImmunityEffect(mockPlayer);</span>
+<span class="fc" id="L41">    }</span>
+
+    /**
+     * Tests that the visitor pattern is correctly implemented.
+     */
+    @Test
+    void accept_validVisitor_callsVisitEventObserver() {
+        // Act
+<span class="fc" id="L49">        effect.accept(mockVisitor);</span>
+
+        // Assert
+<span class="fc" id="L52">        verify(mockVisitor, times(1)).visitEventObserver(effect);</span>
+<span class="fc" id="L53">    }</span>
+
+    // =========================================================================================
+    // EVENT START TESTS
+    // =========================================================================================
+
+    /**
+     * Tests that immunity is granted when the triggering event starts.
+     */
+    @Test
+    void eventStart_shamanicRitualEvent_setsImmunityToTrue() {
+        // Act
+<span class="fc" id="L65">        EffectOutcome outcome = effect.eventStart(EventType.SHAMANIC_RITUAL);</span>
+
+        // Assert: Verify state change on Tribu and the correctness of the returned outcome
+<span class="fc" id="L68">        verify(mockTribu, times(1)).setImmuneToShamanicPenalty(true);</span>
+<span class="fc" id="L69">        assertNotNull(outcome, &quot;EffectOutcome should not be null&quot;);</span>
+<span class="fc" id="L70">        assertTrue(outcome.isEmpty(), &quot;EffectOutcome should be empty for this effect&quot;);</span>
+<span class="fc" id="L71">    }</span>
+
+    /**
+     * Tests that the effect remains inactive for any event other than SHAMANIC_RITUAL,
+     * including null events.
+     * * @param eventType An event type that is NOT SHAMANIC_RITUAL, or null.
+     */
+    @ParameterizedTest
+    @EnumSource(value = EventType.class, mode = EnumSource.Mode.EXCLUDE, names = {&quot;SHAMANIC_RITUAL&quot;})
+    @NullSource
+    void eventStart_nonTriggeringOrNullEvent_doesNotChangeImmunity(EventType eventType) {
+        // Act
+<span class="fc" id="L83">        EffectOutcome outcome = effect.eventStart(eventType);</span>
+
+        // Assert: Verify no interactions occurred with the Tribu's immunity setter
+<span class="fc" id="L86">        verify(mockTribu, never()).setImmuneToShamanicPenalty(anyBoolean());</span>
+<span class="fc" id="L87">        assertNotNull(outcome, &quot;EffectOutcome should not be null even for ignored events&quot;);</span>
+<span class="fc" id="L88">        assertTrue(outcome.isEmpty(), &quot;EffectOutcome should be empty&quot;);</span>
+<span class="fc" id="L89">    }</span>
+
+    // =========================================================================================
+    // EVENT END TESTS
+    // =========================================================================================
+
+    /**
+     * Tests that immunity is correctly revoked when the triggering event ends.
+     */
+    @Test
+    void eventEnd_shamanicRitualEvent_setsImmunityToFalse() {
+        // Act
+<span class="fc" id="L101">        EffectOutcome outcome = effect.eventEnd(EventType.SHAMANIC_RITUAL);</span>
+
+        // Assert: Verify state change on Tribu and the correctness of the returned outcome
+<span class="fc" id="L104">        verify(mockTribu, times(1)).setImmuneToShamanicPenalty(false);</span>
+<span class="fc" id="L105">        assertNotNull(outcome, &quot;EffectOutcome should not be null&quot;);</span>
+<span class="fc" id="L106">        assertTrue(outcome.isEmpty(), &quot;EffectOutcome should be empty for this effect&quot;);</span>
+<span class="fc" id="L107">    }</span>
+
+    /**
+     * Tests that the effect does not accidentally revoke immunity when other events end,
+     * including null events.
+     * * @param eventType An event type that is NOT SHAMANIC_RITUAL, or null.
+     */
+    @ParameterizedTest
+    @EnumSource(value = EventType.class, mode = EnumSource.Mode.EXCLUDE, names = {&quot;SHAMANIC_RITUAL&quot;})
+    @NullSource
+    void eventEnd_nonTriggeringOrNullEvent_doesNotChangeImmunity(EventType eventType) {
+        // Act
+<span class="fc" id="L119">        EffectOutcome outcome = effect.eventEnd(eventType);</span>
+
+        // Assert: Verify no interactions occurred with the Tribu's immunity setter
+<span class="fc" id="L122">        verify(mockTribu, never()).setImmuneToShamanicPenalty(anyBoolean());</span>
+<span class="fc" id="L123">        assertNotNull(outcome, &quot;EffectOutcome should not be null even for ignored events&quot;);</span>
+<span class="fc" id="L124">        assertTrue(outcome.isEmpty(), &quot;EffectOutcome should be empty&quot;);</span>
+<span class="fc" id="L125">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

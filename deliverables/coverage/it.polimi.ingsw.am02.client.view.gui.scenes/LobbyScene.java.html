@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LobbyScene.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">LobbyScene.java</span></div><h1>LobbyScene.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
+
+import it.polimi.ingsw.am02.client.view.gui.GuiController;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import javafx.animation.*;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.control.*;
+import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.util.Duration;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+/**
+ * Represents the lobby scene of the game.
+ * This scene allows players to set their nickname and select a totem color.
+ */
+<span class="nc" id="L32">public class LobbyScene {</span>
+
+    private GuiController controller;
+    private VBox playerList;
+    private VBox nicknameBox;
+    private VBox totemBox;
+    private TextField nickField;
+    private String myNickname;
+
+    private Font tribalSmall;
+    private Font tribalMedium;
+    private Font tribalLarge;
+    private Font introFont;
+
+<span class="nc" id="L46">    private final Totem[] totems = Totem.values();</span>
+<span class="nc" id="L47">    private final Map&lt;Totem, ImageView&gt; totemViews = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L48">    private final List&lt;Transition&gt; runningTransitions = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L50">    private int currentCarouselIndex = 0;</span>
+    private Label selectedTotemLabel;
+    private Button confirmTotemBtn;
+
+    private Button prevBtn;
+    private Button nextBtn;
+
+<span class="nc" id="L57">    private Map&lt;String, Totem&gt; currentChosenTotems = new HashMap&lt;&gt;();</span>
+
+    /**
+     * Builds the lobby scene node.
+     *
+     * @param controller The GUI controller.
+     * @return The constructed Region representing the scene.
+     */
+    public Region buildNode(GuiController controller) {
+<span class="nc" id="L66">        this.controller = controller;</span>
+
+        try {
+<span class="nc" id="L69">            tribalSmall = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 16);</span>
+<span class="nc" id="L70">            tribalMedium = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 24);</span>
+<span class="nc" id="L71">            tribalLarge = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 48);</span>
+<span class="nc" id="L72">            introFont = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/intro.ttf&quot;), 18);</span>
+<span class="nc" id="L73">        } catch (Exception ignored) {</span>
+<span class="nc" id="L74">        }</span>
+
+<span class="nc" id="L76">        StackPane root = new StackPane();</span>
+<span class="nc" id="L77">        root.setStyle(&quot;-fx-background-color: #000000;&quot;);</span>
+
+<span class="nc" id="L79">        Pane bgContainer = new Pane();</span>
+<span class="nc" id="L80">        bgContainer.setMouseTransparent(true);</span>
+<span class="nc" id="L81">        bgContainer.prefWidthProperty().bind(root.widthProperty());</span>
+<span class="nc" id="L82">        bgContainer.prefHeightProperty().bind(root.heightProperty());</span>
+
+<span class="nc" id="L84">        Rectangle clip = new Rectangle();</span>
+<span class="nc" id="L85">        clip.widthProperty().bind(root.widthProperty());</span>
+<span class="nc" id="L86">        clip.heightProperty().bind(root.heightProperty());</span>
+<span class="nc" id="L87">        bgContainer.setClip(clip);</span>
+
+<span class="nc" id="L89">        ImageView backgroundView = new ImageView();</span>
+        try {
+<span class="nc" id="L91">            Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream(&quot;/images/mesos_lobby.png&quot;)));</span>
+<span class="nc" id="L92">            backgroundView.setImage(img);</span>
+<span class="nc" id="L93">            double iw = img.getWidth();</span>
+<span class="nc" id="L94">            double ih = img.getHeight();</span>
+<span class="nc" id="L95">            double vw = iw * 0.8;</span>
+<span class="nc" id="L96">            double vh = ih * 0.8;</span>
+<span class="nc" id="L97">            double vx = (iw - vw) / 2;</span>
+<span class="nc" id="L98">            double vy = (ih - vh) / 2;</span>
+<span class="nc" id="L99">            backgroundView.setViewport(new Rectangle2D(vx, vy, vw, vh));</span>
+<span class="nc" id="L100">        } catch (Exception ignored) {</span>
+<span class="nc" id="L101">        }</span>
+
+<span class="nc" id="L103">        backgroundView.fitWidthProperty().bind(bgContainer.widthProperty());</span>
+<span class="nc" id="L104">        backgroundView.fitHeightProperty().bind(bgContainer.heightProperty());</span>
+<span class="nc" id="L105">        backgroundView.setPreserveRatio(false);</span>
+<span class="nc" id="L106">        backgroundView.setEffect(new GaussianBlur(10));</span>
+
+<span class="nc" id="L108">        ScaleTransition stBg = new ScaleTransition(Duration.seconds(20), backgroundView);</span>
+<span class="nc" id="L109">        stBg.setFromX(1.0);</span>
+<span class="nc" id="L110">        stBg.setFromY(1.0);</span>
+<span class="nc" id="L111">        stBg.setToX(1.25);</span>
+<span class="nc" id="L112">        stBg.setToY(1.25);</span>
+<span class="nc" id="L113">        stBg.setCycleCount(Animation.INDEFINITE);</span>
+<span class="nc" id="L114">        stBg.setAutoReverse(true);</span>
+<span class="nc" id="L115">        stBg.play();</span>
+<span class="nc" id="L116">        bgContainer.getChildren().add(backgroundView);</span>
+
+<span class="nc" id="L118">        Region overlay = new Region();</span>
+<span class="nc" id="L119">        overlay.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.6);&quot;);</span>
+<span class="nc" id="L120">        overlay.setMouseTransparent(true);</span>
+
+<span class="nc" id="L122">        BorderPane uiLayer = new BorderPane();</span>
+<span class="nc" id="L123">        uiLayer.setPickOnBounds(false);</span>
+
+<span class="nc" id="L125">        StackPane topBar = new StackPane();</span>
+<span class="nc" id="L126">        topBar.setPadding(new Insets(30));</span>
+<span class="nc" id="L127">        Label header = new Label(&quot;LOBBY PREPARATION&quot;);</span>
+<span class="nc" id="L128">        header.setTextFill(Color.web(&quot;#F2D5A3&quot;));</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (tribalLarge != null) header.setFont(tribalLarge);</span>
+<span class="nc" id="L130">        uiLayer.setTop(topBar);</span>
+
+<span class="nc" id="L132">        StackPane centerStack = new StackPane();</span>
+
+<span class="nc" id="L134">        nicknameBox = new VBox(20);</span>
+<span class="nc" id="L135">        nicknameBox.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L136">        nicknameBox.setMaxWidth(450);</span>
+<span class="nc" id="L137">        nicknameBox.setStyle(&quot;-fx-background-color: rgba(43, 29, 20, 0.85); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 15; -fx-padding: 40;&quot;);</span>
+
+<span class="nc" id="L139">        Label nickLabel = new Label(&quot;NICKNAME&quot;);</span>
+<span class="nc" id="L140">        nickLabel.setTextFill(Color.WHITE);</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (tribalMedium != null) nickLabel.setFont(tribalMedium);</span>
+
+<span class="nc" id="L143">        nickField = new TextField();</span>
+<span class="nc" id="L144">        nickField.setPromptText(&quot;Enter your name...&quot;);</span>
+<span class="nc" id="L145">        nickField.setMaxWidth(300);</span>
+<span class="nc" id="L146">        nickField.setStyle(&quot;-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3; -fx-alignment: center;&quot;);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (tribalSmall != null) nickField.setFont(tribalSmall);</span>
+
+<span class="nc" id="L149">        Button confirmNick = new Button(&quot;CONFIRM&quot;);</span>
+<span class="nc" id="L150">        confirmNick.setPrefSize(200, 50);</span>
+<span class="nc" id="L151">        confirmNick.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3;&quot;);</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        if (tribalSmall != null) confirmNick.setFont(tribalSmall);</span>
+<span class="nc" id="L153">        confirmNick.setOnAction(e -&gt; {</span>
+<span class="nc" id="L154">            String inputText = nickField.getText();</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if (!inputText.isBlank()) {</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                if (inputText.equals(myNickname)) {</span>
+<span class="nc" id="L157">                    nickField.setEditable(false);</span>
+<span class="nc" id="L158">                    nicknameBox.setVisible(false);</span>
+<span class="nc" id="L159">                    totemBox.setVisible(true);</span>
+<span class="nc" id="L160">                    updateCarouselVisuals();</span>
+                } else {
+<span class="nc" id="L162">                    nickField.setEditable(false);</span>
+<span class="nc" id="L163">                    controller.requestSetUsername(inputText);</span>
+                }
+            }
+<span class="nc" id="L166">        });</span>
+<span class="nc" id="L167">        nicknameBox.getChildren().addAll(nickLabel, nickField, confirmNick);</span>
+
+<span class="nc" id="L169">        totemBox = new VBox(20);</span>
+<span class="nc" id="L170">        totemBox.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L171">        totemBox.setVisible(false);</span>
+
+<span class="nc" id="L173">        StackPane carouselPane = new StackPane();</span>
+<span class="nc" id="L174">        carouselPane.setMinSize(700, 450);</span>
+
+<span class="nc bnc" id="L176" title="All 2 branches missed.">        for (Totem totem : totems) {</span>
+<span class="nc" id="L177">            ImageView view = new ImageView();</span>
+<span class="nc" id="L178">            String colorName = getTotemColorName(totem);</span>
+            try {
+<span class="nc" id="L180">                Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream(&quot;/images/totems/totem_&quot; + colorName + &quot;.png&quot;)));</span>
+<span class="nc" id="L181">                view.setImage(img);</span>
+<span class="nc" id="L182">            } catch (Exception ignored) {</span>
+<span class="nc" id="L183">            }</span>
+<span class="nc" id="L184">            view.setFitHeight(220);</span>
+<span class="nc" id="L185">            view.setPreserveRatio(true);</span>
+<span class="nc" id="L186">            totemViews.put(totem, view);</span>
+<span class="nc" id="L187">            carouselPane.getChildren().add(view);</span>
+        }
+
+<span class="nc" id="L190">        HBox carouselControls = new HBox(10);</span>
+<span class="nc" id="L191">        carouselControls.setAlignment(Pos.CENTER);</span>
+
+<span class="nc" id="L193">        prevBtn = new Button(&quot;&lt;&quot;);</span>
+<span class="nc" id="L194">        prevBtn.setStyle(&quot;-fx-base: #3e2a1d; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-background-radius: 50;&quot;);</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (tribalLarge != null) prevBtn.setFont(tribalLarge);</span>
+<span class="nc" id="L196">        prevBtn.setOnAction(e -&gt; rotateCarousel(-1));</span>
+
+<span class="nc" id="L198">        nextBtn = new Button(&quot;&gt;&quot;);</span>
+<span class="nc" id="L199">        nextBtn.setStyle(&quot;-fx-base: #3e2a1d; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-background-radius: 50;&quot;);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (tribalLarge != null) nextBtn.setFont(tribalLarge);</span>
+<span class="nc" id="L201">        nextBtn.setOnAction(e -&gt; rotateCarousel(1));</span>
+
+<span class="nc" id="L203">        carouselControls.getChildren().addAll(prevBtn, carouselPane, nextBtn);</span>
+
+<span class="nc" id="L205">        selectedTotemLabel = new Label(&quot;&quot;);</span>
+<span class="nc" id="L206">        selectedTotemLabel.setTextFill(Color.web(&quot;#F2D5A3&quot;));</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        if (tribalMedium != null) selectedTotemLabel.setFont(tribalMedium);</span>
+
+<span class="nc" id="L209">        confirmTotemBtn = new Button(&quot;CONFIRM TOTEM&quot;);</span>
+<span class="nc" id="L210">        confirmTotemBtn.setPrefSize(250, 50);</span>
+<span class="nc" id="L211">        confirmTotemBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3;&quot;);</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (tribalSmall != null) confirmTotemBtn.setFont(tribalSmall);</span>
+
+<span class="nc" id="L214">        confirmTotemBtn.setOnAction(e -&gt; {</span>
+<span class="nc" id="L215">            Totem selected = totems[currentCarouselIndex];</span>
+<span class="nc" id="L216">            controller.requestSelectTotem(selected);</span>
+
+<span class="nc" id="L218">        });</span>
+
+<span class="nc" id="L220">        Button backBtn = new Button(&quot;BACK&quot;);</span>
+<span class="nc" id="L221">        backBtn.setPrefSize(250, 40);</span>
+<span class="nc" id="L222">        backBtn.setStyle(&quot;-fx-base: #555555; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #888888;&quot;);</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        if (tribalSmall != null) backBtn.setFont(tribalSmall);</span>
+<span class="nc" id="L224">        backBtn.setOnAction(e -&gt; {</span>
+<span class="nc" id="L225">            nickField.setEditable(true);</span>
+<span class="nc" id="L226">            totemBox.setVisible(false);</span>
+<span class="nc" id="L227">            nicknameBox.setVisible(true);</span>
+<span class="nc" id="L228">            updateCarouselVisuals();</span>
+<span class="nc" id="L229">        });</span>
+
+<span class="nc" id="L231">        totemBox.getChildren().addAll(carouselControls, selectedTotemLabel, confirmTotemBtn, backBtn);</span>
+
+<span class="nc" id="L233">        centerStack.getChildren().addAll(nicknameBox, totemBox);</span>
+<span class="nc" id="L234">        uiLayer.setCenter(centerStack);</span>
+
+<span class="nc" id="L236">        VBox rightBar = new VBox(20);</span>
+<span class="nc" id="L237">        rightBar.setPadding(new Insets(30, 20, 30, 20));</span>
+<span class="nc" id="L238">        rightBar.setPrefWidth(280);</span>
+<span class="nc" id="L239">        rightBar.setAlignment(Pos.TOP_CENTER);</span>
+<span class="nc" id="L240">        rightBar.setStyle(&quot;-fx-background-color: rgba(43, 29, 20, 0.7); -fx-border-color: #F2D5A3; -fx-border-width: 0 0 0 2;&quot;);</span>
+
+<span class="nc" id="L242">        Label pHeader = new Label(&quot;PLAYERS&quot;);</span>
+<span class="nc" id="L243">        pHeader.setTextFill(Color.web(&quot;#F2D5A3&quot;));</span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">        if (tribalMedium != null) pHeader.setFont(tribalMedium);</span>
+
+<span class="nc" id="L246">        playerList = new VBox(15);</span>
+<span class="nc" id="L247">        playerList.setAlignment(Pos.TOP_LEFT);</span>
+
+<span class="nc" id="L249">        Region spacer = new Region();</span>
+<span class="nc" id="L250">        VBox.setVgrow(spacer, Priority.ALWAYS);</span>
+
+<span class="nc" id="L252">        Button leaveBtn = new Button(&quot;LEAVE LOBBY&quot;);</span>
+<span class="nc" id="L253">        leaveBtn.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L254">        leaveBtn.setStyle(&quot;-fx-base: #8B0000; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: white;&quot;);</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if (tribalSmall != null) leaveBtn.setFont(tribalSmall);</span>
+<span class="nc" id="L256">        leaveBtn.setOnAction(e -&gt; controller.requestLeaveLobby());</span>
+
+<span class="nc" id="L258">        rightBar.getChildren().addAll(pHeader, new Separator(), playerList, spacer, leaveBtn);</span>
+<span class="nc" id="L259">        uiLayer.setRight(rightBar);</span>
+
+<span class="nc" id="L261">        root.getChildren().addAll(bgContainer, overlay, uiLayer);</span>
+<span class="nc" id="L262">        return root;</span>
+    }
+
+    /**
+     * Returns the name of the totem color for resource path construction.
+     *
+     * @param t The Totem enum value.
+     * @return The lowercase color name.
+     */
+    private String getTotemColorName(Totem t) {
+<span class="nc" id="L272">        return t.name().toLowerCase();</span>
+    }
+
+    /**
+     * Rotates the totem carousel.
+     *
+     * @param dir The direction to rotate (-1 for left, 1 for right).
+     */
+    private void rotateCarousel(int dir) {
+<span class="nc" id="L281">        currentCarouselIndex = (currentCarouselIndex + dir + totems.length) % totems.length;</span>
+<span class="nc" id="L282">        updateCarouselVisuals();</span>
+<span class="nc" id="L283">    }</span>
+
+    /**
+     * Updates the visual representation of the totem carousel based on the current selection.
+     */
+    private void updateCarouselVisuals() {
+<span class="nc bnc" id="L289" title="All 2 branches missed.">        for (Transition transition : runningTransitions) {</span>
+<span class="nc" id="L290">            transition.stop();</span>
+<span class="nc" id="L291">        }</span>
+<span class="nc" id="L292">        runningTransitions.clear();</span>
+
+<span class="nc" id="L294">        double rX = 260;</span>
+<span class="nc" id="L295">        double rY = 100;</span>
+
+<span class="nc bnc" id="L297" title="All 2 branches missed.">        for (int i = 0; i &lt; totems.length; i++) {</span>
+<span class="nc" id="L298">            final Totem t = totems[i];</span>
+<span class="nc" id="L299">            final ImageView view = totemViews.get(t);</span>
+
+<span class="nc" id="L301">            int offset = (i - currentCarouselIndex + totems.length) % totems.length;</span>
+<span class="nc" id="L302">            double angle = offset * (2.0 * Math.PI / totems.length);</span>
+
+<span class="nc" id="L304">            double tx = rX * Math.sin(angle);</span>
+<span class="nc" id="L305">            double ty = rY * Math.cos(angle);</span>
+
+<span class="nc" id="L307">            double depthFactor = (ty + rY) / (2.0 * rY);</span>
+<span class="nc" id="L308">            double targetScale = 0.55 + (0.45 * depthFactor);</span>
+<span class="nc" id="L309">            double opacity = 0.35 + (0.65 * depthFactor);</span>
+
+<span class="nc" id="L311">            String owner = null;</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">            for (Map.Entry&lt;String, Totem&gt; entry : currentChosenTotems.entrySet()) {</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">                if (entry.getValue() == t) {</span>
+<span class="nc" id="L314">                    owner = entry.getKey();</span>
+<span class="nc" id="L315">                    break;</span>
+                }
+<span class="nc" id="L317">            }</span>
+
+<span class="nc bnc" id="L319" title="All 4 branches missed.">            if (owner != null &amp;&amp; !owner.equals(myNickname)) {</span>
+<span class="nc" id="L320">                ColorAdjust desaturate = new ColorAdjust();</span>
+<span class="nc" id="L321">                desaturate.setSaturation(-1.0);</span>
+<span class="nc" id="L322">                desaturate.setBrightness(-0.4);</span>
+<span class="nc" id="L323">                view.setEffect(desaturate);</span>
+<span class="nc" id="L324">                opacity *= 0.4;</span>
+<span class="nc" id="L325">            } else {</span>
+<span class="nc" id="L326">                view.setEffect(null);</span>
+            }
+
+<span class="nc" id="L329">            TranslateTransition tt = new TranslateTransition(Duration.millis(350), view);</span>
+<span class="nc" id="L330">            tt.setToX(tx);</span>
+<span class="nc" id="L331">            tt.setToY(ty);</span>
+<span class="nc" id="L332">            runningTransitions.add(tt);</span>
+<span class="nc" id="L333">            tt.play();</span>
+
+<span class="nc" id="L335">            ScaleTransition st = new ScaleTransition(Duration.millis(350), view);</span>
+<span class="nc" id="L336">            st.setToX(targetScale);</span>
+<span class="nc" id="L337">            st.setToY(targetScale);</span>
+<span class="nc" id="L338">            runningTransitions.add(st);</span>
+<span class="nc" id="L339">            st.play();</span>
+
+<span class="nc" id="L341">            FadeTransition ft = new FadeTransition(Duration.millis(350), view);</span>
+<span class="nc" id="L342">            ft.setToValue(opacity);</span>
+<span class="nc" id="L343">            runningTransitions.add(ft);</span>
+<span class="nc" id="L344">            ft.play();</span>
+
+<span class="nc bnc" id="L346" title="All 2 branches missed.">            if (offset == 0) {</span>
+<span class="nc" id="L347">                view.toFront();</span>
+<span class="nc" id="L348">                selectedTotemLabel.setText(t.name().toUpperCase());</span>
+
+<span class="nc" id="L350">                final int capturedIndex = currentCarouselIndex;</span>
+<span class="nc" id="L351">                st.setOnFinished(e -&gt; {</span>
+<span class="nc bnc" id="L352" title="All 2 branches missed.">                    if (currentCarouselIndex == capturedIndex) {</span>
+<span class="nc" id="L353">                        ScaleTransition pulse = new ScaleTransition(Duration.millis(800), view);</span>
+<span class="nc" id="L354">                        pulse.setFromX(targetScale);</span>
+<span class="nc" id="L355">                        pulse.setFromY(targetScale);</span>
+<span class="nc" id="L356">                        pulse.setToX(targetScale * 1.15);</span>
+<span class="nc" id="L357">                        pulse.setToY(targetScale * 1.15);</span>
+<span class="nc" id="L358">                        pulse.setAutoReverse(true);</span>
+<span class="nc" id="L359">                        pulse.setCycleCount(Animation.INDEFINITE);</span>
+<span class="nc" id="L360">                        runningTransitions.add(pulse);</span>
+<span class="nc" id="L361">                        pulse.play();</span>
+                    }
+<span class="nc" id="L363">                });</span>
+<span class="nc" id="L364">            } else {</span>
+<span class="nc bnc" id="L365" title="All 2 branches missed.">                if (ty &lt; 0) view.toBack();</span>
+            }
+        }
+<span class="nc" id="L368">        updateConfirmButton();</span>
+<span class="nc" id="L369">    }</span>
+
+    /**
+     * Updates the state of the totem confirmation button.
+     */
+    private void updateConfirmButton() {
+<span class="nc" id="L375">        Totem selected = totems[currentCarouselIndex];</span>
+<span class="nc" id="L376">        String owner = null;</span>
+<span class="nc bnc" id="L377" title="All 2 branches missed.">        for (Map.Entry&lt;String, Totem&gt; entry : currentChosenTotems.entrySet()) {</span>
+<span class="nc bnc" id="L378" title="All 2 branches missed.">            if (entry.getValue() == selected) {</span>
+<span class="nc" id="L379">                owner = entry.getKey();</span>
+<span class="nc" id="L380">                break;</span>
+            }
+<span class="nc" id="L382">        }</span>
+
+<span class="nc bnc" id="L384" title="All 4 branches missed.">        if (owner != null &amp;&amp; !owner.equals(myNickname)) {</span>
+<span class="nc" id="L385">            confirmTotemBtn.setDisable(true);</span>
+<span class="nc" id="L386">            confirmTotemBtn.setText(&quot;TAKEN BY &quot; + owner);</span>
+<span class="nc" id="L387">            confirmTotemBtn.setStyle(&quot;-fx-base: #444; -fx-text-fill: #888;&quot;);</span>
+<span class="nc bnc" id="L388" title="All 4 branches missed.">        } else if (owner != null &amp;&amp; owner.equals(myNickname)) {</span>
+<span class="nc" id="L389">            confirmTotemBtn.setDisable(true);</span>
+<span class="nc" id="L390">            confirmTotemBtn.setText(&quot;THIS IS YOUR TOTEM&quot;);</span>
+<span class="nc" id="L391">            confirmTotemBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: #F2D5A3; -fx-border-color: #F2D5A3;&quot;);</span>
+        } else {
+<span class="nc" id="L393">            confirmTotemBtn.setDisable(false);</span>
+<span class="nc" id="L394">            confirmTotemBtn.setText(&quot;CONFIRM TOTEM&quot;);</span>
+<span class="nc" id="L395">            confirmTotemBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3;&quot;);</span>
+        }
+<span class="nc" id="L397">    }</span>
+
+    /**
+     * Handles the acceptance of a nickname.
+     *
+     * @param nickname The accepted nickname.
+     */
+    public void onNicknameAccepted(String nickname) {
+<span class="nc" id="L405">        this.myNickname = nickname;</span>
+<span class="nc" id="L406">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L407">            nicknameBox.setVisible(false);</span>
+<span class="nc" id="L408">            totemBox.setVisible(true);</span>
+<span class="nc" id="L409">            updateCarouselVisuals();</span>
+<span class="nc" id="L410">        });</span>
+<span class="nc" id="L411">    }</span>
+
+    /**
+     * Handles the rejection of a nickname.
+     */
+    public void onNicknameRejected() {
+<span class="nc" id="L417">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L418">            nickField.setEditable(true);</span>
+<span class="nc" id="L419">            nickField.setText(&quot;&quot;);</span>
+<span class="nc" id="L420">        });</span>
+<span class="nc" id="L421">    }</span>
+
+    /**
+     * Updates the lobby state UI with player list and chosen totems.
+     *
+     * @param lobby The current lobby information.
+     */
+    public void updateLobbyState(LobbyInfo lobby) {
+<span class="nc" id="L429">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L430">            currentChosenTotems = lobby.chosenTotems();</span>
+<span class="nc" id="L431">            playerList.getChildren().clear();</span>
+
+<span class="nc bnc" id="L433" title="All 2 branches missed.">            for (String nick : lobby.currentPlayers()) {</span>
+<span class="nc" id="L434">                Totem t = currentChosenTotems.get(nick);</span>
+<span class="nc bnc" id="L435" title="All 2 branches missed.">                String colorSuffix = (t != null) ? &quot; [&quot; + t.name().toUpperCase() + &quot;]&quot; : &quot; (picking...)&quot;;</span>
+<span class="nc" id="L436">                Label l = new Label(&quot;• &quot; + nick + colorSuffix);</span>
+<span class="nc bnc" id="L437" title="All 2 branches missed.">                if (introFont != null) l.setFont(introFont);</span>
+<span class="nc bnc" id="L438" title="All 2 branches missed.">                l.setTextFill(nick.equals(myNickname) ? Color.LIME : Color.WHITE);</span>
+<span class="nc" id="L439">                playerList.getChildren().add(l);</span>
+<span class="nc" id="L440">            }</span>
+<span class="nc bnc" id="L441" title="All 2 branches missed.">            if (totemBox.isVisible()) updateCarouselVisuals();</span>
+<span class="nc" id="L442">        });</span>
+<span class="nc" id="L443">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

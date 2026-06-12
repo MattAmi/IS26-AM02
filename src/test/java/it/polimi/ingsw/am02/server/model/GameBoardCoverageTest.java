@@ -16,6 +16,12 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * White-box tests for {@link GameBoard} internals using reflection and a mocked
+ * {@link GameRegistry}. Covers round and final event resolution ordering, era
+ * row updates and new-round preparation, verifying the notifications emitted to
+ * the {@link GameEventEmitter} and registered {@link EventObserver}s.
+ */
 public class GameBoardCoverageTest {
 
     private GameBoard gameBoard;
@@ -88,6 +94,7 @@ public class GameBoardCoverageTest {
         eventMap.put(id, mockEvent);
     }
 
+    /** Verifies round events are resolved (final events skipped) and observers/notifier informed. */
     @Test
     void testResolveRoundEvents() throws Exception {
         addMockEvent("E_ROUND_1", false, 1);
@@ -119,6 +126,7 @@ public class GameBoardCoverageTest {
         verify(mockNotifier, times(2)).notifyEventResolved(anyString(), anyString());
     }
 
+    /** Verifies only final events are resolved during end-game and observers are notified. */
     @Test
     void testResolveFinalEvents() throws Exception {
         addMockEvent("E_FINAL_1", true, 1);
@@ -155,6 +163,7 @@ public class GameBoardCoverageTest {
         verify(mockObserver, times(2)).eventEnd(any());
     }
 
+    /** Verifies an era change refreshes the building rows from the deck and notifies listeners. */
     @Test
     void testUpdateRowsForNewEra() throws Exception {
         Field currentEraField = GameBoard.class.getDeclaredField("currentEra");
@@ -196,6 +205,7 @@ public class GameBoardCoverageTest {
         assertEquals(List.of("B_2", "B_3"), lowerRowB); // B_OLD and B_1 are discarded
     }
 
+    /** Verifies new-round preparation draws tribù cards, shifts rows and flags an era change. */
     @Test
     void testPrepareNewRound() throws Exception {
         Field upperRowField = GameBoard.class.getDeclaredField("upperRow");

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommandLogger.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.controller.persistence</a> &gt; <span class="el_source">CommandLogger.java</span></div><h1>CommandLogger.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.controller.persistence;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.common.messages.commands.GameCommand;
+
+import java.io.*;
+import java.nio.file.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * File-based {@link GameLogger} that writes NDJSON (newline-delimited JSON)
+ * to {@code logs/{gameId}.ndjson}.
+ *
+ * &lt;p&gt;Each log entry is a self-contained JSON object on its own line:
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@code GAME_INIT}  — one record at the start with seed, nicknames, and totems&lt;/li&gt;
+ *   &lt;li&gt;{@code COMMAND}    — one record per player action with a sequence number and nickname&lt;/li&gt;
+ *   &lt;li&gt;{@code GAME_ENDED} — one record at the end; its presence prevents replay on restart&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;The writer is opened in append mode and flushed after every line,
+ * so entries survive a server crash at any point during the game.
+ */public class CommandLogger implements GameLogger {
+
+    private static final String LOGS_DIR = &quot;logs&quot;;
+
+    private final ObjectMapper mapper;
+    private final BufferedWriter writer;
+    private int seq;
+
+
+    /**
+     * Opens (or creates) the log file at {@code logs/{gameId}.ndjson} in append mode.
+     *
+     * @param gameId the game's unique identifier (used as the filename)
+     * @throws IOException if the {@code logs/} directory cannot be created or the file cannot be opened
+<span class="nc" id="L42">     */    public CommandLogger(String gameId) throws IOException {</span>
+<span class="nc" id="L43">        this.mapper = new ObjectMapper();</span>
+<span class="nc" id="L44">        this.seq = 0;</span>
+<span class="nc" id="L45">        Files.createDirectories(Path.of(LOGS_DIR));</span>
+<span class="nc" id="L46">        Path logFile = Path.of(LOGS_DIR, gameId + &quot;.ndjson&quot;);</span>
+<span class="nc" id="L47">        this.writer = Files.newBufferedWriter(logFile,</span>
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND);
+<span class="nc" id="L50">    }</span>
+
+    // Writes &quot;GAME_INIT&quot; record before any other command
+    /** {@inheritDoc} */
+    @Override
+    public void logGameInit(String gameId, long seed, List&lt;String&gt; nicknames, Map&lt;String, Totem&gt; chosenTotems) {
+<span class="nc" id="L56">        ObjectNode node = mapper.createObjectNode();</span>
+<span class="nc" id="L57">        node.put(&quot;type&quot;, &quot;GAME_INIT&quot;);</span>
+<span class="nc" id="L58">        node.put(&quot;gameId&quot;, gameId);</span>
+<span class="nc" id="L59">        node.put(&quot;seed&quot;, seed);</span>
+<span class="nc" id="L60">        node.put(&quot;numPlayers&quot;, nicknames.size());</span>
+<span class="nc" id="L61">        node.set(&quot;nicknames&quot;, mapper.valueToTree(nicknames));</span>
+
+
+
+        // CORREZIONE: Usiamo una LinkedHashMap per garantire un ordine deterministico
+        // nel JSON, seguendo l'ordine della lista nicknames passata dal ControllerManager.
+<span class="nc" id="L67">        Map&lt;String, String&gt; orderedTotems = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        for (String nick : nicknames) {</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            if (chosenTotems.containsKey(nick)) {</span>
+<span class="nc" id="L70">                orderedTotems.put(nick, chosenTotems.get(nick).name());</span>
+            }
+<span class="nc" id="L72">        }</span>
+<span class="nc" id="L73">        node.set(&quot;totems&quot;, mapper.valueToTree(orderedTotems));</span>
+
+<span class="nc" id="L75">        writeLine(node);</span>
+<span class="nc" id="L76">    }</span>
+
+    // Writes a COMMAND after a command has been successfully applied to the model
+    /** {@inheritDoc} */
+    @Override
+    public void logCommand(GameCommand cmd, String senderNickname) {
+        try {
+<span class="nc" id="L83">            ObjectNode node = mapper.createObjectNode();</span>
+
+<span class="nc" id="L85">            node.put(&quot;type&quot;, &quot;COMMAND&quot;);</span>
+<span class="nc" id="L86">            node.put(&quot;seq&quot;, seq++);</span>
+
+<span class="nc" id="L88">            node.put(&quot;nickname&quot;, senderNickname);</span>
+
+<span class="nc" id="L90">            node.set(&quot;cmd&quot;, mapper.valueToTree(cmd));</span>
+
+<span class="nc" id="L92">            writeLine(node);</span>
+
+<span class="nc" id="L94">        } catch (Exception e) {</span>
+<span class="nc" id="L95">            System.err.println(&quot;[CommandLogger] Failed to log command: &quot; + e.getMessage());</span>
+<span class="nc" id="L96">        }</span>
+<span class="nc" id="L97">    }</span>
+
+    // Writes &quot;GAME_ENDED&quot; record. After this, the log won't be replayed on restart
+    /** {@inheritDoc} */
+    @Override
+    public void logGameEnded() {
+<span class="nc" id="L103">        ObjectNode node = mapper.createObjectNode();</span>
+<span class="nc" id="L104">        node.put(&quot;type&quot;, &quot;GAME_ENDED&quot;);</span>
+<span class="nc" id="L105">        writeLine(node);</span>
+<span class="nc" id="L106">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void close() {
+        try {
+<span class="nc" id="L112">            writer.close();</span>
+<span class="nc" id="L113">        } catch (IOException e) {</span>
+<span class="nc" id="L114">            System.err.println(&quot;[CommandLogger] Failed to close writer: &quot; + e.getMessage());</span>
+<span class="nc" id="L115">        }</span>
+<span class="nc" id="L116">    }</span>
+
+
+    // Helper methods
+    private void writeLine(ObjectNode node) {
+        try {
+<span class="nc" id="L122">            writer.write(mapper.writeValueAsString(node));</span>
+<span class="nc" id="L123">            writer.newLine();</span>
+<span class="nc" id="L124">            writer.flush(); // flushes each line for crash resilience</span>
+<span class="nc" id="L125">        } catch (IOException e) {</span>
+<span class="nc" id="L126">            System.err.println(&quot;[CommandLogger] Write failed: &quot; + e.getMessage());</span>
+<span class="nc" id="L127">        }</span>
+<span class="nc" id="L128">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

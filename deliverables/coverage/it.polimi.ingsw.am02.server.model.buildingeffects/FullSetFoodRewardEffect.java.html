@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FullSetFoodRewardEffect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">FullSetFoodRewardEffect.java</span></div><h1>FullSetFoodRewardEffect.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.listeners.TribuObserver;
+
+import java.util.List;
+
+/**
+ * Building effect that rewards food whenever the owner's tribe completes a new full set
+ * of all character types (i.e. gains at least one character of every {@link CharacterType}).
+ *
+ * &lt;p&gt;Registered as a {@link TribuObserver}. Fires after each character insertion.
+ * Uses a counter ({@code setsAlreadyRewarded}) to track how many complete sets
+ * have already been rewarded, so only newly completed sets trigger a payout.
+ *
+ * &lt;p&gt;JSON key: {@code &quot;FULL_SET_FOOD_REWARD&quot;}
+ */
+public class FullSetFoodRewardEffect implements BuildingEffect, TribuObserver {
+    private final Player owner;
+    private final int foodBonus;
+    private int setsAlreadyRewarded;
+
+    /**
+     * @param owner      the player who owns this building
+     * @param foodReward food points granted each time a new complete character set is formed
+     */
+<span class="fc" id="L34">    public FullSetFoodRewardEffect(Player owner, int foodReward) {</span>
+<span class="fc" id="L35">        this.owner = owner;</span>
+<span class="fc" id="L36">        this.foodBonus = foodReward;</span>
+<span class="fc" id="L37">        this.setsAlreadyRewarded = calculateCurrentSets(owner.getTribu());</span>
+<span class="fc" id="L38">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void accept(EffectVisitor visitor) {
+<span class="fc" id="L43">        visitor.visitTribuObserver(this);</span>
+<span class="fc" id="L44">    }</span>
+
+    /**
+     * Checks whether a new complete set has been formed after the most recent character insertion.
+     * If so, grants the food reward and updates the rewarded-set counter.
+     *
+     * @param type the type of character just inserted (used to re-evaluate the set count)
+     * @return an {@link EffectOutcome} with the food delta if a new set was completed, or empty
+     */
+    @Override
+    public EffectOutcome onCharacterInsertion(CharacterType type) {
+<span class="fc" id="L55">        Tribu tribu = owner.getTribu();</span>
+<span class="fc" id="L56">        String nickname = owner.getNickname();</span>
+
+<span class="fc" id="L58">        int currentSets = calculateCurrentSets(tribu);</span>
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (currentSets &gt; setsAlreadyRewarded) {</span>
+<span class="fc" id="L61">            tribu.addFoodPoints(foodBonus);</span>
+<span class="fc" id="L62">            setsAlreadyRewarded = currentSets;</span>
+
+<span class="fc" id="L64">            return new EffectOutcome(List.of(</span>
+<span class="fc" id="L65">                    new ResourceDelta(nickname, ResourceType.FOOD, tribu.getFoodPoints(), foodBonus)</span>
+            ));
+        }
+
+<span class="fc" id="L69">        return EffectOutcome.empty();</span>
+    }
+
+    private int calculateCurrentSets(Tribu tribu) {
+<span class="fc" id="L73">        int minPezzi = Integer.MAX_VALUE;</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        for (CharacterType type : CharacterType.values()) {</span>
+<span class="fc" id="L75">            int count = tribu.getCharacterCount(type);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            if (count &lt; minPezzi)</span>
+<span class="fc" id="L77">                minPezzi = count;</span>
+        }
+
+<span class="fc" id="L80">        return minPezzi;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

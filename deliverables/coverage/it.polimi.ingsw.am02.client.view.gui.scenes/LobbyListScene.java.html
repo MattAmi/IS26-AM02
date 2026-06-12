@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LobbyListScene.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">LobbyListScene.java</span></div><h1>LobbyListScene.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
+
+import it.polimi.ingsw.am02.client.view.gui.GuiController;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import javafx.animation.FadeTransition;
+import javafx.animation.ScaleTransition;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.util.Duration;
+
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Represents the lobby list scene of the game.
+ * This scene displays all available lobbies that players can join.
+ */
+<span class="nc" id="L31">public class LobbyListScene {</span>
+
+    private GuiController controller;
+    private VBox listContainer;
+    private Font tribalSmall;
+    private Font tribalMedium;
+    private Font tribalLarge;
+    private Font introFont;
+
+    /**
+     * Builds the lobby list scene node.
+     *
+     * @param controller The GUI controller.
+     * @param onBack     Callback to return to the previous menu.
+     * @return The constructed Region representing the scene.
+     */
+    public Region buildNode(GuiController controller, Runnable onBack) {
+<span class="nc" id="L48">        this.controller = controller;</span>
+
+        try {
+<span class="nc" id="L51">            tribalSmall = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 14);</span>
+<span class="nc" id="L52">            tribalMedium = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 20);</span>
+<span class="nc" id="L53">            tribalLarge = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 36);</span>
+<span class="nc" id="L54">            introFont = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/intro.ttf&quot;), 18);</span>
+<span class="nc" id="L55">        } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L57">        StackPane rootNode = new StackPane();</span>
+<span class="nc" id="L58">        rootNode.setStyle(&quot;-fx-background-color: #000000;&quot;);</span>
+
+<span class="nc" id="L60">        Pane bgContainer = new Pane();</span>
+<span class="nc" id="L61">        bgContainer.setMouseTransparent(true);</span>
+<span class="nc" id="L62">        bgContainer.prefWidthProperty().bind(rootNode.widthProperty());</span>
+<span class="nc" id="L63">        bgContainer.prefHeightProperty().bind(rootNode.heightProperty());</span>
+
+<span class="nc" id="L65">        Rectangle clip = new Rectangle();</span>
+<span class="nc" id="L66">        clip.widthProperty().bind(rootNode.widthProperty());</span>
+<span class="nc" id="L67">        clip.heightProperty().bind(rootNode.heightProperty());</span>
+<span class="nc" id="L68">        bgContainer.setClip(clip);</span>
+
+<span class="nc" id="L70">        ImageView backgroundView = new ImageView();</span>
+        try {
+<span class="nc" id="L72">            Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream(&quot;/images/mesos_lobby.png&quot;)));</span>
+<span class="nc" id="L73">            backgroundView.setImage(img);</span>
+<span class="nc" id="L74">            double iw = img.getWidth();</span>
+<span class="nc" id="L75">            double ih = img.getHeight();</span>
+<span class="nc" id="L76">            double vw = iw * 0.6;</span>
+<span class="nc" id="L77">            double vh = ih * 0.6;</span>
+<span class="nc" id="L78">            double vx = (iw - vw) / 2;</span>
+<span class="nc" id="L79">            double vy = (ih - vh) / 2;</span>
+<span class="nc" id="L80">            backgroundView.setViewport(new Rectangle2D(vx, vy, vw, vh));</span>
+<span class="nc" id="L81">        } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L83">        backgroundView.fitWidthProperty().bind(bgContainer.widthProperty());</span>
+<span class="nc" id="L84">        backgroundView.fitHeightProperty().bind(bgContainer.heightProperty());</span>
+<span class="nc" id="L85">        backgroundView.setPreserveRatio(false);</span>
+
+<span class="nc" id="L87">        backgroundView.setEffect(new GaussianBlur(12));</span>
+
+<span class="nc" id="L89">        FadeTransition fadeIn = new FadeTransition(Duration.seconds(2.0), backgroundView);</span>
+<span class="nc" id="L90">        fadeIn.setFromValue(0.0);</span>
+<span class="nc" id="L91">        fadeIn.setToValue(1.0);</span>
+<span class="nc" id="L92">        fadeIn.play();</span>
+
+<span class="nc" id="L94">        ScaleTransition st = new ScaleTransition(Duration.seconds(20), backgroundView);</span>
+<span class="nc" id="L95">        st.setFromX(1.0); st.setFromY(1.0); st.setToX(1.25); st.setToY(1.25);</span>
+<span class="nc" id="L96">        st.setCycleCount(ScaleTransition.INDEFINITE); st.setAutoReverse(true); st.play();</span>
+
+<span class="nc" id="L98">        bgContainer.getChildren().add(backgroundView);</span>
+<span class="nc" id="L99">        Region overlay = new Region();</span>
+<span class="nc" id="L100">        overlay.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.45);&quot;);</span>
+<span class="nc" id="L101">        overlay.setMouseTransparent(true);</span>
+<span class="nc" id="L102">        overlay.prefWidthProperty().bind(rootNode.widthProperty());</span>
+<span class="nc" id="L103">        overlay.prefHeightProperty().bind(rootNode.heightProperty());</span>
+
+<span class="nc" id="L105">        BorderPane uiLayer = new BorderPane();</span>
+<span class="nc" id="L106">        uiLayer.setPadding(new Insets(30));</span>
+<span class="nc" id="L107">        uiLayer.setPickOnBounds(false);</span>
+
+<span class="nc" id="L109">        StackPane topBar = new StackPane();</span>
+<span class="nc" id="L110">        topBar.setPadding(new Insets(0, 0, 20, 0));</span>
+
+<span class="nc" id="L112">        Button backBtn = new Button(&quot;BACK TO MENU&quot;);</span>
+<span class="nc" id="L113">        backBtn.setStyle(&quot;-fx-base: #444; -fx-text-fill: white; -fx-cursor: hand;&quot;);</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (tribalSmall != null) backBtn.setFont(tribalSmall);</span>
+<span class="nc" id="L115">        backBtn.setOnAction(e -&gt; onBack.run());</span>
+<span class="nc" id="L116">        StackPane.setAlignment(backBtn, Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L118">        Label title = new Label(&quot;AVAILABLE LOBBIES&quot;);</span>
+<span class="nc" id="L119">        title.setTextFill(Color.web(&quot;#F2D5A3&quot;));</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (tribalLarge != null) title.setFont(tribalLarge);</span>
+<span class="nc" id="L121">        StackPane.setAlignment(title, Pos.CENTER);</span>
+
+<span class="nc" id="L123">        topBar.getChildren().addAll(title, backBtn);</span>
+<span class="nc" id="L124">        uiLayer.setTop(topBar);</span>
+
+<span class="nc" id="L126">        listContainer = new VBox(20);</span>
+<span class="nc" id="L127">        listContainer.setAlignment(Pos.TOP_CENTER);</span>
+<span class="nc" id="L128">        listContainer.setPadding(new Insets(100, 20, 20, 20));</span>
+
+<span class="nc" id="L130">        ScrollPane scroll = new ScrollPane(listContainer);</span>
+<span class="nc" id="L131">        scroll.setFitToWidth(true);</span>
+<span class="nc" id="L132">        scroll.setStyle(&quot;-fx-background: transparent; -fx-background-color: transparent; -fx-control-inner-background: transparent; -fx-viewport-background: transparent;&quot;);</span>
+
+<span class="nc" id="L134">        uiLayer.setCenter(scroll);</span>
+<span class="nc" id="L135">        rootNode.getChildren().addAll(bgContainer, overlay, uiLayer);</span>
+
+<span class="nc" id="L137">        return rootNode;</span>
+    }
+
+    /**
+     * Updates the UI with the list of available lobbies.
+     *
+     * @param lobbies The list of available lobbies.
+     */
+    public void onAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; lobbies) {
+<span class="nc" id="L146">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L147">            listContainer.getChildren().clear();</span>
+
+<span class="nc bnc" id="L149" title="All 4 branches missed.">            if (lobbies == null || lobbies.isEmpty()) {</span>
+<span class="nc" id="L150">                Label emptyLbl = new Label(&quot;No active lobbies found. Go back and create one!&quot;);</span>
+<span class="nc" id="L151">                emptyLbl.setTextFill(Color.WHITE);</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">                if (tribalMedium != null) emptyLbl.setFont(tribalMedium);</span>
+<span class="nc" id="L153">                listContainer.getChildren().add(emptyLbl);</span>
+<span class="nc" id="L154">                return;</span>
+            }
+
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            for (LobbyInfo lobby : lobbies) {</span>
+<span class="nc" id="L158">                HBox row = new HBox(30);</span>
+<span class="nc" id="L159">                row.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L160">                row.setPadding(new Insets(20));</span>
+<span class="nc" id="L161">                row.setStyle(&quot;-fx-background-color: rgba(43, 29, 20, 0.85); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 10;&quot;);</span>
+
+<span class="nc" id="L163">                TextField idField = new TextField(&quot;Lobby ID: &quot; + lobby.lobbyId());</span>
+<span class="nc" id="L164">                idField.setEditable(false); idField.setFocusTraversable(false);</span>
+<span class="nc" id="L165">                idField.setStyle(&quot;-fx-background-color: transparent; -fx-text-fill: white; -fx-padding: 0; -fx-cursor: text;&quot;);</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                if (introFont != null) idField.setFont(introFont);</span>
+<span class="nc" id="L167">                idField.setMinWidth(Region.USE_PREF_SIZE);</span>
+<span class="nc" id="L168">                HBox.setHgrow(idField, Priority.NEVER);</span>
+
+<span class="nc" id="L170">                Label players = new Label(&quot;Players: &quot; + lobby.currentPlayers().size() + &quot; / &quot; + lobby.expectedPlayers());</span>
+<span class="nc" id="L171">                players.setTextFill(Color.LIGHTGRAY);</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                if (introFont != null) players.setFont(introFont);</span>
+<span class="nc" id="L173">                players.setMinWidth(Region.USE_PREF_SIZE);</span>
+
+<span class="nc" id="L175">                Region spacer = new Region();</span>
+<span class="nc" id="L176">                HBox.setHgrow(spacer, Priority.ALWAYS);</span>
+
+<span class="nc" id="L178">                Button join = new Button(&quot;JOIN LOBBY&quot;);</span>
+<span class="nc" id="L179">                join.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand;&quot;);</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                if (tribalSmall != null) join.setFont(tribalSmall);</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                join.setDisable(lobby.currentPlayers().size() &gt;= lobby.expectedPlayers());</span>
+<span class="nc" id="L182">                join.setOnAction(e -&gt; controller.requestJoinLobby(lobby.lobbyId()));</span>
+
+<span class="nc" id="L184">                row.getChildren().addAll(idField, players, spacer, join);</span>
+<span class="nc" id="L185">                listContainer.getChildren().add(row);</span>
+<span class="nc" id="L186">            }</span>
+<span class="nc" id="L187">        });</span>
+<span class="nc" id="L188">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

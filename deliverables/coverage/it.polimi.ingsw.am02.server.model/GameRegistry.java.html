@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameRegistry.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">GameRegistry.java</span></div><h1>GameRegistry.java</h1><pre class="source lang-java linenums">// DONE is a mock
+
+package it.polimi.ingsw.am02.server.model;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.polimi.ingsw.am02.common.ResourcePaths;
+import it.polimi.ingsw.am02.server.model.card.*;
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
+import it.polimi.ingsw.am02.server.model.tile.OfferTilesFactory;
+import it.polimi.ingsw.am02.server.model.tile.TurnOrderTile;
+import it.polimi.ingsw.am02.server.model.tile.TurnOrderTilesFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Singleton registry that loads and provides access to all static game data:
+ * character cards, event cards, building cards, offer tiles, and turn-order tiles.
+ *
+ * &lt;p&gt;All data is loaded from JSON resource files at class-initialization time.
+ * Use {@link #getInstance()} to obtain the single shared instance.
+ */
+public class GameRegistry {
+
+<span class="fc" id="L30">    private static final GameRegistry INSTANCE = new GameRegistry(); //the only instance of the registry</span>
+
+    private final Map&lt;String, CharacterCard&gt; characterMap;
+    private final Map&lt;String, EventCard&gt; eventMap;
+    private final Map&lt;String, BuildingCard&gt; buildingMap;
+    private final List&lt;OfferTile&gt; offerTiles;
+    private final List&lt;TurnOrderTile&gt; turnOrderTiles;
+
+    private final ObjectMapper mapper;
+
+<span class="fc" id="L40">    private GameRegistry() {</span>
+<span class="fc" id="L41">        this.mapper = new ObjectMapper();</span>
+<span class="fc" id="L42">        this.characterMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L43">        this.eventMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L44">        this.buildingMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L45">        this.offerTiles = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L46">        this.turnOrderTiles = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L48">        loadCharacters(ResourcePaths.CHARACTERS);</span>
+<span class="fc" id="L49">        loadEvents(ResourcePaths.EVENTS);</span>
+<span class="fc" id="L50">        loadBuildings(ResourcePaths.BUILDINGS);</span>
+<span class="fc" id="L51">        loadOfferTiles(ResourcePaths.OFFER_TILES);</span>
+<span class="fc" id="L52">        loadTurnOrderTiles(ResourcePaths.TURN_ORDER_TILES);</span>
+<span class="fc" id="L53">    }</span>
+
+    /** @return the singleton instance of the registry */
+    public static GameRegistry getInstance() {
+<span class="fc" id="L57">        return INSTANCE;</span>
+    }
+
+    /**
+     * Loads character cards from the given JSON resource path, replacing any previously loaded characters.
+     * Normally called once during construction; exposed for testing with custom data files.
+     *
+     * @param charactersPath classpath-relative path to the JSON file (e.g. {@code &quot;/it/.../Characters.json&quot;})
+     */
+    public void loadCharacters(String charactersPath) {
+        try {
+<span class="fc" id="L68">            List&lt;JsonNode&gt; nodes = parseJsonToList(charactersPath);</span>
+<span class="fc" id="L69">            CharacterFactory characterFactory = new CharacterFactory();</span>
+
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            for(JsonNode node : nodes) {</span>
+<span class="fc" id="L72">                CharacterCard characterCard = characterFactory.createCharacter(node);</span>
+<span class="fc" id="L73">                characterMap.put(characterCard.getID(), characterCard);</span>
+<span class="fc" id="L74">            }</span>
+<span class="nc" id="L75">        } catch (IOException e) {</span>
+<span class="nc" id="L76">            e.printStackTrace();</span>
+<span class="fc" id="L77">        }</span>
+<span class="fc" id="L78">    }</span>
+
+    /**
+     * Loads event cards from the given JSON resource path.
+     *
+     * @param eventsPath classpath-relative path to the JSON file
+     */
+    public void loadEvents(String eventsPath) {
+        try {
+<span class="fc" id="L87">            List&lt;JsonNode&gt; nodes = parseJsonToList(eventsPath);</span>
+<span class="fc" id="L88">            EventFactory eventFactory = new EventFactory();</span>
+
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            for(JsonNode node : nodes) {</span>
+<span class="fc" id="L91">                EventCard eventCard = eventFactory.createEvent(node);</span>
+<span class="fc" id="L92">                eventMap.put(eventCard.getID(), eventCard);</span>
+<span class="fc" id="L93">            }</span>
+<span class="nc" id="L94">        } catch (IOException e) {</span>
+<span class="nc" id="L95">            e.printStackTrace();</span>
+<span class="fc" id="L96">        }</span>
+<span class="fc" id="L97">    }</span>
+
+    /**
+     * Loads building cards from the given JSON resource path.
+     *
+     * @param buildingsPath classpath-relative path to the JSON file
+     */
+    public void loadBuildings(String buildingsPath) {
+        try {
+<span class="fc" id="L106">            List&lt;JsonNode&gt; nodes = parseJsonToList(buildingsPath);</span>
+<span class="fc" id="L107">            BuildingCardFactory buildingCardFactory = new BuildingCardFactory();</span>
+
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            for (JsonNode node : nodes) {</span>
+<span class="fc" id="L110">                BuildingCard buildingCard = buildingCardFactory.createBuilding(node);</span>
+<span class="fc" id="L111">                buildingMap.put(buildingCard.getCardID(), buildingCard);</span>
+<span class="fc" id="L112">            }</span>
+<span class="nc" id="L113">        } catch (IOException e) {</span>
+<span class="nc" id="L114">            e.printStackTrace();</span>
+<span class="fc" id="L115">        }</span>
+<span class="fc" id="L116">    }</span>
+
+    /**
+     * Loads offer tile definitions from the given JSON resource path.
+     *
+     * @param offerTilesPath classpath-relative path to the JSON file
+     */
+    public void loadOfferTiles(String offerTilesPath) {
+        try {
+<span class="fc" id="L125">            List&lt;JsonNode&gt; nodes = parseJsonToList(offerTilesPath);</span>
+<span class="fc" id="L126">            OfferTilesFactory offerTilesFactory = new OfferTilesFactory();</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            for (JsonNode node : nodes) {</span>
+<span class="fc" id="L128">                OfferTile offerTile = offerTilesFactory.createOfferTile(node);</span>
+<span class="fc" id="L129">                offerTiles.add(offerTile);</span>
+<span class="fc" id="L130">            }</span>
+<span class="nc" id="L131">        } catch (IOException e) {</span>
+<span class="nc" id="L132">            e.printStackTrace();</span>
+<span class="fc" id="L133">        }</span>
+<span class="fc" id="L134">    }</span>
+
+    /**
+     * Loads turn-order tile definitions from the given JSON resource path.
+     *
+     * @param turnOrderTilesPath classpath-relative path to the JSON file
+     */
+    public void loadTurnOrderTiles(String turnOrderTilesPath) {
+        try {
+<span class="fc" id="L143">            List&lt;JsonNode&gt; nodes = parseJsonToList(turnOrderTilesPath);</span>
+<span class="fc" id="L144">            TurnOrderTilesFactory turnOrderTilesFactory = new TurnOrderTilesFactory();</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">            for (JsonNode node : nodes) {</span>
+<span class="fc" id="L146">                TurnOrderTile turnOrderTile = turnOrderTilesFactory.createTurnOrderTile(node);</span>
+<span class="fc" id="L147">                turnOrderTiles.add(turnOrderTile);</span>
+<span class="fc" id="L148">            }</span>
+<span class="nc" id="L149">        } catch (IOException e) {</span>
+<span class="nc" id="L150">            e.printStackTrace();</span>
+<span class="fc" id="L151">        }</span>
+<span class="fc" id="L152">    }</span>
+
+    private List&lt;JsonNode&gt; parseJsonToList(String resourcePath) throws IOException {
+<span class="fc" id="L155">        try (InputStream is = getClass().getResourceAsStream(resourcePath)) {</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">            if (is == null)</span>
+<span class="nc" id="L157">                throw new IOException(&quot;Resource not found: &quot; + resourcePath);</span>
+
+<span class="fc" id="L159">            JsonNode rootNode = mapper.readTree(is);</span>
+<span class="fc" id="L160">            List&lt;JsonNode&gt; nodes = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">            if (rootNode.isArray()) rootNode.forEach(nodes::add);</span>
+<span class="fc" id="L162">            return nodes;</span>
+        }
+    }
+
+    /**
+     * @param cardID the card ID to check
+     * @return {@code true} if the ID corresponds to a character card
+     */
+    public boolean isCharacter(String cardID) {
+<span class="fc" id="L171">        return characterMap.containsKey(cardID);</span>
+    }
+
+    /**
+     * @param cardID the card ID to check
+     * @return {@code true} if the ID corresponds to an event card
+     */
+    public boolean isEvent(String cardID) {
+<span class="fc" id="L179">        return eventMap.containsKey(cardID);</span>
+    }
+
+    /**
+     * @param cardID the card ID to check
+     * @return {@code true} if the ID corresponds to a building card
+     */
+    public boolean isBuilding(String cardID) {
+<span class="fc" id="L187">        return buildingMap.containsKey(cardID);</span>
+    }
+
+    /**
+     * @param cardID the character card ID
+     * @return the corresponding {@link CharacterCard}, or {@code null} if not found
+     */
+    public CharacterCard getCharacter(String cardID) {
+<span class="fc" id="L195">        return characterMap.get(cardID);</span>
+    }
+
+    /**
+     * @param cardID the event card ID
+     * @return the corresponding {@link EventCard}, or {@code null} if not found
+     */
+    public EventCard getEvent(String cardID) {
+<span class="fc" id="L203">        return eventMap.get(cardID);</span>
+    }
+
+    /**
+     * @param cardID the building card ID
+     * @return the corresponding {@link BuildingCard}, or {@code null} if not found
+     */
+    public BuildingCard getBuilding(String cardID) {
+<span class="fc" id="L211">        return buildingMap.get(cardID);</span>
+    }
+
+    /**
+     * Returns all offer tiles valid for the given player count
+     * (i.e. tiles whose {@code minPlayers} is {@code &lt;= numPlayers}).
+     *
+     * @param numPlayers the number of players in the current game
+     * @return a list of qualifying {@link OfferTile} templates
+     */
+    public List&lt;OfferTile&gt; getOfferTiles(int numPlayers) {
+<span class="fc" id="L222">        List&lt;OfferTile&gt; myOfferTiles = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        for (OfferTile offerTile : offerTiles){</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">            if(offerTile.getMinPlayers() &lt;= numPlayers){</span>
+                //take it
+<span class="fc" id="L226">                myOfferTiles.add(offerTile);</span>
+            }
+<span class="fc" id="L228">        }</span>
+<span class="fc" id="L229">        return myOfferTiles;</span>
+    }
+
+    /**
+     * Returns the turn-order tile template configured for exactly the given player count.
+     *
+     * @param numPlayers the number of players
+     * @return the matching {@link TurnOrderTile} template, or {@code null} if none matches
+     */
+    public TurnOrderTile getTurnOrderTile(int numPlayers){
+
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        for(TurnOrderTile turnOrderTile : turnOrderTiles){</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">            if(numPlayers == turnOrderTile.getNumPlayers())</span>
+<span class="fc" id="L242">                return turnOrderTile;</span>
+<span class="fc" id="L243">        }</span>
+<span class="fc" id="L244">        return null; //we should never get to this point</span>
+    }
+
+    /** @return a new list containing all registered character card IDs */
+    public List&lt;String&gt; getAllCharactersIDs() {
+<span class="fc" id="L249">        return new ArrayList&lt;&gt;(characterMap.keySet());</span>
+    }
+
+    /** @return a new list containing all registered event card IDs */
+    public List&lt;String&gt; getAllEventsIDs() {
+<span class="fc" id="L254">        return new ArrayList&lt;&gt;(eventMap.keySet());</span>
+    }
+
+    /** @return a new list containing all registered building card IDs */
+    public List&lt;String&gt; getAllBuildingsIDs() {
+<span class="fc" id="L259">        return new ArrayList&lt;&gt;(buildingMap.keySet());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

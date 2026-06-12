@@ -12,6 +12,12 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests the client-side {@link GameModel}, verifying that every server update —
+ * setup, phase/turn changes, totem placement, board and era refreshes, pick
+ * limits, resources, card draws, events, extra turns and game end — mutates the
+ * local state correctly and is forwarded to the registered {@link ClientView}.
+ */
 class GameModelTest {
 
     private GameModel gameModel;
@@ -24,6 +30,7 @@ class GameModelTest {
         mockView = Mockito.mock(ClientView.class);
     }
 
+    /** Verifies observers are registered once and stop receiving updates after removal. */
     @Test
     void testAddRemoveObserver() {
         gameModel.addObserver(mockView);
@@ -39,6 +46,7 @@ class GameModelTest {
         verify(mockView, never()).onError("error3");
     }
 
+    /** Verifies game start stores the game id, clears the ended flag and notifies the view. */
     @Test
     void testUpdateGameStarted() {
         gameModel.addObserver(mockView);
@@ -48,6 +56,7 @@ class GameModelTest {
         verify(mockView).onGameStarted("game123");
     }
 
+    /** Verifies setup completion populates totems, turn order, food, rows and limits (and tolerates a null snapshot). */
     @Test
     void testUpdateGameSetupCompleted() {
         gameModel.addObserver(mockView);
@@ -80,6 +89,7 @@ class GameModelTest {
         assertTrue(gameModel.getUpperRow().isEmpty());
     }
 
+    /** Verifies phase updates store phase/current player and refresh pick limits on action resolution. */
     @Test
     void testUpdateCurrentPhase() {
         gameModel.addObserver(mockView);
@@ -102,6 +112,7 @@ class GameModelTest {
         assertEquals(3, gameModel.getRemainingLower().get("p1"));
     }
 
+    /** Verifies a current-player update is stored and forwarded to the view. */
     @Test
     void testUpdateCurrentPlayer() {
         gameModel.addObserver(mockView);
@@ -110,6 +121,7 @@ class GameModelTest {
         verify(mockView).onCurrentPlayerChanged("p1");
     }
 
+    /** Verifies a turn-order update is stored and forwarded to the view. */
     @Test
     void testUpdateTurnOrder() {
         gameModel.addObserver(mockView);
@@ -119,6 +131,7 @@ class GameModelTest {
         verify(mockView).onTurnOrderEstablished(turnOrder);
     }
 
+    /** Verifies placing a totem updates its position, the offer tile occupant and clears the turn-order slot. */
     @Test
     void testUpdateTotemPlaced() {
         gameModel.addObserver(mockView);
@@ -135,6 +148,7 @@ class GameModelTest {
         verify(mockView, atLeastOnce()).onOfferTilesUpdated(any());
     }
 
+    /** Verifies returning a totem clears its position, restores the turn-order slot and frees the offer tile. */
     @Test
     void testUpdateTotemReturned() {
         gameModel.addObserver(mockView);
@@ -151,6 +165,7 @@ class GameModelTest {
         verify(mockView).onTotemReturned("me", 0);
     }
 
+    /** Verifies a board update refreshes the card rows and deck count and notifies the view. */
     @Test
     void testUpdateBoard() {
         gameModel.addObserver(mockView);
@@ -163,6 +178,7 @@ class GameModelTest {
         verify(mockView).onBoardUpdated(upper, lower, 5);
     }
 
+    /** Verifies an era update stores the new era and building rows and notifies the view. */
     @Test
     void testUpdateEra() {
         gameModel.addObserver(mockView);
@@ -175,6 +191,7 @@ class GameModelTest {
         verify(mockView).onEraChanged(Era.II, upper, lower);
     }
 
+    /** Verifies both the initialization and subsequent updates of a player's pick limits. */
     @Test
     void testUpdatePlayerLimits() {
         gameModel.addObserver(mockView);
@@ -189,6 +206,7 @@ class GameModelTest {
         verify(mockView).onPlayerLimitsUpdated("p1", 0, 1);
     }
 
+    /** Verifies food and prestige resource updates are stored per player and forwarded. */
     @Test
     void testUpdatePlayerResource() {
         gameModel.addObserver(mockView);
@@ -201,6 +219,7 @@ class GameModelTest {
         verify(mockView).onPlayerResourceChanged("p1", ResourceType.PRESTIGE_POINTS, 20);
     }
 
+    /** Verifies taking characters and buildings from either row removes them and assigns them to the player. */
     @Test
     void testUpdateCardTaken() {
         gameModel.addObserver(mockView);
@@ -230,6 +249,7 @@ class GameModelTest {
         verify(mockView, times(4)).onCardTaken(anyString(), anyString(), any(), any());
     }
 
+  /** Verifies auto-player timer-started and invoked updates are forwarded to the view. */
   @Test
     void testAutoPlayer() {
         gameModel.addObserver(mockView);
@@ -242,6 +262,7 @@ class GameModelTest {
         verify(mockView).onAutoPlayerInvoked("p1");
     }
 
+    /** Verifies a resolved event is stored as the last event and forwarded to the view. */
     @Test
     void testUpdateEventResolved() {
         gameModel.addObserver(mockView);
@@ -250,6 +271,7 @@ class GameModelTest {
         verify(mockView).onEventResolved("e1", "Event Name");
     }
 
+    /** Verifies extra-turn start sets the player's pick limits and that start/end are forwarded. */
     @Test
     void testExtraTurn() {
         gameModel.addObserver(mockView);
@@ -261,6 +283,7 @@ class GameModelTest {
         verify(mockView).onExtraTurnEnded("me");
     }
 
+    /** Verifies game end sets the ended flag and stores winners and final rankings. */
     @Test
     void testUpdateGameEnded() {
         gameModel.addObserver(mockView);
@@ -273,6 +296,7 @@ class GameModelTest {
         verify(mockView).onGameEnded(winners, rankings);
     }
 
+    /** Verifies player disconnect/reconnect updates record the message and notify the view. */
     @Test
     void testPlayerDisconnectedReconnected() {
         gameModel.addObserver(mockView);
@@ -284,6 +308,7 @@ class GameModelTest {
         verify(mockView).onPlayerReconnected("p1");
     }
 
+    /** Verifies game abort and recovery-failure both mark the game ended and notify the view. */
     @Test
     void testGameAbortedAndRecoveryFailed() {
         gameModel.addObserver(mockView);
@@ -296,6 +321,7 @@ class GameModelTest {
         verify(mockView).onGameRecoveryFailed();
     }
 
+    /** Verifies an error update stores the message and forwards it to the view. */
     @Test
     void testUpdateError() {
         gameModel.addObserver(mockView);
@@ -304,6 +330,7 @@ class GameModelTest {
         verify(mockView).onError("fatal error");
     }
 
+    /** Verifies basic accessors, the in-game flag toggling on game end, and that collections are non-null. */
     @Test
     void testGettersAndSetters() {
         assertEquals(myNickname, gameModel.getMyNickname());

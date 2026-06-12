@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InventorPairRewardEffect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">InventorPairRewardEffect.java</span></div><h1>InventorPairRewardEffect.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.listeners.TribuObserver;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.InventionType;
+
+import java.util.List;
+
+/**
+ * Building effect that rewards food whenever the owner's tribe accumulates a new pair
+ * of Inventors sharing the same {@link InventionType}.
+ *
+ * &lt;p&gt;Registered as a {@link TribuObserver}. Only fires when an {@code INVENTOR} character
+ * is inserted. Uses a counter ({@code pairsAlreadyRewarded}) to track already-rewarded pairs,
+ * so each new pair is rewarded exactly once.
+ *
+ * &lt;p&gt;JSON key: {@code &quot;INVENTOR_PAIR_FOOD_REWARD&quot;}
+ */
+public class InventorPairRewardEffect implements BuildingEffect, TribuObserver {
+    private final Player owner;
+    private final int foodReward;
+    private int pairsAlreadyRewarded;
+
+    /**
+     * @param owner      the player who owns this building
+     * @param foodReward food points granted per newly completed Inventor pair
+     */
+<span class="fc" id="L35">    public InventorPairRewardEffect(Player owner, int foodReward) {</span>
+<span class="fc" id="L36">        this.owner = owner;</span>
+<span class="fc" id="L37">        this.foodReward = foodReward;</span>
+<span class="fc" id="L38">        this.pairsAlreadyRewarded = calculateCurrentPairs(owner.getTribu());</span>
+<span class="fc" id="L39">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void accept(EffectVisitor v) {
+<span class="fc" id="L44">        v.visitTribuObserver(this);</span>
+<span class="fc" id="L45">    }</span>
+
+    /**
+     * After an Inventor character is inserted, checks whether any new same-type
+     * Inventor pairs have been formed and grants the food reward for each.
+     * Has no effect when a non-Inventor character is inserted.
+     *
+     * @param type the type of character just inserted
+     * @return an {@link EffectOutcome} with the food delta for all new pairs, or empty
+     */
+    @Override
+    public EffectOutcome onCharacterInsertion(CharacterType type) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if(type == CharacterType.INVENTOR) {</span>
+<span class="fc" id="L58">            Tribu tribu = owner.getTribu();</span>
+<span class="fc" id="L59">            String nickname = owner.getNickname();</span>
+
+<span class="fc" id="L61">            int currentPairs = calculateCurrentPairs(tribu);</span>
+
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            if (currentPairs &gt; pairsAlreadyRewarded) {</span>
+<span class="fc" id="L64">                int newPairsFormed = currentPairs - pairsAlreadyRewarded;</span>
+<span class="fc" id="L65">                int totalBonus = foodReward * newPairsFormed;</span>
+
+<span class="fc" id="L67">                tribu.addFoodPoints(totalBonus);</span>
+<span class="fc" id="L68">                pairsAlreadyRewarded = currentPairs;</span>
+
+<span class="fc" id="L70">                return new EffectOutcome(List.of(</span>
+<span class="fc" id="L71">                        new ResourceDelta(nickname, ResourceType.FOOD, tribu.getFoodPoints(), totalBonus)</span>
+                ));
+            }
+        }
+
+<span class="fc" id="L76">        return EffectOutcome.empty();</span>
+    }
+
+    private int calculateCurrentPairs(Tribu tribu) {
+<span class="fc" id="L80">        int totalPairs = 0;</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        for (InventionType invType : InventionType.values()) {</span>
+<span class="fc" id="L82">            int count = tribu.getInventionTypeCount(invType);</span>
+<span class="fc" id="L83">            totalPairs += (count / 2);</span>
+        }
+<span class="fc" id="L85">        return totalPairs;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

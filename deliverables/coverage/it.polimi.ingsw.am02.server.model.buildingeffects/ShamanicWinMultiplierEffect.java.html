@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShamanicWinMultiplierEffect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">ShamanicWinMultiplierEffect.java</span></div><h1>ShamanicWinMultiplierEffect.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.EventType;
+import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
+import it.polimi.ingsw.am02.server.model.player.Player;
+
+import java.util.List;
+
+/**
+ * Building effect that multiplies the prestige bonus the owner received for winning
+ * the Shamanic Ritual event.
+ *
+ * &lt;p&gt;Registered as an {@link EventObserver}. Fires in {@link #eventPostResolution}:
+ * reads the bonus the owner received from {@link Tribu#getLastEventBonusReceived()}
+ * and adds {@code bonus × (multiplier - 1)} extra prestige points.
+ * Only activates if the owner actually received a positive bonus (i.e. was the majority winner).
+ *
+ * &lt;p&gt;JSON key: {@code &quot;SHAMANIC_WIN_MULTIPLIER&quot;}
+ */
+public class ShamanicWinMultiplierEffect implements BuildingEffect, EventObserver {
+    private final Player owner;
+    private final int multiplier;
+
+    /**
+     * @param owner      the player who owns this building
+     * @param multiplier the factor applied to the Shamanic Ritual majority bonus
+     */
+<span class="fc" id="L34">    public ShamanicWinMultiplierEffect(Player owner, int multiplier) {</span>
+<span class="fc" id="L35">        this.owner = owner;</span>
+<span class="fc" id="L36">        this.multiplier = multiplier;</span>
+<span class="fc" id="L37">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void accept(EffectVisitor visitor) {
+<span class="fc" id="L42">        visitor.visitEventObserver(this);</span>
+<span class="fc" id="L43">    }</span>
+
+    /**
+     * After the Shamanic Ritual resolves, multiplies the owner's majority bonus.
+     * The extra prestige added is {@code lastBonus × (multiplier - 1)}.
+     * Has no effect for other event types or if the owner received no bonus.
+     *
+     * @param currentEvent the event that just finished resolving
+     * @return an {@link EffectOutcome} with the extra prestige-point delta, or empty
+     */
+    @Override
+    public EffectOutcome eventPostResolution(EventType currentEvent) {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (currentEvent == EventType.SHAMANIC_RITUAL) {</span>
+<span class="fc" id="L56">            Tribu tribu = owner.getTribu();</span>
+<span class="fc" id="L57">            String nickname = owner.getNickname();</span>
+
+<span class="fc" id="L59">            int bonusReceived = tribu.getLastEventBonusReceived();</span>
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (bonusReceived &gt; 0) {</span>
+<span class="fc" id="L62">                int extraBonus = bonusReceived * (multiplier - 1);</span>
+<span class="fc" id="L63">                tribu.addPrestigePoints(extraBonus);</span>
+
+<span class="fc" id="L65">                return new EffectOutcome(List.of(</span>
+<span class="fc" id="L66">                        new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), extraBonus)</span>
+                ));
+            }
+        }
+
+<span class="fc" id="L71">        return EffectOutcome.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

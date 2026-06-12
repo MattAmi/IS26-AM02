@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PlayerSidebarItem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.components</a> &gt; <span class="el_source">PlayerSidebarItem.java</span></div><h1>PlayerSidebarItem.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.components;
+
+import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+
+/**
+ * Represents an item in the player sidebar of the GUI.
+ * This class displays player information such as nickname, totem, food, and prestige points.
+ */
+public class PlayerSidebarItem extends VBox {
+
+    /**
+     * Constructs a new PlayerSidebarItem.
+     *
+     * @param nickname    The player's nickname.
+     * @param isMe        True if this item represents the local player.
+     * @param isActive    True if it is currently this player's turn.
+     * @param isOffline   True if the player is currently disconnected.
+     * @param isViewed    True if this player's hand is currently being viewed.
+     * @param food        The player's current food count.
+     * @param pp          The player's current prestige points.
+     * @param totem       The totem color assigned to the player.
+     * @param tribalFont  The font to use for text display.
+     * @param onClick     The action to perform when the item is clicked.
+     */
+    public PlayerSidebarItem(String nickname, boolean isMe, boolean isActive, boolean isOffline, boolean isViewed, int food, int pp, Totem totem, Font tribalFont, Runnable onClick) {
+<span class="nc" id="L37">        super(5);</span>
+
+<span class="nc" id="L39">        this.setPadding(new Insets(10));</span>
+<span class="nc" id="L40">        this.setCursor(Cursor.HAND);</span>
+
+        // Dynamic styling based on player state
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        String borderColor = isViewed ? &quot;#F2D5A3&quot; : &quot;transparent&quot;;</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        String bgColor = isActive ? &quot;rgba(163, 29, 29, 0.3)&quot; : &quot;rgba(255,255,255,0.05)&quot;;</span>
+
+<span class="nc" id="L46">        this.setStyle(&quot;-fx-background-color: &quot; + bgColor +</span>
+                &quot;; -fx-border-color: &quot; + borderColor +
+                &quot;; -fx-border-radius: 5; -fx-border-width: 2;&quot;);
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        this.setOpacity(isOffline ? 0.5 : 1.0);</span>
+
+<span class="nc" id="L51">        HBox nameRow = new HBox(8);</span>
+<span class="nc" id="L52">        nameRow.setAlignment(Pos.CENTER_LEFT);</span>
+
+        // Load and add Totem icon if present
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (totem != null) {</span>
+<span class="nc" id="L56">            String totemPath = &quot;/images/totems/totem_&quot; + totem.name().toLowerCase() + &quot;.png&quot;;</span>
+<span class="nc" id="L57">            ImageView totemIcon = new ImageView(ImageLoader.getImage(totemPath));</span>
+<span class="nc" id="L58">            totemIcon.setFitHeight(20);</span>
+<span class="nc" id="L59">            totemIcon.setPreserveRatio(true);</span>
+<span class="nc" id="L60">            nameRow.getChildren().add(totemIcon);</span>
+        }
+
+        // Setup player name
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        String displayName = nickname.toUpperCase() + (isMe ? &quot; (YOU)&quot; : &quot;&quot;);</span>
+<span class="nc" id="L65">        Label nameLabel = new Label(displayName);</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        nameLabel.setTextFill(isActive ? Color.GOLD : Color.WHITE);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (tribalFont != null) {</span>
+<span class="nc" id="L68">            nameLabel.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));</span>
+        }
+<span class="nc" id="L70">        nameRow.getChildren().add(nameLabel);</span>
+
+        // Setup player stats
+<span class="nc" id="L73">        HBox statsRow = new HBox(10);</span>
+<span class="nc" id="L74">        statsRow.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L76">        HBox foodBox = new HBox(4);</span>
+<span class="nc" id="L77">        foodBox.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L78">        ImageView foodIcon = new ImageView(ImageLoader.getImage(&quot;/images/icons/food_point.png&quot;));</span>
+<span class="nc" id="L79">        foodIcon.setFitHeight(12);</span>
+<span class="nc" id="L80">        foodIcon.setPreserveRatio(true);</span>
+<span class="nc" id="L81">        Label foodLabel = new Label(String.valueOf(food));</span>
+<span class="nc" id="L82">        foodLabel.setTextFill(Color.LIGHTGRAY);</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (tribalFont != null) {</span>
+<span class="nc" id="L84">            foodLabel.setFont(Font.font(tribalFont.getFamily(), 12));</span>
+        }
+<span class="nc" id="L86">        foodBox.getChildren().addAll(foodIcon, foodLabel);</span>
+
+<span class="nc" id="L88">        HBox ppBox = new HBox(4);</span>
+<span class="nc" id="L89">        ppBox.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L90">        ImageView ppIcon = new ImageView(ImageLoader.getImage(&quot;/images/icons/prestige_point.png&quot;));</span>
+<span class="nc" id="L91">        ppIcon.setFitHeight(12);</span>
+<span class="nc" id="L92">        ppIcon.setPreserveRatio(true);</span>
+<span class="nc" id="L93">        Label ppLabel = new Label(String.valueOf(pp));</span>
+<span class="nc" id="L94">        ppLabel.setTextFill(Color.LIGHTGRAY);</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (tribalFont != null) {</span>
+<span class="nc" id="L96">            ppLabel.setFont(Font.font(tribalFont.getFamily(), 12));</span>
+        }
+<span class="nc" id="L98">        ppBox.getChildren().addAll(ppIcon, ppLabel);</span>
+
+<span class="nc" id="L100">        statsRow.getChildren().addAll(foodBox, ppBox);</span>
+
+<span class="nc" id="L102">        this.getChildren().addAll(nameRow, statsRow);</span>
+<span class="nc" id="L103">        this.setOnMouseClicked(e -&gt; onClick.run());</span>
+<span class="nc" id="L104">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

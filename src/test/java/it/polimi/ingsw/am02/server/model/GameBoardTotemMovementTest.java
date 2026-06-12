@@ -55,6 +55,7 @@ class GameBoardTotemMovementTest {
 
     //  movePlayerToOffer — happy path
 
+    /** Verifies a player can place a totem on a valid, free offer tile. */
     @Test
     void movePlayerToOfferFirstPlayerPlacedSuccessfully() {
         // The OfferTrack for 3 players should have tiles B, C, D (letters in order).
@@ -62,6 +63,7 @@ class GameBoardTotemMovementTest {
         assertDoesNotThrow(() -> gameBoard.movePlayerToOffer(players.getFirst(), 'B'));
     }
 
+    /** Verifies all three players can place totems on distinct tiles. */
     @Test
     void movePlayerToOfferAllThreePlayersOnDifferentTiles() {
         gameBoard.movePlayerToOffer(players.get(0), 'B');
@@ -72,6 +74,7 @@ class GameBoardTotemMovementTest {
 
     //  movePlayerToOffer — error cases
 
+    /** Verifies placing a totem on an already-occupied tile is rejected. */
     @Test
     void movePlayerToOffer_tileAlreadyOccupied_throwsException() {
         gameBoard.movePlayerToOffer(players.get(0), 'B');
@@ -81,6 +84,7 @@ class GameBoardTotemMovementTest {
                 () -> gameBoard.movePlayerToOffer(players.get(1), 'B'));
     }
 
+    /** Verifies placing a totem on a non-existent tile ID is rejected. */
     @Test
     void movePlayerToOfferInvalidTileIDThrowsException() {
         // 'Z' does not correspond to any OfferTile for a 3-player game
@@ -90,12 +94,14 @@ class GameBoardTotemMovementTest {
 
     //  areAllTotemsPlaced
 
+    /** Verifies the board reports not-all-placed before any totem is moved. */
     @Test
     void areAllTotemsPlacedNoTotemsPlacedYetReturnsFalse() {
         assertFalse(gameBoard.areAllTotemsPlaced(),
                 "No totems moved yet — TurnOrderTile should not be empty");
     }
 
+    /** Verifies the board reports not-all-placed with only some totems moved. */
     @Test
     void areAllTotemsPlacedPartialPlacementReturnsFalse() {
         gameBoard.movePlayerToOffer(players.get(0), 'B');
@@ -105,6 +111,7 @@ class GameBoardTotemMovementTest {
                 "Only 2 of 3 totems placed — should return false");
     }
 
+    /** Verifies the board reports all-placed once every totem has been moved. */
     @Test
     void areAllTotemsPlacedAllPlacedReturnsTrue() {
         gameBoard.movePlayerToOffer(players.get(0), 'B');
@@ -117,6 +124,7 @@ class GameBoardTotemMovementTest {
 
     //  getPlayersInResolutionOrder
 
+    /** Verifies resolution order follows left-to-right track position, not placement order. */
     @Test
     void getPlayersInResolutionOrderMatchesLeftToRightTrackOrder() {
         // Place totems in non-alphabetical order: player1->D, player2->B, player3->C
@@ -141,6 +149,7 @@ class GameBoardTotemMovementTest {
                 "Player on tile D should resolve third");
     }
 
+    /** Verifies that placing totems in track order yields that same resolution order. */
     @Test
     void getPlayersInResolutionOrderAlphabeticalPlacementPreservesOrder() {
         // Place in alphabetical tile order: player1->B, player2->C, player3->D
@@ -157,6 +166,7 @@ class GameBoardTotemMovementTest {
 
     //  Full flow: placement → check → resolution order
 
+    /** End-to-end flow: place all totems checking intermediate state, then verify resolution order. */
     @Test
     void fullPlacementFlowPlaceAllThenResolve() {
         // Step 1: verify nobody is placed yet

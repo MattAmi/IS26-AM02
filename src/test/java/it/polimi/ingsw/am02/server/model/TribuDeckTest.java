@@ -16,12 +16,18 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests {@link TribuDeck} construction, verifying for each player count that the
+ * deck holds the expected number of cards and that draws come out era-stratified
+ * (Era I, then II, then III, then final events). Uses a mocked {@link GameRegistry}.
+ */
 public class TribuDeckTest {
 
     private final Random gameRandom = new Random(42);
     private static final String ANSI_GREEN = "\u001B[32m";
     private static final String ANSI_RESET = "\u001B[0m";
 
+    /** Verifies deck size per player count and that cards are drawn in non-decreasing era order. */
     @ParameterizedTest(name = "Test TribuDeck with {0} players")
     @CsvSource({
             "2, 63",

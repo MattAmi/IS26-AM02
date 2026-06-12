@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FullSetFoodRewardEffectTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">FullSetFoodRewardEffectTest.java</span></div><h1>FullSetFoodRewardEffectTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Unit tests for the {@link FullSetFoodRewardEffect} class.
+ * Ensures the effect correctly tracks the number of completed character sets
+ * and exclusively rewards the player when a new full set is formed,
+ * preventing retroactive rewards for sets completed prior to acquiring the effect.
+ */
+<span class="fc" id="L22">class FullSetFoodRewardEffectTest {</span>
+
+    private Player mockPlayer;
+    private Tribu mockTribu;
+    private EffectVisitor mockVisitor;
+
+    // Strict test constants
+    private static final int FOOD_BONUS = 3;
+    private static final String PLAYER_NICKNAME = &quot;EchoPlayer&quot;;
+<span class="fc" id="L31">    private static final CharacterType TRIGGERING_CHARACTER = CharacterType.SHAMAN;</span>
+<span class="fc" id="L32">    private static final CharacterType MISSING_CHARACTER = CharacterType.GATHERER;</span>
+
+    @BeforeEach
+    void setUp() {
+        // Arrange: Initialize mocks
+<span class="fc" id="L37">        mockPlayer = Mockito.mock(Player.class);</span>
+<span class="fc" id="L38">        mockTribu = Mockito.mock(Tribu.class);</span>
+<span class="fc" id="L39">        mockVisitor = Mockito.mock(EffectVisitor.class);</span>
+
+        // Standard mock links
+<span class="fc" id="L42">        when(mockPlayer.getTribu()).thenReturn(mockTribu);</span>
+<span class="fc" id="L43">        when(mockPlayer.getNickname()).thenReturn(PLAYER_NICKNAME);</span>
+<span class="fc" id="L44">    }</span>
+
+    /**
+     * Tests that the visitor pattern is correctly implemented.
+     */
+    @Test
+    void accept_validVisitor_callsVisitTribuObserver() {
+        // Arrange: default setup (0 characters)
+<span class="fc" id="L52">        when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(0);</span>
+<span class="fc" id="L53">        FullSetFoodRewardEffect effect = new FullSetFoodRewardEffect(mockPlayer, FOOD_BONUS);</span>
+
+        // Act
+<span class="fc" id="L56">        effect.accept(mockVisitor);</span>
+
+        // Assert
+<span class="fc" id="L59">        verify(mockVisitor, times(1)).visitTribuObserver(effect);</span>
+<span class="fc" id="L60">    }</span>
+
+    // =========================================================================================
+    // ON CHARACTER INSERTION TESTS
+    // =========================================================================================
+
+    /**
+     * Tests that the player receives the food reward and a populated DTO
+     * when the inserted character completes a brand new full set.
+     */
+    @Test
+    void onCharacterInsertion_setCompleted_addsFoodAndReturnsDelta() {
+        // Arrange: The player starts with 0 sets when the effect is created
+<span class="fc" id="L73">        when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(0);</span>
+<span class="fc" id="L74">        FullSetFoodRewardEffect effect = new FullSetFoodRewardEffect(mockPlayer, FOOD_BONUS);</span>
+
+        // Fast-forward game state: The player just added the final character they needed.
+        // Now, the Tribu reports 1 of EVERY character.
+<span class="fc" id="L78">        when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(1);</span>
+<span class="fc" id="L79">        when(mockTribu.getFoodPoints()).thenReturn(10); // Simulated food total after addition</span>
+
+        // Act: The observer notification fires
+<span class="fc" id="L82">        EffectOutcome outcome = effect.onCharacterInsertion(TRIGGERING_CHARACTER);</span>
+
+        // Assert: Verify state changes and interactions
+<span class="fc" id="L85">        verify(mockTribu, times(1)).addFoodPoints(FOOD_BONUS);</span>
+
+        // Assert: Verify the outcome payload
+<span class="fc" id="L88">        assertNotNull(outcome, &quot;EffectOutcome should not be null&quot;);</span>
+<span class="fc" id="L89">        assertFalse(outcome.isEmpty(), &quot;EffectOutcome should contain a ResourceDelta&quot;);</span>
+<span class="fc" id="L90">        assertEquals(1, outcome.resourceDeltas().size(), &quot;There should be exactly one delta&quot;);</span>
+<span class="fc" id="L91">        assertEquals(ResourceType.FOOD, outcome.resourceDeltas().get(0).resource(), &quot;Delta should be for FOOD&quot;);</span>
+<span class="fc" id="L92">        assertEquals(FOOD_BONUS, outcome.resourceDeltas().get(0).delta(), &quot;Delta amount should match the food bonus&quot;);</span>
+<span class="fc" id="L93">    }</span>
+
+    /**
+     * Tests that the player receives no reward if the inserted character does not
+     * complete a full set (i.e., a bottleneck character is still missing).
+     */
+    @Test
+    void onCharacterInsertion_setNotCompleted_doesNothingAndReturnsEmpty() {
+        // Arrange: The player starts with 0 sets
+<span class="fc" id="L102">        when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(0);</span>
+<span class="fc" id="L103">        FullSetFoodRewardEffect effect = new FullSetFoodRewardEffect(mockPlayer, FOOD_BONUS);</span>
+
+        // Fast-forward game state: The player has 1 of almost everything,
+        // BUT they still have 0 of the MISSING_CHARACTER (Bottleneck = 0 sets).
+<span class="fc" id="L107">        when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(1);</span>
+<span class="fc" id="L108">        when(mockTribu.getCharacterCount(MISSING_CHARACTER)).thenReturn(0);</span>
+
+        // Act: Player inserted a Shaman, but still lacks a Gatherer
+<span class="fc" id="L111">        EffectOutcome outcome = effect.onCharacterInsertion(TRIGGERING_CHARACTER);</span>
+
+        // Assert: No food should be added
+<span class="fc" id="L114">        verify(mockTribu, never()).addFoodPoints(anyInt());</span>
+
+<span class="fc" id="L116">        assertNotNull(outcome, &quot;EffectOutcome should not be null&quot;);</span>
+<span class="fc" id="L117">        assertTrue(outcome.isEmpty(), &quot;EffectOutcome should be empty when no set is completed&quot;);</span>
+<span class="fc" id="L118">    }</span>
+
+    /**
+     * Tests that the effect correctly memorizes the sets completed BEFORE it was acquired,
+     * preventing the player from receiving retroactive rewards for past achievements.
+     */
+    @Test
+    void onCharacterInsertion_playerAlreadyHasSets_doesNotRewardRetroactively() {
+        // Arrange 1: The player ALREADY has 2 full sets BEFORE they buy this building.
+<span class="fc" id="L127">        int existingSets = 2;</span>
+<span class="fc" id="L128">        when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(existingSets);</span>
+
+        // The building is bought and the effect is created. It memorizes 2 sets.
+<span class="fc" id="L131">        FullSetFoodRewardEffect effect = new FullSetFoodRewardEffect(mockPlayer, FOOD_BONUS);</span>
+
+        // Arrange 2 &amp; Act 1: The player inserts a character, but it's just their 3rd Shaman.
+        // They still only have 2 FULL sets (the bottleneck is still 2).
+<span class="fc" id="L135">        when(mockTribu.getCharacterCount(TRIGGERING_CHARACTER)).thenReturn(3);</span>
+<span class="fc" id="L136">        EffectOutcome firstOutcome = effect.onCharacterInsertion(TRIGGERING_CHARACTER);</span>
+
+        // Assert 1: No food added, because 3 full sets haven't been reached yet.
+<span class="fc" id="L139">        verify(mockTribu, never()).addFoodPoints(anyInt());</span>
+<span class="fc" id="L140">        assertTrue(firstOutcome.isEmpty());</span>
+
+        // Arrange 3 &amp; Act 2: Now the player completes their 3rd full set
+        // (they finally get their 3rd copy of the bottleneck character).
+<span class="fc" id="L144">        when(mockTribu.getCharacterCount(any(CharacterType.class))).thenReturn(3);</span>
+<span class="fc" id="L145">        when(mockTribu.getFoodPoints()).thenReturn(20);</span>
+
+<span class="fc" id="L147">        EffectOutcome finalOutcome = effect.onCharacterInsertion(MISSING_CHARACTER);</span>
+
+        // Assert 2: NOW they should get the reward, exactly once.
+<span class="fc" id="L150">        verify(mockTribu, times(1)).addFoodPoints(FOOD_BONUS);</span>
+<span class="fc" id="L151">        assertFalse(finalOutcome.isEmpty());</span>
+<span class="fc" id="L152">        assertEquals(FOOD_BONUS, finalOutcome.resourceDeltas().get(0).delta());</span>
+<span class="fc" id="L153">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

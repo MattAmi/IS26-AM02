@@ -13,6 +13,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests the {@link SustenanceEffect}, verifying that each tribù pays its food
+ * upkeep and, when food is insufficient, loses prestige proportional to the
+ * unmet sustenance cost.
+ */
 class SustenanceEffectTest {
 
     private Player p1, p2;
@@ -35,6 +40,7 @@ class SustenanceEffectTest {
         effect = new SustenanceEffect(PENALTY);
     }
 
+    /** Verifies a fully-fed tribù pays only food, with no prestige loss. */
     @Test
     void applyEffect_allFed_deductsFood() {
         when(t1.calculateSustenanceCost()).thenReturn(3);
@@ -54,6 +60,7 @@ class SustenanceEffectTest {
         assertEquals(-3, outcome.resourceDeltas().get(0).delta());
     }
 
+    /** Verifies a partially-fed tribù spends all its food and loses prestige for the shortfall. */
     @Test
     void applyEffect_partialFed_deductsFoodAndPP() {
         when(t1.calculateSustenanceCost()).thenReturn(5);
@@ -67,6 +74,7 @@ class SustenanceEffectTest {
         assertEquals(2, outcome.resourceDeltas().size());
     }
 
+    /** Verifies a tribù with no food loses only prestige for the full sustenance cost. */
     @Test
     void applyEffect_noneFed_deductsOnlyPP() {
         when(t1.calculateSustenanceCost()).thenReturn(4);

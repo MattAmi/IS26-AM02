@@ -11,6 +11,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 
 
+/**
+ * Tests {@link TurnOrderTile}, verifying player registration/removal, empty and
+ * count tracking, registration-ordered retrieval and the food/prestige rewards
+ * applied per slot (positive bonus, food malus, prestige malus when food runs out).
+ */
 class TurnOrderTileTest {
 
     private TurnOrderTile tile;
@@ -26,6 +31,7 @@ class TurnOrderTileTest {
 
     // --- Happy paths ---
 
+    /** Verifies registering a player fills the first free slot. */
     @Test
     @DisplayName("registerPlayer should place player in first free slot")
     void shouldRegisterPlayerInFirstFreeSlot() {
@@ -35,6 +41,7 @@ class TurnOrderTileTest {
         assertFalse(tile.isEmpty());
     }
 
+    /** Verifies a fresh tile reports empty with zero players. */
     @Test
     @DisplayName("isEmpty should return true when no players are registered")
     void shouldBeEmptyInitially() {
@@ -42,6 +49,7 @@ class TurnOrderTileTest {
         assertEquals(0, tile.getPlayerCount());
     }
 
+    /** Verifies the empty state toggles correctly across registration and removal. */
     @Test
     @DisplayName("isEmpty should return false after one player registered, true after all removed")
     void shouldTrackEmptyStateCorrectly() {
@@ -52,6 +60,7 @@ class TurnOrderTileTest {
         assertTrue(tile.isEmpty());
     }
 
+    /** Verifies the player count tracks registrations and removals. */
     @Test
     @DisplayName("getPlayerCount should reflect registrations and removals")
     void shouldCountPlayersCorrectly() {
@@ -67,6 +76,7 @@ class TurnOrderTileTest {
         assertEquals(1, tile.getPlayerCount());
     }
 
+    /** Verifies both registered players are returned in registration order. */
     @Test
     @DisplayName("getOrderedPlayers should return players in registration order when both slots are occupied")
     void getOrderedPlayersBothSlotsOccupiedReturnsPlayersInOrder() {
@@ -80,6 +90,7 @@ class TurnOrderTileTest {
         assertEquals(raed, result.get(1));
     }
 
+    /** Verifies only the single registered player is returned. */
     @Test
     @DisplayName("getOrderedPlayers should return only the registered player when a single slot is occupied")
     void getOrderedPlayersOneSlotOccupiedReturnsSinglePlayer() {
@@ -91,6 +102,7 @@ class TurnOrderTileTest {
         assertEquals(matteo, result.getFirst());
     }
 
+    /** Verifies an empty tile returns an empty ordered list. */
     @Test
     @DisplayName("getOrderedPlayers should return an empty list when no player has been registered")
     void getOrderedPlayersNoPlayersRegisteredReturnsEmptyList() {
@@ -99,6 +111,7 @@ class TurnOrderTileTest {
         assertTrue(result.isEmpty());
     }
 
+    /** Verifies the first slot yields its positive food bonus. */
     @Test
     @DisplayName("getFoodForPlayer should return the correct food bonus for the player in the first slot (positive bonus)")
     void getFoodForPlayerFirstSlotReturnsPositiveBonus() {
@@ -109,6 +122,7 @@ class TurnOrderTileTest {
         assertEquals(1, food);
     }
 
+    /** Verifies the second slot yields its negative food value. */
     @Test
     @DisplayName("getFoodForPlayer should return the correct food bonus for the player in the second slot (negative bonus)")
     void getFoodForPlayerSecondSlotReturnsNegativeValue() {
@@ -120,6 +134,7 @@ class TurnOrderTileTest {
         assertEquals(-1, food);
     }
 
+    /** Verifies an unregistered player yields a zero food bonus. */
     @Test
     @DisplayName("getFoodForPlayer should return 0 when the player is not registered in any slot")
     void getFoodForPlayerPlayerNotRegisteredReturnsZero() {
@@ -128,6 +143,7 @@ class TurnOrderTileTest {
         assertEquals(0, food);
     }
 
+    /** Verifies applying rewards credits the first-slot player with food. */
     @Test
     @DisplayName("applyRewards should add food to a player occupying the first free slot (positive food bonus)")
     void applyRewardsFirstSlotPositiveBonusAddsFoodToPlayer() {
@@ -139,6 +155,7 @@ class TurnOrderTileTest {
         assertEquals(foodBefore + 1, matteo.getTribu().getFoodPoints());
     }
 
+    /** Verifies the second-slot food malus is paid with food when available, sparing prestige. */
     @Test
     @DisplayName("applyRewards should deduct food from the player in the second slot when the player has enough food to pay the malus")
     void applyRewardsSecondSlotNegativeBonusPlayerHasFoodDeductsFood() {
@@ -154,6 +171,7 @@ class TurnOrderTileTest {
         assertEquals(0, raed.getTribu().getPrestigePoints());
     }
 
+    /** Verifies the second-slot malus falls back to a prestige penalty when food is insufficient. */
     @Test
     @DisplayName("applyRewards should deduct prestige points when a player in the\n" +
             "     * second slot does not have enough food to pay the malus")

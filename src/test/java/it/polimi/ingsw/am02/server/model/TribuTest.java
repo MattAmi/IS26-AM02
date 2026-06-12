@@ -11,6 +11,12 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests {@link Tribu}, a player's resource and character container. Covers the
+ * default state, the food/prestige/shaman/discount/builder accumulators, and —
+ * against the real {@link GameRegistry} — character insertion and its effect on
+ * type counts, builder stats, invention tracking and sustenance cost.
+ */
 class TribuTest {
 
     private Tribu tribu;
@@ -28,6 +34,7 @@ class TribuTest {
         Mockito.when(mockPlayer.getNickname()).thenReturn("TestPlayer");
     }
 
+    /** Verifies a new tribù has all counters at zero and flags false. */
     @Test
     @DisplayName("Default constructor initializes all numeric fields to 0 and boolean fields to false")
     void constructorInitializesAllFieldsToDefaults() {
@@ -46,6 +53,7 @@ class TribuTest {
         );
     }
 
+    /** Verifies a new tribù holds no characters of any type. */
     @Test
     @DisplayName("No characters are present at construction")
     void constructorNoCharacters() {
@@ -55,6 +63,7 @@ class TribuTest {
         }
     }
 
+    /** Verifies a new tribù tracks no inventions of any type. */
     @Test
     @DisplayName("No inventions are tracked at construction")
     void constructorNoInventions() {
@@ -64,6 +73,7 @@ class TribuTest {
         }
     }
 
+    /** Verifies setFoodPoints overwrites the current food value. */
     @Test
     @DisplayName("setFoodPoints replaces the current value")
     void setFoodPointsReplacesValue() {
@@ -71,6 +81,7 @@ class TribuTest {
         assertEquals(10, tribu.getFoodPoints());
     }
 
+    /** Verifies addFoodPoints adds a positive delta. */
     @Test
     @DisplayName("addFoodPoints adds a positive delta")
     void addFoodPointsAddsDelta() {
@@ -78,6 +89,7 @@ class TribuTest {
         assertEquals(3, tribu.getFoodPoints());
     }
 
+    /** Verifies adding zero food leaves the value unchanged. */
     @Test
     @DisplayName("addFoodPoints with zero leaves the value unchanged")
     void addFoodPointsZeroIsNoop() {
@@ -85,6 +97,7 @@ class TribuTest {
         assertEquals(0, tribu.getFoodPoints());
     }
 
+    /** Verifies a negative delta reduces the food value. */
     @Test
     @DisplayName("addFoodPoints with a negative delta reduces food")
     void addFoodPointsNegativeDelta() {
@@ -93,6 +106,7 @@ class TribuTest {
         assertEquals(3, tribu.getFoodPoints());
     }
 
+    /** Verifies food can be reset to zero. */
     @Test
     @DisplayName("setFoodPoints to zero is valid")
     void setFoodPointsToZero() {
@@ -101,6 +115,7 @@ class TribuTest {
         assertEquals(0, tribu.getFoodPoints());
     }
 
+    /** Verifies addPrestigePoints adds to the prestige total. */
     @Test
     @DisplayName("addPrestigePoints accumulates correctly")
     void addPrestigePointsAccumulates() {
@@ -108,6 +123,7 @@ class TribuTest {
         assertEquals(7, tribu.getPrestigePoints());
     }
 
+    /** Verifies prestige may go negative. */
     @Test
     @DisplayName("addPrestigePoints with negative value reduces PP (score can go negative)")
     void addPrestigePointsCanGoNegative() {
@@ -115,6 +131,7 @@ class TribuTest {
         assertEquals(-10, tribu.getPrestigePoints());
     }
 
+    /** Verifies repeated prestige additions accumulate. */
     @Test
     @DisplayName("Multiple addPrestigePoints calls are cumulative")
     void addPrestigePointsMultipleCalls() {
@@ -123,6 +140,7 @@ class TribuTest {
         assertEquals(7, tribu.getPrestigePoints());
     }
 
+    /** Verifies addShamanStars adds to the shaman-star total. */
     @Test
     @DisplayName("addShamanStars accumulates correctly")
     void addShamanStarsAccumulates() {
@@ -130,6 +148,7 @@ class TribuTest {
         assertEquals(2, tribu.getShamanStars());
     }
 
+    /** Verifies repeated shaman-star additions accumulate. */
     @Test
     @DisplayName("addShamanStars multiple times is cumulative")
     void addShamanStarsMultipleCalls() {
@@ -138,6 +157,7 @@ class TribuTest {
         assertEquals(4, tribu.getShamanStars());
     }
 
+    /** Verifies food discounts accumulate across calls. */
     @Test
     @DisplayName("addFoodDiscount accumulates across multiple calls")
     void addFoodDiscountAccumulates() {
@@ -146,6 +166,7 @@ class TribuTest {
         assertEquals(5, tribu.getFoodDiscount());
     }
 
+    /** Verifies building discounts accumulate without touching the food discount. */
     @Test
     @DisplayName("addBuildingDiscount accumulates independently from food discount")
     void addBuildingDiscountAccumulates() {
@@ -155,6 +176,7 @@ class TribuTest {
         assertEquals(0, tribu.getFoodDiscount());
     }
 
+    /** Verifies food and building discounts are tracked independently. */
     @Test
     @DisplayName("Food and building discounts are independent")
     void discountsAreIndependent() {
@@ -164,6 +186,7 @@ class TribuTest {
         assertEquals(7, tribu.getBuildingDiscount());
     }
 
+    /** Verifies builder prestige points accumulate. */
     @Test
     @DisplayName("addPPBuilders accumulates correctly")
     void addPPBuildersAccumulates() {
@@ -175,6 +198,7 @@ class TribuTest {
 
     // With GameRegistry
 
+    /** Verifies inserting a HUNTER raises the hunter count. */
     @Test
     @DisplayName("insertCharacter with a real HUNTER card increments HUNTER count")
     void insertCharacterHunterIncrementsCount() {
@@ -185,6 +209,7 @@ class TribuTest {
         assertEquals(1, tribu.getCharacterCount(CharacterType.HUNTER));
     }
 
+    /** Verifies inserting a character raises the overall character count. */
     @Test
     @DisplayName("insertCharacter increments total character count")
     void insertCharacterIncrementsTotalCount() {
@@ -195,6 +220,7 @@ class TribuTest {
         assertEquals(1, tribu.getNumCharacters());
     }
 
+    /** Verifies inserting two of the same type raises both the type and total counts. */
     @Test
     @DisplayName("Multiple insertions of same type increment that type's count")
     void insertMultipleSameTypeCharacters() {
@@ -208,6 +234,7 @@ class TribuTest {
         assertEquals(2, tribu.getNumCharacters());
     }
 
+    /** Verifies different character types are counted independently. */
     @Test
     @DisplayName("Characters of different types are tracked independently")
     void insertDifferentTypeCharacters() {
@@ -224,12 +251,14 @@ class TribuTest {
         assertEquals(2, tribu.getNumCharacters());
     }
 
+    /** Verifies an uninserted character type has a count of zero. */
     @Test
     @DisplayName("getCharacterCount returns 0 for type with no insertions after registry load")
     void getCharacterCountZeroForAbsentType() {
         assertEquals(0, tribu.getCharacterCount(CharacterType.SHAMAN));
     }
 
+    /** Verifies inserting a BUILDER raises the building discount. */
     @Test
     @DisplayName("Inserting a BUILDER increases buildingDiscount")
     void insertBuilderIncreasesBuildingDiscount() {
@@ -243,6 +272,7 @@ class TribuTest {
                 "Building discount should increase after inserting a BUILDER");
     }
 
+    /** Verifies the building discount never decreases as more BUILDERs are added. */
     @Test
     @DisplayName("Inserting multiple BUILDERs accumulates buildingDiscount")
     void insertMultipleBuildersAccumulatesDiscount() {
@@ -257,6 +287,7 @@ class TribuTest {
                 "Building discount should not decrease after adding another BUILDER");
     }
 
+    /** Verifies inserting a BUILDER raises the builder prestige points. */
     @Test
     @DisplayName("Inserting a BUILDER updates totalPPBuilders")
     void insertBuilderUpdatesPPBuilders() {
@@ -269,6 +300,7 @@ class TribuTest {
                 "PP from builders should be positive after inserting a BUILDER");
     }
 
+    /** Verifies inserting an INVENTOR starts tracking an invention type. */
     @Test
     @DisplayName("Inserting an INVENTOR updates inventionCounts")
     void insertInventorUpdatesInventionCounts() {
@@ -281,6 +313,7 @@ class TribuTest {
                 "After inserting an INVENTOR, at least one invention type should be tracked");
     }
 
+    /** Verifies the distinct invention count never decreases as INVENTORs are added. */
     @Test
     @DisplayName("Inserting INVENTORs with different inventions increases distinct count")
     void insertInventorsWithDifferentInventions() {
@@ -300,6 +333,7 @@ class TribuTest {
                 "Adding more INVENTORs should not decrease distinct invention count");
     }
 
+    /** Verifies a non-BUILDER character leaves builder discount and PP untouched. */
     @Test
     @DisplayName("Inserting a HUNTER does not change buildingDiscount or PPBuilders")
     void insertNonBuilderDoesNotAffectBuilderStats() {
@@ -314,12 +348,14 @@ class TribuTest {
                 "HUNTER should not affect PP from builders");
     }
 
+    /** Verifies sustenance cost is zero for an empty tribù. */
     @Test
     @DisplayName("Sustenance cost is 0 when tribe has no characters")
     void sustenanceCostZeroWithNoCharacters() {
         assertEquals(0, tribu.calculateSustenanceCost());
     }
 
+    /** Verifies sustenance cost becomes positive after adding a character. */
     @Test
     @DisplayName("Sustenance cost increases after inserting characters")
     void sustenanceCostIncreasesWithCharacters() {
@@ -332,6 +368,7 @@ class TribuTest {
                 "Sustenance cost should be positive after adding a character");
     }
 
+    /** Verifies sustenance cost grows monotonically with the character count. */
     @Test
     @DisplayName("Sustenance cost scales with the number of characters")
     void sustenanceCostScalesWithCharacterCount() {
@@ -353,6 +390,7 @@ class TribuTest {
                 "Cost after 3 characters should exceed cost after 2");
     }
 
+    /** Verifies building discount is non-decreasing and positive across several BUILDERs. */
     @Test
     @DisplayName("getBuildingDiscount reflects accumulated BUILDER discounts correctly")
     void buildingDiscountReflectsAllBuilders() {
@@ -373,6 +411,7 @@ class TribuTest {
                 "After inserting 3 BUILDERs, total building discount should be positive");
     }
 
+    /** Verifies builder prestige points are non-decreasing and positive across several BUILDERs. */
     @Test
     @DisplayName("getPPBuilders reflects accumulated BUILDER PP correctly")
     void ppBuildersReflectsAllBuilders() {
@@ -393,6 +432,7 @@ class TribuTest {
                 "After inserting 3 BUILDERs, total PP from builders should be positive");
     }
 
+    /** Verifies building prestige points are unaffected by inserting characters. */
     @Test
     @DisplayName("totalPPBuildings starts at 0 and is unaffected by character insertions")
     void totalPPBuildingsUnchangedByCharacters() {

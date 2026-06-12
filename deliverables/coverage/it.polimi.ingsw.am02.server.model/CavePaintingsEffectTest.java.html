@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CavePaintingsEffectTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">CavePaintingsEffectTest.java</span></div><h1>CavePaintingsEffectTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.server.model.effect.CavePaintingsEffect;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Tests the {@link CavePaintingsEffect}, verifying that a player's tribù is
+ * awarded a per-artist prestige bonus when the artist requirement is met and a
+ * prestige malus otherwise.
+ */
+<span class="fc" id="L21">class CavePaintingsEffectTest {</span>
+
+    private Player p1, p2;
+    private Tribu t1, t2;
+    private CavePaintingsEffect effect;
+    private static final int MIN_ARTISTS = 2;
+    private static final int MALUS = 4;
+    private static final int BONUS_PER_ARTIST = 3;
+
+    @BeforeEach
+    void setUp() {
+<span class="fc" id="L32">        p1 = mock(Player.class);</span>
+<span class="fc" id="L33">        p2 = mock(Player.class);</span>
+<span class="fc" id="L34">        t1 = mock(Tribu.class);</span>
+<span class="fc" id="L35">        t2 = mock(Tribu.class);</span>
+
+<span class="fc" id="L37">        when(p1.getTribu()).thenReturn(t1);</span>
+<span class="fc" id="L38">        when(p2.getTribu()).thenReturn(t2);</span>
+<span class="fc" id="L39">        when(p1.getNickname()).thenReturn(&quot;P1&quot;);</span>
+<span class="fc" id="L40">        when(p2.getNickname()).thenReturn(&quot;P2&quot;);</span>
+
+<span class="fc" id="L42">        effect = new CavePaintingsEffect(MIN_ARTISTS, MALUS, BONUS_PER_ARTIST);</span>
+<span class="fc" id="L43">    }</span>
+
+    /** Verifies that meeting the artist requirement grants the per-artist bonus. */
+    @Test
+    void applyEffect_metRequirement_addsBonus() {
+<span class="fc" id="L48">        when(t1.getCharacterCount(CharacterType.ARTIST)).thenReturn(3); // &gt;= 2</span>
+<span class="fc" id="L49">        when(t1.getPrestigePoints()).thenReturn(10);</span>
+
+<span class="fc" id="L51">        EffectOutcome outcome = effect.applyEffect(List.of(p1));</span>
+
+<span class="fc" id="L53">        verify(t1).addPrestigePoints(9); // 3 * 3</span>
+<span class="fc" id="L54">        assertEquals(1, outcome.resourceDeltas().size());</span>
+<span class="fc" id="L55">        assertEquals(9, outcome.resourceDeltas().get(0).delta());</span>
+<span class="fc" id="L56">    }</span>
+
+    /** Verifies that failing the artist requirement applies the prestige malus. */
+    @Test
+    void applyEffect_failedRequirement_addsMalus() {
+<span class="fc" id="L61">        when(t1.getCharacterCount(CharacterType.ARTIST)).thenReturn(1); // &lt; 2</span>
+<span class="fc" id="L62">        when(t1.getPrestigePoints()).thenReturn(10);</span>
+
+<span class="fc" id="L64">        EffectOutcome outcome = effect.applyEffect(List.of(p1));</span>
+
+<span class="fc" id="L66">        verify(t1).addPrestigePoints(-4);</span>
+<span class="fc" id="L67">        assertEquals(-4, outcome.resourceDeltas().get(0).delta());</span>
+<span class="fc" id="L68">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

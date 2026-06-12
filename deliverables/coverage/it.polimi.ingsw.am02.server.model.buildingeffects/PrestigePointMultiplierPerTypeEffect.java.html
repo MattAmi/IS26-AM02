@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrestigePointMultiplierPerTypeEffect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">PrestigePointMultiplierPerTypeEffect.java</span></div><h1>PrestigePointMultiplierPerTypeEffect.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
+import it.polimi.ingsw.am02.server.model.player.Player;
+
+import java.util.List;
+
+/**
+ * Building effect that multiplies the prestige points earned by Builder characters
+ * at the end of the game.
+ *
+ * &lt;p&gt;At {@link PhaseType#END_GAME}, the extra bonus is computed as
+ * {@code ppBuilders × (multiplier - 1)}, effectively scaling Builder PP by {@code multiplier}.
+ *
+ * &lt;p&gt;Registered as a {@link PhaseObserver}.
+ *
+ * &lt;p&gt;JSON key: {@code &quot;PP_MULTIPLIER_PER_TYPE&quot;}
+ */
+public class PrestigePointMultiplierPerTypeEffect implements BuildingEffect, PhaseObserver {
+    final Player owner;
+    final CharacterType type;
+    final int multiplier;
+
+    /**
+     * @param owner      the player who owns this building
+     * @param type       the character type whose PP are multiplied (currently always {@code BUILDER})
+     * @param multiplier the factor by which Builder prestige points are scaled
+     */
+<span class="fc" id="L37">    public PrestigePointMultiplierPerTypeEffect(Player owner, CharacterType type, int multiplier) {</span>
+<span class="fc" id="L38">        this.owner = owner;</span>
+<span class="fc" id="L39">        this.type = type;</span>
+<span class="fc" id="L40">        this.multiplier = multiplier;</span>
+<span class="fc" id="L41">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void accept(EffectVisitor visitor) {
+<span class="fc" id="L46">        visitor.visitPhaseObserver(this);</span>
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * Applies the multiplier to the owner's Builder prestige points at game end.
+     * Extra bonus = {@code ppBuilders × (multiplier - 1)}.
+     *
+     * @param newPhase the phase the game is transitioning into
+     * @return an {@link EffectOutcome} with the prestige-point delta, or empty if not {@code END_GAME}
+     */
+    @Override
+    public EffectOutcome onPhaseChange(PhaseType newPhase) {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if(newPhase == PhaseType.END_GAME) {</span>
+<span class="fc" id="L59">            Tribu tribu = owner.getTribu();</span>
+<span class="fc" id="L60">            String nickname = owner.getNickname();</span>
+
+<span class="fc" id="L62">            int bonus = tribu.getPPBuilders() * (multiplier - 1);</span>
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (bonus == 0)</span>
+<span class="fc" id="L65">                return EffectOutcome.empty();</span>
+
+<span class="fc" id="L67">            tribu.addPrestigePoints(bonus);</span>
+
+<span class="fc" id="L69">            return new EffectOutcome(List.of(</span>
+<span class="fc" id="L70">                    new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), bonus)</span>
+            ));
+        }
+
+<span class="fc" id="L74">        return EffectOutcome.empty();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

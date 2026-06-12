@@ -13,6 +13,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests the {@link CavePaintingsEffect}, verifying that a player's tribù is
+ * awarded a per-artist prestige bonus when the artist requirement is met and a
+ * prestige malus otherwise.
+ */
 class CavePaintingsEffectTest {
 
     private Player p1, p2;
@@ -37,6 +42,7 @@ class CavePaintingsEffectTest {
         effect = new CavePaintingsEffect(MIN_ARTISTS, MALUS, BONUS_PER_ARTIST);
     }
 
+    /** Verifies that meeting the artist requirement grants the per-artist bonus. */
     @Test
     void applyEffect_metRequirement_addsBonus() {
         when(t1.getCharacterCount(CharacterType.ARTIST)).thenReturn(3); // >= 2
@@ -49,6 +55,7 @@ class CavePaintingsEffectTest {
         assertEquals(9, outcome.resourceDeltas().get(0).delta());
     }
 
+    /** Verifies that failing the artist requirement applies the prestige malus. */
     @Test
     void applyEffect_failedRequirement_addsMalus() {
         when(t1.getCharacterCount(CharacterType.ARTIST)).thenReturn(1); // < 2

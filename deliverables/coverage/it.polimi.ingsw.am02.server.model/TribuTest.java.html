@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TribuTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">TribuTest.java</span></div><h1>TribuTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model;
+
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.enumerations.InventionType;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Tests {@link Tribu}, a player's resource and character container. Covers the
+ * default state, the food/prestige/shaman/discount/builder accumulators, and —
+ * against the real {@link GameRegistry} — character insertion and its effect on
+ * type counts, builder stats, invention tracking and sustenance cost.
+ */
+<span class="fc" id="L20">class TribuTest {</span>
+
+    private Tribu tribu;
+    private static GameRegistry registry;
+<span class="fc" id="L24">    private final Player mockPlayer = Mockito.mock(Player.class);</span>
+
+    @BeforeEach
+    void setUp() {
+        // Starting values chosen to be non-zero so tests can distinguish
+        // &quot;value was there from the start&quot; from &quot;value was added by the method&quot;.
+<span class="fc" id="L30">        tribu = new Tribu();</span>
+<span class="fc" id="L31">        TestHelper.ensureRegistryLoaded();</span>
+<span class="fc" id="L32">        registry = GameRegistry.getInstance();</span>
+<span class="fc" id="L33">        Mockito.when(mockPlayer.getTribu()).thenReturn(tribu);</span>
+<span class="fc" id="L34">        Mockito.when(mockPlayer.getNickname()).thenReturn(&quot;TestPlayer&quot;);</span>
+<span class="fc" id="L35">    }</span>
+
+    /** Verifies a new tribù has all counters at zero and flags false. */
+    @Test
+    @DisplayName(&quot;Default constructor initializes all numeric fields to 0 and boolean fields to false&quot;)
+    void constructorInitializesAllFieldsToDefaults() {
+<span class="fc" id="L41">        assertAll(</span>
+<span class="fc" id="L42">                () -&gt; assertEquals(0, tribu.getFoodPoints()),</span>
+<span class="fc" id="L43">                () -&gt; assertEquals(0, tribu.getPrestigePoints()),</span>
+<span class="fc" id="L44">                () -&gt; assertEquals(0, tribu.getShamanStars()),</span>
+<span class="fc" id="L45">                () -&gt; assertEquals(0, tribu.getFoodDiscount()),</span>
+<span class="fc" id="L46">                () -&gt; assertEquals(0, tribu.getBuildingDiscount()),</span>
+<span class="fc" id="L47">                () -&gt; assertEquals(0, tribu.getPPBuilders()),</span>
+<span class="fc" id="L48">                () -&gt; assertEquals(0, tribu.getTotalPPBuildings()),</span>
+<span class="fc" id="L49">                () -&gt; assertEquals(0, tribu.getNumCharacters()),</span>
+<span class="fc" id="L50">                () -&gt; assertEquals(0, tribu.getLastEventBonusReceived()),</span>
+
+<span class="fc" id="L52">                () -&gt; assertFalse(tribu.isImmune())</span>
+        );
+<span class="fc" id="L54">    }</span>
+
+    /** Verifies a new tribù holds no characters of any type. */
+    @Test
+    @DisplayName(&quot;No characters are present at construction&quot;)
+    void constructorNoCharacters() {
+<span class="fc" id="L60">        assertEquals(0, tribu.getNumCharacters());</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        for (CharacterType type : CharacterType.values()) {</span>
+<span class="fc" id="L62">            assertEquals(0, tribu.getCharacterCount(type));</span>
+        }
+<span class="fc" id="L64">    }</span>
+
+    /** Verifies a new tribù tracks no inventions of any type. */
+    @Test
+    @DisplayName(&quot;No inventions are tracked at construction&quot;)
+    void constructorNoInventions() {
+<span class="fc" id="L70">        assertEquals(0, tribu.getNumOfDifferentInventionTypes());</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        for (InventionType type : InventionType.values()) {</span>
+<span class="fc" id="L72">            assertEquals(0, tribu.getInventionTypeCount(type));</span>
+        }
+<span class="fc" id="L74">    }</span>
+
+    /** Verifies setFoodPoints overwrites the current food value. */
+    @Test
+    @DisplayName(&quot;setFoodPoints replaces the current value&quot;)
+    void setFoodPointsReplacesValue() {
+<span class="fc" id="L80">        tribu.setFoodPoints(10);</span>
+<span class="fc" id="L81">        assertEquals(10, tribu.getFoodPoints());</span>
+<span class="fc" id="L82">    }</span>
+
+    /** Verifies addFoodPoints adds a positive delta. */
+    @Test
+    @DisplayName(&quot;addFoodPoints adds a positive delta&quot;)
+    void addFoodPointsAddsDelta() {
+<span class="fc" id="L88">        tribu.addFoodPoints(3);</span>
+<span class="fc" id="L89">        assertEquals(3, tribu.getFoodPoints());</span>
+<span class="fc" id="L90">    }</span>
+
+    /** Verifies adding zero food leaves the value unchanged. */
+    @Test
+    @DisplayName(&quot;addFoodPoints with zero leaves the value unchanged&quot;)
+    void addFoodPointsZeroIsNoop() {
+<span class="fc" id="L96">        tribu.addFoodPoints(0);</span>
+<span class="fc" id="L97">        assertEquals(0, tribu.getFoodPoints());</span>
+<span class="fc" id="L98">    }</span>
+
+    /** Verifies a negative delta reduces the food value. */
+    @Test
+    @DisplayName(&quot;addFoodPoints with a negative delta reduces food&quot;)
+    void addFoodPointsNegativeDelta() {
+<span class="fc" id="L104">        tribu.setFoodPoints(5);</span>
+<span class="fc" id="L105">        tribu.addFoodPoints(-2);</span>
+<span class="fc" id="L106">        assertEquals(3, tribu.getFoodPoints());</span>
+<span class="fc" id="L107">    }</span>
+
+    /** Verifies food can be reset to zero. */
+    @Test
+    @DisplayName(&quot;setFoodPoints to zero is valid&quot;)
+    void setFoodPointsToZero() {
+<span class="fc" id="L113">        tribu.setFoodPoints(5);</span>
+<span class="fc" id="L114">        tribu.setFoodPoints(0);</span>
+<span class="fc" id="L115">        assertEquals(0, tribu.getFoodPoints());</span>
+<span class="fc" id="L116">    }</span>
+
+    /** Verifies addPrestigePoints adds to the prestige total. */
+    @Test
+    @DisplayName(&quot;addPrestigePoints accumulates correctly&quot;)
+    void addPrestigePointsAccumulates() {
+<span class="fc" id="L122">        tribu.addPrestigePoints(7);</span>
+<span class="fc" id="L123">        assertEquals(7, tribu.getPrestigePoints());</span>
+<span class="fc" id="L124">    }</span>
+
+    /** Verifies prestige may go negative. */
+    @Test
+    @DisplayName(&quot;addPrestigePoints with negative value reduces PP (score can go negative)&quot;)
+    void addPrestigePointsCanGoNegative() {
+<span class="fc" id="L130">        tribu.addPrestigePoints(-10);</span>
+<span class="fc" id="L131">        assertEquals(-10, tribu.getPrestigePoints());</span>
+<span class="fc" id="L132">    }</span>
+
+    /** Verifies repeated prestige additions accumulate. */
+    @Test
+    @DisplayName(&quot;Multiple addPrestigePoints calls are cumulative&quot;)
+    void addPrestigePointsMultipleCalls() {
+<span class="fc" id="L138">        tribu.addPrestigePoints(2);</span>
+<span class="fc" id="L139">        tribu.addPrestigePoints(5);</span>
+<span class="fc" id="L140">        assertEquals(7, tribu.getPrestigePoints());</span>
+<span class="fc" id="L141">    }</span>
+
+    /** Verifies addShamanStars adds to the shaman-star total. */
+    @Test
+    @DisplayName(&quot;addShamanStars accumulates correctly&quot;)
+    void addShamanStarsAccumulates() {
+<span class="fc" id="L147">        tribu.addShamanStars(2);</span>
+<span class="fc" id="L148">        assertEquals(2, tribu.getShamanStars());</span>
+<span class="fc" id="L149">    }</span>
+
+    /** Verifies repeated shaman-star additions accumulate. */
+    @Test
+    @DisplayName(&quot;addShamanStars multiple times is cumulative&quot;)
+    void addShamanStarsMultipleCalls() {
+<span class="fc" id="L155">        tribu.addShamanStars(1);</span>
+<span class="fc" id="L156">        tribu.addShamanStars(3);</span>
+<span class="fc" id="L157">        assertEquals(4, tribu.getShamanStars());</span>
+<span class="fc" id="L158">    }</span>
+
+    /** Verifies food discounts accumulate across calls. */
+    @Test
+    @DisplayName(&quot;addFoodDiscount accumulates across multiple calls&quot;)
+    void addFoodDiscountAccumulates() {
+<span class="fc" id="L164">        tribu.addFoodDiscount(2);</span>
+<span class="fc" id="L165">        tribu.addFoodDiscount(3);</span>
+<span class="fc" id="L166">        assertEquals(5, tribu.getFoodDiscount());</span>
+<span class="fc" id="L167">    }</span>
+
+    /** Verifies building discounts accumulate without touching the food discount. */
+    @Test
+    @DisplayName(&quot;addBuildingDiscount accumulates independently from food discount&quot;)
+    void addBuildingDiscountAccumulates() {
+<span class="fc" id="L173">        tribu.addBuildingDiscount(1);</span>
+<span class="fc" id="L174">        tribu.addBuildingDiscount(4);</span>
+<span class="fc" id="L175">        assertEquals(5, tribu.getBuildingDiscount());</span>
+<span class="fc" id="L176">        assertEquals(0, tribu.getFoodDiscount());</span>
+<span class="fc" id="L177">    }</span>
+
+    /** Verifies food and building discounts are tracked independently. */
+    @Test
+    @DisplayName(&quot;Food and building discounts are independent&quot;)
+    void discountsAreIndependent() {
+<span class="fc" id="L183">        tribu.addFoodDiscount(3);</span>
+<span class="fc" id="L184">        tribu.addBuildingDiscount(7);</span>
+<span class="fc" id="L185">        assertEquals(3, tribu.getFoodDiscount());</span>
+<span class="fc" id="L186">        assertEquals(7, tribu.getBuildingDiscount());</span>
+<span class="fc" id="L187">    }</span>
+
+    /** Verifies builder prestige points accumulate. */
+    @Test
+    @DisplayName(&quot;addPPBuilders accumulates correctly&quot;)
+    void addPPBuildersAccumulates() {
+<span class="fc" id="L193">        tribu.addPPBuilders(4);</span>
+<span class="fc" id="L194">        tribu.addPPBuilders(2);</span>
+<span class="fc" id="L195">        assertEquals(6, tribu.getPPBuilders());</span>
+<span class="fc" id="L196">    }</span>
+
+
+    // With GameRegistry
+
+    /** Verifies inserting a HUNTER raises the hunter count. */
+    @Test
+    @DisplayName(&quot;insertCharacter with a real HUNTER card increments HUNTER count&quot;)
+    void insertCharacterHunterIncrementsCount() {
+<span class="fc" id="L205">        String hunterID = findFirstCardIDByType(CharacterType.HUNTER);</span>
+<span class="fc" id="L206">        assertNotNull(hunterID, &quot;No HUNTER card found in registry&quot;);</span>
+
+<span class="fc" id="L208">        tribu.insertCharacter(hunterID, mockPlayer);</span>
+<span class="fc" id="L209">        assertEquals(1, tribu.getCharacterCount(CharacterType.HUNTER));</span>
+<span class="fc" id="L210">    }</span>
+
+    /** Verifies inserting a character raises the overall character count. */
+    @Test
+    @DisplayName(&quot;insertCharacter increments total character count&quot;)
+    void insertCharacterIncrementsTotalCount() {
+<span class="fc" id="L216">        String hunterID = findFirstCardIDByType(CharacterType.HUNTER);</span>
+<span class="fc" id="L217">        assertNotNull(hunterID, &quot;No HUNTER card found in registry&quot;);</span>
+
+<span class="fc" id="L219">        tribu.insertCharacter(hunterID, mockPlayer);</span>
+<span class="fc" id="L220">        assertEquals(1, tribu.getNumCharacters());</span>
+<span class="fc" id="L221">    }</span>
+
+    /** Verifies inserting two of the same type raises both the type and total counts. */
+    @Test
+    @DisplayName(&quot;Multiple insertions of same type increment that type's count&quot;)
+    void insertMultipleSameTypeCharacters() {
+<span class="fc" id="L227">        List&lt;String&gt; hunterIDs = findCardIDsByType(CharacterType.HUNTER, 2);</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        assertTrue(hunterIDs.size() &gt;= 2, &quot;Need at least 2 HUNTER cards in registry&quot;);</span>
+
+<span class="fc" id="L230">        tribu.insertCharacter(hunterIDs.get(0), mockPlayer);</span>
+<span class="fc" id="L231">        tribu.insertCharacter(hunterIDs.get(1), mockPlayer);</span>
+
+<span class="fc" id="L233">        assertEquals(2, tribu.getCharacterCount(CharacterType.HUNTER));</span>
+<span class="fc" id="L234">        assertEquals(2, tribu.getNumCharacters());</span>
+<span class="fc" id="L235">    }</span>
+
+    /** Verifies different character types are counted independently. */
+    @Test
+    @DisplayName(&quot;Characters of different types are tracked independently&quot;)
+    void insertDifferentTypeCharacters() {
+<span class="fc" id="L241">        String hunterID = findFirstCardIDByType(CharacterType.HUNTER);</span>
+<span class="fc" id="L242">        String builderID = findFirstCardIDByType(CharacterType.BUILDER);</span>
+<span class="fc" id="L243">        assertNotNull(hunterID);</span>
+<span class="fc" id="L244">        assertNotNull(builderID);</span>
+
+<span class="fc" id="L246">        tribu.insertCharacter(hunterID, mockPlayer);</span>
+<span class="fc" id="L247">        tribu.insertCharacter(builderID, mockPlayer);</span>
+
+<span class="fc" id="L249">        assertEquals(1, tribu.getCharacterCount(CharacterType.HUNTER));</span>
+<span class="fc" id="L250">        assertEquals(1, tribu.getCharacterCount(CharacterType.BUILDER));</span>
+<span class="fc" id="L251">        assertEquals(2, tribu.getNumCharacters());</span>
+<span class="fc" id="L252">    }</span>
+
+    /** Verifies an uninserted character type has a count of zero. */
+    @Test
+    @DisplayName(&quot;getCharacterCount returns 0 for type with no insertions after registry load&quot;)
+    void getCharacterCountZeroForAbsentType() {
+<span class="fc" id="L258">        assertEquals(0, tribu.getCharacterCount(CharacterType.SHAMAN));</span>
+<span class="fc" id="L259">    }</span>
+
+    /** Verifies inserting a BUILDER raises the building discount. */
+    @Test
+    @DisplayName(&quot;Inserting a BUILDER increases buildingDiscount&quot;)
+    void insertBuilderIncreasesBuildingDiscount() {
+<span class="fc" id="L265">        String builderID = findFirstCardIDByType(CharacterType.BUILDER);</span>
+<span class="fc" id="L266">        assertNotNull(builderID, &quot;No BUILDER card found in registry&quot;);</span>
+
+<span class="fc" id="L268">        int discountBefore = tribu.getBuildingDiscount();</span>
+<span class="fc" id="L269">        tribu.insertCharacter(builderID, mockPlayer);</span>
+
+<span class="pc bpc" id="L271" title="1 of 2 branches missed.">        assertTrue(tribu.getBuildingDiscount() &gt; discountBefore,</span>
+                &quot;Building discount should increase after inserting a BUILDER&quot;);
+<span class="fc" id="L273">    }</span>
+
+    /** Verifies the building discount never decreases as more BUILDERs are added. */
+    @Test
+    @DisplayName(&quot;Inserting multiple BUILDERs accumulates buildingDiscount&quot;)
+    void insertMultipleBuildersAccumulatesDiscount() {
+<span class="fc" id="L279">        List&lt;String&gt; builderIDs = findCardIDsByType(CharacterType.BUILDER, 2);</span>
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">        assertTrue(builderIDs.size() &gt;= 2, &quot;Need at least 2 BUILDER cards in registry&quot;);</span>
+
+<span class="fc" id="L282">        tribu.insertCharacter(builderIDs.get(0), mockPlayer);</span>
+<span class="fc" id="L283">        int discountAfterFirst = tribu.getBuildingDiscount();</span>
+
+<span class="fc" id="L285">        tribu.insertCharacter(builderIDs.get(1), mockPlayer);</span>
+<span class="pc bpc" id="L286" title="1 of 2 branches missed.">        assertTrue(tribu.getBuildingDiscount() &gt;= discountAfterFirst,</span>
+                &quot;Building discount should not decrease after adding another BUILDER&quot;);
+<span class="fc" id="L288">    }</span>
+
+    /** Verifies inserting a BUILDER raises the builder prestige points. */
+    @Test
+    @DisplayName(&quot;Inserting a BUILDER updates totalPPBuilders&quot;)
+    void insertBuilderUpdatesPPBuilders() {
+<span class="fc" id="L294">        String builderID = findFirstCardIDByType(CharacterType.BUILDER);</span>
+<span class="fc" id="L295">        assertNotNull(builderID);</span>
+
+<span class="fc" id="L297">        tribu.insertCharacter(builderID, mockPlayer);</span>
+
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">        assertTrue(tribu.getPPBuilders() &gt; 0,</span>
+                &quot;PP from builders should be positive after inserting a BUILDER&quot;);
+<span class="fc" id="L301">    }</span>
+
+    /** Verifies inserting an INVENTOR starts tracking an invention type. */
+    @Test
+    @DisplayName(&quot;Inserting an INVENTOR updates inventionCounts&quot;)
+    void insertInventorUpdatesInventionCounts() {
+<span class="fc" id="L307">        String inventorID = findFirstCardIDByType(CharacterType.INVENTOR);</span>
+<span class="fc" id="L308">        assertNotNull(inventorID, &quot;No INVENTOR card found in registry&quot;);</span>
+
+<span class="fc" id="L310">        tribu.insertCharacter(inventorID, mockPlayer);</span>
+
+<span class="pc bpc" id="L312" title="1 of 2 branches missed.">        assertTrue(tribu.getNumOfDifferentInventionTypes() &gt; 0,</span>
+                &quot;After inserting an INVENTOR, at least one invention type should be tracked&quot;);
+<span class="fc" id="L314">    }</span>
+
+    /** Verifies the distinct invention count never decreases as INVENTORs are added. */
+    @Test
+    @DisplayName(&quot;Inserting INVENTORs with different inventions increases distinct count&quot;)
+    void insertInventorsWithDifferentInventions() {
+        // Find two inventors with different invention types
+<span class="fc" id="L321">        List&lt;String&gt; inventorIDs = findCardIDsByType(CharacterType.INVENTOR, 6);</span>
+<span class="pc bpc" id="L322" title="1 of 2 branches missed.">        assertTrue(inventorIDs.size() &gt;= 2, &quot;Need at least 2 INVENTOR cards in registry&quot;);</span>
+
+<span class="fc" id="L324">        tribu.insertCharacter(inventorIDs.getFirst(), mockPlayer);</span>
+<span class="fc" id="L325">        int distinctAfterFirst = tribu.getNumOfDifferentInventionTypes();</span>
+
+        // Try adding more inventors until we find one that increases distinct count
+<span class="fc bfc" id="L328" title="All 2 branches covered.">        for (int i = 1; i &lt; inventorIDs.size(); i++) {</span>
+<span class="fc" id="L329">            tribu.insertCharacter(inventorIDs.get(i), mockPlayer);</span>
+        }
+
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">        assertTrue(tribu.getNumOfDifferentInventionTypes() &gt;= distinctAfterFirst,</span>
+                &quot;Adding more INVENTORs should not decrease distinct invention count&quot;);
+<span class="fc" id="L334">    }</span>
+
+    /** Verifies a non-BUILDER character leaves builder discount and PP untouched. */
+    @Test
+    @DisplayName(&quot;Inserting a HUNTER does not change buildingDiscount or PPBuilders&quot;)
+    void insertNonBuilderDoesNotAffectBuilderStats() {
+<span class="fc" id="L340">        String hunterID = findFirstCardIDByType(CharacterType.HUNTER);</span>
+<span class="fc" id="L341">        assertNotNull(hunterID);</span>
+
+<span class="fc" id="L343">        tribu.insertCharacter(hunterID, mockPlayer);</span>
+
+<span class="fc" id="L345">        assertEquals(0, tribu.getBuildingDiscount(),</span>
+                &quot;HUNTER should not affect building discount&quot;);
+<span class="fc" id="L347">        assertEquals(0, tribu.getPPBuilders(),</span>
+                &quot;HUNTER should not affect PP from builders&quot;);
+<span class="fc" id="L349">    }</span>
+
+    /** Verifies sustenance cost is zero for an empty tribù. */
+    @Test
+    @DisplayName(&quot;Sustenance cost is 0 when tribe has no characters&quot;)
+    void sustenanceCostZeroWithNoCharacters() {
+<span class="fc" id="L355">        assertEquals(0, tribu.calculateSustenanceCost());</span>
+<span class="fc" id="L356">    }</span>
+
+    /** Verifies sustenance cost becomes positive after adding a character. */
+    @Test
+    @DisplayName(&quot;Sustenance cost increases after inserting characters&quot;)
+    void sustenanceCostIncreasesWithCharacters() {
+<span class="fc" id="L362">        String hunterID = findFirstCardIDByType(CharacterType.HUNTER);</span>
+<span class="fc" id="L363">        assertNotNull(hunterID);</span>
+
+<span class="fc" id="L365">        tribu.insertCharacter(hunterID, mockPlayer);</span>
+
+<span class="pc bpc" id="L367" title="1 of 2 branches missed.">        assertTrue(tribu.calculateSustenanceCost() &gt; 0,</span>
+                &quot;Sustenance cost should be positive after adding a character&quot;);
+<span class="fc" id="L369">    }</span>
+
+    /** Verifies sustenance cost grows monotonically with the character count. */
+    @Test
+    @DisplayName(&quot;Sustenance cost scales with the number of characters&quot;)
+    void sustenanceCostScalesWithCharacterCount() {
+<span class="fc" id="L375">        List&lt;String&gt; hunterIDs = findCardIDsByType(CharacterType.HUNTER, 3);</span>
+<span class="pc bpc" id="L376" title="1 of 2 branches missed.">        assertTrue(hunterIDs.size() &gt;= 3, &quot;Need at least 3 HUNTER cards in registry&quot;);</span>
+
+<span class="fc" id="L378">        tribu.insertCharacter(hunterIDs.get(0), mockPlayer);</span>
+<span class="fc" id="L379">        int costAfter1 = tribu.calculateSustenanceCost();</span>
+
+<span class="fc" id="L381">        tribu.insertCharacter(hunterIDs.get(1), mockPlayer);</span>
+<span class="fc" id="L382">        int costAfter2 = tribu.calculateSustenanceCost();</span>
+
+<span class="fc" id="L384">        tribu.insertCharacter(hunterIDs.get(2), mockPlayer);</span>
+<span class="fc" id="L385">        int costAfter3 = tribu.calculateSustenanceCost();</span>
+
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">        assertTrue(costAfter2 &gt; costAfter1,</span>
+                &quot;Cost after 2 characters should exceed cost after 1&quot;);
+<span class="pc bpc" id="L389" title="1 of 2 branches missed.">        assertTrue(costAfter3 &gt; costAfter2,</span>
+                &quot;Cost after 3 characters should exceed cost after 2&quot;);
+<span class="fc" id="L391">    }</span>
+
+    /** Verifies building discount is non-decreasing and positive across several BUILDERs. */
+    @Test
+    @DisplayName(&quot;getBuildingDiscount reflects accumulated BUILDER discounts correctly&quot;)
+    void buildingDiscountReflectsAllBuilders() {
+<span class="fc" id="L397">        List&lt;String&gt; builderIDs = findCardIDsByType(CharacterType.BUILDER, 3);</span>
+<span class="pc bpc" id="L398" title="1 of 2 branches missed.">        assertTrue(builderIDs.size() &gt;= 3, &quot;Need at least 3 BUILDER cards in registry&quot;);</span>
+
+<span class="fc" id="L400">        int previousDiscount = 0;</span>
+<span class="fc bfc" id="L401" title="All 2 branches covered.">        for (String id : builderIDs) {</span>
+<span class="fc" id="L402">            tribu.insertCharacter(id, mockPlayer);</span>
+<span class="fc" id="L403">            int currentDiscount = tribu.getBuildingDiscount();</span>
+<span class="pc bpc" id="L404" title="1 of 2 branches missed.">            assertTrue(currentDiscount &gt;= previousDiscount,</span>
+                    &quot;Building discount should never decrease after inserting a BUILDER (was &quot;
+                            + previousDiscount + &quot;, now &quot; + currentDiscount + &quot;)&quot;);
+<span class="fc" id="L407">            previousDiscount = currentDiscount;</span>
+<span class="fc" id="L408">        }</span>
+
+<span class="pc bpc" id="L410" title="1 of 2 branches missed.">        assertTrue(tribu.getBuildingDiscount() &gt; 0,</span>
+                &quot;After inserting 3 BUILDERs, total building discount should be positive&quot;);
+<span class="fc" id="L412">    }</span>
+
+    /** Verifies builder prestige points are non-decreasing and positive across several BUILDERs. */
+    @Test
+    @DisplayName(&quot;getPPBuilders reflects accumulated BUILDER PP correctly&quot;)
+    void ppBuildersReflectsAllBuilders() {
+<span class="fc" id="L418">        List&lt;String&gt; builderIDs = findCardIDsByType(CharacterType.BUILDER, 3);</span>
+<span class="pc bpc" id="L419" title="1 of 2 branches missed.">        assertTrue(builderIDs.size() &gt;= 3, &quot;Need at least 3 BUILDER cards in registry&quot;);</span>
+
+<span class="fc" id="L421">        int previousPP = 0;</span>
+<span class="fc bfc" id="L422" title="All 2 branches covered.">        for (String id : builderIDs) {</span>
+<span class="fc" id="L423">            tribu.insertCharacter(id, mockPlayer);</span>
+<span class="fc" id="L424">            int currentPP = tribu.getPPBuilders();</span>
+<span class="pc bpc" id="L425" title="1 of 2 branches missed.">            assertTrue(currentPP &gt;= previousPP,</span>
+                    &quot;PP from builders should never decrease after inserting a BUILDER (was &quot;
+                            + previousPP + &quot;, now &quot; + currentPP + &quot;)&quot;);
+<span class="fc" id="L428">            previousPP = currentPP;</span>
+<span class="fc" id="L429">        }</span>
+
+<span class="pc bpc" id="L431" title="1 of 2 branches missed.">        assertTrue(tribu.getPPBuilders() &gt; 0,</span>
+                &quot;After inserting 3 BUILDERs, total PP from builders should be positive&quot;);
+<span class="fc" id="L433">    }</span>
+
+    /** Verifies building prestige points are unaffected by inserting characters. */
+    @Test
+    @DisplayName(&quot;totalPPBuildings starts at 0 and is unaffected by character insertions&quot;)
+    void totalPPBuildingsUnchangedByCharacters() {
+<span class="fc" id="L439">        String hunterID = findFirstCardIDByType(CharacterType.HUNTER);</span>
+<span class="fc" id="L440">        assertNotNull(hunterID);</span>
+
+<span class="fc" id="L442">        tribu.insertCharacter(hunterID, mockPlayer);</span>
+<span class="fc" id="L443">        assertEquals(0, tribu.getTotalPPBuildings(),</span>
+                &quot;Character insertions should not affect totalPPBuildings&quot;);
+<span class="fc" id="L445">    }</span>
+
+
+
+    // Helper methods
+
+    /**
+     * Finds the first character card ID of the given type in the registry.
+     */
+    private String findFirstCardIDByType(CharacterType type) {
+<span class="fc" id="L455">        return registry.getAllCharactersIDs().stream()</span>
+<span class="fc bfc" id="L456" title="All 2 branches covered.">                .filter(id -&gt; registry.getCharacter(id).getType() == type)</span>
+<span class="fc" id="L457">                .findFirst()</span>
+<span class="fc" id="L458">                .orElse(null);</span>
+    }
+
+    /**
+     * Finds up to {@code limit} character card IDs of the given type in the registry.
+     */
+    private List&lt;String&gt; findCardIDsByType(CharacterType type, int limit) {
+<span class="fc" id="L465">        return registry.getAllCharactersIDs().stream()</span>
+<span class="fc bfc" id="L466" title="All 2 branches covered.">                .filter(id -&gt; registry.getCharacter(id).getType() == type)</span>
+<span class="fc" id="L467">                .limit(limit)</span>
+<span class="fc" id="L468">                .collect(java.util.stream.Collectors.toList());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

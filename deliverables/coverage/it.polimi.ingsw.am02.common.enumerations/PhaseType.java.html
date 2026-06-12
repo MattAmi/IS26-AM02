@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PhaseType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.common.enumerations</a> &gt; <span class="el_source">PhaseType.java</span></div><h1>PhaseType.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.common.enumerations;
+
+/**
+ * Enumerates every distinct phase in the game FSM.
+ * Phase transitions are broadcast via
+ * {@link it.polimi.ingsw.am02.common.interfaces.VirtualView#notifyPhaseChanged}
+ * and observed by building effects registered as
+ * {@link it.polimi.ingsw.am02.server.model.listeners.PhaseObserver}.
+ *
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@link #SETUP}                  — board initialization, first turn order established&lt;/li&gt;
+ *   &lt;li&gt;{@link #TOTEM_PLACEMENT}        — players place their totems on offer tiles in order&lt;/li&gt;
+ *   &lt;li&gt;{@link #ACTION_RESOLUTION}      — current player selects cards or returns totem&lt;/li&gt;
+ *   &lt;li&gt;{@link #END_PLAYER_TURN}        — turn-order rewards applied; {@code TurnOrderFoodBonusEffect} fires here&lt;/li&gt;
+ *   &lt;li&gt;{@link #END_ROUND}              — all players have acted; extra turns enqueued; {@code ExtraTurnEffect} fires here&lt;/li&gt;
+ *   &lt;li&gt;{@link #EVENT_RESOLUTION}       — non-final event cards in the lower row are resolved&lt;/li&gt;
+ *   &lt;li&gt;{@link #NEW_ROUND}              — board rows refreshed for the next round&lt;/li&gt;
+ *   &lt;li&gt;{@link #NEW_ERA}                — tribe deck era changed; building market rows updated&lt;/li&gt;
+ *   &lt;li&gt;{@link #FINAL_EVENT_RESOLUTION} — final event cards resolved at game end&lt;/li&gt;
+ *   &lt;li&gt;{@link #END_GAME}               — final scoring; end-game building effects fire here&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+<span class="fc" id="L23">public enum PhaseType {</span>
+<span class="fc" id="L24">    SETUP, TOTEM_PLACEMENT, ACTION_RESOLUTION, END_PLAYER_TURN, END_ROUND, EVENT_RESOLUTION , NEW_ROUND, NEW_ERA, FINAL_EVENT_RESOLUTION, END_GAME</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharacterEffectsTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">CharacterEffectsTest.java</span></div><h1>CharacterEffectsTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.server.model.effect.GathererEffect;
+import it.polimi.ingsw.am02.server.model.effect.NoEffect;
+import it.polimi.ingsw.am02.server.model.effect.ShamanEffect;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Tests the immediate character placement effects ({@link GathererEffect},
+ * {@link ShamanEffect}, {@link NoEffect}), verifying that each updates the
+ * player's tribù state and reports the matching resource deltas.
+ */
+<span class="fc" id="L20">class CharacterEffectsTest {</span>
+
+    private Player player;
+
+    @BeforeEach
+    void setUp() {
+<span class="fc" id="L26">        player = new Player(&quot;Alice&quot;, Totem.RED);</span>
+<span class="fc" id="L27">    }</span>
+
+    /** Verifies the gatherer effect increases the tribù's food discount. */
+    @Test
+    void testGathererEffect() {
+<span class="fc" id="L32">        GathererEffect effect = new GathererEffect(2);</span>
+<span class="fc" id="L33">        EffectOutcome outcome = effect.applyEffect(player);</span>
+
+<span class="fc" id="L35">        assertEquals(2, player.getTribu().getFoodDiscount());</span>
+<span class="fc" id="L36">        assertEquals(1, outcome.resourceDeltas().size());</span>
+<span class="fc" id="L37">        assertEquals(2, outcome.resourceDeltas().get(0).delta());</span>
+<span class="fc" id="L38">    }</span>
+
+    /** Verifies the shaman effect increases the tribù's shaman stars. */
+    @Test
+    void testShamanEffect() {
+<span class="fc" id="L43">        ShamanEffect effect = new ShamanEffect(3);</span>
+<span class="fc" id="L44">        EffectOutcome outcome = effect.applyEffect(player);</span>
+
+<span class="fc" id="L46">        assertEquals(3, player.getTribu().getShamanStars());</span>
+<span class="fc" id="L47">        assertEquals(1, outcome.resourceDeltas().size());</span>
+<span class="fc" id="L48">        assertEquals(3, outcome.resourceDeltas().get(0).delta());</span>
+<span class="fc" id="L49">    }</span>
+
+    /** Verifies the no-op effect produces an empty outcome. */
+    @Test
+    void testNoEffect() {
+<span class="fc" id="L54">        NoEffect effect = new NoEffect();</span>
+<span class="fc" id="L55">        EffectOutcome outcome = effect.applyEffect(player);</span>
+<span class="fc" id="L56">        assertTrue(outcome.isEmpty());</span>
+<span class="fc" id="L57">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

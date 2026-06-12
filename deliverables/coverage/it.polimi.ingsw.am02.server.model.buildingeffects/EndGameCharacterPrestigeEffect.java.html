@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EndGameCharacterPrestigeEffect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">EndGameCharacterPrestigeEffect.java</span></div><h1>EndGameCharacterPrestigeEffect.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
+
+import java.util.List;
+
+/**
+ * Building effect that awards prestige points at game end based on
+ * the number of characters of a specific type in the owner's tribe.
+ *
+ * &lt;p&gt;Registered as a {@link PhaseObserver}. Fires once on {@link PhaseType#END_GAME}.
+ * The bonus is {@code bonusPP × count(type)}.
+ *
+ * &lt;p&gt;JSON key: {@code &quot;ENDGAME_CHARACTER_PP&quot;}
+ */
+public class EndGameCharacterPrestigeEffect implements BuildingEffect, PhaseObserver {
+    final Player owner;
+    final CharacterType type;
+    final int bonusPP;
+
+    /**
+     * @param owner   the player who owns this building
+     * @param type    the character type whose count is multiplied by {@code bonusPP}
+     * @param bonusPP prestige points awarded per character of the target type
+     */
+<span class="fc" id="L35">    public EndGameCharacterPrestigeEffect(Player owner, CharacterType type, int bonusPP) {</span>
+<span class="fc" id="L36">        this.owner = owner;</span>
+<span class="fc" id="L37">        this.type = type;</span>
+<span class="fc" id="L38">        this.bonusPP = bonusPP;</span>
+<span class="fc" id="L39">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void accept(EffectVisitor v) {
+<span class="fc" id="L44">        v.visitPhaseObserver(this);</span>
+<span class="fc" id="L45">    }</span>
+
+    /**
+     * Computes and applies the end-game prestige bonus.
+     * The total bonus is {@code bonusPP × characterCount(type)};
+     * produces an empty outcome if the count is zero or the phase is not {@code END_GAME}.
+     *
+     * @param newPhase the phase the game is transitioning into
+     * @return an {@link EffectOutcome} with the prestige-point delta, or empty
+     */
+    @Override
+    public EffectOutcome onPhaseChange(PhaseType newPhase) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if(newPhase == PhaseType.END_GAME) {</span>
+<span class="fc" id="L58">            Tribu tribu = owner.getTribu();</span>
+<span class="fc" id="L59">            String nickname = owner.getNickname();</span>
+
+<span class="fc" id="L61">            int bonus = bonusPP * tribu.getCharacterCount(type);</span>
+
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            if (bonus == 0)</span>
+<span class="fc" id="L64">                return EffectOutcome.empty();</span>
+
+<span class="fc" id="L66">            tribu.addPrestigePoints(bonus);</span>
+
+<span class="fc" id="L68">            return new EffectOutcome(List.of(</span>
+<span class="fc" id="L69">                    new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), bonus)</span>
+            ));
+        }
+<span class="fc" id="L72">        return EffectOutcome.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

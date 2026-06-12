@@ -5,8 +5,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Tests {@link TurnOrderTile.TurnOrderRewardResult}, verifying the factory for an
+ * empty reward result yields zeroed food gain, food penalty and prestige penalty.
+ */
 class TurnOrderRewardResultTest {
 
+    /** Verifies the empty reward result has all fields set to zero. */
     @Test
     void testEmptyResult() {
         TurnOrderTile.TurnOrderRewardResult emptyResult = TurnOrderTile.TurnOrderRewardResult.empty();

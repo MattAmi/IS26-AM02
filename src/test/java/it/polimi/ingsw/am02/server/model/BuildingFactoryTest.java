@@ -13,6 +13,11 @@ import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests {@link BuildingFactory}, verifying that each effect identifier is mapped
+ * to the correct {@link BuildingEffect} implementation, and that unknown or null
+ * identifiers yield no effect.
+ */
 class BuildingFactoryTest {
 
     private Player player;
@@ -26,6 +31,7 @@ class BuildingFactoryTest {
         mapper = new ObjectMapper();
     }
 
+    /** Verifies {@code FULL_SET_FOOD_REWARD} maps to {@link FullSetFoodRewardEffect}. */
     @Test
     void testCreateFullSetFoodRewardEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -34,6 +40,7 @@ class BuildingFactoryTest {
         assertInstanceOf(FullSetFoodRewardEffect.class, effect);
     }
 
+    /** Verifies {@code INVENTOR_PAIR_FOOD_REWARD} maps to {@link InventorPairRewardEffect}. */
     @Test
     void testCreateInventorPairRewardEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -42,6 +49,7 @@ class BuildingFactoryTest {
         assertInstanceOf(InventorPairRewardEffect.class, effect);
     }
 
+    /** Verifies {@code EVENT_CHARACTER_BONUS} maps to {@link EventCharacterBonusEffect}. */
     @Test
     void testCreateEventCharacterBonusEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -54,6 +62,7 @@ class BuildingFactoryTest {
         assertInstanceOf(EventCharacterBonusEffect.class, effect);
     }
 
+    /** Verifies {@code EXTRA_SHAMAN_STARS} maps to {@link ShamanicExtraIconsEffect}. */
     @Test
     void testCreateShamanicExtraIconsEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -62,6 +71,7 @@ class BuildingFactoryTest {
         assertInstanceOf(ShamanicExtraIconsEffect.class, effect);
     }
 
+    /** Verifies {@code SHAMANIC_IMMUNITY} maps to {@link ShamanicImmunityEffect}. */
     @Test
     void testCreateShamanicImmunityEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -69,6 +79,7 @@ class BuildingFactoryTest {
         assertInstanceOf(ShamanicImmunityEffect.class, effect);
     }
 
+    /** Verifies {@code SHAMANIC_WIN_MULTIPLIER} maps to {@link ShamanicWinMultiplierEffect}. */
     @Test
     void testCreateShamanicWinMultiplierEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -77,6 +88,7 @@ class BuildingFactoryTest {
         assertInstanceOf(ShamanicWinMultiplierEffect.class, effect);
     }
 
+    /** Verifies {@code TURN_ORDER_FOOD_BONUS} maps to {@link TurnOrderFoodBonusEffect}. */
     @Test
     void testCreateTurnOrderFoodBonusEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -84,6 +96,7 @@ class BuildingFactoryTest {
         assertInstanceOf(TurnOrderFoodBonusEffect.class, effect);
     }
 
+    /** Verifies {@code ENDGAME_CHARACTER_PP} maps to {@link EndGameCharacterPrestigeEffect}. */
     @Test
     void testCreateEndGameCharacterPrestigeEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -93,6 +106,7 @@ class BuildingFactoryTest {
         assertInstanceOf(EndGameCharacterPrestigeEffect.class, effect);
     }
 
+    /** Verifies {@code ENDGAME_FULL_SET_PP} maps to {@link EndGameFullSetPPEffect}. */
     @Test
     void testCreateEndGameFullSetPPEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -101,6 +115,7 @@ class BuildingFactoryTest {
         assertInstanceOf(EndGameFullSetPPEffect.class, effect);
     }
 
+    /** Verifies {@code PP_MULTIPLIER_PER_TYPE} maps to {@link PrestigePointMultiplierPerTypeEffect}. */
     @Test
     void testCreatePrestigePointMultiplierPerTypeEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -110,6 +125,7 @@ class BuildingFactoryTest {
         assertInstanceOf(PrestigePointMultiplierPerTypeEffect.class, effect);
     }
 
+    /** Verifies {@code ENDGAME_FLAT_PP} maps to {@link FlatPrestigeBonusEffect}. */
     @Test
     void testCreateFlatPrestigeBonusEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -118,6 +134,7 @@ class BuildingFactoryTest {
         assertInstanceOf(FlatPrestigeBonusEffect.class, effect);
     }
 
+    /** Verifies {@code EXTRA_TURN} maps to {@link ExtraTurnEffect}. */
     @Test
     void testCreateExtraTurnEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -127,6 +144,7 @@ class BuildingFactoryTest {
         assertInstanceOf(ExtraTurnEffect.class, effect);
     }
 
+    /** Verifies an unrecognised effect identifier produces no effect. */
     @Test
     void testCreateUnknownEffect() {
         ObjectNode params = mapper.createObjectNode();
@@ -134,6 +152,7 @@ class BuildingFactoryTest {
         assertNull(effect);
     }
 
+    /** Verifies a null effect identifier produces no effect. */
     @Test
     void testCreateNullEffect() {
         BuildingEffect effect = BuildingFactory.createActiveEffect(null, null, player, game);

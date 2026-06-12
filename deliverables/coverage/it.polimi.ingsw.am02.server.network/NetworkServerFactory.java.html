@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetworkServerFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.network</a> &gt; <span class="el_source">NetworkServerFactory.java</span></div><h1>NetworkServerFactory.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.network;
+
+import it.polimi.ingsw.am02.common.enumerations.NetworkType;
+import it.polimi.ingsw.am02.server.network.rmi.RmiServer;
+import it.polimi.ingsw.am02.server.network.socket.SocketServer;
+
+/**
+ * Factory for creating {@link NetworkServer} instances based on the chosen
+ * network technology.
+ *
+ * &lt;p&gt;This class centralizes the mapping between {@link NetworkType} values
+ * and their concrete {@link NetworkServer} implementations, keeping the
+ * server startup code decoupled from transport-specific constructors.
+ *
+ * &lt;p&gt;Usage example:
+ * &lt;pre&gt;{@code
+ * NetworkServer server = NetworkServerFactory.create(NetworkType.SOCKET);
+ * server.start(12345);
+ * }&lt;/pre&gt;
+ */
+public class NetworkServerFactory {
+
+    /** Prevents instantiation of this utility class. */
+    private NetworkServerFactory() {}
+
+    /**
+     * Creates and returns a new {@link NetworkServer} for the given
+     * {@link NetworkType}.
+     *
+     * @param type the network technology to use; must not be {@code null}
+     * @return a new {@link SocketServer} if {@code type} is
+     *         {@link NetworkType#SOCKET}, or a new {@link RmiServer} if
+     *         {@code type} is {@link NetworkType#RMI}
+     * @throws NullPointerException if {@code type} is {@code null}
+     */
+    public static NetworkServer create(NetworkType type) {
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        return switch (type) {</span>
+<span class="nc" id="L38">            case SOCKET -&gt; new SocketServer();</span>
+<span class="nc" id="L39">            case RMI    -&gt; new RmiServer();</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

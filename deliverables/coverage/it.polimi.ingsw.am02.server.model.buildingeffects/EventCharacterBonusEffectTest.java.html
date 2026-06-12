@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventCharacterBonusEffectTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">EventCharacterBonusEffectTest.java</span></div><h1>EventCharacterBonusEffectTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.enumerations.EventType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.mockito.Mockito;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Unit tests for the {@link EventCharacterBonusEffect} class.
+ * Ensures the correct calculation of food, prestige, and food discount rewards based on character count
+ * at the start of a specific event, and ensures discounts are correctly reverted at the end of the event.
+ */
+<span class="fc" id="L29">class EventCharacterBonusEffectTest {</span>
+
+    private Player mockPlayer;
+    private Tribu mockTribu;
+    private EffectVisitor mockVisitor;
+    private EventCharacterBonusEffect effect;
+
+    // Standard Test Constants
+<span class="fc" id="L37">    private static final EventType TARGET_EVENT = EventType.SHAMANIC_RITUAL;</span>
+<span class="fc" id="L38">    private static final CharacterType TARGET_CHARACTER = CharacterType.GATHERER;</span>
+    private static final String PLAYER_NICKNAME = &quot;CharliePlayer&quot;;
+
+    private static final int FOOD_REWARD = 2;
+    private static final int PRESTIGE_REWARD = 3;
+    private static final int FOOD_DISCOUNT = 1;
+
+    @BeforeEach
+    void setUp() {
+        // Arrange: Initialize mocks
+<span class="fc" id="L48">        mockPlayer = Mockito.mock(Player.class);</span>
+<span class="fc" id="L49">        mockTribu = Mockito.mock(Tribu.class);</span>
+<span class="fc" id="L50">        mockVisitor = Mockito.mock(EffectVisitor.class);</span>
+
+<span class="fc" id="L52">        when(mockPlayer.getTribu()).thenReturn(mockTribu);</span>
+<span class="fc" id="L53">        when(mockPlayer.getNickname()).thenReturn(PLAYER_NICKNAME);</span>
+
+        // Standard instance for most tests
+<span class="fc" id="L56">        effect = new EventCharacterBonusEffect(</span>
+                mockPlayer, TARGET_EVENT, TARGET_CHARACTER,
+                FOOD_REWARD, PRESTIGE_REWARD, FOOD_DISCOUNT
+        );
+<span class="fc" id="L60">    }</span>
+
+    /**
+     * Tests that the visitor pattern is correctly implemented.
+     */
+    @Test
+    void accept_validVisitor_callsVisitEventObserver() {
+        // Act
+<span class="fc" id="L68">        effect.accept(mockVisitor);</span>
+
+        // Assert
+<span class="fc" id="L71">        verify(mockVisitor, times(1)).visitEventObserver(effect);</span>
+<span class="fc" id="L72">    }</span>
+
+    // =========================================================================================
+    // EVENT START TESTS
+    // =========================================================================================
+
+    /**
+     * Tests that all rewards are calculated properly and applied when the event matches
+     * and the player has the required characters. Also verifies the outcome contains 3 deltas.
+     */
+    @Test
+    void eventStart_matchingEventWithCharacters_addsAllRewardsAndReturnsDeltas() {
+        // Arrange
+<span class="fc" id="L85">        int count = 3;</span>
+<span class="fc" id="L86">        int expFood = FOOD_REWARD * count;</span>
+<span class="fc" id="L87">        int expPP = PRESTIGE_REWARD * count;</span>
+<span class="fc" id="L88">        int expDiscount = FOOD_DISCOUNT * count;</span>
+
+<span class="fc" id="L90">        when(mockTribu.getCharacterCount(TARGET_CHARACTER)).thenReturn(count);</span>
+<span class="fc" id="L91">        when(mockTribu.getFoodPoints()).thenReturn(10);</span>
+<span class="fc" id="L92">        when(mockTribu.getPrestigePoints()).thenReturn(15);</span>
+<span class="fc" id="L93">        when(mockTribu.getFoodDiscount()).thenReturn(expDiscount);</span>
+
+        // Act
+<span class="fc" id="L96">        EffectOutcome outcome = effect.eventStart(TARGET_EVENT);</span>
+
+        // Assert: Interactions
+<span class="fc" id="L99">        verify(mockTribu, times(1)).addFoodPoints(expFood);</span>
+<span class="fc" id="L100">        verify(mockTribu, times(1)).addPrestigePoints(expPP);</span>
+<span class="fc" id="L101">        verify(mockTribu, times(1)).addFoodDiscount(expDiscount);</span>
+
+        // Assert: Outcome state
+<span class="fc" id="L104">        assertNotNull(outcome, &quot;Outcome must not be null&quot;);</span>
+<span class="fc" id="L105">        assertFalse(outcome.isEmpty(), &quot;Outcome must not be empty&quot;);</span>
+
+        // CORRETTO: Usa resourceDeltas() del record invece di getUpdatedResources()
+<span class="fc" id="L108">        List&lt;ResourceType&gt; updatedResources = outcome.resourceDeltas().stream()</span>
+<span class="fc" id="L109">                .map(ResourceDelta::resource) // NOTA: Usa getResourceType() se ResourceDelta non è un record</span>
+<span class="fc" id="L110">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L112">        assertTrue(updatedResources.contains(ResourceType.FOOD));</span>
+<span class="fc" id="L113">        assertTrue(updatedResources.contains(ResourceType.PRESTIGE_POINTS));</span>
+<span class="fc" id="L114">        assertTrue(updatedResources.contains(ResourceType.FOOD_DISCOUNT));</span>
+<span class="fc" id="L115">        assertEquals(3, outcome.resourceDeltas().size());</span>
+<span class="fc" id="L116">    }</span>
+
+    /**
+     * Edge case: Verifies that if one of the rewards is set to 0 (e.g., this card only gives PP and discount, no food),
+     * the system correctly skips adding 0 and does not generate a delta for that resource.
+     */
+    @Test
+    void eventStart_matchingEventWithPartialRewards_addsOnlyPositiveRewards() {
+        // Arrange: Recreate effect with 0 food reward
+<span class="fc" id="L125">        EventCharacterBonusEffect partialEffect = new EventCharacterBonusEffect(</span>
+                mockPlayer, TARGET_EVENT, TARGET_CHARACTER, 0, PRESTIGE_REWARD, FOOD_DISCOUNT
+        );
+
+<span class="fc" id="L129">        when(mockTribu.getCharacterCount(TARGET_CHARACTER)).thenReturn(2);</span>
+
+        // Act
+<span class="fc" id="L132">        EffectOutcome outcome = partialEffect.eventStart(TARGET_EVENT);</span>
+
+        // Assert
+<span class="fc" id="L135">        verify(mockTribu, never()).addFoodPoints(anyInt());</span>
+<span class="fc" id="L136">        verify(mockTribu, times(1)).addPrestigePoints(PRESTIGE_REWARD * 2);</span>
+<span class="fc" id="L137">        verify(mockTribu, times(1)).addFoodDiscount(FOOD_DISCOUNT * 2);</span>
+
+        // CORRETTO: Usa resourceDeltas()
+<span class="fc" id="L140">        assertEquals(2, outcome.resourceDeltas().size(), &quot;Should only contain deltas for PP and Discount&quot;);</span>
+<span class="fc" id="L141">    }</span>
+
+    /**
+     * Tests early exit when the player has 0 characters of the required type.
+     */
+    @Test
+    void eventStart_matchingEventWithZeroCharacters_doesNothingAndReturnsEmpty() {
+        // Arrange
+<span class="fc" id="L149">        when(mockTribu.getCharacterCount(TARGET_CHARACTER)).thenReturn(0);</span>
+
+        // Act
+<span class="fc" id="L152">        EffectOutcome outcome = effect.eventStart(TARGET_EVENT);</span>
+
+        // Assert
+<span class="fc" id="L155">        verify(mockTribu, never()).addFoodPoints(anyInt());</span>
+<span class="fc" id="L156">        verify(mockTribu, never()).addPrestigePoints(anyInt());</span>
+<span class="fc" id="L157">        verify(mockTribu, never()).addFoodDiscount(anyInt());</span>
+<span class="fc" id="L158">        assertTrue(outcome.isEmpty(), &quot;Outcome must be empty if character count is 0&quot;);</span>
+<span class="fc" id="L159">    }</span>
+
+    /**
+     * Tests that the effect ignores all other events.
+     * @param eventType An event type that is NOT the target event.
+     */
+    @ParameterizedTest
+    @EnumSource(value = EventType.class, mode = EnumSource.Mode.EXCLUDE, names = {&quot;SHAMANIC_RITUAL&quot;})
+    @NullSource
+    void eventStart_nonMatchingOrNullEvent_doesNothingAndReturnsEmpty(EventType eventType) {
+        // Act
+<span class="fc" id="L170">        EffectOutcome outcome = effect.eventStart(eventType);</span>
+
+        // Assert
+<span class="fc" id="L173">        verify(mockPlayer, never()).getTribu();</span>
+<span class="fc" id="L174">        assertTrue(outcome.isEmpty());</span>
+<span class="fc" id="L175">    }</span>
+
+    // =========================================================================================
+    // EVENT END TESTS
+    // =========================================================================================
+
+    /**
+     * Tests that the discount granted at the start of the event is correctly removed
+     * (subtracted) at the end of the event.
+     */
+    @Test
+    void eventEnd_matchingEventWithCharacters_removesDiscountAndReturnsDelta() {
+        // Arrange
+<span class="fc" id="L188">        int count = 3;</span>
+<span class="fc" id="L189">        int expectedDiscountRemoval = -(FOOD_DISCOUNT * count); // Must be negative</span>
+
+<span class="fc" id="L191">        when(mockTribu.getCharacterCount(TARGET_CHARACTER)).thenReturn(count);</span>
+<span class="fc" id="L192">        when(mockTribu.getFoodDiscount()).thenReturn(0);</span>
+
+        // Act
+<span class="fc" id="L195">        EffectOutcome outcome = effect.eventEnd(TARGET_EVENT);</span>
+
+        // Assert
+<span class="fc" id="L198">        verify(mockTribu, times(1)).addFoodDiscount(expectedDiscountRemoval);</span>
+
+        // Ensure it doesn't touch other resources
+<span class="fc" id="L201">        verify(mockTribu, never()).addFoodPoints(anyInt());</span>
+<span class="fc" id="L202">        verify(mockTribu, never()).addPrestigePoints(anyInt());</span>
+
+<span class="fc" id="L204">        assertFalse(outcome.isEmpty());</span>
+        // CORRETTO: Usa resourceDeltas()
+<span class="fc" id="L206">        assertEquals(1, outcome.resourceDeltas().size());</span>
+<span class="fc" id="L207">        assertEquals(ResourceType.FOOD_DISCOUNT, outcome.resourceDeltas().get(0).resource());</span>
+<span class="fc" id="L208">        assertEquals(expectedDiscountRemoval, outcome.resourceDeltas().get(0).delta()); // NOTA: usa getAmount() se ResourceDelta non è un record e adattalo se il delta si chiama diversamente</span>
+<span class="fc" id="L209">    }</span>
+
+    /**
+     * Tests early exit on EventEnd if the player has 0 characters.
+     */
+    @Test
+    void eventEnd_matchingEventWithZeroCharacters_doesNothingAndReturnsEmpty() {
+        // Arrange
+<span class="fc" id="L217">        when(mockTribu.getCharacterCount(TARGET_CHARACTER)).thenReturn(0);</span>
+
+        // Act
+<span class="fc" id="L220">        EffectOutcome outcome = effect.eventEnd(TARGET_EVENT);</span>
+
+        // Assert
+<span class="fc" id="L223">        verify(mockTribu, never()).addFoodDiscount(anyInt());</span>
+<span class="fc" id="L224">        assertTrue(outcome.isEmpty());</span>
+<span class="fc" id="L225">    }</span>
+
+    /**
+     * Tests that the effect ignores all other events ending.
+     * @param eventType An event type that is NOT the target event.
+     */
+    @ParameterizedTest
+    @EnumSource(value = EventType.class, mode = EnumSource.Mode.EXCLUDE, names = {&quot;SHAMANIC_RITUAL&quot;})
+    @NullSource
+    void eventEnd_nonMatchingOrNullEvent_doesNothingAndReturnsEmpty(EventType eventType) {
+        // Act
+<span class="fc" id="L236">        EffectOutcome outcome = effect.eventEnd(eventType);</span>
+
+        // Assert
+<span class="fc" id="L239">        verify(mockPlayer, never()).getTribu();</span>
+<span class="fc" id="L240">        assertTrue(outcome.isEmpty());</span>
+<span class="fc" id="L241">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Player.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.player</a> &gt; <span class="el_source">Player.java</span></div><h1>Player.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.player;
+
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+
+/**
+ * Represents a player in the game, identified by a unique nickname and a totem color.
+ * Each player owns a {@link Tribu} that accumulates resources and characters during the game.
+ */
+public class Player {
+
+    private final String nickname;
+    private final Totem totem;
+    private final Tribu tribu;
+    private Boolean isWinner;
+    private Boolean isConnected;
+
+    /**
+     * Creates a new player with the given nickname and totem.
+     * A fresh, empty {@link Tribu} is automatically created.
+     *
+     * @param nickname the player's unique display name
+     * @param totem    the totem color assigned to this player
+     */
+<span class="fc" id="L24">    public Player(String nickname, Totem totem) {</span>
+<span class="fc" id="L25">        this.nickname = nickname;</span>
+<span class="fc" id="L26">        this.totem = totem;</span>
+<span class="fc" id="L27">        this.tribu = new Tribu();</span>
+<span class="fc" id="L28">    }</span>
+
+    /** @return the player's unique display name */
+    public String getNickname() {
+<span class="fc" id="L32">        return nickname;</span>
+    }
+
+    /** @return the totem color assigned to this player */
+    public Totem getTotem() {
+<span class="fc" id="L37">        return totem;</span>
+    }
+
+    /** @return the {@link Tribu} belonging to this player */
+<span class="fc" id="L41">    public Tribu getTribu() { return tribu; }</span>
+
+
+    /**
+     * Marks this player as a winner or a loser at the end of the game.
+     *
+     * @param winner {@code true} to mark this player as a winner, {@code false} otherwise
+     */
+    public void setAsWinner(Boolean winner) {
+<span class="fc" id="L50">        isWinner = winner;</span>
+<span class="fc" id="L51">    }</span>
+
+    /**
+     * Updates this player's connection status.
+     *
+     * @param connected {@code true} if the player has connected or reconnected,
+     *                  {@code false} if the player has disconnected
+     */
+    public void setConnected(Boolean connected) {
+<span class="fc" id="L60">        isConnected = connected;</span>
+<span class="fc" id="L61">    }</span>
+
+    public boolean isWinner() {
+<span class="fc" id="L64">        return isWinner;</span>
+    }
+    public boolean isConnected() {
+<span class="fc" id="L67">        return isConnected;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

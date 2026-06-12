@@ -11,7 +11,7 @@ import it.polimi.ingsw.am02.server.model.player.Player;
  * Static factory that instantiates the correct {@link BuildingEffect} implementation
  * for a given effect type string and its JSON parameters.
  *
- * <p>Each case in the switch corresponds to one entry in {@code Buildings.JSON}.
+ * <p>Each case in the switch corresponds to one entry in {@code Buildings.json}.
  */
 public class BuildingFactory {
 

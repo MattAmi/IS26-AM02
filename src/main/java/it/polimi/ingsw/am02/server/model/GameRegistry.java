@@ -4,6 +4,7 @@ package it.polimi.ingsw.am02.server.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.polimi.ingsw.am02.common.ResourcePaths;
 import it.polimi.ingsw.am02.server.model.card.*;
 import it.polimi.ingsw.am02.server.model.tile.OfferTile;
 import it.polimi.ingsw.am02.server.model.tile.OfferTilesFactory;
@@ -36,13 +37,6 @@ public class GameRegistry {
 
     private final ObjectMapper mapper;
 
-    private static final String CHARACTERS_PATH = "/it/polimi/ingsw/am02/JSON/Characters.JSON";
-    private static final String EVENTS_PATH = "/it/polimi/ingsw/am02/JSON/Events.JSON";
-    private static final String BUILDINGS_PATH = "/it/polimi/ingsw/am02/JSON/Buildings.JSON";
-    private static final String OFFER_TILES_PATH = "/it/polimi/ingsw/am02/JSON/OfferTiles.JSON";
-    private static final String TURN_ORDER_TILES_PATH = "/it/polimi/ingsw/am02/JSON/TurnOrderTiles.JSON";
-
-
     private GameRegistry() {
         this.mapper = new ObjectMapper();
         this.characterMap = new HashMap<>();
@@ -51,11 +45,11 @@ public class GameRegistry {
         this.offerTiles = new ArrayList<>();
         this.turnOrderTiles = new ArrayList<>();
 
-        loadCharacters(CHARACTERS_PATH);
-        loadEvents(EVENTS_PATH);
-        loadBuildings(BUILDINGS_PATH);
-        loadOfferTiles(OFFER_TILES_PATH);
-        loadTurnOrderTiles(TURN_ORDER_TILES_PATH);
+        loadCharacters(ResourcePaths.CHARACTERS);
+        loadEvents(ResourcePaths.EVENTS);
+        loadBuildings(ResourcePaths.BUILDINGS);
+        loadOfferTiles(ResourcePaths.OFFER_TILES);
+        loadTurnOrderTiles(ResourcePaths.TURN_ORDER_TILES);
     }
 
     /** @return the singleton instance of the registry */
@@ -67,7 +61,7 @@ public class GameRegistry {
      * Loads character cards from the given JSON resource path, replacing any previously loaded characters.
      * Normally called once during construction; exposed for testing with custom data files.
      *
-     * @param charactersPath classpath-relative path to the JSON file (e.g. {@code "/it/.../Characters.JSON"})
+     * @param charactersPath classpath-relative path to the JSON file (e.g. {@code "/it/.../Characters.json"})
      */
     public void loadCharacters(String charactersPath) {
         try {

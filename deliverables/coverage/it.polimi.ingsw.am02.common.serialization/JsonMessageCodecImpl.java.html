@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JsonMessageCodecImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.common.serialization</a> &gt; <span class="el_source">JsonMessageCodecImpl.java</span></div><h1>JsonMessageCodecImpl.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.common.serialization;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.polimi.ingsw.am02.common.messages.Message;
+import it.polimi.ingsw.am02.common.messages.commands.Command;
+import it.polimi.ingsw.am02.common.messages.events.Event;
+
+/**
+ * Jackson-based implementation of {@link JsonMessageCodec}.
+ *
+ * &lt;p&gt;Serialization delegates directly to {@link ObjectMapper#writeValueAsString}.
+ *
+ * &lt;p&gt;Deserialization exploits the fact that {@link Command} and {@link Event}
+ * use different Jackson type-info property names:
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@link Command} — {@code @JsonTypeInfo(property = &quot;commandType&quot;)}&lt;/li&gt;
+ *   &lt;li&gt;{@link Event}   — {@code @JsonTypeInfo(property = &quot;@type&quot;)}&lt;/li&gt;
+ * &lt;/ul&gt;
+ * The presence of {@code &quot;commandType&quot;} in the JSON object is therefore a
+ * reliable, zero-maintenance discriminator that requires no hardcoded name set
+ * and automatically covers every future {@link Command} subtype.
+ */
+<span class="nc" id="L26">public class JsonMessageCodecImpl implements JsonMessageCodec {</span>
+
+<span class="nc" id="L28">    private static final ObjectMapper MAPPER = new ObjectMapper()</span>
+<span class="nc" id="L29">            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);</span>
+
+    /**
+     * Serializes {@code message} to a JSON string.
+     *
+     * @param message the message to serialize; must not be {@code null}
+     * @return the JSON representation of {@code message}
+     * @throws RuntimeException if Jackson serialization fails
+     */
+    @Override
+    public String encode(Message message) {
+        try {
+<span class="nc" id="L41">            return MAPPER.writeValueAsString(message);</span>
+<span class="nc" id="L42">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L43">            throw new RuntimeException(</span>
+<span class="nc" id="L44">                    &quot;Serialization error: &quot; + message.getClass().getSimpleName(), e);</span>
+        }
+    }
+
+    /**
+     * Deserializes a JSON string into the appropriate {@link Message} subtype.
+     *
+     * &lt;p&gt;The discriminator is the presence of the {@code &quot;commandType&quot;} field:
+     * if present, the message is a {@link Command}; otherwise it is an
+     * {@link Event}. This works because {@link Command} uses
+     * {@code @JsonTypeInfo(property = &quot;commandType&quot;)} while {@link Event} uses
+     * {@code @JsonTypeInfo(property = &quot;@type&quot;)}, so the two namespaces are
+     * disjoint by construction.
+     *
+     * @param json the JSON string to deserialize; must not be {@code null}
+     * @return the deserialized {@link Message}
+     * @throws RuntimeException if the JSON is malformed or Jackson
+     *                          deserialization fails
+     */
+    @Override
+    public Message decode(String json) {
+        try {
+<span class="nc" id="L66">            JsonNode node = MAPPER.readTree(json);</span>
+
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            if (node.has(&quot;commandType&quot;)) {</span>
+<span class="nc" id="L69">                return MAPPER.treeToValue(node, Command.class);</span>
+            } else {
+<span class="nc" id="L71">                return MAPPER.treeToValue(node, Event.class);</span>
+            }
+
+<span class="nc" id="L74">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L75">            throw new RuntimeException(&quot;Deserialization error: &quot; + json, e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

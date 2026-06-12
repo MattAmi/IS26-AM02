@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SocketClientHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.network.socket</a> &gt; <span class="el_source">SocketClientHandler.java</span></div><h1>SocketClientHandler.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.network.socket;
+
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.interfaces.VirtualControllerManager;
+import it.polimi.ingsw.am02.common.messages.Message;
+import it.polimi.ingsw.am02.common.messages.commands.*;
+import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PingCommand;
+import it.polimi.ingsw.am02.common.messages.commands.heartbeat.PongCommand;
+import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.error.*;
+import it.polimi.ingsw.am02.common.messages.events.game.*;
+import it.polimi.ingsw.am02.common.messages.events.heartbeat.PingEvent;
+import it.polimi.ingsw.am02.common.messages.events.heartbeat.PongEvent;
+import it.polimi.ingsw.am02.common.messages.events.lobby.*;
+import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
+import it.polimi.ingsw.am02.server.controller.ControllerManager;
+import it.polimi.ingsw.am02.server.network.ClientHandler;
+
+import java.io.*;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
+
+/**
+ * Server-side handler for a single Socket-connected client.
+ *
+ * &lt;p&gt;&lt;b&gt;Inbound:&lt;/b&gt; a reader loop deserializes JSON lines into {@link Command}
+ * records and dispatches them via {@link #dispatch(Command)}, implementing the
+ * Inversion of Control pattern symmetrically to {@link Event#apply} on the
+ * client side. {@link Command} records are used solely as the deserialization
+ * target; they are never passed downstream.
+ *
+ * &lt;p&gt;&lt;b&gt;Outbound:&lt;/b&gt; each {@link it.polimi.ingsw.am02.common.interfaces.VirtualView}
+ * notification constructs the corresponding {@link Event} record, enqueues it,
+ * and returns immediately. A dedicated writer thread drains the queue and
+ * serializes events to the socket, so
+ * {@link it.polimi.ingsw.am02.server.controller.GameController} never blocks
+ * on I/O while holding its lock.
+ *
+ * &lt;p&gt;&lt;b&gt;Keep-alive — bidirectional ping-pong:&lt;/b&gt; liveness is checked in both
+ * directions over the same TCP stream, mirroring the two independent RMI
+ * {@code ping()} calls used in the RMI transport.
+ * &lt;ul&gt;
+ *   &lt;li&gt;&lt;em&gt;Server → client:&lt;/em&gt; a {@link ScheduledExecutorService} enqueues
+ *       a {@link PingEvent} every {@value #PING_INTERVAL_SECONDS} seconds.
+ *       The client replies with a {@link PongCommand}, which resets
+ *       {@link #lastPongReceivedAt} in {@link #dispatch}. If no
+ *       {@link PongCommand} is received within {@value #PING_TIMEOUT_SECONDS}
+ *       seconds, {@link #disconnect()} is called.&lt;/li&gt;
+ *   &lt;li&gt;&lt;em&gt;Client → server:&lt;/em&gt; the client sends periodic {@link PingCommand}s;
+ *       {@link #dispatch} intercepts them and enqueues a {@link PongEvent} in
+ *       reply. No controller involvement is required for either direction.&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+public class SocketClientHandler implements ClientHandler {
+
+    private final Socket socket;
+    private final JsonMessageCodec codec;
+    private final VirtualControllerManager manager;
+    private final PrintWriter out;
+<span class="nc" id="L66">    private final BlockingQueue&lt;Event&gt; eventQueue = new LinkedBlockingQueue&lt;&gt;();</span>
+<span class="nc" id="L67">    private final ScheduledExecutorService pingScheduler = Executors.newSingleThreadScheduledExecutor();</span>
+<span class="nc" id="L68">    private volatile long lastPongReceivedAt = System.currentTimeMillis();</span>
+    private volatile String clientId;
+
+    private static final int PING_INTERVAL_SECONDS = 5;
+    private static final int PING_TIMEOUT_SECONDS  = 10;
+
+    /**
+     * Creates a handler for the given socket, registers it with
+     * {@link ControllerManager}, and initializes the outbound event queue and
+     * ping scheduler.
+     *
+     * @param socket the accepted client socket
+     * @param codec  the codec used to serialize {@link Event} records and
+     *               deserialize {@link Command} records as newline-delimited JSON
+     * @throws IOException if obtaining the socket's output stream fails
+     */
+<span class="nc" id="L84">    public SocketClientHandler(Socket socket, JsonMessageCodec codec) throws IOException {</span>
+<span class="nc" id="L85">        this.socket = socket;</span>
+<span class="nc" id="L86">        this.codec = codec;</span>
+<span class="nc" id="L87">        this.manager = ControllerManager.getInstance();</span>
+<span class="nc" id="L88">        this.out = new PrintWriter(</span>
+<span class="nc" id="L89">                new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true</span>
+        );
+<span class="nc" id="L91">        this.clientId = manager.handleClientConnected(this);</span>
+<span class="nc" id="L92">        this.lastPongReceivedAt = System.currentTimeMillis();</span>
+<span class="nc" id="L93">    }</span>
+
+    /**
+     * Starts the outbound writer thread, the ping scheduler, and then enters
+     * the blocking reader loop. Returns only when the connection is closed.
+     *
+     * &lt;p&gt;Must be called from a dedicated thread, as the reader loop blocks
+     * until the socket is closed or an I/O error occurs.
+     */
+    public void listen() {
+<span class="nc" id="L103">        Thread writerThread = new Thread(this::writerLoop, &quot;socket-out-&quot; + clientId);</span>
+<span class="nc" id="L104">        writerThread.setDaemon(true);</span>
+<span class="nc" id="L105">        writerThread.start();</span>
+<span class="nc" id="L106">        startPingTimer();</span>
+<span class="nc" id="L107">        readerLoop();</span>
+<span class="nc" id="L108">    }</span>
+
+    // =========================================================
+    // PING / PONG
+    // =========================================================
+
+    private void startPingTimer() {
+<span class="nc" id="L115">        pingScheduler.scheduleAtFixedRate(</span>
+<span class="nc" id="L116">                () -&gt; eventQueue.add(new PingEvent()),</span>
+                PING_INTERVAL_SECONDS, PING_INTERVAL_SECONDS, TimeUnit.SECONDS);
+
+<span class="nc" id="L119">        pingScheduler.scheduleAtFixedRate(() -&gt; {</span>
+<span class="nc" id="L120">            long elapsed = System.currentTimeMillis() - lastPongReceivedAt;</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">            if (elapsed &gt; PING_TIMEOUT_SECONDS * 1000L) {</span>
+<span class="nc" id="L122">                System.out.println(&quot;[SocketClientHandler] Ping timeout for clientId: &quot; + clientId);</span>
+<span class="nc" id="L123">                disconnect();</span>
+            }
+<span class="nc" id="L125">        }, PING_INTERVAL_SECONDS, PING_INTERVAL_SECONDS, TimeUnit.SECONDS);</span>
+<span class="nc" id="L126">    }</span>
+
+    // =========================================================
+    // READER / WRITER LOOPS
+    // =========================================================
+
+    private void readerLoop() {
+<span class="nc" id="L133">        try (BufferedReader in = new BufferedReader(</span>
+<span class="nc" id="L134">                new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {</span>
+            String line;
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            while ((line = in.readLine()) != null) {</span>
+<span class="nc" id="L137">                Message msg = codec.decode(line);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                if (msg instanceof Command cmd) {</span>
+<span class="nc" id="L139">                    dispatch(cmd);</span>
+                }
+<span class="nc" id="L141">            }</span>
+<span class="nc" id="L142">        } catch (IOException e) {</span>
+<span class="nc" id="L143">            System.out.println(&quot;[SocketClientHandler] Client disconnected: &quot; + clientId);</span>
+        } finally {
+<span class="nc" id="L145">            disconnect();</span>
+        }
+<span class="nc" id="L147">    }</span>
+
+    private void writerLoop() {
+        try {
+<span class="nc bnc" id="L151" title="All 2 branches missed.">            while (!socket.isClosed()) {</span>
+<span class="nc" id="L152">                Event event = eventQueue.take();</span>
+<span class="nc" id="L153">                out.println(codec.encode(event));</span>
+<span class="nc" id="L154">            }</span>
+<span class="nc" id="L155">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L156">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L157">        }</span>
+<span class="nc" id="L158">    }</span>
+
+    // =========================================================
+    // COMMAND DISPATCH — IoC: each Command knows what to do
+    // =========================================================
+
+    /**
+     * Dispatches an inbound {@link Command} at the transport layer.
+     *
+     * &lt;p&gt;Heartbeat commands are handled here and never forwarded to the
+     * controller:
+     * &lt;ul&gt;
+     *   &lt;li&gt;{@link PongCommand} — resets {@link #lastPongReceivedAt}, proving
+     *       the client is alive in response to a server-initiated
+     *       {@link PingEvent}.&lt;/li&gt;
+     *   &lt;li&gt;{@link PingCommand} — enqueues a {@link PongEvent} in reply,
+     *       proving the server is alive in response to a client-initiated
+     *       ping.&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * &lt;p&gt;{@link ReconnectCommand} requires the handler reference and therefore
+     * uses a dedicated {@code apply} overload. All other commands delegate to
+     * {@link Command#apply(VirtualControllerManager, String)} via IoC.
+     *
+     * @param cmd the command received from the client
+     */
+    private void dispatch(Command cmd) {
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        if (cmd instanceof PongCommand) {</span>
+<span class="nc" id="L186">            lastPongReceivedAt = System.currentTimeMillis();</span>
+<span class="nc" id="L187">            return;</span>
+        }
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        if (cmd instanceof PingCommand) {</span>
+<span class="nc" id="L190">            eventQueue.add(new PongEvent());</span>
+<span class="nc" id="L191">            return;</span>
+        }
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        if (cmd instanceof ReconnectCommand rc) {</span>
+<span class="nc" id="L194">            rc.apply(manager, clientId, this);</span>
+<span class="nc" id="L195">            return;</span>
+        }
+<span class="nc" id="L197">        cmd.apply(manager, clientId);</span>
+<span class="nc" id="L198">    }</span>
+
+    // =========================================================
+    // VirtualView — outbound notifications (server → client)
+    // =========================================================
+
+    @Override
+    public void notifyUsernameResult(String username, boolean isValid, String reason) {
+<span class="nc" id="L206">        eventQueue.add(new UsernameResultEvent(username, isValid, reason));</span>
+<span class="nc" id="L207">    }</span>
+
+    @Override
+    public void notifyGameStarted(String gameId) {
+<span class="nc" id="L211">        eventQueue.add(new GameStartedEvent(gameId));</span>
+<span class="nc" id="L212">    }</span>
+
+    @Override
+    public void notifyAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; lobbies) {
+<span class="nc" id="L216">        eventQueue.add(new UpdatedLobbiesEvent(lobbies));</span>
+<span class="nc" id="L217">    }</span>
+
+    @Override
+    public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {
+<span class="nc" id="L221">        eventQueue.add(new UpdatedLobbyEvent(lobby));</span>
+<span class="nc" id="L222">    }</span>
+
+    @Override
+    public void notifyLobbyDissolved(String lobbyID) {
+<span class="nc" id="L226">        eventQueue.add(new LobbyDissolvedEvent(lobbyID));</span>
+<span class="nc" id="L227">    }</span>
+
+    @Override
+    public void notifyGameSetupCompleted(Map&lt;String, Totem&gt; totemByPlayer, List&lt;String&gt; turnOrder,
+                                         Map&lt;String, Integer&gt; initialFood,
+                                         BoardSnapshot boardSnapshot) {
+<span class="nc" id="L233">        eventQueue.add(new GameSetupCompletedEvent(totemByPlayer, turnOrder, initialFood, boardSnapshot));</span>
+<span class="nc" id="L234">    }</span>
+
+    @Override
+    public void notifyPhaseChanged(PhaseType phase, String currentPlayer,
+                                   List&lt;String&gt; resolutionOrder) {
+<span class="nc" id="L239">        eventQueue.add(new PhaseChangedEvent(phase, currentPlayer, resolutionOrder));</span>
+<span class="nc" id="L240">    }</span>
+
+    @Override
+    public void notifyCurrentPlayerChanged(String nextPlayer) {
+<span class="nc" id="L244">        eventQueue.add(new CurrentPlayerChangedEvent(nextPlayer));</span>
+<span class="nc" id="L245">    }</span>
+
+    @Override
+    public void notifyTurnOrderEstablished(List&lt;String&gt; turnOrder) {
+<span class="nc" id="L249">        eventQueue.add(new TurnOrderEstablishedEvent(turnOrder));</span>
+<span class="nc" id="L250">    }</span>
+
+    @Override
+    public void notifyBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow,
+                                   List&lt;String&gt; discardedCards, List&lt;String&gt; movedToLowerRow,
+                                   int deckRemainingCount) {
+<span class="nc" id="L256">        eventQueue.add(new BoardUpdatedEvent(newUpperRow, newLowerRow, discardedCards,</span>
+                movedToLowerRow, deckRemainingCount));
+<span class="nc" id="L258">    }</span>
+
+    @Override
+    public void notifyEraChanged(Era newEra, List&lt;String&gt; newUpperRowBuildings,
+                                 List&lt;String&gt; newLowerRowBuildings,
+                                 List&lt;String&gt; discardedBuildings) {
+<span class="nc" id="L264">        eventQueue.add(new EraChangedEvent(newEra, newUpperRowBuildings,</span>
+                newLowerRowBuildings, discardedBuildings));
+<span class="nc" id="L266">    }</span>
+
+    @Override
+    public void notifyTotemPlaced(String nickname, char tileID) {
+<span class="nc" id="L270">        eventQueue.add(new TotemPlacedEvent(nickname, tileID));</span>
+<span class="nc" id="L271">    }</span>
+
+    @Override
+    public void notifyTotemReturned(String nickname, int turnOrderPosition) {
+<span class="nc" id="L275">        eventQueue.add(new TotemReturnedEvent(nickname, turnOrderPosition));</span>
+<span class="nc" id="L276">    }</span>
+
+    @Override
+    public void notifyCardTaken(String nickname, String cardID, CardType cardType,
+                                RowPosition sourceRow) {
+<span class="nc" id="L281">        eventQueue.add(new CardTakenEvent(nickname, cardID, cardType, sourceRow));</span>
+<span class="nc" id="L282">    }</span>
+
+    @Override
+    public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper,
+                                              int remainingLower) {
+<span class="nc" id="L287">        eventQueue.add(new PlayerLimitsInitializedEvent(nickname, remainingUpper, remainingLower));</span>
+<span class="nc" id="L288">    }</span>
+
+    @Override
+    public void notifyPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {
+<span class="nc" id="L292">        eventQueue.add(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower));</span>
+<span class="nc" id="L293">    }</span>
+
+    @Override
+    public void notifyPlayerResourceChanged(String nickname, ResourceType resource,
+                                            int newValue, int delta) {
+<span class="nc" id="L298">        eventQueue.add(new PlayerResourceChangedEvent(nickname, resource, newValue, delta));</span>
+<span class="nc" id="L299">    }</span>
+
+    @Override
+    public void notifyEventResolved(String eventID, String eventName) {
+<span class="nc" id="L303">        eventQueue.add(new EventResolvedEvent(eventID, eventName));</span>
+<span class="nc" id="L304">    }</span>
+
+    @Override
+    public void notifyExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+<span class="nc" id="L308">        eventQueue.add(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower));</span>
+<span class="nc" id="L309">    }</span>
+
+    @Override
+    public void notifyExtraTurnEnded(String nickname) {
+<span class="nc" id="L313">        eventQueue.add(new ExtraTurnEndedEvent(nickname));</span>
+<span class="nc" id="L314">    }</span>
+
+    @Override
+    public void notifyGameEnded(List&lt;String&gt; winners, List&lt;PlayerFinalScore&gt; finalRankings) {
+<span class="nc" id="L318">        eventQueue.add(new GameEndedEvent(winners, finalRankings));</span>
+<span class="nc" id="L319">    }</span>
+
+    @Override
+    public void notifyError(String message) {
+<span class="nc" id="L323">        eventQueue.add(new ErrorEvent(message));</span>
+<span class="nc" id="L324">    }</span>
+
+    @Override
+    public void notifyPlayerDisconnected(String nickname) {
+<span class="nc" id="L328">        eventQueue.add(new PlayerDisconnectedEvent(nickname));</span>
+<span class="nc" id="L329">    }</span>
+
+    @Override
+    public void notifyPlayerReconnected(String nickname) {
+<span class="nc" id="L333">        eventQueue.add(new PlayerReconnectedEvent(nickname));</span>
+<span class="nc" id="L334">    }</span>
+
+    @Override
+    public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {
+<span class="nc" id="L338">        eventQueue.add(new AutoPlayerTimerStartedEvent(nickname, seconds));</span>
+<span class="nc" id="L339">    }</span>
+
+    @Override
+    public void notifyAutoPlayerInvoked(String nickname) {
+<span class="nc" id="L343">        eventQueue.add(new AutoPlayerInvokedEvent(nickname));</span>
+<span class="nc" id="L344">    }</span>
+
+    @Override
+    public void notifyGameAborted(String winner) {
+<span class="nc" id="L348">        eventQueue.add(new GameAbortedEvent(winner));</span>
+<span class="nc" id="L349">    }</span>
+
+    @Override
+    public void notifyGameRecoveryFailed() {
+<span class="nc" id="L353">        eventQueue.add(new GameRecoveryFailedEvent());</span>
+<span class="nc" id="L354">    }</span>
+
+    @Override
+    public void notifyGlobalTimerStarted(long seconds) {
+<span class="nc" id="L358">        eventQueue.add(new GlobalTimerStartedEvent(seconds));</span>
+<span class="nc" id="L359">    }</span>
+
+    @Override
+    public void notifyGlobalTimerCancelled() {
+<span class="nc" id="L363">        eventQueue.add(new GlobalTimerCancelledEvent());</span>
+<span class="nc" id="L364">    }</span>
+
+    // =========================================================
+    // Lifecycle
+    // =========================================================
+
+    /**
+     * Closes the socket, shuts down the ping scheduler, and notifies
+     * {@link ControllerManager} of the disconnection. Idempotent: the first
+     * call nulls out {@code clientId}; subsequent calls are no-ops.
+     */
+    @Override
+    public synchronized void disconnect() {
+<span class="nc bnc" id="L377" title="All 2 branches missed.">        if (clientId == null) return;</span>
+<span class="nc" id="L378">        String id = clientId;</span>
+<span class="nc" id="L379">        clientId = null;</span>
+<span class="nc" id="L380">        pingScheduler.shutdownNow();</span>
+<span class="nc" id="L381">        try { socket.close(); } catch (IOException ignored) {}</span>
+<span class="nc" id="L382">        manager.handleDisconnection(id);</span>
+<span class="nc" id="L383">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

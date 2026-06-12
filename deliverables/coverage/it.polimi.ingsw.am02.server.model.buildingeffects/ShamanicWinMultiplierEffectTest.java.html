@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShamanicWinMultiplierEffectTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">ShamanicWinMultiplierEffectTest.java</span></div><h1>ShamanicWinMultiplierEffectTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.enumerations.EventType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Unit tests for the {@link ShamanicWinMultiplierEffect} class.
+ * Ensures the effect correctly multiplies the prestige points won during a SHAMANIC_RITUAL,
+ * explicitly subtracting the base points already received (multiplier - 1).
+ */
+<span class="fc" id="L24">class ShamanicWinMultiplierEffectTest {</span>
+
+    private Player mockPlayer;
+    private Tribu mockTribu;
+    private EffectVisitor mockVisitor;
+    private ShamanicWinMultiplierEffect effect;
+
+    // Strict test constants
+    private static final int MULTIPLIER = 3;
+    private static final int BASE_BONUS_RECEIVED = 5;
+    private static final String PLAYER_NICKNAME = &quot;OmegaPlayer&quot;;
+<span class="fc" id="L35">    private static final EventType TARGET_EVENT = EventType.SHAMANIC_RITUAL;</span>
+
+    @BeforeEach
+    void setUp() {
+        // Arrange
+<span class="fc" id="L40">        mockPlayer = Mockito.mock(Player.class);</span>
+<span class="fc" id="L41">        mockTribu = Mockito.mock(Tribu.class);</span>
+<span class="fc" id="L42">        mockVisitor = Mockito.mock(EffectVisitor.class);</span>
+
+<span class="fc" id="L44">        when(mockPlayer.getTribu()).thenReturn(mockTribu);</span>
+<span class="fc" id="L45">        when(mockPlayer.getNickname()).thenReturn(PLAYER_NICKNAME);</span>
+
+<span class="fc" id="L47">        effect = new ShamanicWinMultiplierEffect(mockPlayer, MULTIPLIER);</span>
+<span class="fc" id="L48">    }</span>
+
+    @Test
+    void accept_validVisitor_callsVisitEventObserver() {
+<span class="fc" id="L52">        effect.accept(mockVisitor);</span>
+<span class="fc" id="L53">        verify(mockVisitor, times(1)).visitEventObserver(effect);</span>
+<span class="fc" id="L54">    }</span>
+
+    // =========================================================================================
+    // EVENT POST RESOLUTION TESTS
+    // =========================================================================================
+
+    /**
+     * Tests that the extra bonus is correctly calculated and applied when the player
+     * actually received a base bonus from winning the ritual.
+     */
+    @Test
+    void eventPostResolution_shamanicRitualWithPositiveBonus_appliesMultiplierAndReturnsDelta() {
+        // Arrange
+<span class="fc" id="L67">        when(mockTribu.getLastEventBonusReceived()).thenReturn(BASE_BONUS_RECEIVED);</span>
+<span class="fc" id="L68">        when(mockTribu.getPrestigePoints()).thenReturn(20);</span>
+
+        // Expected math: 5 * (3 - 1) = 10 extra points
+<span class="fc" id="L71">        int expectedExtraBonus = BASE_BONUS_RECEIVED * (MULTIPLIER - 1);</span>
+
+        // Act
+<span class="fc" id="L74">        EffectOutcome outcome = effect.eventPostResolution(TARGET_EVENT);</span>
+
+        // Assert: Interactions
+<span class="fc" id="L77">        verify(mockTribu, times(1)).addPrestigePoints(expectedExtraBonus);</span>
+
+        // Assert: Outcome state
+<span class="fc" id="L80">        assertNotNull(outcome);</span>
+<span class="fc" id="L81">        assertFalse(outcome.isEmpty());</span>
+<span class="fc" id="L82">        assertEquals(1, outcome.resourceDeltas().size());</span>
+<span class="fc" id="L83">        assertEquals(ResourceType.PRESTIGE_POINTS, outcome.resourceDeltas().get(0).resource());</span>
+<span class="fc" id="L84">        assertEquals(expectedExtraBonus, outcome.resourceDeltas().get(0).delta());</span>
+<span class="fc" id="L85">    }</span>
+
+    /**
+     * Tests that no points are added and an empty outcome is returned if the player
+     * received 0 points from the event (e.g., they lost the ritual).
+     */
+    @Test
+    void eventPostResolution_shamanicRitualWithZeroBonus_doesNothingAndReturnsEmpty() {
+        // Arrange
+<span class="fc" id="L94">        when(mockTribu.getLastEventBonusReceived()).thenReturn(0);</span>
+
+        // Act
+<span class="fc" id="L97">        EffectOutcome outcome = effect.eventPostResolution(TARGET_EVENT);</span>
+
+        // Assert
+<span class="fc" id="L100">        verify(mockTribu, never()).addPrestigePoints(anyInt());</span>
+<span class="fc" id="L101">        assertNotNull(outcome);</span>
+<span class="fc" id="L102">        assertTrue(outcome.isEmpty());</span>
+<span class="fc" id="L103">    }</span>
+
+    /**
+     * Tests that the effect ignores all other events post-resolution.
+     */
+    @ParameterizedTest
+    @EnumSource(value = EventType.class, mode = EnumSource.Mode.EXCLUDE, names = {&quot;SHAMANIC_RITUAL&quot;})
+    @NullSource
+    void eventPostResolution_nonShamanicOrNullEvent_doesNothingAndReturnsEmpty(EventType eventType) {
+        // Act
+<span class="fc" id="L113">        EffectOutcome outcome = effect.eventPostResolution(eventType);</span>
+
+        // Assert
+<span class="fc" id="L116">        verify(mockPlayer, never()).getTribu();</span>
+<span class="fc" id="L117">        verify(mockTribu, never()).getLastEventBonusReceived();</span>
+<span class="fc" id="L118">        verify(mockTribu, never()).addPrestigePoints(anyInt());</span>
+<span class="fc" id="L119">        assertNotNull(outcome);</span>
+<span class="fc" id="L120">        assertTrue(outcome.isEmpty());</span>
+<span class="fc" id="L121">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

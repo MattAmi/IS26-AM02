@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfferTrack.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.tile</a> &gt; <span class="el_source">OfferTrack.java</span></div><h1>OfferTrack.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.tile;
+
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
+import it.polimi.ingsw.am02.server.model.GameRegistry;
+import it.polimi.ingsw.am02.server.model.exceptions.PlayerNotOnTileException;
+import it.polimi.ingsw.am02.server.model.exceptions.TileNotFoundException;
+import it.polimi.ingsw.am02.server.model.exceptions.TileOccupiedException;
+import it.polimi.ingsw.am02.server.model.player.Player;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+/**
+ * The offer track: the ordered collection of {@link OfferTile}s on which players
+ * place their totems during the totem-placement phase.
+ *
+ * &lt;p&gt;Tiles are sorted by tile ID and filtered by player count on construction.
+ */
+public class OfferTrack {
+
+    private final List&lt;OfferTile&gt; tiles;
+
+    /**
+     * Builds the offer track for the given player count, pulling tile templates from
+     * {@link GameRegistry} and sorting them by tile ID.
+     *
+     * @param numPlayers the number of players in the game
+     */
+<span class="fc" id="L30">    public OfferTrack(int numPlayers) {</span>
+<span class="fc" id="L31">        this.tiles = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L32">        setUpTiles(numPlayers);</span>
+<span class="fc" id="L33">    }</span>
+
+    private void setUpTiles(int numPlayers) {
+<span class="fc" id="L36">        List&lt;OfferTile&gt; allTiles = GameRegistry.getInstance().getOfferTiles(numPlayers);</span>
+
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        for (OfferTile tile : allTiles)</span>
+<span class="fc" id="L39">            tiles.add(new OfferTile(tile.getTileID(), tile.getMinPlayers(), tile.getGainedFood(),</span>
+<span class="fc" id="L40">                    tile.getNumUpperChoosable(), tile.getNumLowerChoosable()));</span>
+
+<span class="fc" id="L42">        tiles.sort(Comparator.comparingInt(OfferTile::getTileID));</span>
+<span class="fc" id="L43">    }</span>
+
+    /**
+     * Places the given player on the tile with the specified ID.
+     *
+     * @param player the player to place
+     * @param tileID the target tile identifier
+     * @throws TileOccupiedException if the tile is already occupied
+     * @throws TileNotFoundException if no tile with this ID exists
+     */
+    public void occupyTile(Player player, char tileID) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        for (OfferTile tile : tiles) {</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            if (tile.getTileID() == tileID) {</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                if (tile.isOccupied()) {</span>
+<span class="fc" id="L57">                    throw new TileOccupiedException(tileID);</span>
+                }
+
+<span class="fc" id="L60">                tile.acceptPlayer(player);</span>
+<span class="fc" id="L61">                return;</span>
+            }
+<span class="fc" id="L63">        }</span>
+<span class="fc" id="L64">        throw new TileNotFoundException(tileID);</span>
+    }
+
+    /**
+     * @return all players currently on the track, in ascending tile-ID order
+     *         (i.e. action-resolution order)
+     */
+    public List&lt;Player&gt; getOrderedPlayers() {
+<span class="fc" id="L72">        List&lt;Player&gt; orderedPlayers = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        for (OfferTile tile : tiles) {</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            if (tile.isOccupied()) {</span>
+<span class="fc" id="L75">                orderedPlayers.add(tile.getOccupyingPlayer());</span>
+            }
+<span class="fc" id="L77">        }</span>
+<span class="fc" id="L78">        return orderedPlayers;</span>
+    }
+
+    /**
+     * Finds and returns the tile currently occupied by the given player.
+     *
+     * @param player the player to look up
+     * @return the {@link OfferTile} the player is standing on
+     * @throws PlayerNotOnTileException if the player is not on any tile
+     */
+    public OfferTile getTileByPlayer(Player player) {
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        for (OfferTile tile : tiles) {</span>
+<span class="fc bfc" id="L90" title="All 4 branches covered.">            if (tile.isOccupied() &amp;&amp; tile.getOccupyingPlayer().equals(player)) {</span>
+<span class="fc" id="L91">                return tile;</span>
+            }
+<span class="fc" id="L93">        }</span>
+<span class="fc" id="L94">        throw new PlayerNotOnTileException(player.getNickname());</span>
+    }
+
+    /**
+     * @return a list of {@link OfferTileInfo} DTOs for all tiles on the track,
+     *         suitable for sending to clients
+     */
+    public List&lt;OfferTileInfo&gt; getTilesInfo() {
+<span class="fc" id="L102">        return tiles.stream()</span>
+<span class="fc" id="L103">                .map(OfferTile::toInfo)</span>
+<span class="fc" id="L104">                .toList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

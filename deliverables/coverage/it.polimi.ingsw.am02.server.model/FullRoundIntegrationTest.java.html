@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FullRoundIntegrationTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">FullRoundIntegrationTest.java</span></div><h1>FullRoundIntegrationTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model;
+
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.messages.events.Event;
+import it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent;
+import it.polimi.ingsw.am02.common.messages.events.game.*;
+import it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent;
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
+import it.polimi.ingsw.am02.server.controller.GameController;
+import it.polimi.ingsw.am02.server.controller.persistence.NoOpCommandLogger;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Integration test covering one full round of MESOS:
+ * SetUp → TotemPlacement → ActionResolution (all players) → EndPlayerTurn → EndRound → NewRound.
+ *
+ * The turn order is random (Game uses shuffle), so after startFSM() we read
+ * getTurnOrder() and getCurrentPlayerNickname() to drive the test dynamically.
+ *
+ * Two players: Matteo (WHITE) and Husnain (RED).
+ */
+<span class="fc" id="L33">class FullRoundIntegrationTest {</span>
+
+    private static final String P1 = &quot;Matteo&quot;;
+    private static final String P2 = &quot;Husnain&quot;;
+    private static final long seed = 42L;
+
+    private Game game;
+    private EventCollector collector;
+
+    /** Collects all events broadcast by GameController. */
+<span class="fc" id="L43">    static class EventCollector implements VirtualView {</span>
+<span class="fc" id="L44">        final List&lt;Event&gt; events = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L46">        @Override public void notifyUsernameResult(String username, boolean isValid, String reason) {}</span>
+<span class="nc" id="L47">        @Override public void notifyGameStarted(String gameId) { events.add(new GameStartedEvent(gameId)); }</span>
+<span class="nc" id="L48">        @Override public void notifyAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; lobbies) {}</span>
+<span class="nc" id="L49">        @Override public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {}</span>
+<span class="nc" id="L50">        @Override public void notifyLobbyDissolved(String lobbyID) {}</span>
+
+        @Override
+        public void notifyGameSetupCompleted(Map&lt;String, Totem&gt; totemByPlayer, List&lt;String&gt; turnOrder, Map&lt;String, Integer&gt; initialFood, BoardSnapshot boardSnapshot) {
+<span class="fc" id="L54">            events.add(new GameSetupCompletedEvent(totemByPlayer, turnOrder, initialFood, boardSnapshot));</span>
+<span class="fc" id="L55">        }</span>
+
+        @Override
+        public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List&lt;String&gt; resolutionOrder) {
+<span class="fc" id="L59">            events.add(new PhaseChangedEvent(phase, currentPlayer, resolutionOrder));</span>
+<span class="fc" id="L60">        }</span>
+
+<span class="fc" id="L62">        @Override public void notifyCurrentPlayerChanged(String nextPlayer) { events.add(new CurrentPlayerChangedEvent(nextPlayer)); }</span>
+<span class="fc" id="L63">        @Override public void notifyTurnOrderEstablished(List&lt;String&gt; turnOrder) { events.add(new TurnOrderEstablishedEvent(turnOrder)); }</span>
+
+        @Override
+        public void notifyBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow, List&lt;String&gt; discardedCards, List&lt;String&gt; movedToLowerRow, int deckRemainingCount) {
+<span class="fc" id="L67">            events.add(new BoardUpdatedEvent(newUpperRow, newLowerRow, discardedCards, movedToLowerRow, deckRemainingCount));</span>
+<span class="fc" id="L68">        }</span>
+
+        @Override
+        public void notifyEraChanged(Era newEra, List&lt;String&gt; newUpperRowBuildings, List&lt;String&gt; newLowerRowBuildings, List&lt;String&gt; discardedBuildings) {
+<span class="nc" id="L72">            events.add(new EraChangedEvent(newEra, newUpperRowBuildings, newLowerRowBuildings, discardedBuildings));</span>
+<span class="nc" id="L73">        }</span>
+
+<span class="fc" id="L75">        @Override public void notifyTotemPlaced(String nickname, char tileID) { events.add(new TotemPlacedEvent(nickname, tileID)); }</span>
+<span class="fc" id="L76">        @Override public void notifyTotemReturned(String nickname, int turnOrderPosition) { events.add(new TotemReturnedEvent(nickname, turnOrderPosition)); }</span>
+<span class="fc" id="L77">        @Override public void notifyCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) { events.add(new CardTakenEvent(nickname, cardID, cardType, sourceRow)); }</span>
+<span class="fc" id="L78">        @Override public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) { events.add(new PlayerLimitsInitializedEvent(nickname, remainingUpper, remainingLower)); }</span>
+<span class="fc" id="L79">        @Override public void notifyPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) { events.add(new PlayerLimitsUpdatedEvent(nickname, remainingUpper, remainingLower)); }</span>
+<span class="fc" id="L80">        @Override public void notifyPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta) { events.add(new PlayerResourceChangedEvent(nickname, resource, newValue, delta)); }</span>
+<span class="nc" id="L81">        @Override public void notifyEventResolved(String eventID, String eventName) { events.add(new EventResolvedEvent(eventID, eventName)); }</span>
+<span class="nc" id="L82">        @Override public void notifyExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) { events.add(new ExtraTurnStartedEvent(nickname, remainingUpper, remainingLower)); }</span>
+<span class="nc" id="L83">        @Override public void notifyExtraTurnEnded(String nickname) { events.add(new ExtraTurnEndedEvent(nickname)); }</span>
+<span class="nc" id="L84">        @Override public void notifyGameEnded(List&lt;String&gt; winners, List&lt;PlayerFinalScore&gt; finalRankings) { events.add(new GameEndedEvent(winners, finalRankings)); }</span>
+<span class="nc" id="L85">        @Override public void notifyError(String message) { events.add(new ErrorEvent(message)); }</span>
+<span class="nc" id="L86">        @Override public void notifyPlayerDisconnected(String nickname) { events.add(new PlayerDisconnectedEvent(nickname)); }</span>
+<span class="nc" id="L87">        @Override public void notifyPlayerReconnected(String nickname) { events.add(new PlayerReconnectedEvent(nickname)); }</span>
+<span class="nc" id="L88">        @Override public void notifyAutoPlayerTimerStarted(String nickname, long seconds) { events.add(new AutoPlayerTimerStartedEvent(nickname, seconds)); }</span>
+<span class="nc" id="L89">        @Override public void notifyAutoPlayerInvoked(String nickname) { events.add(new AutoPlayerInvokedEvent(nickname)); }</span>
+<span class="nc" id="L90">        @Override public void notifyGameAborted(String winner) { events.add(new GameAbortedEvent(winner)); }</span>
+<span class="nc" id="L91">        @Override public void notifyGameRecoveryFailed() { events.add(new GameRecoveryFailedEvent()); }</span>
+<span class="nc" id="L92">        @Override public void notifyGlobalTimerStarted(long seconds) { events.add(new GlobalTimerStartedEvent(seconds)); }</span>
+<span class="nc" id="L93">        @Override public void notifyGlobalTimerCancelled() { events.add(new GlobalTimerCancelledEvent()); }</span>
+
+        /** Returns the last event of the given type, or null. */
+        @SuppressWarnings(&quot;unchecked&quot;)
+        &lt;T extends Event&gt; T last(Class&lt;T&gt; type) {
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            for (int i = events.size() - 1; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                if (type.isInstance(events.get(i))) return (T) events.get(i);</span>
+            }
+<span class="nc" id="L101">            return null;</span>
+        }
+
+        /** Returns all events of the given type. */
+        @SuppressWarnings(&quot;unchecked&quot;)
+        &lt;T extends Event&gt; List&lt;T&gt; all(Class&lt;T&gt; type) {
+<span class="fc" id="L107">            return events.stream()</span>
+<span class="fc" id="L108">                    .filter(type::isInstance)</span>
+<span class="fc" id="L109">                    .map(e -&gt; (T) e)</span>
+<span class="fc" id="L110">                    .toList();</span>
+        }
+
+<span class="nc" id="L113">        void clear() { events.clear(); }</span>
+    }
+
+    @BeforeEach
+    void setUp() {
+<span class="fc" id="L118">        TestHelper.ensureRegistryLoaded();</span>
+
+<span class="fc" id="L120">        Map&lt;String, Totem&gt; totems = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L121">        totems.put(P1, Totem.WHITE);</span>
+<span class="fc" id="L122">        totems.put(P2, Totem.RED);</span>
+
+<span class="fc" id="L124">        game = new Game(&quot;test-game-01&quot;, List.of(P1, P2), totems, seed);</span>
+
+<span class="fc" id="L126">        collector = new EventCollector();</span>
+<span class="fc" id="L127">        Map&lt;String, VirtualView&gt; views = Map.of(P1, collector, P2, collector);</span>
+
+        // GameController registers itself as GameObserver on construction
+<span class="fc" id="L130">        new GameController(&quot;test-game-01&quot;, game, views, new NoOpCommandLogger());</span>
+
+        // Triggers SetUpState → TotemPlacementState automatically
+<span class="fc" id="L133">        game.startFSM();</span>
+<span class="fc" id="L134">    }</span>
+
+    /** Verifies startFSM broadcasts setup completion and enters the TOTEM_PLACEMENT phase. */
+    @Test
+    void fullRound_setupCompletedAndTotemPlacementStarted() {
+        // After startFSM(): SetUpState fires GameSetupCompletedEvent,
+        // then transitions to TotemPlacementState which fires PhaseChangedEvent(TOTEM_PLACEMENT).
+<span class="fc" id="L141">        assertNotNull(collector.last(GameSetupCompletedEvent.class),</span>
+                &quot;GameSetupCompletedEvent should have been broadcast after setup&quot;);
+
+<span class="fc" id="L144">        PhaseChangedEvent phaseEvent = collector.last(PhaseChangedEvent.class);</span>
+<span class="fc" id="L145">        assertNotNull(phaseEvent);</span>
+<span class="fc" id="L146">        assertEquals(PhaseType.TOTEM_PLACEMENT, phaseEvent.phase());</span>
+
+<span class="fc" id="L148">        assertNotNull(game.getCurrentPlayerNickname(),</span>
+                &quot;A current player should be set after setup&quot;);
+<span class="fc" id="L150">        assertEquals(2, game.getTurnOrder().size());</span>
+<span class="fc" id="L151">    }</span>
+
+    /** Verifies that once both totems are placed the game enters ACTION_RESOLUTION and initializes pick limits. */
+    @Test
+    void fullRound_bothPlayersPlaceTotems_thenActionResolutionStarts() {
+<span class="fc" id="L156">        List&lt;String&gt; order = game.getTurnOrder(); // random, but deterministic within this run</span>
+
+        // Read offer tiles from the snapshot to find valid tile IDs
+<span class="fc" id="L159">        GameSetupCompletedEvent setupEvent = collector.last(GameSetupCompletedEvent.class);</span>
+<span class="fc" id="L160">        assertNotNull(setupEvent);</span>
+<span class="fc" id="L161">        List&lt;Character&gt; tileIDs = setupEvent.boardSnapshot().offerTiles().stream()</span>
+<span class="fc" id="L162">                .map(OfferTileInfo::tileID)</span>
+<span class="fc" id="L163">                .toList();</span>
+
+        // Each player picks a different tile
+<span class="fc" id="L166">        char tile0 = tileIDs.get(0);</span>
+<span class="fc" id="L167">        char tile1 = tileIDs.get(1);</span>
+
+<span class="fc" id="L169">        game.moveTotem(order.get(0), tile0);</span>
+<span class="fc" id="L170">        game.moveTotem(order.get(1), tile1);</span>
+
+        // Both totems placed → should now be in ACTION_RESOLUTION
+<span class="fc" id="L173">        PhaseChangedEvent phaseEvent = collector.last(PhaseChangedEvent.class);</span>
+<span class="fc" id="L174">        assertEquals(PhaseType.ACTION_RESOLUTION, phaseEvent.phase(),</span>
+                &quot;Phase should be ACTION_RESOLUTION after all totems placed&quot;);
+
+        // Limits should have been initialized for the first acting player
+<span class="fc" id="L178">        assertFalse(collector.all(PlayerLimitsInitializedEvent.class).isEmpty(),</span>
+                &quot;PlayerLimitsInitializedEvent should have been fired&quot;);
+<span class="fc" id="L180">    }</span>
+
+    /** Verifies a full round: both players resolve actions and return their totems, advancing the game past ACTION_RESOLUTION. */
+    @Test
+    void fullRound_eachPlayerResolvesAndReturnsTotem_thenEndRoundReached() {
+<span class="fc" id="L185">        List&lt;String&gt; placementOrder = game.getTurnOrder();</span>
+
+<span class="fc" id="L187">        GameSetupCompletedEvent setupEvent = collector.last(GameSetupCompletedEvent.class);</span>
+<span class="fc" id="L188">        List&lt;Character&gt; tileIDs = setupEvent.boardSnapshot().offerTiles().stream()</span>
+<span class="fc" id="L189">                .map(OfferTileInfo::tileID)</span>
+<span class="fc" id="L190">                .toList();</span>
+
+<span class="fc" id="L192">        char tile0 = tileIDs.get(0);</span>
+<span class="fc" id="L193">        char tile1 = tileIDs.get(1);</span>
+
+        // --- Totem placement ---
+<span class="fc" id="L196">        game.moveTotem(placementOrder.get(0), tile0);</span>
+<span class="fc" id="L197">        game.moveTotem(placementOrder.get(1), tile1);</span>
+
+        // --- Action resolution: each player picks 0 cards then returns totem ---
+        // Resolution order may differ from placement order; read it from the event.
+<span class="fc" id="L201">        PhaseChangedEvent arEvent = collector.last(PhaseChangedEvent.class);</span>
+<span class="fc" id="L202">        List&lt;String&gt; resolutionOrder = arEvent.resolutionOrder();</span>
+<span class="fc" id="L203">        assertNotNull(resolutionOrder, &quot;resolutionOrder must be set on ACTION_RESOLUTION PhaseChangedEvent&quot;);</span>
+
+<span class="fc bfc" id="L205" title="All 2 branches covered.">        for (String player : resolutionOrder) {</span>
+            // resolve with empty list = take no cards (valid only if no mandatory pick obligation)
+            // If the tile allows 0 picks from lower row and 0 from upper, this passes.
+            // Otherwise use the first available card from the snapshot.
+<span class="fc" id="L209">            tryResolveOrSkip(player, setupEvent);</span>
+<span class="fc" id="L210">            game.moveTotem(player, 'T'); // return totem to TurnOrderTile</span>
+<span class="fc" id="L211">        }</span>
+
+        // After all players returned → EndRoundState → should reach NewRound or EventResolution
+<span class="fc" id="L214">        PhaseChangedEvent lastPhase = collector.last(PhaseChangedEvent.class);</span>
+<span class="fc" id="L215">        assertTrue(</span>
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">                lastPhase.phase() == PhaseType.END_ROUND</span>
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">                        || lastPhase.phase() == PhaseType.EVENT_RESOLUTION</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">                        || lastPhase.phase() == PhaseType.NEW_ROUND</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">                        || lastPhase.phase() == PhaseType.TOTEM_PLACEMENT, // next round started</span>
+<span class="fc" id="L220">                &quot;After all players finish, game should advance past ACTION_RESOLUTION. Got: &quot; + lastPhase.phase()</span>
+        );
+<span class="fc" id="L222">    }</span>
+
+    /**
+     * Attempts to resolve actions for a player.
+     * Picks characters until the player is allowed to finish their turn.
+     */
+    private void tryResolveOrSkip(String player, GameSetupCompletedEvent setupEvent) {
+<span class="fc" id="L229">        Player p = game.getPlayerByNickname(player);</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">        while (!game.getGameBoard().canPlayerFinish(p)) {</span>
+<span class="fc" id="L231">            OfferTile tile = game.getGameBoard().getOfferTrack().getTileByPlayer(p);</span>
+<span class="fc" id="L232">            String toPick = null;</span>
+<span class="fc bfc" id="L233" title="All 2 branches covered.">            if (tile.getRemainingUpper() &gt; 0) {</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">                for (String id : game.getGameBoard().getUpperRow()) {</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">                    if (GameRegistry.getInstance().isCharacter(id)) {</span>
+<span class="fc" id="L236">                        toPick = id;</span>
+<span class="fc" id="L237">                        break;</span>
+                    }
+<span class="fc" id="L239">                }</span>
+            }
+<span class="pc bpc" id="L241" title="1 of 4 branches missed.">            if (toPick == null &amp;&amp; tile.getRemainingLower() &gt; 0) {</span>
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">                for (String id : game.getGameBoard().getLowerRow()) {</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">                    if (GameRegistry.getInstance().isCharacter(id)) {</span>
+<span class="fc" id="L244">                        toPick = id;</span>
+<span class="fc" id="L245">                        break;</span>
+                    }
+<span class="nc" id="L247">                }</span>
+            }
+
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">            if (toPick != null) {</span>
+<span class="fc" id="L251">                game.resolveActions(player, List.of(toPick));</span>
+            } else {
+                break; // No characters left to pick
+            }
+<span class="fc" id="L255">        }</span>
+<span class="fc" id="L256">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

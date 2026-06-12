@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuiController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui</a> &gt; <span class="el_source">GuiController.java</span></div><h1>GuiController.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui;
+
+import it.polimi.ingsw.am02.client.controller.ClientController;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
+import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.enumerations.NetworkType;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+
+import java.util.List;
+
+/**
+ * Controller for the Graphical User Interface (GUI).
+ * This class handles the communication between the GUI views and the server proxy,
+ * managing the lobby and game phases.
+ */
+public class GuiController extends ClientController {
+
+    private NetworkType networkType;
+    private String host;
+    private int port;
+
+    /**
+     * Constructs a new GuiController.
+     *
+     * @param proxy      The server proxy to use for communication.
+     * @param lobbyModel The model containing lobby-related data.
+     * @param view       The client view associated with this controller.
+     */
+    public GuiController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {
+<span class="nc" id="L33">        super(proxy, lobbyModel, view);</span>
+<span class="nc" id="L34">    }</span>
+
+    /**
+     * Sets the connection configuration for the server.
+     *
+     * @param networkType The type of network connection (RMI or Socket).
+     * @param host        The server hostname or IP address.
+     * @param port        The server port.
+     */
+    public void setConnectionConfig(NetworkType networkType, String host, int port) {
+<span class="nc" id="L44">        this.networkType = networkType;</span>
+<span class="nc" id="L45">        this.host = host;</span>
+<span class="nc" id="L46">        this.port = port;</span>
+<span class="nc" id="L47">    }</span>
+
+    /**
+     * Creates a new server proxy using the stored connection configuration.
+     *
+     * @return A new ServerProxy instance.
+     * @throws Exception If an error occurs during proxy creation.
+     */
+    @Override
+    protected ServerProxy createNewProxy() throws Exception {
+<span class="nc" id="L57">        return ServerProxyFactory.create(networkType, host, port, lobbyModel, view);</span>
+    }
+
+    /**
+     * Retrieves the list of available lobbies from the lobby model.
+     *
+     * @return A list of LobbyInfo objects representing available lobbies.
+     */
+    public List&lt;LobbyInfo&gt; getAvailableLobbies() {
+<span class="nc" id="L66">        return lobbyModel.getAvailableLobbies();</span>
+    }
+
+    /**
+     * Requests to set the user's nickname.
+     *
+     * @param nickname The desired nickname.
+     */
+<span class="nc" id="L74">    public void requestSetUsername(String nickname) { handleSetNickname(nickname); }</span>
+
+    /**
+     * Requests the creation of a new lobby.
+     *
+     * @param size The expected number of players in the lobby.
+     */
+<span class="nc" id="L81">    public void requestCreateLobby(int size) { handleCreateLobby(size); }</span>
+
+    /**
+     * Requests to join a specific lobby by its ID.
+     *
+     * @param lobbyId The ID of the lobby to join.
+     */
+    public void requestJoinLobby(String lobbyId) {
+<span class="nc" id="L89">        List&lt;LobbyInfo&gt; lobbies = lobbyModel.getAvailableLobbies();</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        for (LobbyInfo l : lobbies) {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            if (l.lobbyId().equals(lobbyId)) {</span>
+<span class="nc" id="L92">                handleJoinLobby(lobbies.indexOf(l));</span>
+<span class="nc" id="L93">                return;</span>
+            }
+<span class="nc" id="L95">        }</span>
+<span class="nc" id="L96">    }</span>
+
+    /**
+     * Requests to reconnect to an ongoing game.
+     *
+     * @param nick The user's nickname.
+     * @param gId  The game ID to reconnect to.
+     */
+<span class="nc" id="L104">    public void requestReconnect(String nick, String gId) { handleReconnect(nick, gId); }</span>
+
+    /**
+     * Requests to select a totem.
+     *
+     * @param t The totem color to select.
+     */
+<span class="nc" id="L111">    public void requestSelectTotem(Totem t) { handleSelectTotem(t); }</span>
+
+    /**
+     * Requests to leave the current lobby.
+     * If not in a lobby, performs a return to the lobby screen.
+     */
+    public void requestLeaveLobby() {
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        if (lobbyModel.getCurrentLobby() != null) proxy.requestLeaveLobby();</span>
+<span class="nc" id="L119">        else performReturnToLobby();</span>
+<span class="nc" id="L120">    }</span>
+
+    /**
+     * Sends a request to move the totem to a specific tile.
+     *
+     * @param t The tile ID to move the totem to.
+     */
+<span class="nc" id="L127">    public void moveTotem(char t) { handleMoveTotem(t); }</span>
+
+    /**
+     * Sends a request to resolve actions with a list of selected cards.
+     *
+     * @param ids The list of card IDs to take.
+     */
+<span class="nc" id="L134">    public void resolveActions(List&lt;String&gt; ids) { handleResolveActions(ids); }</span>
+
+    /**
+     * Requests to return to the lobby screen.
+     */
+<span class="nc" id="L139">    public void requestReturnToLobby() { performReturnToLobby(); }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

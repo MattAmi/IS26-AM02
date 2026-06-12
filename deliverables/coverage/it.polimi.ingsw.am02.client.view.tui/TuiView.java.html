@@ -1,0 +1,1109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TuiView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.tui</a> &gt; <span class="el_source">TuiView.java</span></div><h1>TuiView.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.tui;
+
+import it.polimi.ingsw.am02.client.view.CardCatalog;
+import it.polimi.ingsw.am02.client.model.GameModel;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.client.view.AbstractClientView;
+import it.polimi.ingsw.am02.common.ProjectInfo;
+import it.polimi.ingsw.am02.common.dto.*;
+import it.polimi.ingsw.am02.common.enumerations.*;
+
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+/**
+ * Text-based user interface for the MESOS game client.
+ *
+ * &lt;p&gt;Renders the complete game state to the terminal using ANSI escape codes.
+ * Handles both lobby and in-game phases.&lt;/p&gt;
+ *
+ * &lt;h2&gt;Reconnection strategy&lt;/h2&gt;
+ * &lt;p&gt;When a player reconnects, the {@code GameController} replays the full
+ * event history (&quot;fast-forward&quot;). Each event updates {@link GameModel} state
+ * incrementally. The view does &lt;em&gt;not&lt;/em&gt; attempt to render during fast-forward
+ * because {@link #setGameModel(GameModel)} has not been called yet (or
+ * {@code gameModel} is still being populated). As soon as the controller calls
+ * {@code setGameModel(populatedModel)}, this view immediately performs a full
+ * repaint — showing cards, resources, and turn order exactly as they are.&lt;/p&gt;
+ *
+ * &lt;h2&gt;Notification buffer&lt;/h2&gt;
+ * &lt;p&gt;Only the last {@value #MAX_NOTIFICATIONS} log lines are kept; older ones
+ * are silently discarded.&lt;/p&gt;
+ *
+ * &lt;h2&gt;Thread model&lt;/h2&gt;
+ * &lt;p&gt;All public callbacks enqueue a {@link Runnable} onto {@link #eventQueue}.
+ * A single background thread ({@code TUI-Event-Processor}) drains the queue
+ * sequentially, guaranteeing that terminal writes never interleave.&lt;/p&gt;
+ */
+public class TuiView extends AbstractClientView {
+
+    // -----------------------------------------------------------------------
+    // ANSI constants
+    // -----------------------------------------------------------------------
+
+    private static final String RESET  = &quot;\u001B[0m&quot;;
+    private static final String RED    = &quot;\u001B[31m&quot;;
+    private static final String GREEN  = &quot;\u001B[32m&quot;;
+    private static final String YELLOW = &quot;\u001B[33m&quot;;
+    private static final String BLUE   = &quot;\u001B[34m&quot;;
+    private static final String PURPLE = &quot;\u001B[35m&quot;;
+    private static final String CYAN   = &quot;\u001B[36m&quot;;
+    private static final String WHITE  = &quot;\u001B[37m&quot;;
+    private static final String BOLD   = &quot;\u001B[1m&quot;;
+
+    // -----------------------------------------------------------------------
+    // Configuration
+    // -----------------------------------------------------------------------
+
+    /** Maximum number of recent log entries shown on screen. */
+    private static final int MAX_NOTIFICATIONS = 10;
+
+    // -----------------------------------------------------------------------
+    // State
+    // -----------------------------------------------------------------------
+
+    private final LobbyModel lobbyModel;
+    private GameModel gameModel;
+
+    /** Fallback game ID used before {@link GameModel} is fully populated. */
+    private String currentGameId;
+
+    /** Ring buffer of recent log lines. */
+<span class="nc" id="L73">    private final LinkedList&lt;String&gt; notifications = new LinkedList&lt;&gt;();</span>
+
+    /** Single-writer queue that serializes all terminal-output tasks. */
+<span class="nc" id="L76">    private final BlockingQueue&lt;Runnable&gt; eventQueue = new LinkedBlockingQueue&lt;&gt;();</span>
+
+<span class="nc" id="L78">    private boolean bannerPrinted = false;</span>
+
+    // -----------------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------------
+
+    /**
+     * Creates a new {@code TuiView} bound to the given lobby model and starts
+     * the background event-processor thread.
+     *
+     * @param lobbyModel the client-side lobby model; must not be {@code null}
+     */
+<span class="nc" id="L90">    public TuiView(LobbyModel lobbyModel) {</span>
+<span class="nc" id="L91">        this.lobbyModel = lobbyModel;</span>
+<span class="nc" id="L92">        startEventProcessor();</span>
+<span class="nc" id="L93">    }</span>
+
+    /**
+     * Starts the background event-processor thread that serializes all UI
+     * updates through {@link #eventQueue}, preventing concurrent terminal writes.
+     * A 50 ms pacing delay is applied after each task to smooth catch-up replay.
+     */
+    private void startEventProcessor() {
+<span class="nc" id="L101">        Thread processor = new Thread(() -&gt; {</span>
+            try {
+                while (true) {
+<span class="nc" id="L104">                    Runnable event = eventQueue.take();</span>
+<span class="nc" id="L105">                    event.run();</span>
+<span class="nc" id="L106">                    System.out.flush();</span>
+<span class="nc" id="L107">                    Thread.sleep(50);</span>
+<span class="nc" id="L108">                }</span>
+<span class="nc" id="L109">            } catch (InterruptedException e) {</span>
+<span class="nc" id="L110">                Thread.currentThread().interrupt();</span>
+            }
+<span class="nc" id="L112">        }, &quot;TUI-Event-Processor&quot;);</span>
+<span class="nc" id="L113">        processor.setDaemon(true);</span>
+<span class="nc" id="L114">        processor.start();</span>
+<span class="nc" id="L115">    }</span>
+
+    // -----------------------------------------------------------------------
+    // GameModel injection — key reconnection hook
+    // -----------------------------------------------------------------------
+
+    /**
+     * Binds the populated game model and immediately forces a full repaint.
+     *
+     * &lt;p&gt;This is the single hook that makes reconnection work: the controller
+     * calls this method &lt;em&gt;after&lt;/em&gt; the fast-forward event sequence has
+     * fully updated the model. The first render therefore always reflects the
+     * complete, current game state — cards taken, resources, turn order, etc.&lt;/p&gt;
+     *
+     * @param gameModel the populated client-side game model; {@code null} resets
+     *                  the view to the pre-game state
+     */
+    @Override
+    public void setGameModel(GameModel gameModel) {
+<span class="nc" id="L134">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L135">            this.gameModel = gameModel;</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            if (this.gameModel != null) {</span>
+<span class="nc" id="L137">                renderFullGame();</span>
+            }
+<span class="nc" id="L139">        });</span>
+<span class="nc" id="L140">    }</span>
+
+    /** Pending summary-card text to overlay on the next repaint cycle. */
+<span class="nc" id="L143">    private String pendingSummary = null;</span>
+
+    // -----------------------------------------------------------------------
+    // Notification helper
+    // -----------------------------------------------------------------------
+
+    /**
+     * Appends a message to the notification ring buffer and triggers a repaint.
+     * If {@link #gameModel} is not yet available, the message is printed inline
+     * without a full repaint.
+     *
+     * @param message ANSI-formatted log line to display
+     */
+    private void addNotification(String message) {
+<span class="nc" id="L157">        notifications.addLast(message);</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        if (notifications.size() &gt; MAX_NOTIFICATIONS) {</span>
+<span class="nc" id="L159">            notifications.removeFirst();</span>
+        }
+
+<span class="nc bnc" id="L162" title="All 4 branches missed.">        if (gameModel != null &amp;&amp; gameModel.getGameId() != null) {</span>
+<span class="nc" id="L163">            renderFullGame();</span>
+        } else {
+<span class="nc" id="L165">            System.out.println(message);</span>
+<span class="nc" id="L166">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+        }
+<span class="nc" id="L168">    }</span>
+
+    // -----------------------------------------------------------------------
+    // LOBBY CALLBACKS
+    // -----------------------------------------------------------------------
+
+    /**
+     * Called when the server responds to a nickname registration attempt.
+     * Prints a confirmation or rejection message and refreshes the prompt.
+     *
+     * @param username the requested nickname
+     * @param accepted {@code true} if the server accepted the nickname
+     * @param reason   human-readable rejection reason; ignored when {@code accepted} is {@code true}
+     */
+    @Override
+    public void onUsernameResult(String username, boolean accepted, String reason) {
+<span class="nc" id="L184">        eventQueue.add(() -&gt; {</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (accepted) {</span>
+<span class="nc" id="L186">                clearScreen();</span>
+<span class="nc" id="L187">                printHeader();</span>
+<span class="nc" id="L188">                System.out.println(GREEN + &quot;Successfully logged in as: &quot; + BOLD + username + RESET);</span>
+<span class="nc" id="L189">                System.out.println(&quot;\nCommands: create &lt;size&gt; | join &lt;index&gt; | quit&quot;);</span>
+            } else {
+<span class="nc" id="L191">                System.out.println(RED + &quot;[ERROR] Username '&quot; + username + &quot;' rejected: &quot; + reason + RESET);</span>
+            }
+<span class="nc" id="L193">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+<span class="nc" id="L194">        });</span>
+<span class="nc" id="L195">    }</span>
+
+    /**
+     * Redraws the pre-lobby screen with the current list of open lobbies.
+     * No-op when a game is already in progress.
+     *
+     * @param lobbies snapshot of lobbies currently waiting for players
+     */
+    @Override
+    public void onAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; lobbies) {
+<span class="nc" id="L205">        eventQueue.add(() -&gt; {</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            if (gameModel != null) return;</span>
+<span class="nc" id="L207">            clearScreen();</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">            if (!bannerPrinted) {</span>
+<span class="nc" id="L209">                printBanner();</span>
+<span class="nc" id="L210">                bannerPrinted = true;</span>
+            }
+<span class="nc" id="L212">            printHeader();</span>
+<span class="nc" id="L213">            System.out.println(YELLOW + &quot;Logged in as: &quot; + BOLD + lobbyModel.getMyNickname() + RESET);</span>
+<span class="nc" id="L214">            System.out.println(&quot;\n&quot; + PURPLE + BOLD + &quot;--- AVAILABLE LOBBIES ---&quot; + RESET);</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">            if (lobbies.isEmpty()) {</span>
+<span class="nc" id="L216">                System.out.println(&quot;  No active lobbies found. Use 'create &lt;size&gt;' to start one.&quot;);</span>
+            } else {
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                for (int i = 0; i &lt; lobbies.size(); i++) {</span>
+<span class="nc" id="L219">                    LobbyInfo info = lobbies.get(i);</span>
+<span class="nc" id="L220">                    System.out.printf(&quot;  [%d] Players: %d/%d%n&quot;,</span>
+<span class="nc" id="L221">                            i, info.currentPlayers().size(), info.expectedPlayers());</span>
+                }
+            }
+<span class="nc" id="L224">            System.out.println(&quot;\nCommands: create &lt;2-5&gt; | join &lt;index&gt; | reconnect &lt;nick&gt; &lt;id&gt; | quit&quot;);</span>
+<span class="nc" id="L225">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+<span class="nc" id="L226">        });</span>
+<span class="nc" id="L227">    }</span>
+
+    /**
+     * Redraws the lobby screen with the updated player list and totem selections.
+     * Adapts the command hints based on whether the local player has already set
+     * a nickname and/or picked a totem. No-op when a game is already in progress.
+     *
+     * @param lobby the updated lobby snapshot
+     */
+    @Override
+    public void onCurrentLobbyUpdated(LobbyInfo lobby) {
+<span class="nc" id="L238">        eventQueue.add(() -&gt; {</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">            if (gameModel != null) return;</span>
+<span class="nc" id="L240">            clearScreen();</span>
+<span class="nc" id="L241">            printHeader();</span>
+<span class="nc" id="L242">            System.out.println(PURPLE + BOLD + &quot;--- LOBBY: &quot; + lobby.lobbyId() + &quot; ---&quot; + RESET);</span>
+<span class="nc" id="L243">            System.out.printf(&quot;Capacity: %d/%d players%n&quot;,</span>
+<span class="nc" id="L244">                    lobby.currentPlayers().size(), lobby.expectedPlayers());</span>
+<span class="nc" id="L245">            System.out.println(&quot;\nPlayers:&quot;);</span>
+
+<span class="nc" id="L247">            lobby.currentPlayers().forEach(n -&gt; {</span>
+<span class="nc" id="L248">                Totem chosen = lobby.chosenTotems().get(n);</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">                String totemStr = (chosen != null)</span>
+<span class="nc" id="L250">                        ? YELLOW + &quot;[&quot; + chosen + &quot;]&quot;</span>
+<span class="nc" id="L251">                        : RED + &quot;[no totem selected]&quot;;</span>
+<span class="nc" id="L252">                System.out.println(&quot;  • &quot; + n + &quot; &quot; + totemStr + RESET);</span>
+<span class="nc" id="L253">            });</span>
+
+<span class="nc" id="L255">            List&lt;Totem&gt; availableTotems = new ArrayList&lt;&gt;(Arrays.asList(Totem.values()));</span>
+<span class="nc" id="L256">            availableTotems.removeAll(lobby.chosenTotems().values());</span>
+
+<span class="nc" id="L258">            System.out.println(&quot;\n&quot; + CYAN + &quot;Available totems: &quot; + RESET + availableTotems);</span>
+
+<span class="nc" id="L260">            String myNick = lobbyModel.getMyNickname();</span>
+
+<span class="nc bnc" id="L262" title="All 4 branches missed.">            if (myNick == null || myNick.isBlank()) {</span>
+<span class="nc" id="L263">                System.out.println(&quot;\n&quot; + YELLOW + BOLD + &quot;&gt;&gt; STEP 1: Enter a nickname to join&quot; + RESET);</span>
+<span class="nc" id="L264">                System.out.println(&quot;Commands: nick &lt;name&gt; | leave | quit&quot;);</span>
+            } else {
+<span class="nc" id="L266">                boolean hasTotem = lobby.chosenTotems().containsKey(myNick);</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">                String totemCmd = hasTotem ? &quot;totem &lt;color&gt; (to change)&quot; : &quot;totem &lt;color&gt;&quot;;</span>
+
+<span class="nc" id="L269">                Totem myTotem = lobby.chosenTotems().get(myNick);</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">                String statusMsg = hasTotem</span>
+<span class="nc" id="L271">                        ? &quot;You are ready! Totem: &quot; + totemColor(myTotem) + &quot;[&quot; + myTotem + &quot;]&quot; + RESET</span>
+<span class="nc" id="L272">                        : &quot;Pick your totem!&quot;;</span>
+<span class="nc" id="L273">                System.out.println(&quot;\n&quot; + GREEN + BOLD + &quot;&gt;&gt; STEP 2: Nickname set (&quot; + myNick + &quot;). &quot; + statusMsg + RESET);</span>
+
+<span class="nc" id="L275">                System.out.println(&quot;Commands: nick &lt;name&gt; (to change) | &quot; + totemCmd + &quot; | totems | leave | quit&quot;);</span>
+            }
+
+<span class="nc" id="L278">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+<span class="nc" id="L279">        });</span>
+<span class="nc" id="L280">    }</span>
+
+    /**
+     * Appends a notification listing the totems not yet claimed in the current lobby.
+     */
+    @Override
+    public void onShowAvailableTotems() {
+<span class="nc" id="L287">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L288">            LobbyInfo lobby = lobbyModel.getCurrentLobby();</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">            if (lobby != null) {</span>
+<span class="nc" id="L290">                List&lt;Totem&gt; available = new ArrayList&lt;&gt;(Arrays.asList(Totem.values()));</span>
+<span class="nc" id="L291">                available.removeAll(lobby.chosenTotems().values());</span>
+
+<span class="nc" id="L293">                addNotification(CYAN + &quot;[LOBBY] Available totems: &quot; + GREEN + available + RESET);</span>
+            }
+<span class="nc" id="L295">        });</span>
+<span class="nc" id="L296">    }</span>
+
+    /**
+     * Notifies the user that the lobby they were in has been dissolved by the server.
+     */
+    @Override
+    public void onLobbyDissolved() {
+<span class="nc" id="L303">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L304">            System.out.println(&quot;\n&quot; + RED + &quot;[LOBBY] The lobby has been dissolved.&quot; + RESET);</span>
+<span class="nc" id="L305">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+<span class="nc" id="L306">        });</span>
+<span class="nc" id="L307">    }</span>
+
+    // -----------------------------------------------------------------------
+    // GAME CALLBACKS
+    // -----------------------------------------------------------------------
+
+    /**
+     * Stores the assigned game ID, detaches the view from the lobby-model
+     * observer chain, and posts a game-started notification.
+     *
+     * @param gameId the server-assigned game identifier
+     */
+    @Override
+    public void onGameStarted(String gameId) {
+<span class="nc" id="L321">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L322">            this.currentGameId = gameId;</span>
+<span class="nc" id="L323">            lobbyModel.removeObserver(this);</span>
+<span class="nc" id="L324">            addNotification(GREEN + BOLD + &quot;GAME STARTED! ID: &quot; + gameId + RESET);</span>
+<span class="nc" id="L325">        });</span>
+<span class="nc" id="L326">    }</span>
+
+    /**
+     * Triggers a full repaint once the initial board configuration is available.
+     *
+     * @param turnOrder    initial turn order (top to bottom)
+     * @param initialFood  initial food allocation per player
+     * @param board        initial board snapshot
+     */
+    @Override
+    public void onGameSetupCompleted(List&lt;String&gt; turnOrder,
+                                     Map&lt;String, Integer&gt; initialFood,
+                                     BoardSnapshot board) {
+<span class="nc" id="L339">        eventQueue.add(this::renderFullGame);</span>
+<span class="nc" id="L340">    }</span>
+
+    /**
+     * Triggers a full repaint when the FSM transitions to a new phase.
+     *
+     * @param phase         the new FSM phase
+     * @param currentPlayer nickname of the player who acts in this phase
+     * @param order         current turn order
+     */
+    @Override
+    public void onPhaseChanged(PhaseType phase, String currentPlayer, List&lt;String&gt; order) {
+<span class="nc" id="L351">        eventQueue.add(this::renderFullGame);</span>
+<span class="nc" id="L352">    }</span>
+
+    /**
+     * Triggers a full repaint when control passes to a different player.
+     *
+     * @param nextPlayer the nickname of the player who is now active
+     */
+    @Override
+    public void onCurrentPlayerChanged(String nextPlayer) {
+<span class="nc" id="L361">        eventQueue.add(this::renderFullGame);</span>
+<span class="nc" id="L362">    }</span>
+
+    /**
+     * Triggers a full repaint when a new turn order is established.
+     *
+     * @param turnOrder the updated turn-order list; the first element acts first
+     */
+    @Override
+    public void onTurnOrderEstablished(List&lt;String&gt; turnOrder) {
+<span class="nc" id="L371">        eventQueue.add(this::renderFullGame);</span>
+<span class="nc" id="L372">    }</span>
+
+    /**
+     * Appends a notification when a player places their totem on the offer track.
+     *
+     * @param nickname the player who placed the totem
+     * @param tileID   identifier of the tile where the totem was placed
+     */
+    @Override
+    public void onTotemPlaced(String nickname, char tileID) {
+<span class="nc" id="L382">        eventQueue.add(() -&gt; addNotification(WHITE + &quot;[BOARD] &quot; + nickname</span>
+                + &quot; placed their totem on tile &quot; + BOLD + tileID + RESET));
+<span class="nc" id="L384">    }</span>
+
+    /**
+     * Appends a notification when a player's totem returns to the turn-order tile.
+     *
+     * @param nickname          the player whose totem returned
+     * @param turnOrderPosition zero-based slot index on the turn-order tile;
+     *                          displayed as one-based for readability
+     */
+    @Override
+    public void onTotemReturned(String nickname, int turnOrderPosition) {
+<span class="nc" id="L395">        eventQueue.add(() -&gt; addNotification(WHITE + &quot;[BOARD] &quot; + nickname</span>
+                + &quot; returned to turn-order slot &quot; + (turnOrderPosition + 1) + RESET));
+<span class="nc" id="L397">    }</span>
+
+    /**
+     * Triggers a full repaint when the offer-track tile state changes.
+     *
+     * @param tiles updated snapshot of all offer tiles
+     */
+    @Override
+    public void onOfferTilesUpdated(List&lt;OfferTileInfo&gt; tiles) {
+<span class="nc" id="L406">        eventQueue.add(this::renderFullGame);</span>
+<span class="nc" id="L407">    }</span>
+
+    /**
+     * Triggers a full repaint when the card rows or deck size change.
+     *
+     * @param newUpper  IDs of cards now in the upper row
+     * @param newLower  IDs of cards now in the lower row
+     * @param deckCount remaining cards in the draw pile
+     */
+    @Override
+    public void onBoardUpdated(List&lt;String&gt; newUpper, List&lt;String&gt; newLower, int deckCount) {
+<span class="nc" id="L418">        eventQueue.add(this::renderFullGame);</span>
+<span class="nc" id="L419">    }</span>
+
+    /**
+     * Posts an era-change notification and immediately repaints the board
+     * to reflect the new building market.
+     *
+     * @param era               the era that has just begun
+     * @param newUpperBuildings building card IDs now in the upper row
+     * @param newLowerBuildings building card IDs now in the lower row
+     */
+    @Override
+    public void onEraChanged(Era era, List&lt;String&gt; newUpperBuildings, List&lt;String&gt; newLowerBuildings) {
+<span class="nc" id="L431">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L432">            addNotification(PURPLE + BOLD + &quot;[ERA] Era &quot; + era + &quot; has begun!&quot; + RESET);</span>
+<span class="nc" id="L433">            renderFullGame();</span>
+<span class="nc" id="L434">        });</span>
+<span class="nc" id="L435">    }</span>
+
+    /**
+     * Triggers a full repaint when a player's initial pick limits are set.
+     *
+     * @param nickname the player whose limits were initialized
+     * @param upper    number of cards choosable from the upper row
+     * @param lower    number of cards choosable from the lower row
+     */
+    @Override
+    public void onPlayerLimitsInitialized(String nickname, int upper, int lower) {
+<span class="nc" id="L446">        eventQueue.add(this::renderFullGame);</span>
+<span class="nc" id="L447">    }</span>
+
+    /**
+     * Triggers a full repaint when a player's remaining pick limits change.
+     *
+     * @param nickname the player whose limits changed
+     * @param upper    updated upper-row picks remaining
+     * @param lower    updated lower-row picks remaining
+     */
+    @Override
+    public void onPlayerLimitsUpdated(String nickname, int upper, int lower) {
+<span class="nc" id="L458">        eventQueue.add(this::renderFullGame);</span>
+<span class="nc" id="L459">    }</span>
+
+    /**
+     * Appends a resource-change notification for the given player.
+     *
+     * @param nickname  the affected player
+     * @param resource  the resource type that changed
+     * @param newValue  the player's new resource total
+     */
+    @Override
+    public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
+<span class="nc" id="L470">        eventQueue.add(() -&gt; addNotification(YELLOW + &quot;[RESOURCE] &quot; + nickname</span>
+                + &quot; now has &quot; + newValue + &quot; &quot; + resource + RESET));
+<span class="nc" id="L472">    }</span>
+
+    /**
+     * Appends a card-pickup notification, formatting the card ID for readability.
+     *
+     * @param nickname  the player who took the card
+     * @param cardID    identifier of the card taken
+     * @param cardType  whether the card is a character or a building
+     * @param sourceRow the row the card was taken from
+     */
+    @Override
+    public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
+<span class="nc" id="L484">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L485">            String formatted = CardCatalog.getInstance().format(cardID);</span>
+<span class="nc" id="L486">            addNotification(CYAN + &quot;[ACTION] &quot; + nickname + &quot; took &quot; + formatted + RESET);</span>
+<span class="nc" id="L487">        });</span>
+<span class="nc" id="L488">    }</span>
+
+    /**
+     * Appends a notification when a round or final event is resolved.
+     *
+     * @param eventID   identifier of the resolved event card
+     * @param eventName human-readable name of the event
+     */
+    @Override
+    public void onEventResolved(String eventID, String eventName) {
+<span class="nc" id="L498">        eventQueue.add(() -&gt; addNotification(PURPLE + &quot;[EVENT] Resolved: &quot; + eventName + RESET));</span>
+<span class="nc" id="L499">    }</span>
+
+    /**
+     * Appends a notification when a player gains an extra turn,
+     * reporting their remaining pick budget.
+     *
+     * @param nickname       the player who gained the extra turn
+     * @param remainingUpper upper-row picks still available
+     * @param remainingLower lower-row picks still available
+     */
+    @Override
+    public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+<span class="nc" id="L511">        eventQueue.add(() -&gt; addNotification(GREEN + &quot;[EXTRA] &quot; + nickname + &quot; gained an extra turn!&quot;</span>
+                + &quot; (Up:&quot; + remainingUpper + &quot; Lw:&quot; + remainingLower + &quot;)&quot; + RESET));
+<span class="nc" id="L513">    }</span>
+
+    /**
+     * Appends a notification when a player's extra turn concludes.
+     *
+     * @param nickname the player whose extra turn has ended
+     */
+    @Override
+    public void onExtraTurnEnded(String nickname) {
+<span class="nc" id="L522">        eventQueue.add(() -&gt; addNotification(YELLOW + &quot;[EXTRA] &quot; + nickname + &quot;'s extra turn ended.&quot; + RESET));</span>
+<span class="nc" id="L523">    }</span>
+
+    /**
+     * Appends a disconnection alert for the given player.
+     *
+     * @param nickname the player who disconnected
+     */
+    @Override
+    public void onPlayerDisconnected(String nickname) {
+<span class="nc" id="L532">        eventQueue.add(() -&gt; addNotification(RED + BOLD + &quot;[!] Player disconnected: &quot; + nickname + RESET));</span>
+<span class="nc" id="L533">    }</span>
+
+    /**
+     * Appends a reconnection notification for the given player.
+     *
+     * @param nickname the player who reconnected
+     */
+    @Override
+    public void onPlayerReconnected(String nickname) {
+<span class="nc" id="L542">        eventQueue.add(() -&gt; addNotification(GREEN + &quot;[!] Player reconnected: &quot; + nickname + RESET));</span>
+<span class="nc" id="L543">    }</span>
+
+    /**
+     * Appends an error message to the notification log.
+     *
+     * @param message the error description to display
+     */
+    @Override
+    public void onError(String message) {
+<span class="nc" id="L552">        eventQueue.add(() -&gt; addNotification(RED + &quot;[ERROR] &quot; + message + RESET));</span>
+<span class="nc" id="L553">    }</span>
+
+    /**
+     * Clears the screen and displays a connection-lost banner.
+     * If the game ID is known, it is shown so the player can reconnect later.
+     */
+    @Override
+    public void onConnectionLost() {
+<span class="nc" id="L561">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L562">            clearScreen();</span>
+<span class="nc" id="L563">            printHeader();</span>
+<span class="nc" id="L564">            System.out.println(RED + BOLD + &quot;=== SERVER CONNECTION LOST ===&quot; + RESET);</span>
+<span class="nc" id="L565">            System.out.println(YELLOW + &quot;The server is currently offline or unreachable.&quot; + RESET);</span>
+<span class="nc" id="L566">            System.out.println(&quot;Please wait. The client will attempt to reconnect automatically...\n&quot;);</span>
+
+<span class="nc bnc" id="L568" title="All 4 branches missed.">            String idToPrint = (gameModel != null &amp;&amp; gameModel.getGameId() != null)</span>
+<span class="nc" id="L569">                    ? gameModel.getGameId()</span>
+<span class="nc" id="L570">                    : currentGameId;</span>
+
+<span class="nc bnc" id="L572" title="All 2 branches missed.">            if (idToPrint != null) {</span>
+<span class="nc" id="L573">                System.out.println(CYAN + &quot;Your Game ID (in case you need to reconnect later): &quot; + BOLD + idToPrint + RESET);</span>
+            }
+<span class="nc" id="L575">        });</span>
+<span class="nc" id="L576">    }</span>
+
+    /**
+     * Clears the screen and displays a reconnection-success banner.
+     * The controller will follow up by replaying the game event history.
+     */
+    @Override
+    public void onConnectionRestored() {
+<span class="nc" id="L584">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L585">            clearScreen();</span>
+<span class="nc" id="L586">            printHeader();</span>
+<span class="nc" id="L587">            System.out.println(GREEN + BOLD + &quot;=== CONNECTION RESTORED ===&quot; + RESET);</span>
+<span class="nc" id="L588">            System.out.println(&quot;Successfully reconnected to the server!&quot;);</span>
+<span class="nc" id="L589">            System.out.println(&quot;Resynchronizing state, please wait...\n&quot;);</span>
+<span class="nc" id="L590">        });</span>
+<span class="nc" id="L591">    }</span>
+
+    /**
+     * Appends a notification that the AutoPlayer countdown has begun for a
+     * disconnected player.
+     *
+     * @param nickname the disconnected player
+     * @param seconds  seconds remaining before the AutoPlayer takes over
+     */
+    @Override
+    public void onAutoPlayerTimerStarted(String nickname, long seconds) {
+<span class="nc" id="L602">        eventQueue.add(() -&gt; addNotification(YELLOW + &quot;[BOT] &quot; + nickname</span>
+                + &quot; is disconnected — AutoPlayer takes over in &quot; + seconds + &quot;s.&quot; + RESET));
+<span class="nc" id="L604">    }</span>
+
+    /**
+     * Appends a notification that the AutoPlayer is acting on behalf of a
+     * disconnected player.
+     *
+     * @param nickname the player being substituted by the AutoPlayer
+     */
+    @Override
+    public void onAutoPlayerInvoked(String nickname) {
+<span class="nc" id="L614">        eventQueue.add(() -&gt; addNotification(PURPLE + BOLD + &quot;[BOT] AutoPlayer acting for &quot;</span>
+                + nickname + &quot;...&quot; + RESET));
+<span class="nc" id="L616">    }</span>
+
+    /**
+     * Clears the game model and displays the end-of-game screen with the
+     * winner(s) and complete final rankings.
+     *
+     * @param winners       nicknames of the winning player(s)
+     * @param finalRankings full ranked list with each player's final PP total
+     */
+    @Override
+    public void onGameEnded(List&lt;String&gt; winners, List&lt;PlayerFinalScore&gt; finalRankings) {
+<span class="nc" id="L627">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L628">            this.gameModel = null;</span>
+<span class="nc" id="L629">            clearScreen();</span>
+<span class="nc" id="L630">            printHeader();</span>
+<span class="nc" id="L631">            System.out.println(GREEN + BOLD + &quot;=== GAME OVER ===&quot; + RESET);</span>
+<span class="nc" id="L632">            System.out.println(&quot;Winners: &quot; + String.join(&quot;, &quot;, winners));</span>
+<span class="nc" id="L633">            System.out.println(&quot;\n&quot; + PURPLE + &quot;--- FINAL RANKINGS ---&quot; + RESET);</span>
+<span class="nc bnc" id="L634" title="All 2 branches missed.">            for (int i = 0; i &lt; finalRankings.size(); i++) {</span>
+<span class="nc" id="L635">                PlayerFinalScore s = finalRankings.get(i);</span>
+<span class="nc" id="L636">                System.out.printf(&quot;  %d. %-15s  PP: %d%n&quot;,</span>
+<span class="nc" id="L637">                        i + 1, s.nickname(), s.totalPrestigePoints());</span>
+            }
+<span class="nc" id="L639">            System.out.println(&quot;\nType 'lobby' to return to lobby, or 'quit' to exit.&quot;);</span>
+<span class="nc" id="L640">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+<span class="nc" id="L641">        });</span>
+<span class="nc" id="L642">    }</span>
+
+    /**
+     * Clears the game model and displays an abort screen indicating the
+     * player who won by forfeit due to all others disconnecting.
+     *
+     * @param lastManStanding the only player who remained connected
+     */
+    @Override
+    public void onGameAborted(String lastManStanding) {
+<span class="nc" id="L652">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L653">            this.gameModel = null;</span>
+<span class="nc" id="L654">            clearScreen();</span>
+<span class="nc" id="L655">            printHeader();</span>
+<span class="nc" id="L656">            System.out.println(RED + BOLD + &quot;=== GAME ABORTED ===&quot; + RESET);</span>
+<span class="nc" id="L657">            System.out.println(&quot;Winner by forfeit: &quot; + lastManStanding);</span>
+<span class="nc" id="L658">            System.out.println(&quot;\nType 'lobby' to return to lobby, or 'quit' to exit.&quot;);</span>
+<span class="nc" id="L659">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+<span class="nc" id="L660">        });</span>
+<span class="nc" id="L661">    }</span>
+
+    /**
+     * Clears the game model and informs the user that the post-crash
+     * reconnection window expired before enough players returned.
+     */
+    @Override
+    public void onGameRecoveryFailed() {
+<span class="nc" id="L669">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L670">            this.gameModel = null;</span>
+<span class="nc" id="L671">            clearScreen();</span>
+<span class="nc" id="L672">            printHeader();</span>
+<span class="nc" id="L673">            System.out.println(RED + BOLD + &quot;=== GAME RECOVERY FAILED ===&quot; + RESET);</span>
+<span class="nc" id="L674">            System.out.println(&quot;Not all players reconnected in time. The game has been terminated.&quot;);</span>
+<span class="nc" id="L675">            System.out.println(&quot;\nType 'lobby' to return to lobby, or 'quit' to exit.&quot;);</span>
+<span class="nc" id="L676">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+<span class="nc" id="L677">        });</span>
+<span class="nc" id="L678">    }</span>
+
+    /**
+     * Appends a notification that the global forfeit countdown has started.
+     * Only the sole remaining active player receives this event.
+     *
+     * @param seconds countdown duration in seconds
+     */
+    @Override
+    public void onGlobalTimerStarted(long seconds) {
+<span class="nc" id="L688">        eventQueue.add(() -&gt; addNotification(RED + BOLD + &quot;[!] You are the only active player. &quot;</span>
+                + &quot;If no one reconnects within &quot; + seconds + &quot;s, you win by forfeit.&quot; + RESET));
+<span class="nc" id="L690">    }</span>
+
+    /**
+     * Appends a notification that the global forfeit countdown has been canceled
+     * because another player has reconnected.
+     */
+    @Override
+    public void onGlobalTimerCancelled() {
+<span class="nc" id="L698">        eventQueue.add(() -&gt; addNotification(GREEN + BOLD + &quot;[!] A player has reconnected. &quot;</span>
+                + &quot;The forfeit countdown has been cancelled.&quot; + RESET));
+<span class="nc" id="L700">    }</span>
+
+    /**
+     * Resets all in-game state (game model, game ID, notification buffer) and
+     * clears the screen in preparation for the lobby view.
+     */
+    @Override
+    public void onReturnToLobby() {
+<span class="nc" id="L708">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L709">            this.currentGameId = null;</span>
+<span class="nc" id="L710">            this.gameModel = null;</span>
+<span class="nc" id="L711">            this.notifications.clear();</span>
+
+<span class="nc" id="L713">            clearScreen();</span>
+<span class="nc" id="L714">            printHeader();</span>
+<span class="nc" id="L715">        });</span>
+<span class="nc" id="L716">    }</span>
+
+    /**
+     * Appends the full description of the specified card to the notification log.
+     *
+     * @param cardId the card identifier to look up in the {@link CardCatalog}
+     */
+    public void onShowCardInfo(String cardId) {
+<span class="nc" id="L724">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L725">            String fullInfo = CardCatalog.getInstance().getFullDescription(cardId);</span>
+<span class="nc" id="L726">            String[] lines = fullInfo.split(&quot;\n&quot;);</span>
+<span class="nc bnc" id="L727" title="All 2 branches missed.">            for (String line : lines) {</span>
+<span class="nc" id="L728">                addNotification(WHITE + line + RESET);</span>
+            }
+<span class="nc" id="L730">        });</span>
+<span class="nc" id="L731">    }</span>
+
+    /**
+     * Schedules a summary-card overlay on the next repaint.
+     * The overlay replaces the notification log for one render cycle and is
+     * then cleared automatically.
+     */
+    public void onShowSummaryCard() {
+<span class="nc" id="L739">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L740">            this.pendingSummary = CardCatalog.getInstance().getSummaryCardText();</span>
+<span class="nc" id="L741">            renderFullGame();</span>
+<span class="nc" id="L742">        });</span>
+<span class="nc" id="L743">    }</span>
+
+    /**
+     * Prints a context-sensitive command cheatsheet to standard output.
+     *
+     * @param inPreLobby {@code true} when the player has not yet joined any lobby
+     * @param inLobby    {@code true} when the player is waiting in a lobby
+     * @param inGame     {@code true} when a game is in progress
+     */
+    public void onShowHelp(boolean inPreLobby, boolean inLobby, boolean inGame) {
+<span class="nc" id="L753">        eventQueue.add(() -&gt; {</span>
+<span class="nc" id="L754">            System.out.println(&quot;\n&quot; + CYAN + BOLD + &quot;--- COMMAND CHEATSHEET ---&quot; + RESET);</span>
+<span class="nc bnc" id="L755" title="All 2 branches missed.">            if (inPreLobby) {</span>
+<span class="nc" id="L756">                System.out.println(&quot;  create &lt;size&gt;         - Start a new lobby (size 2-5)&quot;);</span>
+<span class="nc" id="L757">                System.out.println(&quot;  join &lt;index&gt;          - Join a waiting lobby&quot;);</span>
+<span class="nc" id="L758">                System.out.println(&quot;  reconnect &lt;nick&gt; &lt;id&gt; - Rejoin a crashed game&quot;);</span>
+<span class="nc bnc" id="L759" title="All 2 branches missed.">            } else if (inLobby) {</span>
+<span class="nc" id="L760">                System.out.println(&quot;  nick &lt;name&gt;           - Set or change your nickname&quot;);</span>
+<span class="nc" id="L761">                System.out.println(&quot;  totem &lt;color&gt;         - Pick your totem (WHITE, PURPLE, BLUE, RED, YELLOW)&quot;);</span>
+<span class="nc" id="L762">                System.out.println(&quot;  totems                - View available totems&quot;);</span>
+<span class="nc" id="L763">                System.out.println(&quot;  leave                 - Exit the lobby&quot;);</span>
+<span class="nc bnc" id="L764" title="All 2 branches missed.">            } else if (inGame) {</span>
+<span class="nc" id="L765">                System.out.println(&quot;  move &lt;tileID&gt;         - Place totem on the offer track (e.g., move B)&quot;);</span>
+<span class="nc" id="L766">                System.out.println(&quot;  resolve &lt;id...&gt;       - Take specific cards (e.g., resolve C_001 E_002)&quot;);</span>
+<span class="nc" id="L767">                System.out.println(&quot;  move T                - Return totem and END YOUR TURN&quot;);</span>
+<span class="nc" id="L768">                System.out.println(&quot;  info &lt;cardID&gt;         - Read full card details (e.g., info B_004)&quot;);</span>
+<span class="nc" id="L769">                System.out.println(&quot;  summary               - Show the summary card (quick-reference rules)&quot;);</span>
+<span class="nc" id="L770">                System.out.println(&quot;  lobby                 - Leave the game and return to lobby&quot;);</span>
+            }
+<span class="nc" id="L772">            System.out.println(&quot;  quit                  - Close the application&quot;);</span>
+
+<span class="nc bnc" id="L774" title="All 6 branches missed.">            if (inGame &amp;&amp; gameModel != null &amp;&amp; gameModel.getCurrentPlayer() != null) {</span>
+<span class="nc bnc" id="L775" title="All 2 branches missed.">                if (gameModel.getCurrentPlayer().equals(gameModel.getMyNickname())) {</span>
+<span class="nc" id="L776">                    System.out.print(&quot;\n&quot; + GREEN + BOLD + &quot;[YOUR TURN] &gt; &quot; + RESET);</span>
+                } else {
+<span class="nc" id="L778">                    System.out.print(&quot;\n&quot; + YELLOW + &quot;[Waiting for &quot; + gameModel.getCurrentPlayer() + &quot;...] &gt; &quot; + RESET);</span>
+                }
+            } else {
+<span class="nc" id="L781">                System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+            }
+<span class="nc" id="L783">        });</span>
+<span class="nc" id="L784">    }</span>
+
+    // -----------------------------------------------------------------------
+    // CORE RENDERING ENGINE
+    // -----------------------------------------------------------------------
+
+    /**
+     * Clears the screen and repaints the complete in-game UI from the current
+     * {@link GameModel} state. No-op if the model is not yet available.
+     */
+    private void renderFullGame() {
+<span class="nc bnc" id="L795" title="All 4 branches missed.">        if (gameModel == null || gameModel.getGameId() == null) {</span>
+<span class="nc" id="L796">            return;</span>
+        }
+<span class="nc" id="L798">        clearScreen();</span>
+<span class="nc" id="L799">        printHeader();</span>
+
+<span class="nc" id="L801">        PhaseType phase  = gameModel.getCurrentPhase();</span>
+<span class="nc" id="L802">        String currentP  = gameModel.getCurrentPlayer();</span>
+<span class="nc bnc" id="L803" title="All 2 branches missed.">        String displayId = gameModel.getGameId() != null</span>
+<span class="nc" id="L804">                ? gameModel.getGameId()</span>
+<span class="nc bnc" id="L805" title="All 2 branches missed.">                : (currentGameId != null ? currentGameId : &quot;Loading...&quot;);</span>
+
+<span class="nc" id="L807">        System.out.println(CYAN + &quot;Game ID: &quot;       + RESET + displayId</span>
+                + CYAN + &quot;  |  Phase: &quot; + RESET
+<span class="nc bnc" id="L809" title="All 2 branches missed.">                + (phase != null ? YELLOW + phase + RESET : &quot;Starting...&quot;)</span>
+                + CYAN + &quot;  |  Era: &quot; + RESET + PURPLE + BOLD
+<span class="nc" id="L811">                + gameModel.getCurrentEra() + RESET);</span>
+<span class="nc" id="L812">        System.out.println(CYAN + &quot;Active Player: &quot; + RESET + BOLD</span>
+<span class="nc bnc" id="L813" title="All 2 branches missed.">                + (currentP != null ? currentP : &quot;---&quot;) + RESET);</span>
+<span class="nc" id="L814">        System.out.println();</span>
+
+<span class="nc" id="L816">        renderTurnOrder();</span>
+<span class="nc" id="L817">        System.out.println();</span>
+<span class="nc" id="L818">        renderOfferTrack();</span>
+<span class="nc" id="L819">        System.out.println();</span>
+<span class="nc" id="L820">        renderCards();</span>
+<span class="nc" id="L821">        System.out.println();</span>
+<span class="nc" id="L822">        renderPlayers();</span>
+<span class="nc" id="L823">        System.out.println();</span>
+<span class="nc" id="L824">        renderNotifications();</span>
+<span class="nc" id="L825">        System.out.println();</span>
+<span class="nc" id="L826">        renderCommands(phase);</span>
+
+<span class="nc bnc" id="L828" title="All 4 branches missed.">        if (currentP != null &amp;&amp; currentP.equals(gameModel.getMyNickname())) {</span>
+<span class="nc" id="L829">            System.out.print(&quot;\n&quot; + GREEN + BOLD + &quot;[YOUR TURN] &gt; &quot; + RESET);</span>
+<span class="nc bnc" id="L830" title="All 2 branches missed.">        } else if (currentP != null) {</span>
+<span class="nc" id="L831">            System.out.print(&quot;\n&quot; + YELLOW + &quot;[Waiting for &quot; + currentP + &quot;...] &gt; &quot; + RESET);</span>
+        } else {
+<span class="nc" id="L833">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+        }
+<span class="nc" id="L835">    }</span>
+
+    // -----------------------------------------------------------------------
+    // Section renderers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Renders the turn-order tile, showing each slot with its occupant (if any),
+     * food bonus, and PP malus. Data comes directly from
+     * {@link GameModel#getTurnOrderSlots()}, which is kept up-to-date by
+     * {@code TotemPlacedEvent} (clears slot) and {@code TotemReturnedEvent}
+     * (fills slot).
+     */
+    private void renderTurnOrder() {
+<span class="nc" id="L849">        System.out.println(YELLOW + BOLD + &quot;=== TURN ORDER TILE ===&quot; + RESET);</span>
+<span class="nc" id="L850">        List&lt;TurnOrderSlotInfo&gt; slots = gameModel.getTurnOrderSlots();</span>
+<span class="nc bnc" id="L851" title="All 2 branches missed.">        if (slots.isEmpty()) {</span>
+<span class="nc" id="L852">            System.out.println(&quot;  (awaiting turn-order data...)&quot;);</span>
+<span class="nc" id="L853">            return;</span>
+        }
+<span class="nc bnc" id="L855" title="All 2 branches missed.">        for (int i = 0; i &lt; slots.size(); i++) {</span>
+<span class="nc" id="L856">            TurnOrderSlotInfo slot = slots.get(i);</span>
+<span class="nc" id="L857">            String occupant = slot.occupantNickname();</span>
+            String bonusStr = GREEN + &quot; (food: &quot;
+<span class="nc bnc" id="L859" title="All 2 branches missed.">                    + (slot.foodBonus() &gt;= 0 ? &quot;+&quot; : &quot;&quot;) + slot.foodBonus() + &quot;)&quot; + RESET;</span>
+<span class="nc bnc" id="L860" title="All 2 branches missed.">            String malusStr = slot.prestigePointsMalus() != 0</span>
+<span class="nc" id="L861">                    ? RED + &quot; (PP: &quot; + slot.prestigePointsMalus() + &quot;)&quot; + RESET : &quot;&quot;;</span>
+<span class="nc bnc" id="L862" title="All 2 branches missed.">            if (occupant == null) {</span>
+<span class="nc" id="L863">                System.out.printf(&quot;  Slot %d  [ empty ]%s%s%n&quot;, i + 1, bonusStr, malusStr);</span>
+            } else {
+<span class="nc" id="L865">                boolean isMe = occupant.equals(gameModel.getMyNickname());</span>
+<span class="nc bnc" id="L866" title="All 2 branches missed.">                String tag   = isMe ? YELLOW + BOLD + &quot; ★ YOU&quot; + RESET : &quot;&quot;;</span>
+<span class="nc" id="L867">                System.out.printf(&quot;  Slot %d  %s%s%s%s%n&quot;,</span>
+<span class="nc" id="L868">                        i + 1, BOLD + formatOccupant(occupant) + RESET, tag, bonusStr, malusStr);</span>
+            }
+        }
+<span class="nc" id="L871">    }</span>
+
+    /**
+     * Renders the offer track tiles, showing each tile's ID, food bonus,
+     * pick limits, and current occupant (if any).
+     */
+    private void renderOfferTrack() {
+<span class="nc" id="L878">        System.out.println(PURPLE + BOLD + &quot;=== OFFER TRACK ===&quot; + RESET);</span>
+<span class="nc bnc" id="L879" title="All 2 branches missed.">        for (OfferTileInfo tile : gameModel.getOfferTiles()) {</span>
+<span class="nc bnc" id="L880" title="All 2 branches missed.">            String occupant = tile.occupantNickname() != null</span>
+<span class="nc" id="L881">                    ? YELLOW + &quot;  &lt;-- &quot; + formatOccupant(tile.occupantNickname()) + RESET</span>
+<span class="nc" id="L882">                    : &quot;&quot;;</span>
+<span class="nc" id="L883">            System.out.printf(&quot;  [%c]  Food: %+d  |  Upper: %d  |  Lower: %d%s%n&quot;,</span>
+<span class="nc" id="L884">                    tile.tileID(), tile.foodBonus(),</span>
+<span class="nc" id="L885">                    tile.upperChoosable(), tile.lowerChoosable(), occupant);</span>
+<span class="nc" id="L886">        }</span>
+<span class="nc" id="L887">    }</span>
+
+    /**
+     * Renders the card rows (upper and lower) and the building market rows,
+     * including the remaining deck count.
+     */
+    private void renderCards() {
+<span class="nc" id="L894">        System.out.println(BLUE + BOLD + &quot;--- CARDS IN PLAY ---&quot; + RESET);</span>
+
+<span class="nc" id="L896">        System.out.println(WHITE + BOLD + &quot;Upper Row:&quot; + RESET);</span>
+<span class="nc" id="L897">        List&lt;String&gt; upper = gameModel.getUpperRow();</span>
+<span class="nc bnc" id="L898" title="All 2 branches missed.">        if (upper.isEmpty()) {</span>
+<span class="nc" id="L899">            System.out.println(&quot;  (empty)&quot;);</span>
+        } else {
+<span class="nc" id="L901">            upper.forEach(id -&gt; System.out.println(&quot;  &quot; + CardCatalog.getInstance().format(id)));</span>
+        }
+
+<span class="nc" id="L904">        System.out.println(WHITE + BOLD + &quot;\nLower Row:&quot; + RESET);</span>
+<span class="nc" id="L905">        List&lt;String&gt; lower = gameModel.getLowerRow();</span>
+<span class="nc bnc" id="L906" title="All 2 branches missed.">        if (lower.isEmpty()) {</span>
+<span class="nc" id="L907">            System.out.println(&quot;  (empty)&quot;);</span>
+        } else {
+<span class="nc" id="L909">            lower.forEach(id -&gt; System.out.println(&quot;  &quot; + CardCatalog.getInstance().format(id)));</span>
+        }
+
+<span class="nc" id="L912">        List&lt;String&gt; upperB = gameModel.getUpperRowBuildings();</span>
+<span class="nc" id="L913">        List&lt;String&gt; lowerB = gameModel.getLowerRowBuildings();</span>
+<span class="nc bnc" id="L914" title="All 4 branches missed.">        if (!upperB.isEmpty() || !lowerB.isEmpty()) {</span>
+<span class="nc" id="L915">            System.out.println(CYAN + BOLD + &quot;\nBuildings:&quot; + RESET);</span>
+<span class="nc" id="L916">            upperB.forEach(id -&gt; System.out.println(&quot;  [Up]  &quot; + CardCatalog.getInstance().format(id)));</span>
+<span class="nc" id="L917">            lowerB.forEach(id -&gt; System.out.println(&quot;  [Low] &quot; + CardCatalog.getInstance().format(id)));</span>
+        }
+
+<span class="nc" id="L920">        System.out.println(&quot;\nDeck remaining: &quot; + YELLOW + gameModel.getDeckRemainingCount() + RESET);</span>
+<span class="nc" id="L921">    }</span>
+
+    /**
+     * Renders every player's status: food, PP, pick limits, characters, and
+     * buildings. Displays cards for &lt;em&gt;all&lt;/em&gt; players so a reconnecting user
+     * can immediately see the full table state without any extra server round-trip.
+     */
+    private void renderPlayers() {
+<span class="nc" id="L929">        System.out.println(PURPLE + BOLD + &quot;=== PLAYERS STATUS ===&quot; + RESET);</span>
+
+<span class="nc bnc" id="L931" title="All 2 branches missed.">        for (String nickname : gameModel.getTurnOrder()) {</span>
+<span class="nc" id="L932">            int food   = gameModel.getFoodByPlayer().getOrDefault(nickname, 0);</span>
+<span class="nc" id="L933">            int pp     = gameModel.getPpByPlayer().getOrDefault(nickname, 0);</span>
+
+<span class="nc" id="L935">            int picksUp = gameModel.getRemainingUpper().getOrDefault(nickname, 0);</span>
+<span class="nc" id="L936">            int picksLow = gameModel.getRemainingLower().getOrDefault(nickname, 0);</span>
+
+<span class="nc" id="L938">            boolean isMe = nickname.equals(gameModel.getMyNickname());</span>
+<span class="nc bnc" id="L939" title="All 2 branches missed.">            String prefix = isMe ? GREEN + BOLD + &quot;=&gt; &quot; + RESET : &quot;   &quot;;</span>
+<span class="nc bnc" id="L940" title="All 2 branches missed.">            String marker = isMe ? YELLOW + BOLD + &quot; (YOU)&quot; + RESET : RESET;</span>
+
+<span class="nc" id="L942">            Totem t = gameModel.getTotem(nickname);</span>
+<span class="nc bnc" id="L943" title="All 2 branches missed.">            String totemTag = t != null ? totemColor(t) + &quot;[&quot; + t + &quot;]&quot; + RESET + &quot; &quot; : &quot;&quot;;</span>
+<span class="nc" id="L944">            System.out.printf(&quot;%s%s%-15s | Food: &quot; + GREEN + &quot;%2d&quot; + RESET</span>
+                            + &quot;  | PP: &quot; + YELLOW + &quot;%3d&quot; + RESET
+                            + &quot;  | Picks (Up/Low): &quot; + CYAN + &quot;%d/%d&quot; + RESET + &quot;%s%n&quot;,
+<span class="nc" id="L947">                    prefix, totemTag, nickname, food, pp, picksUp, picksLow, marker);</span>
+
+<span class="nc" id="L949">            List&lt;String&gt; chars = gameModel.getCharactersByPlayer()</span>
+<span class="nc" id="L950">                    .getOrDefault(nickname, List.of());</span>
+<span class="nc bnc" id="L951" title="All 2 branches missed.">            if (!chars.isEmpty()) {</span>
+<span class="nc" id="L952">                System.out.println(&quot;    Characters:&quot;);</span>
+<span class="nc" id="L953">                chars.forEach(id -&gt; System.out.println(</span>
+<span class="nc" id="L954">                        &quot;      - &quot; + CardCatalog.getInstance().format(id)));</span>
+            }
+
+<span class="nc" id="L957">            List&lt;String&gt; buildings = gameModel.getBuildingsByPlayer()</span>
+<span class="nc" id="L958">                    .getOrDefault(nickname, List.of());</span>
+<span class="nc bnc" id="L959" title="All 2 branches missed.">            if (!buildings.isEmpty()) {</span>
+<span class="nc" id="L960">                System.out.println(&quot;    Buildings:&quot;);</span>
+<span class="nc" id="L961">                buildings.forEach(id -&gt; System.out.println(</span>
+<span class="nc" id="L962">                        &quot;      - &quot; + CardCatalog.getInstance().format(id)));</span>
+            }
+
+<span class="nc" id="L965">            System.out.println();</span>
+<span class="nc" id="L966">        }</span>
+<span class="nc" id="L967">    }</span>
+
+    /**
+     * Formats a player's totem color tag and nickname for terminal display.
+     *
+     * @param nickname the player's nickname
+     * @return ANSI-colored {@code [TOTEM] nickname} string, or just the
+     *         nickname if the totem is unknown
+     */
+    private String formatOccupant(String nickname) {
+<span class="nc" id="L977">        Totem totem = gameModel.getTotem(nickname);</span>
+<span class="nc bnc" id="L978" title="All 2 branches missed.">        String totemStr = totem != null ? totemColor(totem) + &quot;[&quot; + totem + &quot;]&quot; + RESET + &quot; &quot; : &quot;&quot;;</span>
+<span class="nc" id="L979">        return totemStr + nickname;</span>
+    }
+
+    /**
+     * Maps a {@link Totem} enum value to its corresponding ANSI color code.
+     *
+     * @param totem the totem; must not be {@code null}
+     * @return ANSI escape sequence for the totem's color
+     */
+    private String totemColor(Totem totem) {
+<span class="nc bnc" id="L989" title="All 5 branches missed.">        return switch (totem) {</span>
+<span class="nc" id="L990">            case WHITE  -&gt; WHITE;</span>
+<span class="nc" id="L991">            case PURPLE -&gt; PURPLE;</span>
+<span class="nc" id="L992">            case BLUE   -&gt; BLUE;</span>
+<span class="nc" id="L993">            case RED    -&gt; RED;</span>
+<span class="nc" id="L994">            case YELLOW -&gt; YELLOW;</span>
+        };
+    }
+
+    /**
+     * Renders the last {@value #MAX_NOTIFICATIONS} log entries, or — if a
+     * summary-card overlay is pending — displays that instead for one cycle.
+     */
+    private void renderNotifications() {
+<span class="nc bnc" id="L1003" title="All 2 branches missed.">        if (pendingSummary != null) {</span>
+<span class="nc" id="L1004">            System.out.println(WHITE + BOLD + &quot;--- SUMMARY CARD ---&quot; + RESET);</span>
+<span class="nc" id="L1005">            System.out.println(CYAN + pendingSummary + RESET);</span>
+<span class="nc" id="L1006">            pendingSummary = null;</span>
+        } else {
+<span class="nc" id="L1008">            System.out.println(WHITE + BOLD + &quot;--- RECENT LOGS ---&quot; + RESET);</span>
+<span class="nc bnc" id="L1009" title="All 2 branches missed.">            if (notifications.isEmpty()) {</span>
+<span class="nc" id="L1010">                System.out.println(&quot;  No recent activity.&quot;);</span>
+            } else {
+<span class="nc" id="L1012">                notifications.forEach(n -&gt; System.out.println(&quot;  &quot; + n));</span>
+            }
+        }
+<span class="nc" id="L1015">    }</span>
+
+    /**
+     * Renders the context-sensitive command list, adapting it to the current FSM
+     * phase and whether it is the local player's turn.
+     *
+     * @param phase the current FSM phase; the section is skipped if {@code null}
+     */
+    private void renderCommands(PhaseType phase) {
+<span class="nc bnc" id="L1024" title="All 2 branches missed.">        if (phase == null) return;</span>
+
+<span class="nc" id="L1026">        String myNick   = gameModel.getMyNickname();</span>
+<span class="nc" id="L1027">        String currentP = gameModel.getCurrentPlayer();</span>
+
+<span class="nc bnc" id="L1029" title="All 4 branches missed.">        if (myNick == null || currentP == null) {</span>
+<span class="nc" id="L1030">            System.out.println(&quot;  (Loading player data...)&quot;);</span>
+<span class="nc" id="L1031">            return;</span>
+        }
+
+<span class="nc" id="L1034">        System.out.println(GREEN + BOLD + &quot;--- AVAILABLE COMMANDS ---&quot; + RESET);</span>
+
+<span class="nc bnc" id="L1036" title="All 2 branches missed.">        if (!myNick.equals(currentP)) {</span>
+<span class="nc" id="L1037">            System.out.println(&quot;  Waiting for &quot; + BOLD + currentP + RESET + &quot; to finish their turn...&quot;);</span>
+        } else {
+<span class="nc bnc" id="L1039" title="All 3 branches missed.">            switch (phase) {</span>
+<span class="nc" id="L1040">                case TOTEM_PLACEMENT -&gt; System.out.println(&quot;  move &lt;tileID&gt;     — Place your totem on a free offer tile  (e.g., move B)&quot;);</span>
+
+                case ACTION_RESOLUTION -&gt; {
+<span class="nc" id="L1043">                    System.out.println(&quot;  resolve &lt;id...&gt;   — Pick card IDs from the board  (e.g., resolve C_001 E_002)&quot;);</span>
+<span class="nc" id="L1044">                    System.out.println(&quot;  move T            — Return your totem and END YOUR TURN&quot;);</span>
+<span class="nc" id="L1045">                    System.out.println(YELLOW + &quot;  (You MUST type 'move T' after resolving actions.)&quot; + RESET);</span>
+<span class="nc" id="L1046">                }</span>
+
+<span class="nc" id="L1048">                default -&gt; System.out.println(&quot;  (Waiting for the current phase to complete...)&quot;);</span>
+            }
+        }
+
+<span class="nc" id="L1052">        System.out.println(&quot;  info &lt;cardID&gt;     — View full details of a specific card   (e.g., info C_012)&quot;);</span>
+<span class="nc" id="L1053">        System.out.println(&quot;  summary           — Show the summary card (quick-reference rules)&quot;);</span>
+<span class="nc" id="L1054">        System.out.println(&quot;  lobby             — Leave the game and return to lobby&quot;);</span>
+<span class="nc" id="L1055">        System.out.println(&quot;  quit              — Close the application&quot;);</span>
+<span class="nc" id="L1056">    }</span>
+
+    // -----------------------------------------------------------------------
+    // Utilities
+    // -----------------------------------------------------------------------
+
+    /** Prints the full startup banner with team info, only shown once per session. */
+    private void printBanner() {
+<span class="nc" id="L1064">        System.out.println(GREEN + BOLD</span>
+                + &quot;  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\\n&quot;
+                + &quot;  \\                                                /\n&quot;
+                + &quot;  /    M  E  S  O  S  —  P R E H I S T O R I C   \\\n&quot;
+                + &quot;  \\                                                /\n&quot;
+                + &quot;  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\&quot;
+                + RESET);
+<span class="nc" id="L1071">        System.out.println(YELLOW</span>
+                + &quot;\n  &quot; + ProjectInfo.GROUP
+                + &quot;  │  &quot; + ProjectInfo.YEAR
+                + &quot;  │  &quot; + ProjectInfo.UNIVERSITY
+                + RESET);
+<span class="nc" id="L1076">        System.out.println(WHITE</span>
+                + &quot;  ──────────────────────────────────────────────────────&quot;
+                + RESET);
+<span class="nc" id="L1079">        System.out.println(PURPLE + &quot;  Members:&quot; + RESET);</span>
+<span class="nc" id="L1080">        ProjectInfo.MEMBERS.forEach((name, code) -&gt;</span>
+<span class="nc" id="L1081">                System.out.println(&quot;  &quot; + YELLOW + &quot;◆&quot; + RESET</span>
+<span class="nc" id="L1082">                        + &quot;  &quot; + String.format(&quot;%-20s&quot;, name)</span>
+                        + &quot; [&quot; + code + &quot;]&quot;));
+<span class="nc" id="L1084">        System.out.println(WHITE</span>
+                + &quot;  ──────────────────────────────────────────────────────&quot;
+                + RESET);
+<span class="nc" id="L1087">        System.out.println(WHITE</span>
+                + &quot;  &quot; + ProjectInfo.COURSE
+                + &quot;  │  &quot; + ProjectInfo.PROFESSOR
+                + &quot;\n&quot;
+                + RESET);
+<span class="nc" id="L1092">    }</span>
+
+    /** Prints the compact game-title header shown at the top of every screen. */
+    private void printHeader() {
+<span class="nc" id="L1096">        System.out.println(GREEN + BOLD</span>
+                + &quot;  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n&quot;
+                + &quot;      M  E  S  O  S   —   P  R  E  H  I  S  T  O  R  I  C\n&quot;
+                + &quot;  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~&quot;
+                + RESET);
+<span class="nc" id="L1101">    }</span>
+
+    /** Clears the terminal using ANSI escape codes. */
+    private void clearScreen() {
+<span class="nc" id="L1105">        System.out.print(&quot;\n\033[H\033[2J&quot;);</span>
+<span class="nc" id="L1106">        System.out.flush();</span>
+<span class="nc" id="L1107">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

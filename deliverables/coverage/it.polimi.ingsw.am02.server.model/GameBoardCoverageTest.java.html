@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameBoardCoverageTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">GameBoardCoverageTest.java</span></div><h1>GameBoardCoverageTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model;
+
+import it.polimi.ingsw.am02.common.enumerations.Era;
+import it.polimi.ingsw.am02.server.model.card.*;
+import it.polimi.ingsw.am02.server.model.enumerations.EventType;
+import it.polimi.ingsw.am02.server.model.listeners.EventObserver;
+import it.polimi.ingsw.am02.server.model.listeners.GameEventEmitter;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * White-box tests for {@link GameBoard} internals using reflection and a mocked
+ * {@link GameRegistry}. Covers round and final event resolution ordering, era
+ * row updates and new-round preparation, verifying the notifications emitted to
+ * the {@link GameEventEmitter} and registered {@link EventObserver}s.
+ */
+<span class="fc" id="L25">public class GameBoardCoverageTest {</span>
+
+    private GameBoard gameBoard;
+    private GameEventEmitter mockNotifier;
+    private GameRegistry registry;
+    private Map&lt;String, EventCard&gt; originalEventMap;
+    private Map&lt;String, BuildingCard&gt; originalBuildingMap;
+    private Map&lt;String, CharacterCard&gt; originalCharacterMap;
+
+    @BeforeEach
+    @SuppressWarnings(&quot;unchecked&quot;)
+    void setUp() throws Exception {
+<span class="fc" id="L37">        registry = GameRegistry.getInstance();</span>
+
+        // Save original maps
+<span class="fc" id="L40">        Field eventMapField = GameRegistry.class.getDeclaredField(&quot;eventMap&quot;);</span>
+<span class="fc" id="L41">        eventMapField.setAccessible(true);</span>
+<span class="fc" id="L42">        originalEventMap = new HashMap&lt;&gt;((Map&lt;String, EventCard&gt;) eventMapField.get(registry));</span>
+
+<span class="fc" id="L44">        Field buildingMapField = GameRegistry.class.getDeclaredField(&quot;buildingMap&quot;);</span>
+<span class="fc" id="L45">        buildingMapField.setAccessible(true);</span>
+<span class="fc" id="L46">        originalBuildingMap = new HashMap&lt;&gt;((Map&lt;String, BuildingCard&gt;) buildingMapField.get(registry));</span>
+
+<span class="fc" id="L48">        Field characterMapField = GameRegistry.class.getDeclaredField(&quot;characterMap&quot;);</span>
+<span class="fc" id="L49">        characterMapField.setAccessible(true);</span>
+<span class="fc" id="L50">        originalCharacterMap = new HashMap&lt;&gt;((Map&lt;String, CharacterCard&gt;) characterMapField.get(registry));</span>
+
+        // Clear maps for isolation
+<span class="fc" id="L53">        ((Map&lt;String, EventCard&gt;) eventMapField.get(registry)).clear();</span>
+<span class="fc" id="L54">        ((Map&lt;String, BuildingCard&gt;) buildingMapField.get(registry)).clear();</span>
+<span class="fc" id="L55">        ((Map&lt;String, CharacterCard&gt;) characterMapField.get(registry)).clear();</span>
+
+<span class="fc" id="L57">        mockNotifier = mock(GameEventEmitter.class);</span>
+<span class="fc" id="L58">        gameBoard = new GameBoard(2, mockNotifier, new Random(123));</span>
+<span class="fc" id="L59">    }</span>
+
+    @AfterEach
+    @SuppressWarnings(&quot;unchecked&quot;)
+    void tearDown() throws Exception {
+<span class="fc" id="L64">        Field eventMapField = GameRegistry.class.getDeclaredField(&quot;eventMap&quot;);</span>
+<span class="fc" id="L65">        eventMapField.setAccessible(true);</span>
+<span class="fc" id="L66">        Map&lt;String, EventCard&gt; eMap = (Map&lt;String, EventCard&gt;) eventMapField.get(registry);</span>
+<span class="fc" id="L67">        eMap.clear();</span>
+<span class="fc" id="L68">        eMap.putAll(originalEventMap);</span>
+
+<span class="fc" id="L70">        Field buildingMapField = GameRegistry.class.getDeclaredField(&quot;buildingMap&quot;);</span>
+<span class="fc" id="L71">        buildingMapField.setAccessible(true);</span>
+<span class="fc" id="L72">        Map&lt;String, BuildingCard&gt; bMap = (Map&lt;String, BuildingCard&gt;) buildingMapField.get(registry);</span>
+<span class="fc" id="L73">        bMap.clear();</span>
+<span class="fc" id="L74">        bMap.putAll(originalBuildingMap);</span>
+
+<span class="fc" id="L76">        Field characterMapField = GameRegistry.class.getDeclaredField(&quot;characterMap&quot;);</span>
+<span class="fc" id="L77">        characterMapField.setAccessible(true);</span>
+<span class="fc" id="L78">        Map&lt;String, CharacterCard&gt; cMap = (Map&lt;String, CharacterCard&gt;) characterMapField.get(registry);</span>
+<span class="fc" id="L79">        cMap.clear();</span>
+<span class="fc" id="L80">        cMap.putAll(originalCharacterMap);</span>
+<span class="fc" id="L81">    }</span>
+
+    private void addMockEvent(String id, boolean isFinal, int priority) throws Exception {
+<span class="fc" id="L84">        EventCard mockEvent = mock(EventCard.class);</span>
+<span class="fc" id="L85">        when(mockEvent.getID()).thenReturn(id);</span>
+<span class="fc" id="L86">        when(mockEvent.isFinal()).thenReturn(isFinal);</span>
+<span class="fc" id="L87">        when(mockEvent.getPriority()).thenReturn(priority);</span>
+<span class="fc" id="L88">        when(mockEvent.getType()).thenReturn(EventType.SHAMANIC_RITUAL); // arbitrary</span>
+        
+<span class="fc" id="L90">        Field eventMapField = GameRegistry.class.getDeclaredField(&quot;eventMap&quot;);</span>
+<span class="fc" id="L91">        eventMapField.setAccessible(true);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L93">        Map&lt;String, EventCard&gt; eventMap = (Map&lt;String, EventCard&gt;) eventMapField.get(registry);</span>
+<span class="fc" id="L94">        eventMap.put(id, mockEvent);</span>
+<span class="fc" id="L95">    }</span>
+
+    /** Verifies round events are resolved (final events skipped) and observers/notifier informed. */
+    @Test
+    void testResolveRoundEvents() throws Exception {
+<span class="fc" id="L100">        addMockEvent(&quot;E_ROUND_1&quot;, false, 1);</span>
+<span class="fc" id="L101">        addMockEvent(&quot;E_ROUND_2&quot;, false, 2);</span>
+<span class="fc" id="L102">        addMockEvent(&quot;E_FINAL_1&quot;, true, 3); // should be ignored</span>
+
+<span class="fc" id="L104">        Field lowerRowField = GameBoard.class.getDeclaredField(&quot;lowerRow&quot;);</span>
+<span class="fc" id="L105">        lowerRowField.setAccessible(true);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L107">        List&lt;String&gt; lowerRow = (List&lt;String&gt;) lowerRowField.get(gameBoard);</span>
+<span class="fc" id="L108">        lowerRow.clear();</span>
+<span class="fc" id="L109">        lowerRow.add(&quot;E_ROUND_2&quot;);</span>
+<span class="fc" id="L110">        lowerRow.add(&quot;E_ROUND_1&quot;);</span>
+<span class="fc" id="L111">        lowerRow.add(&quot;E_FINAL_1&quot;);</span>
+
+<span class="fc" id="L113">        EventObserver mockObserver = mock(EventObserver.class);</span>
+<span class="fc" id="L114">        gameBoard.attachEventObserver(mockObserver);</span>
+
+<span class="fc" id="L116">        List&lt;Player&gt; players = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L117">        gameBoard.resolveRoundEvents(players);</span>
+
+<span class="fc" id="L119">        EventCard e1 = registry.getEvent(&quot;E_ROUND_1&quot;);</span>
+<span class="fc" id="L120">        EventCard e2 = registry.getEvent(&quot;E_ROUND_2&quot;);</span>
+        
+<span class="fc" id="L122">        verify(e1, times(1)).applyEventEffect(eq(players), anyList());</span>
+<span class="fc" id="L123">        verify(e2, times(1)).applyEventEffect(eq(players), anyList());</span>
+<span class="fc" id="L124">        verify(mockObserver, times(2)).eventStart(any());</span>
+<span class="fc" id="L125">        verify(mockObserver, times(2)).eventEnd(any());</span>
+<span class="fc" id="L126">        verify(mockNotifier, times(2)).notifyEventResolved(anyString(), anyString());</span>
+<span class="fc" id="L127">    }</span>
+
+    /** Verifies only final events are resolved during end-game and observers are notified. */
+    @Test
+    void testResolveFinalEvents() throws Exception {
+<span class="fc" id="L132">        addMockEvent(&quot;E_FINAL_1&quot;, true, 1);</span>
+<span class="fc" id="L133">        addMockEvent(&quot;E_FINAL_2&quot;, true, 2);</span>
+<span class="fc" id="L134">        addMockEvent(&quot;E_ROUND_1&quot;, false, 3); // should be ignored</span>
+
+<span class="fc" id="L136">        Field upperRowField = GameBoard.class.getDeclaredField(&quot;upperRow&quot;);</span>
+<span class="fc" id="L137">        upperRowField.setAccessible(true);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L139">        List&lt;String&gt; upperRow = (List&lt;String&gt;) upperRowField.get(gameBoard);</span>
+<span class="fc" id="L140">        upperRow.clear();</span>
+<span class="fc" id="L141">        upperRow.add(&quot;E_FINAL_1&quot;);</span>
+
+<span class="fc" id="L143">        Field lowerRowField = GameBoard.class.getDeclaredField(&quot;lowerRow&quot;);</span>
+<span class="fc" id="L144">        lowerRowField.setAccessible(true);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L146">        List&lt;String&gt; lowerRow = (List&lt;String&gt;) lowerRowField.get(gameBoard);</span>
+<span class="fc" id="L147">        lowerRow.clear();</span>
+<span class="fc" id="L148">        lowerRow.add(&quot;E_FINAL_2&quot;);</span>
+<span class="fc" id="L149">        lowerRow.add(&quot;E_ROUND_1&quot;);</span>
+
+<span class="fc" id="L151">        EventObserver mockObserver = mock(EventObserver.class);</span>
+<span class="fc" id="L152">        gameBoard.attachEventObserver(mockObserver);</span>
+
+<span class="fc" id="L154">        List&lt;Player&gt; players = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L155">        gameBoard.resolveFinalEvents(players);</span>
+
+<span class="fc" id="L157">        EventCard e1 = registry.getEvent(&quot;E_FINAL_1&quot;);</span>
+<span class="fc" id="L158">        EventCard e2 = registry.getEvent(&quot;E_FINAL_2&quot;);</span>
+
+<span class="fc" id="L160">        verify(e1, times(1)).applyEventEffect(eq(players), anyList());</span>
+<span class="fc" id="L161">        verify(e2, times(1)).applyEventEffect(eq(players), anyList());</span>
+<span class="fc" id="L162">        verify(mockObserver, times(2)).eventStart(any());</span>
+<span class="fc" id="L163">        verify(mockObserver, times(2)).eventEnd(any());</span>
+<span class="fc" id="L164">    }</span>
+
+    /** Verifies an era change refreshes the building rows from the deck and notifies listeners. */
+    @Test
+    void testUpdateRowsForNewEra() throws Exception {
+<span class="fc" id="L169">        Field currentEraField = GameBoard.class.getDeclaredField(&quot;currentEra&quot;);</span>
+<span class="fc" id="L170">        currentEraField.setAccessible(true);</span>
+<span class="fc" id="L171">        currentEraField.set(gameBoard, Era.II);</span>
+
+<span class="fc" id="L173">        Field upperRowBField = GameBoard.class.getDeclaredField(&quot;upperRowBuildings&quot;);</span>
+<span class="fc" id="L174">        upperRowBField.setAccessible(true);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L176">        List&lt;String&gt; upperRowB = (List&lt;String&gt;) upperRowBField.get(gameBoard);</span>
+<span class="fc" id="L177">        upperRowB.clear();</span>
+<span class="fc" id="L178">        upperRowB.add(&quot;B_1&quot;);</span>
+
+<span class="fc" id="L180">        Field lowerRowBField = GameBoard.class.getDeclaredField(&quot;lowerRowBuildings&quot;);</span>
+<span class="fc" id="L181">        lowerRowBField.setAccessible(true);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L183">        List&lt;String&gt; lowerRowB = (List&lt;String&gt;) lowerRowBField.get(gameBoard);</span>
+<span class="fc" id="L184">        lowerRowB.clear();</span>
+<span class="fc" id="L185">        lowerRowB.add(&quot;B_OLD&quot;);</span>
+
+<span class="fc" id="L187">        BuildingDeck mockDeck = mock(BuildingDeck.class);</span>
+<span class="fc" id="L188">        when(mockDeck.getBuildingsForEra(Era.II)).thenReturn(List.of(&quot;B_2&quot;, &quot;B_3&quot;));</span>
+<span class="fc" id="L189">        Field deckField = GameBoard.class.getDeclaredField(&quot;buildingDeck&quot;);</span>
+<span class="fc" id="L190">        deckField.setAccessible(true);</span>
+<span class="fc" id="L191">        deckField.set(gameBoard, mockDeck);</span>
+
+<span class="fc" id="L193">        gameBoard.updateRowsForNewEra();</span>
+
+<span class="fc" id="L195">        assertEquals(List.of(&quot;B_2&quot;, &quot;B_3&quot;), upperRowB);</span>
+<span class="fc" id="L196">        assertEquals(List.of(&quot;B_OLD&quot;, &quot;B_1&quot;), lowerRowB);</span>
+<span class="fc" id="L197">        verify(mockNotifier, times(1)).notifyEraChanged(eq(Era.II), anyList(), anyList(), anyList());</span>
+
+        // Test for Era III
+<span class="fc" id="L200">        currentEraField.set(gameBoard, Era.III);</span>
+<span class="fc" id="L201">        when(mockDeck.getBuildingsForEra(Era.III)).thenReturn(List.of(&quot;B_4&quot;));</span>
+        
+<span class="fc" id="L203">        gameBoard.updateRowsForNewEra();</span>
+<span class="fc" id="L204">        assertEquals(List.of(&quot;B_4&quot;), upperRowB);</span>
+<span class="fc" id="L205">        assertEquals(List.of(&quot;B_2&quot;, &quot;B_3&quot;), lowerRowB); // B_OLD and B_1 are discarded</span>
+<span class="fc" id="L206">    }</span>
+
+    /** Verifies new-round preparation draws tribù cards, shifts rows and flags an era change. */
+    @Test
+    void testPrepareNewRound() throws Exception {
+<span class="fc" id="L211">        Field upperRowField = GameBoard.class.getDeclaredField(&quot;upperRow&quot;);</span>
+<span class="fc" id="L212">        upperRowField.setAccessible(true);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L214">        List&lt;String&gt; upperRow = (List&lt;String&gt;) upperRowField.get(gameBoard);</span>
+<span class="fc" id="L215">        upperRow.clear();</span>
+<span class="fc" id="L216">        upperRow.add(&quot;U1&quot;);</span>
+<span class="fc" id="L217">        upperRow.add(&quot;U2&quot;);</span>
+
+<span class="fc" id="L219">        Field lowerRowField = GameBoard.class.getDeclaredField(&quot;lowerRow&quot;);</span>
+<span class="fc" id="L220">        lowerRowField.setAccessible(true);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L222">        List&lt;String&gt; lowerRow = (List&lt;String&gt;) lowerRowField.get(gameBoard);</span>
+<span class="fc" id="L223">        lowerRow.clear();</span>
+<span class="fc" id="L224">        lowerRow.add(&quot;L1&quot;);</span>
+
+<span class="fc" id="L226">        TribuDeck mockDeck = mock(TribuDeck.class);</span>
+<span class="fc" id="L227">        when(mockDeck.isEmpty()).thenReturn(false, false, true); // draw 2 cards then empty</span>
+<span class="fc" id="L228">        when(mockDeck.draw()).thenReturn(&quot;N1&quot;, &quot;N2&quot;);</span>
+<span class="fc" id="L229">        when(mockDeck.getRemainingSize()).thenReturn(0);</span>
+
+<span class="fc" id="L231">        Field deckField = GameBoard.class.getDeclaredField(&quot;tribuDeck&quot;);</span>
+<span class="fc" id="L232">        deckField.setAccessible(true);</span>
+<span class="fc" id="L233">        deckField.set(gameBoard, mockDeck);</span>
+
+<span class="fc" id="L235">        CharacterCard mockChar1 = mock(CharacterCard.class);</span>
+<span class="fc" id="L236">        when(mockChar1.getEra()).thenReturn(Era.II);</span>
+<span class="fc" id="L237">        Field charMapField = GameRegistry.class.getDeclaredField(&quot;characterMap&quot;);</span>
+<span class="fc" id="L238">        charMapField.setAccessible(true);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L240">        Map&lt;String, CharacterCard&gt; charMap = (Map&lt;String, CharacterCard&gt;) charMapField.get(registry);</span>
+<span class="fc" id="L241">        charMap.put(&quot;N1&quot;, mockChar1);</span>
+<span class="fc" id="L242">        charMap.put(&quot;N2&quot;, mockChar1);</span>
+
+<span class="fc" id="L244">        Field currentEraField = GameBoard.class.getDeclaredField(&quot;currentEra&quot;);</span>
+<span class="fc" id="L245">        currentEraField.setAccessible(true);</span>
+<span class="fc" id="L246">        currentEraField.set(gameBoard, Era.I);</span>
+
+<span class="fc" id="L248">        gameBoard.prepareNewRound(2);</span>
+
+<span class="fc" id="L250">        assertTrue(gameBoard.hasEraChanged());</span>
+<span class="fc" id="L251">        assertEquals(List.of(&quot;N1&quot;, &quot;N2&quot;), upperRow);</span>
+<span class="fc" id="L252">        assertEquals(List.of(&quot;U1&quot;, &quot;U2&quot;), lowerRow);</span>
+<span class="fc" id="L253">        verify(mockNotifier, times(1)).notifyBoardUpdated(anyList(), anyList(), anyList(), anyList(), anyInt());</span>
+<span class="fc" id="L254">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlatPrestigeBonusEffect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.buildingeffects</a> &gt; <span class="el_source">FlatPrestigeBonusEffect.java</span></div><h1>FlatPrestigeBonusEffect.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.buildingeffects;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.EffectVisitor;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+import it.polimi.ingsw.am02.server.model.listeners.PhaseObserver;
+
+import java.util.List;
+
+/**
+ * Building effect that awards a fixed number of prestige points at the end of the game.
+ *
+ * &lt;p&gt;Registered as a {@link PhaseObserver}. Fires once on {@link PhaseType#END_GAME}.
+ *
+ * &lt;p&gt;JSON key: {@code &quot;ENDGAME_FLAT_PP&quot;}
+ */
+public class FlatPrestigeBonusEffect implements BuildingEffect, PhaseObserver {
+    final Player owner;
+    final int bonusPP;
+
+    /**
+     * @param owner   the player who owns this building
+     * @param bonusPP the flat number of prestige points awarded at game end
+     */
+<span class="fc" id="L30">    public FlatPrestigeBonusEffect(Player owner, int bonusPP) {</span>
+<span class="fc" id="L31">        this.owner = owner;</span>
+<span class="fc" id="L32">        this.bonusPP = bonusPP;</span>
+<span class="fc" id="L33">    }</span>
+
+    /** {@inheritDoc} */
+    @Override
+    public void accept(EffectVisitor visitor) {
+<span class="fc" id="L38">        visitor.visitPhaseObserver(this);</span>
+<span class="fc" id="L39">    }</span>
+
+    /**
+     * Adds the flat prestige bonus to the owner's tribe when the game ends.
+     * Has no effect during any other phase transition.
+     *
+     * @param newPhase the phase the game is transitioning into
+     * @return an {@link EffectOutcome} with the prestige-point delta, or empty if not {@code END_GAME}
+     */
+    @Override
+    public EffectOutcome onPhaseChange(PhaseType newPhase) {
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if(newPhase == PhaseType.END_GAME) {</span>
+<span class="fc" id="L51">            Tribu tribu = owner.getTribu();</span>
+<span class="fc" id="L52">            String nickname = owner.getNickname();</span>
+
+<span class="fc" id="L54">            tribu.addPrestigePoints(bonusPP);</span>
+
+<span class="fc" id="L56">            return new EffectOutcome(List.of(</span>
+<span class="fc" id="L57">                    new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), bonusPP)</span>
+            ));
+        }
+
+<span class="fc" id="L61">        return EffectOutcome.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

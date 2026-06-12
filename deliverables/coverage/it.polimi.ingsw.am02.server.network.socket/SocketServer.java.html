@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SocketServer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.network.socket</a> &gt; <span class="el_source">SocketServer.java</span></div><h1>SocketServer.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.network.socket;
+
+import it.polimi.ingsw.am02.common.serialization.JsonMessageCodec;
+import it.polimi.ingsw.am02.common.serialization.JsonMessageCodecImpl;
+import it.polimi.ingsw.am02.server.network.NetworkServer;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+/**
+ * {@link NetworkServer} implementation for the Socket transport.
+ *
+ * &lt;p&gt;Listens for incoming TCP connections on the configured port. For each
+ * accepted connection a {@link SocketClientHandler} is created and started on
+ * a dedicated daemon thread, which then drives the handler's read/write loops
+ * for the lifetime of that connection.
+ */
+<span class="nc" id="L19">public class SocketServer implements NetworkServer {</span>
+
+<span class="nc" id="L21">    private final JsonMessageCodec codec = new JsonMessageCodecImpl();</span>
+    private ServerSocket serverSocket;
+<span class="nc" id="L23">    private volatile boolean running = false;</span>
+
+
+    /**
+     * Starts the server and blocks in the accept loop until {@link #stop()} is called.
+     *
+     * &lt;p&gt;Each accepted connection is handed off to a new {@link SocketClientHandler}
+     * running on its own thread; this method therefore must be called from a
+     * dedicated server thread and not from the application main thread.
+     *
+     * @param port the TCP port to listen on
+     */
+    @Override
+    public void start(int port) {
+        try {
+<span class="nc" id="L38">            serverSocket = new ServerSocket(port);</span>
+<span class="nc" id="L39">            running = true;</span>
+<span class="nc" id="L40">            System.out.println(&quot;[READY] Socket server listening on port &quot; + port);</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            while (running) {</span>
+<span class="nc" id="L42">                Socket clientSocket = serverSocket.accept();</span>
+<span class="nc" id="L43">                System.out.println(&quot;[SocketServer] New Connection: &quot;</span>
+<span class="nc" id="L44">                        + clientSocket.getInetAddress());</span>
+<span class="nc" id="L45">                SocketClientHandler handler = new SocketClientHandler(clientSocket, codec);</span>
+<span class="nc" id="L46">                new Thread(handler::listen).start();</span>
+<span class="nc" id="L47">            }</span>
+<span class="nc" id="L48">        } catch (IOException e) {</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            if (running) {</span>
+<span class="nc" id="L50">                System.err.println(&quot;[SocketServer] Error: &quot; + e.getMessage());</span>
+            }
+<span class="nc" id="L52">        }</span>
+<span class="nc" id="L53">    }</span>
+
+    /**
+     * Stops the accept loop and closes the {@link ServerSocket}, causing
+     * {@link #start(int)} to return.
+     */
+    @Override
+    public void stop() {
+<span class="nc" id="L61">        running = false;</span>
+        try {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (serverSocket != null) serverSocket.close();</span>
+<span class="nc" id="L64">        } catch (IOException ignored) {}</span>
+<span class="nc" id="L65">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

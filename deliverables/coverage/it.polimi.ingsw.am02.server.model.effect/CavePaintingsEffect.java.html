@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CavePaintingsEffect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.effect</a> &gt; <span class="el_source">CavePaintingsEffect.java</span></div><h1>CavePaintingsEffect.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.effect;
+
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Event effect for the Cave Paintings event.
+ * Players who have at least the required number of Artist characters gain prestige
+ * points per Artist; players who fall short lose prestige points.
+ */
+public class CavePaintingsEffect implements EventEffect {
+
+    final int minArtists; //minimum number to profit from the event
+    final int ppMalusIfFailed;
+    final int bonusPerArtist;
+
+    /**
+     * @param minArtists      minimum Artist count needed to benefit from the event
+     * @param malusIfFailed   prestige points lost if the player has fewer than {@code minArtists} Artists
+     * @param bonusPerArtist  prestige points gained per Artist if the threshold is met
+     */
+<span class="fc" id="L30">    public CavePaintingsEffect(int minArtists, int malusIfFailed, int bonusPerArtist) {</span>
+<span class="fc" id="L31">        this.minArtists = minArtists;</span>
+<span class="fc" id="L32">        this.ppMalusIfFailed = malusIfFailed;</span>
+<span class="fc" id="L33">        this.bonusPerArtist = bonusPerArtist;</span>
+<span class="fc" id="L34">    }</span>
+
+    /**
+     * Applies the Cave Paintings outcome to every player.
+     *
+     * @param players all active players
+     * @return an {@link EffectOutcome} with prestige-point deltas for each player
+     */
+    @Override
+    public EffectOutcome applyEffect(List&lt;Player&gt; players) {
+<span class="fc" id="L44">        List&lt;ResourceDelta&gt; deltas = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        for (Player player : players) {</span>
+<span class="fc" id="L47">            Tribu tribu = player.getTribu();</span>
+<span class="fc" id="L48">            String nickname = player.getNickname();</span>
+
+<span class="fc" id="L50">            int numOfArtists = tribu.getCharacterCount(CharacterType.ARTIST);</span>
+
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            if (numOfArtists &gt;= minArtists) {</span>
+<span class="fc" id="L53">                int bonus = bonusPerArtist * numOfArtists;</span>
+<span class="fc" id="L54">                tribu.addPrestigePoints(bonus);</span>
+<span class="fc" id="L55">                deltas.add(new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), bonus));</span>
+<span class="fc" id="L56">            } else {</span>
+<span class="fc" id="L57">                tribu.addPrestigePoints(-ppMalusIfFailed);</span>
+<span class="fc" id="L58">                deltas.add(new ResourceDelta(nickname, ResourceType.PRESTIGE_POINTS, tribu.getPrestigePoints(), -ppMalusIfFailed));</span>
+            }
+<span class="fc" id="L60">        }</span>
+<span class="fc" id="L61">        return new EffectOutcome(deltas);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

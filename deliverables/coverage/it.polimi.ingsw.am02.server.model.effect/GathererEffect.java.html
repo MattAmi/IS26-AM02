@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GathererEffect.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.effect</a> &gt; <span class="el_source">GathererEffect.java</span></div><h1>GathererEffect.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.effect;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.player.Tribu;
+
+import java.util.List;
+
+/**
+ * Character effect for the Gatherer archetype.
+ * Grants a permanent food discount applied during Sustenance event resolution.
+ */
+public class GathererEffect implements CharacterEffect {
+
+    private final int foodDiscount;
+
+    /**
+     * @param foodDiscount the number of food points discounted during each Sustenance event
+     */
+<span class="fc" id="L22">    public GathererEffect(int foodDiscount) {</span>
+<span class="fc" id="L23">        this.foodDiscount = foodDiscount;</span>
+<span class="fc" id="L24">    }</span>
+
+    /**
+     * Adds the food discount to the player's tribe.
+     *
+     * @param player the player who drew this character
+     * @return an {@link EffectOutcome} with the food-discount delta
+     */
+    @Override
+    public EffectOutcome applyEffect(Player player) {
+
+<span class="fc" id="L35">        Tribu tribu = player.getTribu();</span>
+<span class="fc" id="L36">        tribu.addFoodDiscount(foodDiscount);</span>
+
+<span class="fc" id="L38">        String nickname = player.getNickname();</span>
+
+<span class="fc" id="L40">        return new EffectOutcome(List.of(</span>
+                new ResourceDelta(
+                        nickname,
+                        ResourceType.FOOD_DISCOUNT,
+<span class="fc" id="L44">                        tribu.getFoodDiscount(),</span>
+                        foodDiscount)
+        ));
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

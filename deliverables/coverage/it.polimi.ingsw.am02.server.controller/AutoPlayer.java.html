@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AutoPlayer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.controller</a> &gt; <span class="el_source">AutoPlayer.java</span></div><h1>AutoPlayer.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.controller;
+
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.common.messages.commands.GameCommand;
+import it.polimi.ingsw.am02.common.messages.commands.MoveTotemCommand;
+import it.polimi.ingsw.am02.common.messages.commands.ResolveActionsCommand;
+import it.polimi.ingsw.am02.server.model.GameRegistry;
+
+import java.util.List;
+
+/**
+ * Stateless utility that computes the best available command for a
+ * disconnected player based on the current {@link ServerGameSnapshot}.
+ *
+ * &lt;p&gt;The strategy is deliberately minimal:
+ * &lt;ul&gt;
+ *   &lt;li&gt;During {@link it.polimi.ingsw.am02.common.enumerations.PhaseType#TOTEM_PLACEMENT}:
+ *       place the totem on the first free offer tile.&lt;/li&gt;
+ *   &lt;li&gt;During {@link it.polimi.ingsw.am02.common.enumerations.PhaseType#ACTION_RESOLUTION}:
+ *       pick one character from the upper row if possible, then the lower row;
+ *       otherwise return the totem.&lt;/li&gt;
+ *   &lt;li&gt;During any other phase: return {@code null} (no player action expected).&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;Package-private: only {@link GameController} may call this class.
+ */
+final class AutoPlayer {
+
+    private AutoPlayer() {}
+
+    /**
+     * Returns the command appropriate for the current phase, or {@code null}
+     * if no player action is expected in this phase (e.g. event resolution,
+     * scoring).
+     *
+     * @param nickname the disconnected player for whom the command is produced
+     * @param snapshot the current server-side game state
+     * @return a ready-to-dispatch {@link GameCommand}, or {@code null}
+     */
+    static GameCommand computeMove(String nickname, ServerGameSnapshot snapshot) {
+<span class="nc" id="L41">        PhaseType phase = snapshot.currentPhase();</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (phase == null) return null;</span>
+
+<span class="nc bnc" id="L44" title="All 3 branches missed.">        return switch (phase) {</span>
+<span class="nc" id="L45">            case TOTEM_PLACEMENT -&gt; computeTotemPlacement(nickname, snapshot);</span>
+<span class="nc" id="L46">            case ACTION_RESOLUTION -&gt; computeActionResolution(nickname, snapshot);</span>
+<span class="nc" id="L47">            default -&gt; null;</span>
+        };
+    }
+
+    // ── Totem placement
+
+    private static GameCommand computeTotemPlacement(String nickname, ServerGameSnapshot snapshot) {
+<span class="nc" id="L54">        List&lt;Character&gt; free = snapshot.freeOfferTiles();</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (free.isEmpty())</span>
+<span class="nc" id="L56">            return null;</span>
+
+<span class="nc" id="L58">        return new MoveTotemCommand(nickname, free.getFirst());</span>
+    }
+
+    // Action resolution
+
+    private static GameCommand computeActionResolution(String nickname, ServerGameSnapshot snapshot) {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (snapshot.isExtraTurnMode()) {</span>
+<span class="nc" id="L65">            return new MoveTotemCommand(nickname, 'T');   // extra turn: always skip</span>
+        }
+
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (canPlayerFinish(nickname, snapshot)) {</span>
+<span class="nc" id="L69">            return new MoveTotemCommand(nickname,'T');</span>
+        }
+
+        // Try to pick one Character, upper row first.
+<span class="nc" id="L73">        int upperLeft = snapshot.remainingUpperOf(nickname);</span>
+<span class="nc" id="L74">        int lowerLeft = snapshot.remainingLowerOf(nickname);</span>
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (upperLeft &gt; 0) {</span>
+<span class="nc" id="L77">            String card = firstCharacterIn(snapshot.upperRow());</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (card != null) return new ResolveActionsCommand(nickname, List.of(card));</span>
+        }
+
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (lowerLeft &gt; 0) {</span>
+<span class="nc" id="L82">            String card = firstCharacterIn(snapshot.lowerRow());</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            if (card != null) return new ResolveActionsCommand(nickname, List.of(card));</span>
+        }
+
+        // No Character is reachable (only Events or nothing left).
+        // Return the totem: GameBoard.canPlayerFinish will accept this because
+        // no Character cards are available in the rows the player can draw from.
+<span class="nc" id="L89">        return new MoveTotemCommand(nickname,'T');</span>
+    }
+
+    private static boolean canPlayerFinish(String nickname, ServerGameSnapshot snapshot) {
+<span class="nc" id="L93">        int upperLeft = snapshot.remainingUpperOf(nickname);</span>
+<span class="nc" id="L94">        int lowerLeft = snapshot.remainingLowerOf(nickname);</span>
+
+<span class="nc bnc" id="L96" title="All 4 branches missed.">        if (upperLeft == 0 &amp;&amp; lowerLeft == 0)</span>
+<span class="nc" id="L97">            return true;</span>
+
+<span class="nc bnc" id="L99" title="All 4 branches missed.">        boolean upperDone = upperLeft == 0 || firstCharacterIn(snapshot.upperRow()) == null;</span>
+<span class="nc bnc" id="L100" title="All 4 branches missed.">        boolean lowerDone = lowerLeft == 0 || firstCharacterIn(snapshot.lowerRow()) == null;</span>
+
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        return upperDone &amp;&amp; lowerDone;</span>
+    }
+
+    private static String firstCharacterIn(List&lt;String&gt; row) {
+<span class="nc" id="L106">        GameRegistry registry = GameRegistry.getInstance();</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        for (String id : row) {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            if (registry.isCharacter(id)) return id;</span>
+<span class="nc" id="L109">        }</span>
+<span class="nc" id="L110">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

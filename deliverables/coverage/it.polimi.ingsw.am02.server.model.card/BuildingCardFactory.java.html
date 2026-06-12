@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BuildingCardFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.card</a> &gt; <span class="el_source">BuildingCardFactory.java</span></div><h1>BuildingCardFactory.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.card;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import it.polimi.ingsw.am02.common.enumerations.Era;
+
+/**
+ * Factory that deserializes a {@link BuildingCard} from a Jackson {@link JsonNode}.
+ */
+<span class="fc" id="L9">public class BuildingCardFactory {</span>
+
+    /**
+     * Creates a {@link BuildingCard} from the given JSON node.
+     *
+     * @param node the JSON object representing one building card entry
+     * @return the constructed {@link BuildingCard}
+     */
+    public BuildingCard createBuilding(JsonNode node) {
+
+<span class="fc" id="L19">        String cardID = node.path(&quot;cardID&quot;).asText();</span>
+<span class="fc" id="L20">        Era era = Era.valueOf(node.path(&quot;era&quot;).asText());</span>
+<span class="fc" id="L21">        int buildingCost = node.path(&quot;buildingCost&quot;).asInt();</span>
+<span class="fc" id="L22">        int buildingPp = node.path(&quot;buildingPp&quot;).asInt();</span>
+<span class="fc" id="L23">        String effectType = node.path(&quot;effectType&quot;).asText();</span>
+<span class="fc" id="L24">        JsonNode effectParams = node.path(&quot;effectParams&quot;);</span>
+
+<span class="fc" id="L26">        return new BuildingCard(cardID, era, buildingCost, buildingPp, effectType, effectParams);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SummaryCardOverlay.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">SummaryCardOverlay.java</span></div><h1>SummaryCardOverlay.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+
+/**
+ * Represents the overlay for the summary card.
+ * This overlay displays a quick-reference card that can be flipped to show its back side.
+ */
+<span class="nc" id="L15">public class SummaryCardOverlay {</span>
+
+<span class="nc" id="L17">    private boolean showingFront = true;</span>
+
+    /**
+     * Builds the summary card overlay node.
+     *
+     * @param onClose Callback to close the overlay.
+     * @return The constructed VBox representing the overlay.
+     */
+    public VBox buildNode(Runnable onClose) {
+
+<span class="nc" id="L27">        Font introFont = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/intro.ttf&quot;), 13);</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        if (introFont == null) introFont = Font.font(&quot;System&quot;, 13);</span>
+
+<span class="nc" id="L30">        Image frontImage = new Image(</span>
+<span class="nc" id="L31">                getClass().getResourceAsStream(&quot;/images/summary_card_front.png&quot;)</span>
+        );
+<span class="nc" id="L33">        Image backImage = new Image(</span>
+<span class="nc" id="L34">                getClass().getResourceAsStream(&quot;/images/summary_card_back.png&quot;)</span>
+        );
+
+<span class="nc" id="L37">        ImageView cardView = new ImageView(frontImage);</span>
+<span class="nc" id="L38">        cardView.setPreserveRatio(true);</span>
+<span class="nc" id="L39">        cardView.setFitHeight(520);</span>
+
+<span class="nc" id="L41">        Button flipBtn = new Button(&quot;Rotate card&quot;);</span>
+<span class="nc" id="L42">        flipBtn.setFont(introFont);</span>
+<span class="nc" id="L43">        flipBtn.setStyle(</span>
+                &quot;-fx-background-color: #5C6B32; -fx-text-fill: white;&quot; +
+                        &quot;-fx-padding: 8 20; -fx-background-radius: 6;&quot;
+        );
+<span class="nc" id="L47">        flipBtn.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            showingFront = !showingFront;</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            cardView.setImage(showingFront ? frontImage : backImage);</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            flipBtn.setText(showingFront ? &quot;Rotate card&quot; : &quot;Rotate card&quot;);</span>
+<span class="nc" id="L51">        });</span>
+
+<span class="nc" id="L53">        Button closeBtn = new Button(&quot;Close&quot;);</span>
+<span class="nc" id="L54">        closeBtn.setFont(introFont);</span>
+<span class="nc" id="L55">        closeBtn.setStyle(</span>
+                &quot;-fx-background-color: #6B2A2A; -fx-text-fill: white;&quot; +
+                        &quot;-fx-padding: 8 20; -fx-background-radius: 6;&quot;
+        );
+<span class="nc" id="L59">        closeBtn.setOnAction(e -&gt; onClose.run());</span>
+
+<span class="nc" id="L61">        HBox buttons = new HBox(12, flipBtn, closeBtn);</span>
+<span class="nc" id="L62">        buttons.setAlignment(Pos.CENTER);</span>
+
+<span class="nc" id="L64">        VBox container = new VBox(16, cardView, buttons);</span>
+<span class="nc" id="L65">        container.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L66">        container.setPadding(new Insets(24));</span>
+<span class="nc" id="L67">        container.setStyle(</span>
+                &quot;-fx-background-color: #1C1C1C;&quot; +
+                        &quot;-fx-background-radius: 14;&quot; +
+                        &quot;-fx-border-color: #F2D5A3;&quot; +
+                        &quot;-fx-border-width: 2;&quot; +
+                        &quot;-fx-border-radius: 14;&quot;
+        );
+<span class="nc" id="L74">        container.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);</span>
+
+<span class="nc" id="L76">        return container;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

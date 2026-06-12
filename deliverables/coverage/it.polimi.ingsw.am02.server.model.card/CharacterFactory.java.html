@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharacterFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.card</a> &gt; <span class="el_source">CharacterFactory.java</span></div><h1>CharacterFactory.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.card;
+import com.fasterxml.jackson.databind.JsonNode;
+import it.polimi.ingsw.am02.server.model.effect.*;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.common.enumerations.Era;
+import it.polimi.ingsw.am02.server.model.enumerations.InventionType;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.function.Function;
+
+/**
+ * Factory that deserializes a {@link CharacterCard} (with the appropriate {@link CharacterEffect})
+ * from a Jackson {@link JsonNode}.
+ *
+ * &lt;p&gt;Uses an internal registry that maps each {@link CharacterType} to a lambda
+ * responsible for constructing the corresponding effect from JSON parameters.
+ */
+public class CharacterFactory {
+
+    private final Map&lt;CharacterType, Function&lt;JsonNode, CharacterEffect&gt;&gt; effectRegistry;
+
+    /** Constructs the factory and populates the internal effect registry. */
+<span class="fc" id="L23">    public CharacterFactory() {</span>
+<span class="fc" id="L24">        this.effectRegistry = new EnumMap&lt;&gt;(CharacterType.class);</span>
+<span class="fc" id="L25">        setUpRegistry();</span>
+<span class="fc" id="L26">    }</span>
+
+    private void setUpRegistry() {
+<span class="fc" id="L29">        effectRegistry.put(CharacterType.INVENTOR, node -&gt; {</span>
+<span class="fc" id="L30">            String nameInJson = node.path(&quot;invention&quot;).asText();</span>
+<span class="fc" id="L31">            InventionType invention = InventionType.valueOf(nameInJson);</span>
+<span class="fc" id="L32">            return new InventorEffect(invention);</span>
+        });
+
+<span class="fc" id="L35">        effectRegistry.put(CharacterType.BUILDER, node -&gt;</span>
+<span class="fc" id="L36">                new BuilderEffect(</span>
+<span class="fc" id="L37">                        node.path(&quot;buildingDiscount&quot;).asInt(),</span>
+<span class="fc" id="L38">                        node.path(&quot;prestigePoints&quot;).asInt())</span>
+        );
+
+<span class="fc" id="L41">        effectRegistry.put(CharacterType.GATHERER, node -&gt;</span>
+<span class="fc" id="L42">                new GathererEffect(</span>
+<span class="fc" id="L43">                        node.path(&quot;foodDiscount&quot;).asInt())</span>
+        );
+
+<span class="fc" id="L46">        effectRegistry.put(CharacterType.ARTIST, node -&gt;</span>
+<span class="fc" id="L47">                new NoEffect()</span>
+        );
+
+<span class="fc" id="L50">        effectRegistry.put(CharacterType.SHAMAN, node -&gt;</span>
+<span class="fc" id="L51">                new ShamanEffect(</span>
+<span class="fc" id="L52">                        node.path(&quot;shamanStars&quot;).asInt())</span>
+        );
+
+<span class="fc" id="L55">        effectRegistry.put(CharacterType.HUNTER, node -&gt; {</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            if (node.path(&quot;hasGigot&quot;).asBoolean()) {</span>
+<span class="fc" id="L57">                return new HunterWithGigotEffect();</span>
+            }
+<span class="fc" id="L59">            return new NoEffect();</span>
+        });
+<span class="fc" id="L61">    }</span>
+
+    /**
+     * Creates a {@link CharacterCard} from the given JSON node.
+     *
+     * @param node the JSON object representing one character card entry
+     * @return the fully constructed {@link CharacterCard}
+     */
+    public CharacterCard createCharacter(JsonNode node){
+<span class="fc" id="L70">        String cardID = node.path(&quot;cardID&quot;).asText();</span>
+<span class="fc" id="L71">        Era era = Era.valueOf(node.path(&quot;era&quot;).asText());</span>
+<span class="fc" id="L72">        CharacterType type = CharacterType.valueOf(node.path(&quot;type&quot;).asText());</span>
+<span class="fc" id="L73">        int minPlayers = node.path(&quot;minPlayers&quot;).asInt();</span>
+
+<span class="fc" id="L75">        CharacterEffect characterEffect = effectRegistry</span>
+<span class="pc" id="L76">                .getOrDefault(type, n -&gt; new NoEffect())</span>
+<span class="fc" id="L77">                .apply(node);</span>
+
+<span class="fc" id="L79">        return new CharacterCard(cardID, era, type, minPlayers, characterEffect);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

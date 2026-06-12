@@ -1,0 +1,783 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.controller</a> &gt; <span class="el_source">GameController.java</span></div><h1>GameController.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.controller;
+
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
+import it.polimi.ingsw.am02.common.interfaces.VirtualView;
+import it.polimi.ingsw.am02.server.controller.persistence.ConnectionStatus;
+import it.polimi.ingsw.am02.server.controller.persistence.GameLogger;
+import it.polimi.ingsw.am02.server.model.listeners.GameObserver;
+import it.polimi.ingsw.am02.common.messages.commands.*;
+
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
+
+/**
+ * Per-game server-side controller that bridges the network layer and the
+ * domain model for a single game session.
+ *
+ * &lt;p&gt;Responsibilities:
+ * &lt;ul&gt;
+ *   &lt;li&gt;Receives granular commands from {@link ControllerManager} and forwards
+ *       them to the {@link ModelInterface}.&lt;/li&gt;
+ *   &lt;li&gt;Implements {@link it.polimi.ingsw.am02.server.model.listeners.GameObserver}
+ *       to receive model notifications and fan them out to all connected clients
+ *       via {@link it.polimi.ingsw.am02.common.interfaces.VirtualView}.&lt;/li&gt;
+ *   &lt;li&gt;Maintains a global event history for reconnecting players (catch-up replay).&lt;/li&gt;
+ *   &lt;li&gt;Manages per-player and global disconnection timers; invokes
+ *       {@link AutoPlayer} when a timer expires.&lt;/li&gt;
+ *   &lt;li&gt;Logs every successfully applied command to a {@link GameLogger} for
+ *       crash-recovery replay.&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;All public methods are {@code synchronized} on the controller's monitor.
+ * Background tasks (drain threads, timer callbacks, AutoPlayer) acquire the
+ * same lock before reading or writing shared state.
+ */
+public class GameController implements GameObserver {
+
+    private static final long DISCONNECTED_PLAYER_TIMEOUT_SECONDS = 30;
+    private static final long GLOBAL_DISCONNECTION_TIMEOUT_SECONDS = 120;
+
+    private final String gameId;
+    private final ModelInterface model;
+<span class="fc" id="L45">    private final Map&lt;String, VirtualView&gt; handlers = new HashMap&lt;&gt;();</span>
+    private final GameLogger gameLogger;
+
+    private Runnable gameEndedCallback;
+
+<span class="fc" id="L50">    private final Map&lt;String, ConnectionStatus&gt; connectionStatus = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L51">    private final List&lt;Consumer&lt;VirtualView&gt;&gt; globalEventHistory = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="fc" id="L52">    private final Set&lt;String&gt; gracePeriodExpired = ConcurrentHashMap.newKeySet();</span>
+
+    private final ExecutorService drainExecutor;
+    private final ScheduledExecutorService scheduler;
+    private final ExecutorService autoPlayerExecutor;
+
+    private ScheduledFuture&lt;?&gt; disconnectedPlayerTimer;
+    private String disconnectedPlayerTimerTarget;
+    private ScheduledFuture&lt;?&gt; globalTimer;
+
+    private String currentPlayerNickname;
+
+<span class="fc" id="L64">    private final ServerGameSnapshot snapshot = new ServerGameSnapshot();</span>
+
+<span class="fc" id="L66">    private boolean replayMode = false;</span>
+
+    /**
+     * Constructs a controller for the given game session.
+     *
+     * @param gameId     unique identifier for this game
+     * @param model      the domain model (implements {@link ModelInterface})
+     * @param handlers   mapping from player nickname to their {@link VirtualView}
+     * @param gameLogger the persistence logger for command recording
+     */
+    public GameController(String gameId, ModelInterface model,
+<span class="fc" id="L77">                          Map&lt;String, VirtualView&gt; handlers, GameLogger gameLogger) {</span>
+<span class="fc" id="L78">        this.gameId = gameId;</span>
+<span class="fc" id="L79">        this.model = model;</span>
+<span class="fc" id="L80">        this.handlers.putAll(handlers);</span>
+<span class="fc" id="L81">        this.gameLogger = gameLogger;</span>
+<span class="fc" id="L82">        this.gameEndedCallback = null;</span>
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        for (String nickname : handlers.keySet()) {</span>
+<span class="fc" id="L85">            connectionStatus.put(nickname, ConnectionStatus.CONNECTED);</span>
+<span class="fc" id="L86">        }</span>
+
+<span class="fc" id="L88">        this.drainExecutor = Executors.newCachedThreadPool(r -&gt; {</span>
+<span class="nc" id="L89">            Thread t = new Thread(r, &quot;GC[&quot; + gameId + &quot;]-Drain&quot;);</span>
+<span class="nc" id="L90">            t.setDaemon(true);</span>
+<span class="nc" id="L91">            return t;</span>
+        });
+
+<span class="fc" id="L94">        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -&gt; {</span>
+<span class="nc" id="L95">            Thread t = new Thread(r, &quot;GC[&quot; + gameId + &quot;]-Scheduler&quot;);</span>
+<span class="nc" id="L96">            t.setDaemon(true);</span>
+<span class="nc" id="L97">            return t;</span>
+        });
+
+<span class="fc" id="L100">        this.autoPlayerExecutor = Executors.newSingleThreadExecutor(r -&gt; {</span>
+<span class="nc" id="L101">            Thread t = new Thread(r, &quot;GC[&quot; + gameId + &quot;]-AutoPlayer&quot;);</span>
+<span class="nc" id="L102">            t.setDaemon(true);</span>
+<span class="nc" id="L103">            return t;</span>
+        });
+
+<span class="fc" id="L106">        this.disconnectedPlayerTimer = null;</span>
+<span class="fc" id="L107">        this.disconnectedPlayerTimerTarget = null;</span>
+<span class="fc" id="L108">        this.globalTimer = null;</span>
+<span class="fc" id="L109">        this.currentPlayerNickname = null;</span>
+
+<span class="fc" id="L111">        this.model.addGameObserver(this);</span>
+<span class="fc" id="L112">    }</span>
+
+    /**
+     * Registers a callback invoked once after the game ends (normal finish or forfeit).
+     * The callback runs on a daemon thread to avoid blocking the monitor.
+     *
+     * @param callback the runnable to call when the game session is fully over
+     */
+    public synchronized void setGameEndedCallback(Runnable callback) {
+<span class="nc" id="L121">        this.gameEndedCallback = callback;</span>
+<span class="nc" id="L122">    }</span>
+
+    // =========================================================
+    // Public granular command methods (called by ControllerManager)
+    // =========================================================
+
+    /**
+     * Logs and executes a move-totem action on behalf of the given player.
+     * Logging is skipped during replay mode, since commands are already
+     * persisted in the NDJSON file being replayed.
+     *
+     * @param nickname the player performing the action
+     * @param tileId   the letter identifier of the target offer tile
+     */
+    public synchronized void executeMoveTotem(String nickname, char tileId) {
+        try {
+<span class="nc" id="L138">            model.moveTotem(nickname, tileId);</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">            if (!replayMode) {</span>
+<span class="nc" id="L140">                gameLogger.logCommand(new MoveTotemCommand(nickname, tileId), nickname);</span>
+<span class="nc" id="L141">                log(&quot;Logged MoveTotem for &quot; + nickname + &quot; (tileId=&quot; + tileId + &quot;)&quot;);</span>
+            }
+<span class="nc" id="L143">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L144">            handleCommandError(nickname, e);</span>
+<span class="nc" id="L145">        }</span>
+<span class="nc" id="L146">    }</span>
+
+    /**
+     * Logs and executes a resolve-actions action on behalf of the given player.
+     * Logging is skipped during replay mode, since commands are already
+     * persisted in the NDJSON file being replayed.
+     *
+     * @param nickname    the player performing the action
+     * @param selectedIds the card identifiers the player wishes to take
+     */
+    public synchronized void executeResolveActions(String nickname, List&lt;String&gt; selectedIds) {
+        try {
+<span class="nc" id="L158">            model.resolveActions(nickname, selectedIds);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (!replayMode) {</span>
+<span class="nc" id="L160">                gameLogger.logCommand(new ResolveActionsCommand(nickname, selectedIds), nickname);</span>
+<span class="nc" id="L161">                log(&quot;Logged ResolveActions for &quot; + nickname + &quot; (selectedIds=&quot; + selectedIds + &quot;)&quot;);</span>
+            }
+<span class="nc" id="L163">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L164">            handleCommandError(nickname, e);</span>
+<span class="nc" id="L165">        }</span>
+<span class="nc" id="L166">    }</span>
+
+    private void handleCommandError(String nickname, RuntimeException e) {
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (replayMode) {</span>
+<span class="nc" id="L170">            System.err.println(&quot;[GameController:&quot; + gameId + &quot;] REPLAY ERROR: &quot;</span>
+<span class="nc" id="L171">                    + &quot;Command rejected for &quot; + nickname + &quot; -&gt; &quot; + e.getMessage());</span>
+<span class="nc" id="L172">            return;</span>
+        }
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {</span>
+<span class="nc" id="L175">            log(&quot;AutoPlayer rejected for &quot; + nickname + &quot;: &quot; + e.getMessage());</span>
+        } else {
+<span class="nc" id="L177">            unicastTransient(nickname, v -&gt; v.notifyError(e.getMessage()));</span>
+        }
+<span class="nc" id="L179">    }</span>
+
+    /**
+     * Routes a {@link GameCommand} to the appropriate execution method.
+     * Package-private: only used during replay in {@link ControllerManager}.
+     * Logging is intentionally omitted here — commands are already logged in the NDJSON file
+     * being replayed.
+     *
+     * @param cmd            the command to execute
+     * @param senderNickname the player the command belongs to
+     */
+    synchronized void handle(GameCommand cmd, String senderNickname) {
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        switch (cmd) {</span>
+<span class="nc" id="L192">            case MoveTotemCommand c      -&gt; executeMoveTotem(senderNickname, c.tileID());</span>
+<span class="nc" id="L193">            case ResolveActionsCommand c -&gt; executeResolveActions(senderNickname, c.selectedIDs());</span>
+        }
+<span class="nc" id="L195">    }</span>
+
+    // =========================================================
+    // Disconnection / reconnection
+    // =========================================================
+
+    /**
+     * Called by the network layer when a player's connection is lost.
+     * Updates connection status, notifies other players, and arms the
+     * appropriate timer (per-player or global).
+     *
+     * @param nickname the disconnected player's nickname
+     */
+    public synchronized void handlePlayerDisconnected(String nickname) {
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (!connectionStatus.containsKey(nickname)) {</span>
+<span class="nc" id="L210">            System.err.println(&quot;[GameController:&quot; + gameId + &quot;] Disconnect for unknown player: &quot; + nickname);</span>
+<span class="nc" id="L211">            return;</span>
+        }
+
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        if (connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED) {</span>
+<span class="nc" id="L215">            return;</span>
+        }
+
+<span class="nc" id="L218">        connectionStatus.put(nickname, ConnectionStatus.DISCONNECTED);</span>
+<span class="nc" id="L219">        log(&quot;Player disconnected: &quot; + nickname);</span>
+<span class="nc" id="L220">        pushTransientOthers(nickname, v -&gt; v.notifyPlayerDisconnected(nickname));</span>
+
+<span class="nc" id="L222">        long activeCount = connectionStatus.values().stream()</span>
+<span class="nc bnc" id="L223" title="All 4 branches missed.">                .filter(s -&gt; s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)</span>
+<span class="nc" id="L224">                .count();</span>
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (activeCount == 0) {</span>
+<span class="nc" id="L227">            log(&quot;Mass disconnection: 0 players active. Pausing game and arming global timer.&quot;);</span>
+<span class="nc" id="L228">            cancelDisconnectedPlayerTimer(currentPlayerNickname);</span>
+<span class="nc" id="L229">            startGlobalDisconnectionTimeout();</span>
+        } else {
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            if (nickname.equals(currentPlayerNickname)) {</span>
+<span class="nc" id="L232">                startDisconnectedPlayerTimer(nickname);</span>
+            }
+<span class="nc bnc" id="L234" title="All 2 branches missed.">            if (activeCount == 1) {</span>
+<span class="nc" id="L235">                startGlobalDisconnectionTimeout();</span>
+            }
+        }
+<span class="nc" id="L238">    }</span>
+
+    /**
+     * Called by {@link ControllerManager} when a player reconnects.
+     * Immediately begins streaming the global event history to the new view on
+     * a background thread, then transitions the player to {@code CONNECTED}
+     * once the drain is complete.
+     *
+     * @param nickname the reconnecting player's nickname
+     * @param newView  the new {@link VirtualView} for this connection
+     * @throws IllegalStateException if the server is still in replay mode and
+     *                               cannot yet accept reconnections
+     */
+    public void handlePlayerReconnected(String nickname, VirtualView newView) {
+<span class="nc" id="L252">        synchronized (this) {</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">            if (replayMode) {</span>
+<span class="nc" id="L254">                log(&quot;Reconnection rejected for &quot; + nickname + &quot;: server still recovering state.&quot;);</span>
+<span class="nc" id="L255">                throw new IllegalStateException(&quot;Server is still recovering. Please retry in a few seconds.&quot;);</span>
+            }
+
+<span class="nc" id="L258">            ConnectionStatus current = connectionStatus.get(nickname);</span>
+<span class="nc bnc" id="L259" title="All 6 branches missed.">            if (current == null || current == ConnectionStatus.CONNECTED || current == ConnectionStatus.RECONNECTING) {</span>
+<span class="nc" id="L260">                return;</span>
+            }
+
+<span class="nc" id="L263">            handlers.put(nickname, newView);</span>
+<span class="nc" id="L264">            cancelDisconnectedPlayerTimer(nickname);</span>
+<span class="nc" id="L265">            boolean globalTimerWasCancelled = cancelGlobalDisconnectionTimer();</span>
+
+<span class="nc" id="L267">            connectionStatus.put(nickname, ConnectionStatus.RECONNECTING);</span>
+<span class="nc" id="L268">            log(&quot;Player reconnecting: &quot; + nickname);</span>
+<span class="nc" id="L269">            gracePeriodExpired.remove(nickname);</span>
+
+<span class="nc" id="L271">            long activeCount = connectionStatus.values().stream()</span>
+<span class="nc bnc" id="L272" title="All 4 branches missed.">                    .filter(s -&gt; s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)</span>
+<span class="nc" id="L273">                    .count();</span>
+
+<span class="nc bnc" id="L275" title="All 4 branches missed.">            if (activeCount == 1 &amp;&amp; currentPlayerNickname != null) {</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">                if (connectionStatus.get(currentPlayerNickname) == ConnectionStatus.DISCONNECTED) {</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">                    if (gracePeriodExpired.contains(currentPlayerNickname)) {</span>
+<span class="nc" id="L278">                        log(&quot;First human returned. Waking AutoPlayer immediately for &quot; + currentPlayerNickname);</span>
+<span class="nc" id="L279">                        scheduleAutoPlayerMove(currentPlayerNickname);</span>
+                    } else {
+<span class="nc" id="L281">                        log(&quot;First human returned. Starting AutoPlayer timer for &quot; + currentPlayerNickname);</span>
+<span class="nc" id="L282">                        startDisconnectedPlayerTimer(currentPlayerNickname);</span>
+                    }
+                }
+            }
+
+<span class="nc" id="L287">            pushTransientOthers(nickname, v -&gt; v.notifyPlayerReconnected(nickname));</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">            if (globalTimerWasCancelled) notifyGlobalTimerCancelled();</span>
+<span class="nc" id="L289">        }</span>
+
+<span class="nc" id="L291">        drainExecutor.submit(() -&gt; {</span>
+            try {
+<span class="nc" id="L293">                int currentIndex = 0;</span>
+
+                // Svuota la coda il più velocemente possibile senza bloccare il server
+                while (true) {
+                    Consumer&lt;VirtualView&gt; historicalCall;
+<span class="nc" id="L298">                    synchronized (this) {</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">                        if (currentIndex &gt;= globalEventHistory.size()) break;</span>
+<span class="nc" id="L300">                        historicalCall = globalEventHistory.get(currentIndex);</span>
+<span class="nc" id="L301">                    }</span>
+<span class="nc" id="L302">                    historicalCall.accept(newView);</span>
+<span class="nc" id="L303">                    currentIndex++;</span>
+<span class="nc" id="L304">                }</span>
+
+<span class="nc" id="L306">                synchronized (this) {</span>
+                    // Assicuriamoci di non aver perso nessun evento dell'ultimo millisecondo
+<span class="nc bnc" id="L308" title="All 2 branches missed.">                    while (currentIndex &lt; globalEventHistory.size()) {</span>
+<span class="nc" id="L309">                        globalEventHistory.get(currentIndex).accept(newView);</span>
+<span class="nc" id="L310">                        currentIndex++;</span>
+                    }
+
+<span class="nc" id="L313">                    connectionStatus.put(nickname, ConnectionStatus.CONNECTED);</span>
+<span class="nc" id="L314">                    log(&quot;Drain complete for &quot; + nickname + &quot; — now CONNECTED.&quot;);</span>
+
+<span class="nc" id="L316">                    long pendingCount = connectionStatus.values().stream()</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">                            .filter(s -&gt; s == ConnectionStatus.PENDING_RECONNECTION)</span>
+<span class="nc" id="L318">                            .count();</span>
+<span class="nc" id="L319">                    long activeCount = connectionStatus.values().stream()</span>
+<span class="nc bnc" id="L320" title="All 4 branches missed.">                            .filter(s -&gt; s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)</span>
+<span class="nc" id="L321">                            .count();</span>
+
+<span class="nc bnc" id="L323" title="All 2 branches missed.">                    if (activeCount &gt;= 2) {</span>
+                        // At least 2 players active: game can resume. Cancel the global forfeit timer
+                        // and convert any remaining PENDING_RECONNECTION players to DISCONNECTED so
+                        // AutoPlayer can act for them. We check activeCount rather than pendingCount
+                        // because a concurrent network thread may have already transitioned some
+                        // PENDING players to RECONNECTING before this drain completed (race condition).
+<span class="nc bnc" id="L329" title="All 2 branches missed.">                        if (cancelGlobalDisconnectionTimer()) notifyGlobalTimerCancelled();</span>
+<span class="nc" id="L330">                        connectionStatus.replaceAll((nick, status) -&gt;</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">                                status == ConnectionStatus.PENDING_RECONNECTION</span>
+<span class="nc" id="L332">                                        ? ConnectionStatus.DISCONNECTED</span>
+<span class="nc" id="L333">                                        : status);</span>
+<span class="nc" id="L334">                        log(&quot;Recovery threshold reached (&quot; + activeCount + &quot; players back). &quot;</span>
+                                + &quot;Remaining PENDING players converted to DISCONNECTED.&quot;);
+<span class="nc bnc" id="L336" title="All 2 branches missed.">                        if (currentPlayerNickname != null</span>
+<span class="nc bnc" id="L337" title="All 2 branches missed.">                                &amp;&amp; connectionStatus.get(currentPlayerNickname) == ConnectionStatus.DISCONNECTED) {</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">                            if (gracePeriodExpired.contains(currentPlayerNickname)) {</span>
+<span class="nc" id="L339">                                scheduleAutoPlayerMove(currentPlayerNickname);</span>
+                            } else {
+<span class="nc" id="L341">                                startDisconnectedPlayerTimer(currentPlayerNickname);</span>
+                            }
+                        }
+                    } else {
+                        // Only one player active so far: arm the 120s global timer.
+                        // If a second player's drain completes later, the branch above will cancel it.
+<span class="nc" id="L347">                        startGlobalDisconnectionTimeout();</span>
+                    }
+<span class="nc" id="L349">                }</span>
+
+<span class="nc" id="L351">            } catch (Exception e) {</span>
+<span class="nc" id="L352">                System.err.println(&quot;[GameController:&quot; + gameId + &quot;] Catch-up failed for &quot;</span>
+<span class="nc" id="L353">                        + nickname + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L354">                handlePlayerDisconnected(nickname);</span>
+<span class="nc" id="L355">            }</span>
+<span class="nc" id="L356">        });</span>
+<span class="nc" id="L357">    }</span>
+
+    synchronized void markAllPlayersPendingReconnection() {
+<span class="nc" id="L360">        connectionStatus.replaceAll((nickname, status) -&gt; ConnectionStatus.PENDING_RECONNECTION);</span>
+<span class="nc" id="L361">    }</span>
+
+
+    /**
+     * @return {@code true} if every player is in {@link ConnectionStatus#PENDING_RECONNECTION} state,
+     *         meaning the game was recovered from a log but no one has reconnected yet
+     */
+    public synchronized boolean areAllPlayersPendingReconnection() {
+<span class="nc" id="L369">        return connectionStatus.values().stream()</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">                .allMatch(s -&gt; s == ConnectionStatus.PENDING_RECONNECTION);</span>
+    }
+
+    /**
+     * Cancels all timers and shuts down the background executor services.
+     * Safe to call more than once.
+     */
+    public synchronized void shutdown() {
+<span class="nc bnc" id="L378" title="All 2 branches missed.">        if (disconnectedPlayerTimer != null) {</span>
+<span class="nc" id="L379">            disconnectedPlayerTimer.cancel(false);</span>
+<span class="nc" id="L380">            disconnectedPlayerTimer = null;</span>
+<span class="nc" id="L381">            disconnectedPlayerTimerTarget = null;</span>
+        }
+<span class="nc bnc" id="L383" title="All 2 branches missed.">        if (globalTimer != null) {</span>
+<span class="nc" id="L384">            globalTimer.cancel(false);</span>
+<span class="nc" id="L385">            globalTimer = null;</span>
+        }
+<span class="nc" id="L387">        scheduler.shutdownNow();</span>
+<span class="nc" id="L388">        drainExecutor.shutdownNow();</span>
+<span class="nc" id="L389">        autoPlayerExecutor.shutdownNow();</span>
+<span class="nc" id="L390">        log(&quot;Shutdown complete.&quot;);</span>
+<span class="nc" id="L391">    }</span>
+
+    // =========================================================
+    // Notification helpers
+    // =========================================================
+
+    private synchronized void pushGlobalCall(Consumer&lt;VirtualView&gt; call) {
+<span class="fc" id="L398">        globalEventHistory.add(call);</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">        for (Map.Entry&lt;String, ConnectionStatus&gt; entry : connectionStatus.entrySet()) {</span>
+<span class="fc" id="L400">            String nickname = entry.getKey();</span>
+<span class="pc bpc" id="L401" title="1 of 2 branches missed.">            if (entry.getValue() == ConnectionStatus.CONNECTED) {</span>
+                try {
+<span class="fc" id="L403">                    call.accept(handlers.get(nickname));</span>
+<span class="nc" id="L404">                } catch (RuntimeException e) {</span>
+<span class="nc" id="L405">                    log(&quot;Failed to notify &quot; + nickname + &quot; during pushGlobalCall.&quot;);</span>
+<span class="fc" id="L406">                }</span>
+            }
+<span class="fc" id="L408">        }</span>
+<span class="fc" id="L409">    }</span>
+
+    private synchronized void unicastTransient(String nickname, Consumer&lt;VirtualView&gt; call) {
+<span class="nc bnc" id="L412" title="All 2 branches missed.">        if (connectionStatus.get(nickname) == ConnectionStatus.CONNECTED) {</span>
+<span class="nc" id="L413">            call.accept(handlers.get(nickname));</span>
+        }
+<span class="nc" id="L415">    }</span>
+
+    private synchronized void pushTransientOthers(String exclude, Consumer&lt;VirtualView&gt; call) {
+<span class="nc bnc" id="L418" title="All 2 branches missed.">        for (Map.Entry&lt;String, ConnectionStatus&gt; entry : connectionStatus.entrySet()) {</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">            if (!entry.getKey().equals(exclude)</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">                    &amp;&amp; entry.getValue() == ConnectionStatus.CONNECTED) {</span>
+<span class="nc" id="L421">                call.accept(handlers.get(entry.getKey()));</span>
+            }
+<span class="nc" id="L423">        }</span>
+<span class="nc" id="L424">    }</span>
+
+    // =========================================================
+    // Timer management
+    // =========================================================
+
+    private void handleCurrentPlayerTransition(String newCurrentPlayer) {
+<span class="fc" id="L431">        this.currentPlayerNickname = newCurrentPlayer;</span>
+
+<span class="pc bpc" id="L433" title="3 of 4 branches missed.">        if (disconnectedPlayerTimer != null &amp;&amp; !newCurrentPlayer.equals(disconnectedPlayerTimerTarget)) {</span>
+<span class="nc" id="L434">            cancelDisconnectedPlayerTimer(disconnectedPlayerTimerTarget);</span>
+        }
+
+<span class="pc bpc" id="L437" title="1 of 2 branches missed.">        if (connectionStatus.get(newCurrentPlayer) == ConnectionStatus.DISCONNECTED) {</span>
+<span class="nc" id="L438">            long activeCount = connectionStatus.values().stream()</span>
+<span class="nc bnc" id="L439" title="All 4 branches missed.">                    .filter(s -&gt; s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)</span>
+<span class="nc" id="L440">                    .count();</span>
+<span class="nc bnc" id="L441" title="All 2 branches missed.">            if (activeCount == 0) {</span>
+<span class="nc" id="L442">                log(&quot;Game is paused (0 players). Deferring turn timer for &quot; + newCurrentPlayer);</span>
+<span class="nc" id="L443">                return;</span>
+            }
+
+<span class="nc bnc" id="L446" title="All 2 branches missed.">            if (gracePeriodExpired.contains(newCurrentPlayer)) {</span>
+<span class="nc" id="L447">                log(&quot;Player &quot; + newCurrentPlayer + &quot; is still absent. Invoking AutoPlayer immediately.&quot;);</span>
+<span class="nc" id="L448">                scheduleAutoPlayerMove(newCurrentPlayer);</span>
+            } else {
+<span class="nc" id="L450">                startDisconnectedPlayerTimer(newCurrentPlayer);</span>
+            }
+        }
+<span class="fc" id="L453">    }</span>
+
+    private synchronized void scheduleAutoPlayerMove(String nickname) {
+<span class="nc" id="L456">        long activeCount = connectionStatus.values().stream()</span>
+<span class="nc bnc" id="L457" title="All 4 branches missed.">                .filter(s -&gt; s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)</span>
+<span class="nc" id="L458">                .count();</span>
+<span class="nc bnc" id="L459" title="All 2 branches missed.">        if (activeCount == 0) {</span>
+<span class="nc" id="L460">            log(&quot;AutoPlayer aborted: no human players connected.&quot;);</span>
+<span class="nc" id="L461">            return;</span>
+        }
+
+<span class="nc" id="L464">        autoPlayerExecutor.execute(() -&gt; {</span>
+            GameCommand autoCmd;
+<span class="nc" id="L466">            synchronized (this) {</span>
+<span class="nc bnc" id="L467" title="All 2 branches missed.">                if (!nickname.equals(currentPlayerNickname)</span>
+<span class="nc bnc" id="L468" title="All 2 branches missed.">                        || connectionStatus.get(nickname) != ConnectionStatus.DISCONNECTED) {</span>
+<span class="nc" id="L469">                    log(&quot;AutoPlayer skipped for &quot; + nickname + &quot;: no longer disconnected or current player.&quot;);</span>
+<span class="nc" id="L470">                    return;</span>
+                }
+<span class="nc" id="L472">                autoCmd = AutoPlayer.computeMove(nickname, snapshot);</span>
+<span class="nc" id="L473">            }</span>
+
+<span class="nc bnc" id="L475" title="All 2 branches missed.">            if (autoCmd == null) {</span>
+<span class="nc" id="L476">                log(&quot;AutoPlayer produced no command for &quot; + nickname + &quot; in current phase — skipping.&quot;);</span>
+<span class="nc" id="L477">                return;</span>
+            }
+
+<span class="nc" id="L480">            synchronized (this) {</span>
+<span class="nc" id="L481">                pushTransientOthers(nickname, v -&gt; v.notifyAutoPlayerInvoked(nickname));</span>
+<span class="nc" id="L482">            }</span>
+
+<span class="nc" id="L484">            handle(autoCmd, nickname);</span>
+
+            // Se il comando era un pick (non move T), rischedula per il pick successivo
+<span class="nc" id="L487">            synchronized (this) {</span>
+<span class="nc bnc" id="L488" title="All 2 branches missed.">                if (nickname.equals(currentPlayerNickname)</span>
+<span class="nc bnc" id="L489" title="All 4 branches missed.">                        &amp;&amp; connectionStatus.get(nickname) == ConnectionStatus.DISCONNECTED</span>
+                        &amp;&amp; autoCmd instanceof ResolveActionsCommand) {
+<span class="nc" id="L491">                    scheduleAutoPlayerMove(nickname);</span>
+                }
+<span class="nc" id="L493">            }</span>
+<span class="nc" id="L494">        });</span>
+<span class="nc" id="L495">    }</span>
+
+    private void startDisconnectedPlayerTimer(String nickname) {
+<span class="nc bnc" id="L498" title="All 2 branches missed.">        if (disconnectedPlayerTimer != null) {</span>
+<span class="nc" id="L499">            disconnectedPlayerTimer.cancel(false);</span>
+        }
+<span class="nc" id="L501">        disconnectedPlayerTimerTarget = nickname;</span>
+<span class="nc" id="L502">        disconnectedPlayerTimer = scheduler.schedule(</span>
+<span class="nc" id="L503">                () -&gt; onDisconnectedPlayerTimerExpired(nickname),</span>
+                DISCONNECTED_PLAYER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+<span class="nc" id="L505">        log(&quot;Per-player timer armed for &quot; + nickname</span>
+                + &quot; (&quot; + DISCONNECTED_PLAYER_TIMEOUT_SECONDS + &quot;s).&quot;);
+<span class="nc" id="L507">        pushTransientOthers(nickname, v -&gt; v.notifyAutoPlayerTimerStarted(nickname, DISCONNECTED_PLAYER_TIMEOUT_SECONDS));</span>
+<span class="nc" id="L508">    }</span>
+
+    private void cancelDisconnectedPlayerTimer(String nickname) {
+<span class="nc bnc" id="L511" title="All 4 branches missed.">        if (disconnectedPlayerTimer != null</span>
+                &amp;&amp; nickname != null
+<span class="nc bnc" id="L513" title="All 2 branches missed.">                &amp;&amp; nickname.equals(disconnectedPlayerTimerTarget)) {</span>
+<span class="nc" id="L514">            disconnectedPlayerTimer.cancel(false);</span>
+<span class="nc" id="L515">            disconnectedPlayerTimer = null;</span>
+<span class="nc" id="L516">            disconnectedPlayerTimerTarget = null;</span>
+<span class="nc" id="L517">            log(&quot;Per-player timer cancelled for &quot; + nickname + &quot;.&quot;);</span>
+        }
+<span class="nc" id="L519">    }</span>
+
+    private void onDisconnectedPlayerTimerExpired(String nickname) {
+<span class="nc" id="L522">        synchronized (this) {</span>
+<span class="nc bnc" id="L523" title="All 2 branches missed.">            if (connectionStatus.get(nickname) != ConnectionStatus.DISCONNECTED) {</span>
+<span class="nc" id="L524">                log(&quot;Per-player timer expired but &quot; + nickname + &quot; is no longer disconnected — skipping.&quot;);</span>
+<span class="nc" id="L525">                return;</span>
+            }
+<span class="nc bnc" id="L527" title="All 2 branches missed.">            if (!nickname.equals(currentPlayerNickname)) {</span>
+<span class="nc" id="L528">                log(&quot;Per-player timer expired but &quot; + nickname + &quot; is no longer current player — skipping.&quot;);</span>
+<span class="nc" id="L529">                return;</span>
+            }
+<span class="nc" id="L531">            log(&quot;Per-player timer expired for &quot; + nickname + &quot; — invoking AutoPlayer.&quot;);</span>
+<span class="nc" id="L532">            gracePeriodExpired.add(nickname);</span>
+<span class="nc" id="L533">            disconnectedPlayerTimer = null;</span>
+<span class="nc" id="L534">            disconnectedPlayerTimerTarget = null;</span>
+<span class="nc" id="L535">        }</span>
+<span class="nc" id="L536">        scheduleAutoPlayerMove(nickname);</span>
+<span class="nc" id="L537">    }</span>
+
+    private void startGlobalDisconnectionTimeout() {
+<span class="nc bnc" id="L540" title="All 2 branches missed.">        if (globalTimer != null) return;</span>
+<span class="nc" id="L541">        globalTimer = scheduler.schedule(</span>
+                this::onGlobalDisconnectionTimerExpired,
+                GLOBAL_DISCONNECTION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+<span class="nc" id="L544">        log(&quot;Global forfeit timer armed (&quot; + GLOBAL_DISCONNECTION_TIMEOUT_SECONDS + &quot;s).&quot;);</span>
+<span class="nc" id="L545">        pushTransientOthers(null, v -&gt; v.notifyGlobalTimerStarted(GLOBAL_DISCONNECTION_TIMEOUT_SECONDS));</span>
+<span class="nc" id="L546">    }</span>
+
+    private boolean cancelGlobalDisconnectionTimer() {
+<span class="nc bnc" id="L549" title="All 2 branches missed.">        if (globalTimer != null) {</span>
+<span class="nc" id="L550">            globalTimer.cancel(false);</span>
+<span class="nc" id="L551">            globalTimer = null;</span>
+<span class="nc" id="L552">            log(&quot;Global forfeit timer cancelled.&quot;);</span>
+<span class="nc" id="L553">            return true;</span>
+        }
+<span class="nc" id="L555">        return false;</span>
+    }
+
+    private void notifyGlobalTimerCancelled() {
+<span class="nc" id="L559">        pushTransientOthers(null, VirtualView::notifyGlobalTimerCancelled);</span>
+<span class="nc" id="L560">    }</span>
+
+    private void onGlobalDisconnectionTimerExpired() {
+<span class="nc" id="L563">        synchronized (this) {</span>
+<span class="nc" id="L564">            int pendingCount = (int) connectionStatus.values().stream()</span>
+<span class="nc bnc" id="L565" title="All 2 branches missed.">                    .filter(s -&gt; s == ConnectionStatus.PENDING_RECONNECTION)</span>
+<span class="nc" id="L566">                    .count();</span>
+<span class="nc" id="L567">            int activeCount = (int) connectionStatus.values().stream()</span>
+<span class="nc bnc" id="L568" title="All 4 branches missed.">                    .filter(s -&gt; s == ConnectionStatus.CONNECTED || s == ConnectionStatus.RECONNECTING)</span>
+<span class="nc" id="L569">                    .count();</span>
+
+<span class="nc bnc" id="L571" title="All 4 branches missed.">            if (pendingCount == 0 &amp;&amp; activeCount &gt; 1) {</span>
+<span class="nc" id="L572">                log(&quot;Global timer expired but &quot; + activeCount + &quot; players active — skipping.&quot;);</span>
+<span class="nc" id="L573">                globalTimer = null;</span>
+<span class="nc" id="L574">                return;</span>
+            }
+
+<span class="nc" id="L577">            globalTimer = null;</span>
+
+            // In both recovery (pendingCount &gt; 0, activeCount == 1) and normal single-survivor
+            // scenarios, the winner is the sole active player.
+<span class="nc" id="L581">            String winner = connectionStatus.entrySet().stream()</span>
+<span class="nc bnc" id="L582" title="All 2 branches missed.">                    .filter(e -&gt; e.getValue() == ConnectionStatus.CONNECTED</span>
+<span class="nc bnc" id="L583" title="All 2 branches missed.">                            || e.getValue() == ConnectionStatus.RECONNECTING)</span>
+<span class="nc" id="L584">                    .map(Map.Entry::getKey)</span>
+<span class="nc" id="L585">                    .findFirst()</span>
+<span class="nc" id="L586">                    .orElse(null);</span>
+
+<span class="nc bnc" id="L588" title="All 2 branches missed.">            if (winner != null) {</span>
+<span class="nc" id="L589">                log(&quot;Global timer expired — winner by forfeit: &quot; + winner</span>
+                        + &quot; (pendingCount=&quot; + pendingCount + &quot;, activeCount=&quot; + activeCount + &quot;).&quot;);
+<span class="nc" id="L591">                pushGlobalCall(v -&gt; v.notifyGameAborted(winner));</span>
+            } else {
+                // Defensive fallback: timer fired with nobody active (should never happen).
+<span class="nc" id="L594">                log(&quot;Global timer expired with no active player — notifying recovery failed.&quot;);</span>
+<span class="nc" id="L595">                pushGlobalCall(VirtualView::notifyGameRecoveryFailed);</span>
+            }
+
+<span class="nc" id="L598">            gameLogger.logGameEnded();</span>
+<span class="nc" id="L599">            gameLogger.close();</span>
+<span class="nc" id="L600">            shutdown();</span>
+<span class="nc" id="L601">        }</span>
+<span class="nc" id="L602">        fireGameEndedCallback();</span>
+<span class="nc" id="L603">    }</span>
+
+    // =========================================================
+    // GameObserver callbacks
+    // =========================================================
+
+    @Override
+    public synchronized void onGameSetupCompleted(Map&lt;String, Totem&gt; totemByPlayer,
+                                                  List&lt;String&gt; turnOrder,
+                                                  Map&lt;String, Integer&gt; initialFood,
+                                                  BoardSnapshot boardSnapshot) {
+<span class="fc" id="L614">        snapshot.applySetup(boardSnapshot);</span>
+<span class="fc" id="L615">        pushGlobalCall(v -&gt; v.notifyGameSetupCompleted(totemByPlayer, turnOrder, initialFood, boardSnapshot));</span>
+<span class="fc" id="L616">    }</span>
+
+    @Override
+    public synchronized void onPhaseChanged(PhaseType phase) {
+<span class="fc" id="L620">        snapshot.setPhase(phase, null);</span>
+<span class="fc" id="L621">        pushGlobalCall(v -&gt; v.notifyPhaseChanged(phase, null, null));</span>
+<span class="fc" id="L622">    }</span>
+
+    @Override
+    public synchronized void onPhaseChanged(PhaseType phase, String currentPlayer) {
+<span class="fc" id="L626">        snapshot.setPhase(phase, currentPlayer);</span>
+<span class="fc" id="L627">        pushGlobalCall(v -&gt; v.notifyPhaseChanged(phase, currentPlayer, null));</span>
+<span class="pc bpc" id="L628" title="1 of 2 branches missed.">        if (currentPlayer != null)</span>
+<span class="fc" id="L629">            handleCurrentPlayerTransition(currentPlayer);</span>
+<span class="fc" id="L630">    }</span>
+
+    @Override
+    public synchronized void onPhaseChanged(PhaseType phase, String currentPlayer,
+                                            List&lt;String&gt; resolutionOrder) {
+<span class="fc" id="L635">        snapshot.setPhase(phase, currentPlayer);</span>
+<span class="fc" id="L636">        pushGlobalCall(v -&gt; v.notifyPhaseChanged(phase, currentPlayer, resolutionOrder));</span>
+<span class="pc bpc" id="L637" title="1 of 2 branches missed.">        if (currentPlayer != null)</span>
+<span class="fc" id="L638">            handleCurrentPlayerTransition(currentPlayer);</span>
+<span class="fc" id="L639">    }</span>
+
+    @Override
+    public synchronized void onCurrentPlayerChanged(String nextPlayer) {
+<span class="fc" id="L643">        snapshot.setCurrentPlayer(nextPlayer);</span>
+<span class="fc" id="L644">        pushGlobalCall(v -&gt; v.notifyCurrentPlayerChanged(nextPlayer));</span>
+<span class="fc" id="L645">        handleCurrentPlayerTransition(nextPlayer);</span>
+<span class="fc" id="L646">    }</span>
+
+    @Override
+    public synchronized void onTurnOrderEstablished(List&lt;String&gt; turnOrder) {
+<span class="fc" id="L650">        pushGlobalCall(v -&gt; v.notifyTurnOrderEstablished(turnOrder));</span>
+<span class="fc" id="L651">    }</span>
+
+    @Override
+    public synchronized void onEraChanged(Era newEra, List&lt;String&gt; newUpperRowBuildings,
+                                          List&lt;String&gt; newLowerRowBuildings,
+                                          List&lt;String&gt; discardedBuildings) {
+<span class="nc" id="L657">        pushGlobalCall(v -&gt; v.notifyEraChanged(newEra, newUpperRowBuildings,</span>
+                newLowerRowBuildings, discardedBuildings));
+<span class="nc" id="L659">    }</span>
+
+    @Override
+    public synchronized void onBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow,
+                                            List&lt;String&gt; discardedCards,
+                                            List&lt;String&gt; movedToLowerRow, int deckRemainingCount) {
+<span class="fc" id="L665">        snapshot.applyBoardUpdated(newUpperRow, newLowerRow);</span>
+<span class="fc" id="L666">        pushGlobalCall(v -&gt; v.notifyBoardUpdated(newUpperRow, newLowerRow,</span>
+                discardedCards, movedToLowerRow, deckRemainingCount));
+<span class="fc" id="L668">    }</span>
+
+    @Override
+    public synchronized void onCardTaken(String nickname, String cardID,
+                                         CardType cardType, RowPosition sourceRow) {
+<span class="fc" id="L673">        snapshot.applyCardTaken(cardID);</span>
+<span class="fc" id="L674">        pushGlobalCall(v -&gt; v.notifyCardTaken(nickname, cardID, cardType, sourceRow));</span>
+<span class="fc" id="L675">    }</span>
+
+    @Override
+    public synchronized void onTotemPlaced(String nickname, char tileID) {
+<span class="fc" id="L679">        snapshot.applyTotemPlaced(nickname, tileID);</span>
+<span class="fc" id="L680">        pushGlobalCall(v -&gt; v.notifyTotemPlaced(nickname, tileID));</span>
+<span class="fc" id="L681">    }</span>
+
+    @Override
+    public synchronized void onTotemReturned(String nickname, int turnOrderPosition) {
+<span class="fc" id="L685">        snapshot.applyTotemReturned(nickname);</span>
+<span class="fc" id="L686">        pushGlobalCall(v -&gt; v.notifyTotemReturned(nickname, turnOrderPosition));</span>
+<span class="fc" id="L687">    }</span>
+
+    @Override
+    public synchronized void onPlayerLimitsInitialized(String nickname,
+                                                       int remainingUpper, int remainingLower) {
+<span class="fc" id="L692">        snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);</span>
+<span class="fc" id="L693">        pushGlobalCall(v -&gt; v.notifyPlayerLimitsInitialized(nickname, remainingUpper, remainingLower));</span>
+<span class="fc" id="L694">    }</span>
+
+    @Override
+    public synchronized void onPlayerLimitsUpdated(String nickname,
+                                                   int remainingUpper, int remainingLower) {
+<span class="fc" id="L699">        snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);</span>
+<span class="fc" id="L700">        pushGlobalCall(v -&gt; v.notifyPlayerLimitsUpdated(nickname, remainingUpper, remainingLower));</span>
+<span class="fc" id="L701">    }</span>
+
+    @Override
+    public synchronized void onPlayerResourceChanged(String nickname, ResourceType resource,
+                                                     int newValue, int delta) {
+<span class="fc" id="L706">        pushGlobalCall(v -&gt; v.notifyPlayerResourceChanged(nickname, resource, newValue, delta));</span>
+<span class="fc" id="L707">    }</span>
+
+    @Override
+    public synchronized void onEventResolved(String eventID, String eventName) {
+<span class="nc" id="L711">        pushGlobalCall(v -&gt; v.notifyEventResolved(eventID, eventName));</span>
+<span class="nc" id="L712">    }</span>
+
+    @Override
+    public synchronized void onExtraTurnStarted(String nickname,
+                                                int remainingUpper, int remainingLower) {
+<span class="nc" id="L717">        snapshot.setExtraTurnMode(true);</span>
+<span class="nc" id="L718">        snapshot.setPlayerLimits(nickname, remainingUpper, remainingLower);</span>
+<span class="nc" id="L719">        pushGlobalCall(v -&gt; v.notifyExtraTurnStarted(nickname, remainingUpper, remainingLower));</span>
+<span class="nc" id="L720">    }</span>
+
+    @Override
+    public synchronized void onExtraTurnEnded(String nickname) {
+<span class="nc" id="L724">        snapshot.setExtraTurnMode(false);</span>
+<span class="nc" id="L725">        pushGlobalCall(v -&gt; v.notifyExtraTurnEnded(nickname));</span>
+<span class="nc" id="L726">    }</span>
+
+    @Override
+    public synchronized void onGameEnded(List&lt;String&gt; winners,
+                                         List&lt;PlayerFinalScore&gt; finalRankings) {
+<span class="nc" id="L731">        pushGlobalCall(v -&gt; v.notifyGameEnded(winners, finalRankings));</span>
+<span class="nc" id="L732">        gameLogger.logGameEnded();</span>
+<span class="nc" id="L733">        gameLogger.close();</span>
+<span class="nc" id="L734">        shutdown();</span>
+<span class="nc" id="L735">        fireGameEndedCallback();</span>
+<span class="nc" id="L736">    }</span>
+
+    // =========================================================
+    // Utility
+    // =========================================================
+
+    private void fireGameEndedCallback() {
+<span class="nc" id="L743">        Runnable cb = gameEndedCallback;</span>
+<span class="nc bnc" id="L744" title="All 2 branches missed.">        if (cb != null) {</span>
+<span class="nc" id="L745">            Thread t = new Thread(cb, &quot;GameController[&quot; + gameId + &quot;]-EndCallback&quot;);</span>
+<span class="nc" id="L746">            t.setDaemon(true);</span>
+<span class="nc" id="L747">            t.start();</span>
+        }
+<span class="nc" id="L749">    }</span>
+
+    private void log(String msg) {
+<span class="nc" id="L752">        System.out.println(&quot;[GameController:&quot; + gameId + &quot;] &quot; + msg);</span>
+<span class="nc" id="L753">    }</span>
+
+    /**
+     * @param nickname the player to query
+     * @return {@code true} if the player's status is {@link ConnectionStatus#DISCONNECTED}
+     *         or {@link ConnectionStatus#PENDING_RECONNECTION}
+     */
+    public synchronized boolean isPlayerDisconnected(String nickname) {
+<span class="nc" id="L761">        ConnectionStatus status = connectionStatus.get(nickname);</span>
+<span class="nc bnc" id="L762" title="All 4 branches missed.">        return status == ConnectionStatus.DISCONNECTED</span>
+                || status == ConnectionStatus.PENDING_RECONNECTION;
+    }
+
+    /**
+     * Enters replay mode: all players are set to {@link ConnectionStatus#PENDING_RECONNECTION}
+     * and logging is suppressed. Called by {@link ControllerManager} before replaying the NDJSON log.
+     */
+    synchronized void enterReplayMode() {
+<span class="nc" id="L771">        this.replayMode = true;</span>
+<span class="nc" id="L772">        markAllPlayersPendingReconnection();</span>
+<span class="nc" id="L773">    }</span>
+
+    /**
+     * Exits replay mode, re-enabling logging and allowing reconnections.
+     * Called by {@link ControllerManager} after the NDJSON replay is complete.
+     */
+    synchronized void exitReplayMode() {
+<span class="nc" id="L780">        this.replayMode = false;</span>
+<span class="nc" id="L781">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClientController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.controller</a> &gt; <span class="el_source">ClientController.java</span></div><h1>ClientController.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.controller;
+
+import it.polimi.ingsw.am02.client.model.GameModel;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Abstract base controller that wires the network proxy, the domain models,
+ * and the view together for the client side.
+ *
+ * &lt;p&gt;Performs lightweight client-side validation before forwarding commands
+ * to the server via {@link ServerProxy}. Only checks that are based on
+ * &lt;em&gt;stable&lt;/em&gt;, locally-known state are performed here (e.g. tile
+ * occupancy, card presence on board, lobby slot availability). All
+ * authoritative rule enforcement — turn order, phase constraints, pick
+ * obligations — remains on the server.
+ *
+ * &lt;p&gt;Concrete subclasses ({@link it.polimi.ingsw.am02.client.view.tui.TuiController},
+ * {@link it.polimi.ingsw.am02.client.view.gui.GuiController}) implement
+ * {@link #createNewProxy()} to supply the correct transport when the client
+ * needs to reconnect or return to the lobby.
+ */
+public abstract class ClientController {
+
+    protected ServerProxy proxy;
+    protected final LobbyModel lobbyModel;
+    protected final ClientView view;
+    protected GameModel gameModel;
+
+    /**
+     * Creates a fresh {@link ServerProxy} of the same transport type as the one
+     * currently in use. Called internally during lobby return and reconnection.
+     *
+     * @return a new, unconnected proxy
+     * @throws Exception if the proxy cannot be constructed (e.g. invalid host/port)
+     */
+    protected abstract ServerProxy createNewProxy() throws Exception;
+
+    /**
+     * Constructs the controller and registers the view as an observer of the lobby model.
+     *
+     * @param proxy      the initial server proxy (Socket or RMI)
+     * @param lobbyModel the client-side lobby state
+     * @param view       the view that will receive model updates
+     */
+<span class="nc" id="L54">    public ClientController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view) {</span>
+<span class="nc" id="L55">        this.proxy = proxy;</span>
+<span class="nc" id="L56">        this.lobbyModel = lobbyModel;</span>
+<span class="nc" id="L57">        this.view = view;</span>
+<span class="nc" id="L58">        this.lobbyModel.addObserver(view);</span>
+<span class="nc" id="L59">    }</span>
+
+    /**
+     * Replaces the {@link ServerProxy} (e.g. after a reconnection creates a new connection).
+     *
+     * @param proxy the new proxy
+     */
+<span class="nc" id="L66">    public void setServerProxy(ServerProxy proxy) { this.proxy = proxy; }</span>
+
+    // -------------------------------------------------------------------------
+    // CONTEXT MANAGEMENT
+    // -------------------------------------------------------------------------
+
+    /**
+     * Lazily creates the {@link GameModel} the first time it is needed (on
+     * {@code onGameStarted}), switches the view's observer registration from
+     * the lobby model to the game model, and injects the model into the view.
+     * No-op if a game model is already present.
+     *
+     * @param nickname the local player's nickname, used to initialize the game model
+     */
+    public synchronized void onGameModelRequired(String nickname) {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (this.gameModel != null)</span>
+<span class="nc" id="L82">            return;</span>
+
+<span class="nc" id="L84">        this.gameModel = new GameModel(nickname);</span>
+<span class="nc" id="L85">        this.lobbyModel.removeObserver(this.view);</span>
+<span class="nc" id="L86">        this.gameModel.addObserver(this.view);</span>
+<span class="nc" id="L87">        this.view.setGameModel(this.gameModel);</span>
+<span class="nc" id="L88">    }</span>
+
+    /**
+     * Tears down the current game session and asynchronously re-establishes a
+     * connection for the lobby phase. Steps performed on a background thread:
+     * &lt;ol&gt;
+     *   &lt;li&gt;Removes the view from the game model observer list.&lt;/li&gt;
+     *   &lt;li&gt;Notifies the view via {@link ClientView#onReturnToLobby()}.&lt;/li&gt;
+     *   &lt;li&gt;Disconnects the current proxy.&lt;/li&gt;
+     *   &lt;li&gt;Creates and connects a fresh proxy via {@link #createNewProxy()}.&lt;/li&gt;
+     *   &lt;li&gt;Re-registers the view as a lobby model observer.&lt;/li&gt;
+     * &lt;/ol&gt;
+     */
+    protected void performReturnToLobby() {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (gameModel != null) {</span>
+<span class="nc" id="L103">            gameModel.removeObserver(view);</span>
+<span class="nc" id="L104">            gameModel = null;</span>
+        }
+<span class="nc" id="L106">        view.onReturnToLobby();</span>
+<span class="nc" id="L107">        try { proxy.disconnect(); } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L109">        new Thread(() -&gt; {</span>
+            try {
+<span class="nc" id="L111">                ServerProxy newProxy = createNewProxy();</span>
+<span class="nc" id="L112">                newProxy.setClientController(this);</span>
+<span class="nc" id="L113">                setServerProxy(newProxy);</span>
+<span class="nc" id="L114">                lobbyModel.addObserver(view);</span>
+<span class="nc" id="L115">                newProxy.connect();</span>
+<span class="nc" id="L116">            } catch (Exception e) {</span>
+<span class="nc" id="L117">                view.onError(&quot;Return to lobby failed: &quot; + e.getMessage());</span>
+<span class="nc" id="L118">            }</span>
+<span class="nc" id="L119">        }, &quot;ReturnToLobby-Worker&quot;).start();</span>
+<span class="nc" id="L120">    }</span>
+
+    // -------------------------------------------------------------------------
+    // LOBBY PHASE HANDLERS
+    // -------------------------------------------------------------------------
+
+    /**
+     * Validates the nickname locally (non-blank, not already the current nickname,
+     * not already taken in the current lobby) and forwards to the server.
+     * Global uniqueness across all clients is enforced server-side.
+     *
+     * @param nickname the desired nickname
+     */
+    public void handleSetNickname(String nickname) {
+<span class="nc bnc" id="L134" title="All 4 branches missed.">        if (nickname == null || nickname.isBlank()) {</span>
+<span class="nc" id="L135">            view.onError(&quot;Action blocked: Nickname cannot be empty.&quot;);</span>
+<span class="nc" id="L136">            return;</span>
+        }
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        if (gameModel != null) {</span>
+<span class="nc" id="L139">            view.onError(&quot;Action blocked: You cannot change your nickname while a game is in progress.&quot;);</span>
+<span class="nc" id="L140">            return;</span>
+        }
+
+        // Se stai ri-inviando il tuo stesso nick, non fare nulla
+<span class="nc" id="L144">        String myCurrentNick = lobbyModel.getMyNickname();</span>
+<span class="nc bnc" id="L145" title="All 4 branches missed.">        if (myCurrentNick != null &amp;&amp; myCurrentNick.equals(nickname)) {</span>
+<span class="nc" id="L146">            view.onError(&quot;'&quot; + nickname + &quot;' is already your current nickname. No change made.&quot;);</span>
+<span class="nc" id="L147">            return;</span>
+        }
+
+<span class="nc" id="L150">        LobbyInfo current = lobbyModel.getCurrentLobby();</span>
+<span class="nc bnc" id="L151" title="All 4 branches missed.">        if (current != null &amp;&amp; current.currentPlayers().contains(nickname)) {</span>
+<span class="nc" id="L152">            view.onError(&quot;Action blocked: The nickname '&quot; + nickname + &quot;' is already taken in this lobby.&quot;);</span>
+<span class="nc" id="L153">            return;</span>
+        }
+
+<span class="nc" id="L156">        proxy.requestSetUsername(nickname);</span>
+<span class="nc" id="L157">    }</span>
+
+    /**
+     * Validates lobby size constraints (2–5 players) locally and forwards to the server.
+     *
+     * @param size the desired number of players
+     */
+    public void handleCreateLobby(int size) {
+<span class="nc bnc" id="L165" title="All 4 branches missed.">        if (size &lt; 2 || size &gt; 5) {</span>
+<span class="nc" id="L166">            view.onError(&quot;Action blocked: Lobby size must be between 2 and 5 players.&quot;);</span>
+<span class="nc" id="L167">            return;</span>
+        }
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (lobbyModel.getCurrentLobby() != null) {</span>
+<span class="nc" id="L170">            view.onError(&quot;Action blocked: You must leave your current lobby before creating a new one.&quot;);</span>
+<span class="nc" id="L171">            return;</span>
+        }
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (gameModel != null) {</span>
+<span class="nc" id="L174">            view.onError(&quot;Action blocked: Type 'lobby' first to return to the lobby screen.&quot;);</span>
+<span class="nc" id="L175">            return;</span>
+        }
+<span class="nc" id="L177">        proxy.requestCreateLobby(size);</span>
+<span class="nc" id="L178">    }</span>
+
+    /**
+     * Resolves the target lobby from its display index in the locally cached list
+     * and forwards the join request to the server.
+     *
+     * @param index 0-based index into the list of available lobbies
+     */
+    public void handleJoinLobby(int index) {
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        if (lobbyModel.getCurrentLobby() != null) {</span>
+<span class="nc" id="L188">            view.onError(&quot;Action blocked: You are already in a lobby.&quot;);</span>
+<span class="nc" id="L189">            return;</span>
+        }
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (gameModel != null) {</span>
+<span class="nc" id="L192">            view.onError(&quot;Action blocked: Type 'lobby' first to return to the lobby screen.&quot;);</span>
+<span class="nc" id="L193">            return;</span>
+        }
+<span class="nc" id="L195">        List&lt;LobbyInfo&gt; available = lobbyModel.getAvailableLobbies();</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">        if (available.isEmpty()) {</span>
+<span class="nc" id="L197">            view.onError(&quot;Action blocked: No lobbies are currently available.&quot;);</span>
+<span class="nc" id="L198">            return;</span>
+        }
+<span class="nc bnc" id="L200" title="All 4 branches missed.">        if (index &lt; 0 || index &gt;= available.size()) {</span>
+<span class="nc" id="L201">            view.onError(&quot;Action blocked: Invalid index. Please choose a value between 0 and &quot;</span>
+<span class="nc" id="L202">                    + (available.size() - 1) + &quot;.&quot;);</span>
+<span class="nc" id="L203">            return;</span>
+        }
+<span class="nc" id="L205">        proxy.requestJoinLobby(available.get(index).lobbyId());</span>
+<span class="nc" id="L206">    }</span>
+
+    /**
+     * Validates that the totem is non-null and not already taken according to the
+     * locally known lobby state, then forwards to the server.
+     * Totem availability is stable between server notifications.
+     *
+     * @param totem the desired totem color
+     */
+    public void handleSelectTotem(Totem totem) {
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        if (totem == null) {</span>
+<span class="nc" id="L217">            view.onError(&quot;Action blocked: Invalid totem color.&quot;);</span>
+<span class="nc" id="L218">            return;</span>
+        }
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        if (lobbyModel.getMyNickname() == null) {</span>
+<span class="nc" id="L221">            view.onError(&quot;Action blocked: You must set a nickname before choosing a totem.&quot;);</span>
+<span class="nc" id="L222">            return;</span>
+        }
+<span class="nc" id="L224">        LobbyInfo current = lobbyModel.getCurrentLobby();</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        if (current == null) {</span>
+<span class="nc" id="L226">            view.onError(&quot;Action blocked: You must be in a lobby to select a totem.&quot;);</span>
+<span class="nc" id="L227">            return;</span>
+        }
+
+<span class="nc" id="L230">        Totem myCurrentTotem = current.chosenTotems().get(lobbyModel.getMyNickname());</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (totem.equals(myCurrentTotem)) {</span>
+<span class="nc" id="L232">            view.onError(&quot;'&quot; + totem + &quot;' is already your current totem. No change made.&quot;);</span>
+<span class="nc" id="L233">            return;</span>
+        }
+
+<span class="nc" id="L236">        String taker = current.chosenTotems().entrySet().stream()</span>
+<span class="nc" id="L237">                .filter(e -&gt; e.getValue().equals(totem))</span>
+<span class="nc" id="L238">                .map(Map.Entry::getKey)</span>
+<span class="nc" id="L239">                .findFirst()</span>
+<span class="nc" id="L240">                .orElse(null);</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        if (taker != null) {</span>
+<span class="nc" id="L242">            view.onError(&quot;Action blocked: Totem &quot; + totem + &quot; is already taken by &quot; + taker + &quot;.&quot;);</span>
+<span class="nc" id="L243">            return;</span>
+        }
+
+<span class="nc" id="L246">        proxy.requestSelectTotem(totem);</span>
+<span class="nc" id="L247">    }</span>
+
+    // -------------------------------------------------------------------------
+    // IN-GAME HANDLERS
+    // -------------------------------------------------------------------------
+
+    /**
+     * Validates and forwards a totem-move request.
+     *
+     * &lt;p&gt;Client-side checks performed (in order):
+     * &lt;ol&gt;
+     *   &lt;li&gt;A game is in progress and has not yet ended.&lt;/li&gt;
+     *   &lt;li&gt;The current phase permits totem movement
+     *       ({@code TOTEM_PLACEMENT} or {@code ACTION_RESOLUTION}).&lt;/li&gt;
+     *   &lt;li&gt;It is the caller's turn ({@code currentPlayer} matches own nickname).&lt;/li&gt;
+     *   &lt;li&gt;For {@code 'T'}: the phase is {@code ACTION_RESOLUTION}
+     *       (return is not allowed during placement).&lt;/li&gt;
+     *   &lt;li&gt;For any other tile during {@code ACTION_RESOLUTION}: blocked entirely,
+     *       since the only valid move in that phase is returning via {@code 'T'}.&lt;/li&gt;
+     *   &lt;li&gt;For any other tile during {@code TOTEM_PLACEMENT}: the tile exists,
+     *       is not already occupied, and the caller has not already placed this round.&lt;/li&gt;
+     * &lt;/ol&gt;
+     *
+     * &lt;p&gt;All checks rely on state that is stable between server notifications:
+     * the local {@link GameModel} is updated exclusively by server events,
+     * so reads here are consistent with the last acknowledged server state.
+     * Turn-order and phase enforcement remain authoritative on the server.
+     *
+     * @param tileID the identifier of the target offer tile,
+     *               or {@code 'T'} to return the totem to the turn-order tile
+     */
+    public void handleMoveTotem(char tileID) {
+<span class="nc bnc" id="L279" title="All 2 branches missed.">        if (gameModel == null) {</span>
+<span class="nc" id="L280">            view.onError(&quot;Action blocked: No game in progress.&quot;);</span>
+<span class="nc" id="L281">            return;</span>
+        }
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        if (gameModel.isGameEnded()) {</span>
+<span class="nc" id="L284">            view.onError(&quot;Action blocked: The game has already ended.&quot;);</span>
+<span class="nc" id="L285">            return;</span>
+        }
+
+<span class="nc" id="L288">        PhaseType phase = gameModel.getCurrentPhase();</span>
+
+        // moveTotem is only meaningful in these two phases
+<span class="nc bnc" id="L291" title="All 4 branches missed.">        if (phase != PhaseType.TOTEM_PLACEMENT &amp;&amp; phase != PhaseType.ACTION_RESOLUTION) {</span>
+<span class="nc" id="L292">            view.onError(&quot;Action blocked: You cannot move your totem in the current phase (&quot;</span>
+                    + phase + &quot;).&quot;);
+<span class="nc" id="L294">            return;</span>
+        }
+
+        // Turn check: only the active player may issue this command
+<span class="nc bnc" id="L298" title="All 2 branches missed.">        if (!myNickname().equals(gameModel.getCurrentPlayer())) {</span>
+<span class="nc" id="L299">            view.onError(&quot;Action blocked: It is not your turn.&quot;);</span>
+<span class="nc" id="L300">            return;</span>
+        }
+
+<span class="nc bnc" id="L303" title="All 2 branches missed.">        if (tileID == 'T') {</span>
+            // Returning the totem is only valid during ACTION_RESOLUTION
+<span class="nc bnc" id="L305" title="All 2 branches missed.">            if (phase != PhaseType.ACTION_RESOLUTION) {</span>
+<span class="nc" id="L306">                view.onError(&quot;Action blocked: You can only return your totem during action resolution.&quot;);</span>
+<span class="nc" id="L307">                return;</span>
+            }
+            // 'T' is always structurally valid — no further check needed
+<span class="nc" id="L310">            proxy.moveTotem('T');</span>
+<span class="nc" id="L311">            return;</span>
+        }
+
+        // Any tile other than 'T' during ACTION_RESOLUTION is meaningless:
+        // the only valid move in that phase is returning via 'T'
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        if (phase == PhaseType.ACTION_RESOLUTION) {</span>
+<span class="nc" id="L317">            view.onError(&quot;Action blocked: During action resolution your totem must return &quot;</span>
+                    + &quot;to the turn-order tile. Use 'move T'.&quot;);
+<span class="nc" id="L319">            return;</span>
+        }
+
+        // From here on: TOTEM_PLACEMENT phase, tileID != 'T'
+
+        // Tile existence check: offer tiles are fixed at setup and never change
+<span class="nc" id="L325">        OfferTileInfo target = gameModel.getOfferTiles().stream()</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">                .filter(t -&gt; t.tileID() == tileID)</span>
+<span class="nc" id="L327">                .findFirst()</span>
+<span class="nc" id="L328">                .orElse(null);</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">        if (target == null) {</span>
+<span class="nc" id="L330">            view.onError(&quot;Action blocked: Tile '&quot; + tileID + &quot;' does not exist.&quot;);</span>
+<span class="nc" id="L331">            return;</span>
+        }
+
+        // Occupancy check: stable within a placement phase, updated by onTotemPlaced
+<span class="nc bnc" id="L335" title="All 2 branches missed.">        if (target.occupantNickname() != null) {</span>
+<span class="nc" id="L336">            view.onError(&quot;Action blocked: Tile '&quot; + tileID + &quot;' is already occupied by &quot;</span>
+<span class="nc" id="L337">                    + target.occupantNickname() + &quot;.&quot;);</span>
+<span class="nc" id="L338">            return;</span>
+        }
+
+        // Each player places their totem exactly once per round during TOTEM_PLACEMENT
+<span class="nc bnc" id="L342" title="All 2 branches missed.">        if (gameModel.getTotemPositions().containsKey(myNickname())) {</span>
+<span class="nc" id="L343">            view.onError(&quot;Action blocked: You have already placed your totem this round.&quot;);</span>
+<span class="nc" id="L344">            return;</span>
+        }
+
+<span class="nc" id="L347">        proxy.moveTotem(tileID);</span>
+<span class="nc" id="L348">    }</span>
+
+    /**
+     * Validates and forwards a resolve-actions request.
+     *
+     * &lt;p&gt;Client-side checks performed (in order):
+     * &lt;ol&gt;
+     *   &lt;li&gt;A game is in progress and has not yet ended.&lt;/li&gt;
+     *   &lt;li&gt;The current phase is {@code ACTION_RESOLUTION}.&lt;/li&gt;
+     *   &lt;li&gt;It is the caller's turn ({@code currentPlayer} matches own nickname).&lt;/li&gt;
+     *   &lt;li&gt;The selection is non-null and non-empty.&lt;/li&gt;
+     *   &lt;li&gt;No duplicate card IDs are present in the selection.&lt;/li&gt;
+     *   &lt;li&gt;Every selected card is currently present on the board
+     *       (upper/lower row, characters or buildings).&lt;/li&gt;
+     *   &lt;li&gt;The number of upper-row picks does not exceed the caller's
+     *       remaining upper-row allowance.&lt;/li&gt;
+     *   &lt;li&gt;The number of lower-row picks does not exceed the caller's
+     *       remaining lower-row allowance.&lt;/li&gt;
+     * &lt;/ol&gt;
+     *
+     * &lt;p&gt;Selecting fewer cards than the maximum allowed is always valid:
+     * the server accepts partial picks. Whether mandatory character picks
+     * are satisfied is enforced exclusively server-side, as the client has
+     * no access to card-type metadata ({@code GameRegistry} is server-only).
+     * Pick-limit and phase enforcement remain authoritative on the server.
+     *
+     * @param cardIDs the identifiers of the cards the player wishes to take;
+     *                must be non-null, non-empty, and free of duplicates
+     */
+    public void handleResolveActions(List&lt;String&gt; cardIDs) {
+<span class="nc bnc" id="L378" title="All 2 branches missed.">        if (gameModel == null) {</span>
+<span class="nc" id="L379">            view.onError(&quot;Action blocked: No game in progress.&quot;);</span>
+<span class="nc" id="L380">            return;</span>
+        }
+<span class="nc bnc" id="L382" title="All 2 branches missed.">        if (gameModel.isGameEnded()) {</span>
+<span class="nc" id="L383">            view.onError(&quot;Action blocked: The game has already ended.&quot;);</span>
+<span class="nc" id="L384">            return;</span>
+        }
+
+        // resolveActions is only valid during ACTION_RESOLUTION
+<span class="nc bnc" id="L388" title="All 2 branches missed.">        if (gameModel.getCurrentPhase() != PhaseType.ACTION_RESOLUTION) {</span>
+<span class="nc" id="L389">            view.onError(&quot;Action blocked: You can only resolve actions during the action &quot;</span>
+                    + &quot;resolution phase.&quot;);
+<span class="nc" id="L391">            return;</span>
+        }
+
+        // Turn check: only the active player may issue this command
+<span class="nc bnc" id="L395" title="All 2 branches missed.">        if (!myNickname().equals(gameModel.getCurrentPlayer())) {</span>
+<span class="nc" id="L396">            view.onError(&quot;Action blocked: It is not your turn.&quot;);</span>
+<span class="nc" id="L397">            return;</span>
+        }
+
+<span class="nc bnc" id="L400" title="All 4 branches missed.">        if (cardIDs == null || cardIDs.isEmpty()) {</span>
+<span class="nc" id="L401">            view.onError(&quot;Action blocked: No cards selected. Select at least one card &quot;</span>
+                    + &quot;from the board, or use 'move T' to end your turn.&quot;);
+<span class="nc" id="L403">            return;</span>
+        }
+
+        // Duplicate check: each card can only be taken once per action
+<span class="nc" id="L407">        long distinctCount = cardIDs.stream().distinct().count();</span>
+<span class="nc bnc" id="L408" title="All 2 branches missed.">        if (distinctCount &lt; cardIDs.size()) {</span>
+<span class="nc" id="L409">            view.onError(&quot;Action blocked: Duplicate card IDs in selection.&quot;);</span>
+<span class="nc" id="L410">            return;</span>
+        }
+
+        // Card presence and row attribution:
+        // board contents are stable within a turn — updated only by onCardTaken/onBoardUpdated
+<span class="nc" id="L415">        String nick = myNickname();</span>
+<span class="nc" id="L416">        int upperPicks = 0;</span>
+<span class="nc" id="L417">        int lowerPicks = 0;</span>
+
+<span class="nc bnc" id="L419" title="All 2 branches missed.">        for (String id : cardIDs) {</span>
+<span class="nc" id="L420">            boolean inUpperChar     = gameModel.getUpperRow().contains(id);</span>
+<span class="nc" id="L421">            boolean inUpperBuilding = gameModel.getUpperRowBuildings().contains(id);</span>
+<span class="nc" id="L422">            boolean inLowerChar     = gameModel.getLowerRow().contains(id);</span>
+<span class="nc" id="L423">            boolean inLowerBuilding = gameModel.getLowerRowBuildings().contains(id);</span>
+
+<span class="nc bnc" id="L425" title="All 8 branches missed.">            if (!inUpperChar &amp;&amp; !inUpperBuilding &amp;&amp; !inLowerChar &amp;&amp; !inLowerBuilding) {</span>
+<span class="nc" id="L426">                view.onError(&quot;Action blocked: Card [&quot; + id + &quot;] is not available on the board. &quot;</span>
+                        + &quot;It may have already been taken or it does not exist.&quot;);
+<span class="nc" id="L428">                return;</span>
+            }
+
+<span class="nc bnc" id="L431" title="All 4 branches missed.">            if (inUpperChar || inUpperBuilding) upperPicks++;</span>
+<span class="nc" id="L432">            else lowerPicks++;  // inLowerChar || inLowerBuilding, mutually exclusive with upper</span>
+<span class="nc" id="L433">        }</span>
+
+        // Pick-limit check: the client knows the remaining allowance from onPlayerLimitsUpdated.
+        // Whether mandatory character picks are satisfied is enforced server-side only,
+        // since the client cannot distinguish character cards from building cards by ID alone.
+<span class="nc" id="L438">        int allowedUpper = gameModel.getRemainingUpper().getOrDefault(nick, 0);</span>
+<span class="nc" id="L439">        int allowedLower = gameModel.getRemainingLower().getOrDefault(nick, 0);</span>
+
+<span class="nc bnc" id="L441" title="All 2 branches missed.">        if (upperPicks &gt; allowedUpper) {</span>
+<span class="nc" id="L442">            int excess = upperPicks - allowedUpper;</span>
+<span class="nc" id="L443">            view.onError(&quot;Action blocked: Upper-row pick limit exceeded (&quot;</span>
+                    + upperPicks + &quot; selected, &quot; + allowedUpper + &quot; remaining). &quot;
+                    + &quot;Remove &quot; + excess + &quot; card(s) from your upper-row selection.&quot;);
+<span class="nc" id="L446">            return;</span>
+        }
+<span class="nc bnc" id="L448" title="All 2 branches missed.">        if (lowerPicks &gt; allowedLower) {</span>
+<span class="nc" id="L449">            int excess = lowerPicks - allowedLower;</span>
+<span class="nc" id="L450">            view.onError(&quot;Action blocked: Lower-row pick limit exceeded (&quot;</span>
+                    + lowerPicks + &quot; selected, &quot; + allowedLower + &quot; remaining). &quot;
+                    + &quot;Remove &quot; + excess + &quot; card(s) from your lower-row selection.&quot;);
+<span class="nc" id="L453">            return;</span>
+        }
+
+<span class="nc" id="L456">        proxy.resolveActions(cardIDs);</span>
+<span class="nc" id="L457">    }</span>
+
+    /**
+     * Validates that nickname and game ID are non-blank, then forwards the
+     * reconnection request.
+     */
+    public void handleReconnect(String nickname, String gameId) {
+<span class="nc bnc" id="L464" title="All 4 branches missed.">        if (nickname == null || nickname.isBlank()) {</span>
+<span class="nc" id="L465">            view.onError(&quot;Action blocked: Nickname is required for reconnection.&quot;);</span>
+<span class="nc" id="L466">            return;</span>
+        }
+<span class="nc bnc" id="L468" title="All 4 branches missed.">        if (gameId == null || gameId.isBlank()) {</span>
+<span class="nc" id="L469">            view.onError(&quot;Action blocked: Game ID is required for reconnection.&quot;);</span>
+<span class="nc" id="L470">            return;</span>
+        }
+<span class="nc" id="L472">        proxy.requestReconnect(nickname, gameId);</span>
+<span class="nc" id="L473">    }</span>
+
+    /** @return the current game model, or {@code null} if no game is in progress */
+<span class="nc" id="L476">    public synchronized GameModel getGameModel() { return gameModel; }</span>
+
+    /**
+     * Returns the local player's nickname, reading from the game model if a game
+     * is in progress, or from the lobby model otherwise.
+     *
+     * @return the current nickname, or {@code null} if not yet set
+     */
+    protected String myNickname() {
+<span class="nc bnc" id="L485" title="All 2 branches missed.">        return gameModel != null ? gameModel.getMyNickname() : lobbyModel.getMyNickname();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

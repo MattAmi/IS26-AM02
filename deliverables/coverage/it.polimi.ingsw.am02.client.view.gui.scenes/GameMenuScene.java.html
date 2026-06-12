@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameMenuScene.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">GameMenuScene.java</span></div><h1>GameMenuScene.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
+
+import it.polimi.ingsw.am02.client.view.gui.GuiController;
+import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
+import javafx.animation.FadeTransition;
+import javafx.animation.ScaleTransition;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.util.Duration;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+/**
+ * Represents the main menu scene of the game.
+ * This scene allows players to create a lobby, join a lobby, reconnect to a game,
+ * or view the game rules.
+ */
+<span class="nc" id="L31">public class GameMenuScene {</span>
+
+    private GuiController controller;
+    private StackPane menuContainer;
+    private VBox mainButtonsBox;
+    private VBox createLobbyBox;
+    private VBox reconnectBox;
+    private StackPane rulesOverlay;
+    private ImageView rulesImageView;
+<span class="nc" id="L40">    private List&lt;Image&gt; rulesPages = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L41">    private int currentPage = 0;</span>
+    private Font tribalSmall;
+    private Font tribalLarge;
+    private Font introFont;
+
+    /**
+     * Builds the main menu scene node.
+     *
+     * @param controller      The GUI controller.
+     * @param onShowLobbyList Callback to show the lobby list.
+     * @param onError         Callback to handle errors.
+     * @return The constructed Region representing the scene.
+     */
+    public Region buildNode(GuiController controller, Runnable onShowLobbyList, Consumer&lt;String&gt; onError) {
+<span class="nc" id="L55">        this.controller = controller;</span>
+
+        try {
+<span class="nc" id="L58">            tribalSmall = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 16);</span>
+<span class="nc" id="L59">            tribalLarge = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 100);</span>
+<span class="nc" id="L60">            introFont = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/intro.ttf&quot;), 18);</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            for (int i = 0; i &lt; 8; i++) {</span>
+<span class="nc" id="L63">                rulesPages.add(ImageLoader.getImage(&quot;/images/rules/page&quot; + i + &quot;.png&quot;));</span>
+            }
+<span class="nc" id="L65">        } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L67">        StackPane root = new StackPane();</span>
+<span class="nc" id="L68">        root.setStyle(&quot;-fx-background-color: #000000;&quot;);</span>
+
+<span class="nc" id="L70">        Pane bgContainer = new Pane();</span>
+<span class="nc" id="L71">        bgContainer.setMouseTransparent(true);</span>
+<span class="nc" id="L72">        bgContainer.prefWidthProperty().bind(root.widthProperty());</span>
+<span class="nc" id="L73">        bgContainer.prefHeightProperty().bind(root.heightProperty());</span>
+
+<span class="nc" id="L75">        Rectangle clip = new Rectangle();</span>
+<span class="nc" id="L76">        clip.widthProperty().bind(root.widthProperty());</span>
+<span class="nc" id="L77">        clip.heightProperty().bind(root.heightProperty());</span>
+<span class="nc" id="L78">        bgContainer.setClip(clip);</span>
+
+<span class="nc" id="L80">        ImageView backgroundView = new ImageView();</span>
+        try {
+<span class="nc" id="L82">            Image img = ImageLoader.getImage(&quot;/images/mesos_box.png&quot;);            backgroundView.setImage(img);</span>
+<span class="nc" id="L83">            double iw = img.getWidth();</span>
+<span class="nc" id="L84">            double ih = img.getHeight();</span>
+<span class="nc" id="L85">            double vw = iw * 0.7;</span>
+<span class="nc" id="L86">            double vh = ih * 0.7;</span>
+<span class="nc" id="L87">            double vx = (iw - vw) / 2;</span>
+<span class="nc" id="L88">            double vy = (ih - vh) / 2;</span>
+<span class="nc" id="L89">            backgroundView.setViewport(new Rectangle2D(vx, vy, vw, vh));</span>
+<span class="nc" id="L90">        } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L92">        backgroundView.fitWidthProperty().bind(bgContainer.widthProperty());</span>
+<span class="nc" id="L93">        backgroundView.fitHeightProperty().bind(bgContainer.heightProperty());</span>
+<span class="nc" id="L94">        backgroundView.setPreserveRatio(false);</span>
+<span class="nc" id="L95">        backgroundView.setEffect(new GaussianBlur(10));</span>
+
+<span class="nc" id="L97">        ScaleTransition st = new ScaleTransition(Duration.seconds(20), backgroundView);</span>
+<span class="nc" id="L98">        st.setFromX(1.0); st.setFromY(1.0); st.setToX(1.25); st.setToY(1.25);</span>
+<span class="nc" id="L99">        st.setCycleCount(ScaleTransition.INDEFINITE); st.setAutoReverse(true); st.play();</span>
+
+<span class="nc" id="L101">        bgContainer.getChildren().add(backgroundView);</span>
+
+<span class="nc" id="L103">        VBox uiLayer = new VBox(30);</span>
+<span class="nc" id="L104">        uiLayer.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L105">        uiLayer.setPickOnBounds(false);</span>
+
+<span class="nc" id="L107">        Label title = new Label(&quot;MESOS&quot;);</span>
+<span class="nc" id="L108">        title.setTextFill(Color.web(&quot;#F2D5A3&quot;));</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (tribalLarge != null) title.setFont(tribalLarge);</span>
+
+<span class="nc" id="L111">        menuContainer = new StackPane();</span>
+<span class="nc" id="L112">        menuContainer.setMaxSize(450, 550);</span>
+
+<span class="nc" id="L114">        buildMainButtons(onShowLobbyList);</span>
+<span class="nc" id="L115">        buildCreateLobbyForm(onError);</span>
+<span class="nc" id="L116">        buildReconnectForm(onError);</span>
+<span class="nc" id="L117">        buildRulesOverlay();</span>
+
+<span class="nc" id="L119">        menuContainer.getChildren().addAll(createLobbyBox, reconnectBox, mainButtonsBox);</span>
+<span class="nc" id="L120">        createLobbyBox.setVisible(false);</span>
+<span class="nc" id="L121">        reconnectBox.setVisible(false);</span>
+
+<span class="nc" id="L123">        uiLayer.getChildren().addAll(title, menuContainer);</span>
+<span class="nc" id="L124">        root.getChildren().addAll(bgContainer, uiLayer, rulesOverlay);</span>
+
+<span class="nc" id="L126">        return root;</span>
+    }
+
+    /**
+     * Builds the main navigation buttons.
+     *
+     * @param onShowLobbyList Callback to show the lobby list.
+     */
+    private void buildMainButtons(Runnable onShowLobbyList) {
+<span class="nc" id="L135">        mainButtonsBox = new VBox(20);</span>
+<span class="nc" id="L136">        mainButtonsBox.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L137">        mainButtonsBox.getChildren().addAll(</span>
+<span class="nc" id="L138">                createMenuButton(&quot;CREATE LOBBY&quot;, e -&gt; switchInternalMenu(createLobbyBox)),</span>
+<span class="nc" id="L139">                createMenuButton(&quot;JOIN LOBBY&quot;, e -&gt; onShowLobbyList.run()),</span>
+<span class="nc" id="L140">                createMenuButton(&quot;RECONNECT&quot;, e -&gt; switchInternalMenu(reconnectBox)),</span>
+<span class="nc" id="L141">                createMenuButton(&quot;GAME RULES&quot;, e -&gt; showRules()),</span>
+<span class="nc" id="L142">                createQuitButton()</span>
+        );
+<span class="nc" id="L144">    }</span>
+
+    /**
+     * Builds the rules overlay for viewing game instructions.
+     */
+    private void buildRulesOverlay() {
+<span class="nc" id="L150">        rulesOverlay = new StackPane();</span>
+<span class="nc" id="L151">        rulesOverlay.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.8);&quot;);</span>
+<span class="nc" id="L152">        rulesOverlay.setVisible(false);</span>
+<span class="nc" id="L153">        rulesOverlay.setPadding(new Insets(40));</span>
+
+<span class="nc" id="L155">        VBox content = new VBox(20);</span>
+<span class="nc" id="L156">        content.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L157">        content.setMaxWidth(1200);</span>
+
+<span class="nc" id="L159">        rulesImageView = new ImageView();</span>
+<span class="nc" id="L160">        rulesImageView.setPreserveRatio(true);</span>
+<span class="nc" id="L161">        rulesImageView.setFitHeight(850);</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (!rulesPages.isEmpty()) rulesImageView.setImage(rulesPages.get(0));</span>
+
+<span class="nc" id="L164">        HBox navigationBar = new HBox();</span>
+<span class="nc" id="L165">        navigationBar.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L166">        navigationBar.setSpacing(10);</span>
+
+<span class="nc" id="L168">        Button prevBtn = createMenuButton(&quot;PREV&quot;, e -&gt; navigateRules(-1));</span>
+<span class="nc" id="L169">        prevBtn.setPrefSize(150, 45);</span>
+
+<span class="nc" id="L171">        Button nextBtn = createMenuButton(&quot;NEXT&quot;, e -&gt; navigateRules(1));</span>
+<span class="nc" id="L172">        nextBtn.setPrefSize(150, 45);</span>
+
+<span class="nc" id="L174">        Button closeBtn = createMenuButton(&quot;CLOSE&quot;, e -&gt; rulesOverlay.setVisible(false));</span>
+<span class="nc" id="L175">        closeBtn.setPrefSize(150, 45);</span>
+<span class="nc" id="L176">        closeBtn.setStyle(&quot;-fx-base: #8B0000; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: white; -fx-border-radius: 5;&quot;);</span>
+
+<span class="nc" id="L178">        Region spacer1 = new Region(); HBox.setHgrow(spacer1, Priority.ALWAYS);</span>
+<span class="nc" id="L179">        Region spacer2 = new Region(); HBox.setHgrow(spacer2, Priority.ALWAYS);</span>
+
+<span class="nc" id="L181">        navigationBar.getChildren().addAll(prevBtn, spacer1, closeBtn, spacer2, nextBtn);</span>
+<span class="nc" id="L182">        content.getChildren().addAll(rulesImageView, navigationBar);</span>
+<span class="nc" id="L183">        rulesOverlay.getChildren().add(content);</span>
+<span class="nc" id="L184">    }</span>
+
+    /**
+     * Displays the rules overlay.
+     */
+    private void showRules() {
+<span class="nc" id="L190">        currentPage = 0; updateRulesDisplay();</span>
+<span class="nc" id="L191">        rulesOverlay.setOpacity(0); rulesOverlay.setVisible(true);</span>
+<span class="nc" id="L192">        FadeTransition ft = new FadeTransition(Duration.millis(300), rulesOverlay);</span>
+<span class="nc" id="L193">        ft.setToValue(1); ft.play();</span>
+<span class="nc" id="L194">    }</span>
+
+    /**
+     * Navigates through the rules pages.
+     *
+     * @param direction The navigation direction (-1 for previous, 1 for next).
+     */
+    private void navigateRules(int direction) {
+<span class="nc" id="L202">        int next = currentPage + direction;</span>
+<span class="nc bnc" id="L203" title="All 4 branches missed.">        if (next &gt;= 0 &amp;&amp; next &lt; rulesPages.size()) {</span>
+<span class="nc" id="L204">            currentPage = next; updateRulesDisplay();</span>
+        }
+<span class="nc" id="L206">    }</span>
+
+    /**
+     * Updates the rules image based on the current page.
+     */
+    private void updateRulesDisplay() {
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (!rulesPages.isEmpty()) rulesImageView.setImage(rulesPages.get(currentPage));</span>
+<span class="nc" id="L213">    }</span>
+
+    /**
+     * Builds the form for creating a new lobby.
+     *
+     * @param onError Callback to handle errors.
+     */
+    private void buildCreateLobbyForm(Consumer&lt;String&gt; onError) {
+<span class="nc" id="L221">        createLobbyBox = new VBox(15);</span>
+<span class="nc" id="L222">        createLobbyBox.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L223">        createLobbyBox.setStyle(&quot;-fx-background-color: rgba(43, 29, 20, 0.95); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 15; -fx-padding: 30;&quot;);</span>
+
+<span class="nc" id="L225">        Label lbl = new Label(&quot;Select Lobby Size (2-5):&quot;);</span>
+<span class="nc" id="L226">        lbl.setTextFill(Color.WHITE);</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (tribalSmall != null) lbl.setFont(tribalSmall);</span>
+
+<span class="nc" id="L229">        TextField sizeField = new TextField(&quot;2&quot;);</span>
+<span class="nc" id="L230">        sizeField.setMaxWidth(100); sizeField.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L231">        sizeField.setStyle(&quot;-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;&quot;);</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">        if (tribalSmall != null) sizeField.setFont(tribalSmall);</span>
+
+<span class="nc" id="L234">        createLobbyBox.getChildren().addAll(lbl, sizeField,</span>
+<span class="nc" id="L235">                createMenuButton(&quot;CONFIRM&quot;, e -&gt; {</span>
+                    try {
+<span class="nc" id="L237">                        int size = Integer.parseInt(sizeField.getText());</span>
+<span class="nc bnc" id="L238" title="All 4 branches missed.">                        if (size &gt;= 2 &amp;&amp; size &lt;= 5) controller.requestCreateLobby(size);</span>
+<span class="nc" id="L239">                        else onError.accept(&quot;Size must be between 2 and 5.&quot;);</span>
+<span class="nc" id="L240">                    } catch (Exception ex) { onError.accept(&quot;Invalid format.&quot;); }</span>
+<span class="nc" id="L241">                }),</span>
+<span class="nc" id="L242">                createMenuButton(&quot;BACK&quot;, e -&gt; switchInternalMenu(mainButtonsBox))</span>
+        );
+<span class="nc" id="L244">    }</span>
+
+    /**
+     * Builds the form for reconnecting to an ongoing game.
+     *
+     * @param onError Callback to handle errors.
+     */
+    private void buildReconnectForm(Consumer&lt;String&gt; onError) {
+<span class="nc" id="L252">        reconnectBox = new VBox(15);</span>
+<span class="nc" id="L253">        reconnectBox.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L254">        reconnectBox.setStyle(&quot;-fx-background-color: rgba(43, 29, 20, 0.95); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 15; -fx-padding: 30;&quot;);</span>
+
+<span class="nc" id="L256">        Label lblNick = new Label(&quot;Nickname:&quot;);</span>
+<span class="nc" id="L257">        lblNick.setTextFill(Color.WHITE);</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">        if (introFont != null) lblNick.setFont(introFont);</span>
+
+<span class="nc" id="L260">        TextField nickField = new TextField();</span>
+<span class="nc" id="L261">        nickField.setPromptText(&quot;Enter Nickname&quot;); nickField.setMaxWidth(220);</span>
+<span class="nc" id="L262">        nickField.setStyle(&quot;-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;&quot;);</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        if (introFont != null) nickField.setFont(introFont);</span>
+
+<span class="nc" id="L265">        Label lblId = new Label(&quot;Game ID:&quot;);</span>
+<span class="nc" id="L266">        lblId.setTextFill(Color.WHITE);</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        if (introFont != null) lblId.setFont(introFont);</span>
+
+<span class="nc" id="L269">        TextField gameIdField = new TextField();</span>
+<span class="nc" id="L270">        gameIdField.setPromptText(&quot;Enter Game ID&quot;); gameIdField.setMaxWidth(220);</span>
+<span class="nc" id="L271">        gameIdField.setStyle(&quot;-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;&quot;);</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        if (introFont != null) gameIdField.setFont(introFont);</span>
+
+<span class="nc" id="L274">        reconnectBox.getChildren().addAll(lblNick, nickField, lblId, gameIdField,</span>
+<span class="nc" id="L275">                createMenuButton(&quot;RECONNECT&quot;, e -&gt; {</span>
+<span class="nc bnc" id="L276" title="All 4 branches missed.">                    if (!nickField.getText().isBlank() &amp;&amp; !gameIdField.getText().isBlank())</span>
+<span class="nc" id="L277">                        controller.requestReconnect(nickField.getText(), gameIdField.getText());</span>
+<span class="nc" id="L278">                    else onError.accept(&quot;Fill both fields.&quot;);</span>
+<span class="nc" id="L279">                }),</span>
+<span class="nc" id="L280">                createMenuButton(&quot;BACK&quot;, e -&gt; switchInternalMenu(mainButtonsBox))</span>
+        );
+<span class="nc" id="L282">    }</span>
+
+    /**
+     * Creates a menu button with the specified text and event handler.
+     *
+     * @param text  The button text.
+     * @param event The event handler for button clicks.
+     * @return The constructed Button.
+     */
+    private Button createMenuButton(String text, javafx.event.EventHandler&lt;javafx.event.ActionEvent&gt; event) {
+<span class="nc" id="L292">        Button btn = new Button(text);</span>
+<span class="nc" id="L293">        btn.setPrefSize(280, 55);</span>
+<span class="nc" id="L294">        btn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3; -fx-border-width: 1; -fx-border-radius: 5;&quot;);</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">        if (tribalSmall != null) btn.setFont(tribalSmall);</span>
+<span class="nc" id="L296">        btn.setOnAction(event);</span>
+<span class="nc" id="L297">        return btn;</span>
+    }
+
+    /**
+     * Creates a quit button to exit the application.
+     *
+     * @return The constructed Button.
+     */
+    private Button createQuitButton() {
+<span class="nc" id="L306">        Button quitBtn = new Button(&quot;QUIT GAME&quot;);</span>
+<span class="nc" id="L307">        quitBtn.setPrefSize(280, 55);</span>
+<span class="nc" id="L308">        quitBtn.setStyle(&quot;-fx-base: #8B0000; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: white; -fx-border-width: 1; -fx-border-radius: 5;&quot;);</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">        if (tribalSmall != null) quitBtn.setFont(tribalSmall);</span>
+<span class="nc" id="L310">        quitBtn.setOnAction(e -&gt; System.exit(0));</span>
+<span class="nc" id="L311">        return quitBtn;</span>
+    }
+
+    /**
+     * Switches between internal menu boxes (e.g., main menu to create lobby form).
+     *
+     * @param menuToShow The VBox to display.
+     */
+    private void switchInternalMenu(VBox menuToShow) {
+<span class="nc" id="L320">        mainButtonsBox.setVisible(false); createLobbyBox.setVisible(false);</span>
+<span class="nc" id="L321">        reconnectBox.setVisible(false); menuToShow.setVisible(true);</span>
+<span class="nc" id="L322">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

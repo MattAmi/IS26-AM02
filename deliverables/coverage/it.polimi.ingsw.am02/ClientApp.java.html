@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClientApp.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02</a> &gt; <span class="el_source">ClientApp.java</span></div><h1>ClientApp.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02;
+
+import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
+import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.client.view.gui.GuiController;
+import it.polimi.ingsw.am02.client.view.gui.GuiView;
+import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
+import it.polimi.ingsw.am02.client.view.gui.SceneRouter;
+import it.polimi.ingsw.am02.client.view.tui.TuiController;
+import it.polimi.ingsw.am02.client.view.tui.TuiView;
+import it.polimi.ingsw.am02.common.NetworkDefaults;
+import it.polimi.ingsw.am02.common.enumerations.NetworkType;
+import javafx.application.Application;
+import javafx.stage.Stage;
+
+import java.util.Scanner;
+
+/**
+ * Main entrance for the client application.
+ * This class allows the user to choose between TUI and GUI interfaces
+ * and manages the initial setup for both.
+ */
+<span class="nc" id="L25">public class ClientApp extends Application {</span>
+
+    private static LobbyModel lobbyModel;
+    private static String[] savedArgs;
+
+    /**
+     * The main method that starts the application.
+     * It prompts the user to select the interface type.
+     *
+     * @param args command line arguments.
+     */
+    public static void main(String[] args) {
+<span class="nc" id="L37">        savedArgs = args;</span>
+<span class="nc" id="L38">        Scanner setupScanner = new Scanner(System.in);</span>
+
+        try {
+<span class="nc" id="L41">            lobbyModel = new LobbyModel();</span>
+
+            // 1. Interface choice (TUI or GUI)
+<span class="nc" id="L44">            System.out.println(&quot;Select Interface: [1] TUI | [2] GUI&quot;);</span>
+<span class="nc" id="L45">            String uiChoice = setupScanner.nextLine().trim();</span>
+<span class="nc" id="L46">            boolean useGui = uiChoice.equals(&quot;2&quot;);</span>
+
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            if (useGui) {</span>
+                // --- GUI SETUP ---
+<span class="nc" id="L50">                Application.launch(ClientApp.class, args);</span>
+
+            } else {
+                // --- TUI SETUP ---
+<span class="nc" id="L54">                System.out.println(&quot;Select Protocol: [1] RMI | [2] Socket&quot;);</span>
+<span class="nc" id="L55">                String netChoice = setupScanner.nextLine().trim();</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                NetworkType networkType = netChoice.equals(&quot;2&quot;) ? NetworkType.SOCKET : NetworkType.RMI;</span>
+
+                // Dynamic IP request
+<span class="nc" id="L59">                System.out.print(&quot;Server IP Address [default: 127.0.0.1]: &quot;);</span>
+<span class="nc" id="L60">                String host = setupScanner.nextLine().trim();</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                if (host.isEmpty()) host = &quot;127.0.0.1&quot;;</span>
+
+                // Dynamic Port request with auto-detection of default based on protocol
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                int defaultPort = (networkType == NetworkType.SOCKET) ? NetworkDefaults.DEFAULT_SOCKET_PORT : NetworkDefaults.DEFAULT_RMI_PORT;</span>
+<span class="nc" id="L65">                System.out.print(&quot;Server Port [default: &quot; + defaultPort + &quot;]: &quot;);</span>
+<span class="nc" id="L66">                String portStr = setupScanner.nextLine().trim();</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                int port = portStr.isEmpty() ? defaultPort : Integer.parseInt(portStr);</span>
+
+                // Creation of the MVC ecosystem for the TUI
+<span class="nc" id="L70">                ClientView view = new TuiView(lobbyModel);</span>
+<span class="nc" id="L71">                ServerProxy proxy = ServerProxyFactory.create(networkType, host, port, lobbyModel, view);</span>
+
+<span class="nc" id="L73">                TuiController controller = new TuiController(proxy, lobbyModel, view, networkType, host, port);</span>
+<span class="nc" id="L74">                proxy.setClientController(controller);</span>
+
+<span class="nc" id="L76">                System.out.println(&quot;\nConnecting to server via &quot; + networkType + &quot; on &quot; + host + &quot;:&quot; + port + &quot;...&quot;);</span>
+<span class="nc" id="L77">                proxy.connect();</span>
+<span class="nc" id="L78">                controller.run(); // Blocking loop to read commands from terminal</span>
+            }
+
+<span class="nc" id="L81">        } catch (Exception e) {</span>
+<span class="nc" id="L82">            System.err.println(&quot;[FATAL] Client failed to start: &quot; + e.getMessage());</span>
+<span class="nc" id="L83">            e.printStackTrace();</span>
+<span class="nc" id="L84">            System.exit(1);</span>
+<span class="nc" id="L85">        }</span>
+<span class="nc" id="L86">    }</span>
+
+    /**
+     * Start method for the JavaFX GUI.
+     * Initializes the GUI views, controller, and router.
+     *
+     * @param primaryStage the primary stage for this application.
+     */
+    @Override
+    public void start(Stage primaryStage) {
+        try {
+<span class="nc" id="L97">            ImageLoader.preloadRulesInBackground();</span>
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (lobbyModel == null) {</span>
+<span class="nc" id="L100">                lobbyModel = new LobbyModel();</span>
+            }
+
+<span class="nc" id="L103">            primaryStage.setOnCloseRequest(event -&gt; {</span>
+<span class="nc" id="L104">                javafx.application.Platform.exit();</span>
+<span class="nc" id="L105">                System.exit(0);</span>
+<span class="nc" id="L106">            });</span>
+
+<span class="nc" id="L108">            GuiView guiView = new GuiView(lobbyModel);</span>
+<span class="nc" id="L109">            SceneRouter sceneRouter = new SceneRouter(primaryStage);</span>
+<span class="nc" id="L110">            GuiController guiController = new GuiController(null, lobbyModel, guiView);</span>
+
+<span class="nc" id="L112">            guiView.setSceneRouter(sceneRouter);</span>
+<span class="nc" id="L113">            sceneRouter.setGuiController(guiController);</span>
+
+<span class="nc" id="L115">            sceneRouter.show();</span>
+<span class="nc" id="L116">            sceneRouter.promptConnectionAndRetry(lobbyModel, guiView);</span>
+
+<span class="nc" id="L118">        } catch (Exception e) {</span>
+<span class="nc" id="L119">            System.err.println(&quot;[FATAL] Critical error during GUI startup:&quot;);</span>
+<span class="nc" id="L120">            e.printStackTrace();</span>
+<span class="nc" id="L121">            System.exit(1);</span>
+<span class="nc" id="L122">        }</span>
+<span class="nc" id="L123">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfferTileTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model</a> &gt; <span class="el_source">OfferTileTest.java</span></div><h1>OfferTileTest.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model;
+
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+import it.polimi.ingsw.am02.server.model.player.Player;
+import it.polimi.ingsw.am02.server.model.tile.OfferTile;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Tests {@link OfferTile}, verifying idempotent food crediting, the
+ * remaining-picks / satisfied bookkeeping and player occupancy management.
+ */
+<span class="fc" id="L16">class OfferTileTest {</span>
+
+    private OfferTile tileA;
+    private OfferTile tileG;
+    private Player matteo;
+    private Player husnain;
+
+    @BeforeEach
+    void setUp() {
+<span class="fc" id="L25">        tileA = new OfferTile('A', 5, 3, 0, 0);  // gainedFood = 3</span>
+<span class="fc" id="L26">        tileG = new OfferTile('G', 4, 0, 2, 1);  // gainedFood = 0</span>
+<span class="fc" id="L27">        matteo = new Player(&quot;Matteo&quot;, Totem.WHITE);</span>
+<span class="fc" id="L28">        husnain = new Player(&quot;Husnain&quot;, Totem.RED);</span>
+<span class="fc" id="L29">    }</span>
+
+    /** Verifies a food-giving tile credits its food only on the first resolution. */
+    @Test
+    @DisplayName(&quot;resolveFoodOffer on tile A (Matteo) should credit food exactly once&quot;)
+    void shouldCreditFoodOnlyOnceTileAMatteo() {
+<span class="fc" id="L35">        int initialFood = matteo.getTribu().getFoodPoints();</span>
+<span class="fc" id="L36">        tileA.acceptPlayer(matteo);</span>
+
+        // First call assigns food and puts isFoodResolved = true
+<span class="fc" id="L39">        tileA.resolveFoodOffer(matteo);</span>
+<span class="fc" id="L40">        assertEquals(initialFood + 3, matteo.getTribu().getFoodPoints());</span>
+
+        // Second call doesn't assign food (isFoodResolved = true)
+<span class="fc" id="L43">        tileA.resolveFoodOffer(matteo);</span>
+<span class="fc" id="L44">        assertEquals(initialFood + 3, matteo.getTribu().getFoodPoints());</span>
+<span class="fc" id="L45">    }</span>
+
+    /** Verifies a zero-food tile leaves food unchanged across repeated resolutions. */
+    @Test
+    @DisplayName(&quot;resolveFoodOffer on tile G (Husnain) should credit food exactly once&quot;)
+    void shouldCreditFoodOnlyOnceTileGHusnain() {
+<span class="fc" id="L51">        int initialFood = husnain.getTribu().getFoodPoints();</span>
+<span class="fc" id="L52">        tileG.acceptPlayer(husnain);</span>
+
+        // First call: assigns 0 food (tileG), and puts isFoodResolved = true
+<span class="fc" id="L55">        tileG.resolveFoodOffer(husnain);</span>
+<span class="fc" id="L56">        assertEquals(initialFood, husnain.getTribu().getFoodPoints());</span>
+
+        // Second call doesn't assign food either (isFoodResolved = true)
+<span class="fc" id="L59">        tileG.resolveFoodOffer(husnain);</span>
+<span class="fc" id="L60">        assertEquals(initialFood, husnain.getTribu().getFoodPoints());</span>
+<span class="fc" id="L61">    }</span>
+
+    /** Verifies the tile is satisfied only once both upper and lower picks reach zero. */
+    @Test
+    @DisplayName(&quot;setRemainingPicks and isSatisfied should work correctly&quot;)
+    void shouldTrackRemainingPicks() {
+<span class="fc" id="L67">        tileA.setRemainingPicks(1, 1);</span>
+
+<span class="fc" id="L69">        assertFalse(tileA.isSatisfied());</span>
+<span class="fc" id="L70">        assertEquals(1, tileA.getRemainingUpper());</span>
+<span class="fc" id="L71">        assertEquals(1, tileA.getRemainingLower());</span>
+
+<span class="fc" id="L73">        tileA.decrementPicks(1, 0);</span>
+<span class="fc" id="L74">        assertFalse(tileA.isSatisfied()); // lower still to be satisfied</span>
+
+<span class="fc" id="L76">        tileA.decrementPicks(0, 1);</span>
+<span class="fc" id="L77">        assertTrue(tileA.isSatisfied());  // both at 0</span>
+<span class="fc" id="L78">    }</span>
+
+    /** Verifies a tile with no required picks is immediately satisfied. */
+    @Test
+    @DisplayName(&quot;isSatisfied should return true when both pick quotas start at zero&quot;)
+    void shouldBeSatisfiedWhenNoPicksRequired() {
+<span class="fc" id="L84">        tileA.setRemainingPicks(0, 0);</span>
+<span class="fc" id="L85">        assertTrue(tileA.isSatisfied());</span>
+<span class="fc" id="L86">    }</span>
+
+    /** Verifies accepting a player sets it as the tile's occupant. */
+    @Test
+    @DisplayName(&quot;acceptPlayer should assign the player to the tile&quot;)
+    void shouldAcceptPlayer() {
+<span class="fc" id="L92">        tileA.acceptPlayer(matteo);</span>
+<span class="fc" id="L93">        assertSame(matteo, tileA.getOccupyingPlayer());</span>
+<span class="fc" id="L94">    }</span>
+
+    /** Verifies removing a player clears the tile's occupant. */
+    @Test
+    @DisplayName(&quot;removePlayer should clear the occupant&quot;)
+    void shouldRemovePlayer() {
+<span class="fc" id="L100">        tileA.acceptPlayer(matteo);</span>
+<span class="fc" id="L101">        tileA.removePlayer(matteo);</span>
+<span class="fc" id="L102">        assertNull(tileA.getOccupyingPlayer());</span>
+<span class="fc" id="L103">    }</span>
+
+    /** Verifies the tile itself overwrites its occupant without throwing (occupancy is guarded by OfferTrack). */
+    @Test
+    @DisplayName(&quot;acceptPlayer should silently overwrite the previous occupant (OfferTrack guards occupancy)&quot;)
+    void shouldOverwriteOccupantSilently() {
+<span class="fc" id="L109">        tileA.acceptPlayer(matteo);</span>
+        // OfferTrack calls isOccupied() before arriving here:
+        // OfferTile does not throw exceptions; it simply performs the assignment.
+<span class="fc" id="L112">        tileA.acceptPlayer(husnain);</span>
+<span class="fc" id="L113">        assertSame(husnain, tileA.getOccupyingPlayer());</span>
+<span class="fc" id="L114">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

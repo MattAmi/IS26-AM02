@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ServerProxyFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.network</a> &gt; <span class="el_source">ServerProxyFactory.java</span></div><h1>ServerProxyFactory.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.network;
+
+import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy;
+import it.polimi.ingsw.am02.client.network.socket.SocketServerProxy;
+import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.enumerations.NetworkType;
+
+/**
+ * Factory for creating {@link ServerProxy} instances.
+ *
+ * &lt;p&gt;Selects the concrete implementation — RMI or Socket — based on the
+ * {@link NetworkType} chosen by the player at startup, shielding the rest
+ * of the client code from the construction details of each proxy.
+ *
+ * @see it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy
+ * @see it.polimi.ingsw.am02.client.network.socket.SocketServerProxy
+ */
+public class ServerProxyFactory {
+
+    /** Not instantiable — utility class. */
+    private ServerProxyFactory() {}
+
+    /**
+     * Creates and returns an unconnected {@link ServerProxy} for the requested
+     * network technology.
+     *
+     * &lt;p&gt;The returned proxy must be wired ({@link ServerProxy#setClientController})
+     * and then started ({@link ServerProxy#connect()}) before use.
+     *
+     * @param type       the network technology ({@link NetworkType#RMI} or
+     *                   {@link NetworkType#SOCKET})
+     * @param host       the server hostname or IP address
+     * @param port       the server port number
+     * @param lobbyModel the shared lobby model that receives pre-game notifications
+     * @param view       the client view used to report connection-state changes
+     * @return a new, unconnected {@link ServerProxy}
+     * @throws Exception if RMI proxy construction fails (e.g. {@link java.rmi.RemoteException})
+     */
+    public static ServerProxy create(NetworkType type, String host, int port,
+                                     LobbyModel lobbyModel, ClientView view) throws Exception {
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        return switch (type) {</span>
+<span class="nc" id="L43">            case SOCKET -&gt; new SocketServerProxy(host, port, lobbyModel, view);</span>
+<span class="nc" id="L44">            case RMI    -&gt; new RmiServerProxy(host, port, lobbyModel, view);</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

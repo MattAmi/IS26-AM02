@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharacterCard.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.card</a> &gt; <span class="el_source">CharacterCard.java</span></div><h1>CharacterCard.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.card;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.server.model.effect.CharacterEffect;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.common.enumerations.Era;
+import it.polimi.ingsw.am02.server.model.player.Player;
+
+/**
+ * Represents an immutable character card.
+ * Each card belongs to a specific {@link Era}, has a {@link CharacterType},
+ * and carries a {@link CharacterEffect} that is applied immediately when the card is drawn.
+ */
+public class CharacterCard {
+
+    private final String cardID;
+    private final Era era;
+    private final CharacterType type;
+    private final int minPlayers;
+    private final CharacterEffect characterEffect;
+
+    /**
+     * @param cardID          unique identifier for this card (e.g. {@code &quot;C_001&quot;})
+     * @param era             the game era this card belongs to
+     * @param type            the character archetype (HUNTER, BUILDER, etc.)
+     * @param minPlayers      minimum number of players required for this card to be included in the deck
+     * @param characterEffect the effect applied when this card enters a tribe
+     */
+<span class="fc" id="L29">    public CharacterCard(String cardID, Era era, CharacterType type, int minPlayers, CharacterEffect characterEffect) {</span>
+<span class="fc" id="L30">        this.cardID = cardID;</span>
+<span class="fc" id="L31">        this.era = era;</span>
+<span class="fc" id="L32">        this.type = type;</span>
+<span class="fc" id="L33">        this.minPlayers = minPlayers;</span>
+<span class="fc" id="L34">        this.characterEffect = characterEffect;</span>
+<span class="fc" id="L35">    }</span>
+
+    /** @return the unique card identifier */
+    public String getID() {
+<span class="fc" id="L39">        return cardID;</span>
+    }
+
+    /** @return the era this card belongs to */
+    public Era getEra() {
+<span class="fc" id="L44">        return era;</span>
+    }
+
+    /** @return the character type (archetype) of this card */
+    public CharacterType getType() {
+<span class="fc" id="L49">        return type;</span>
+    }
+
+    /** @return the minimum player count required for this card to appear in the game */
+    public int getMinPlayers() {
+<span class="fc" id="L54">        return minPlayers;</span>
+    }
+
+    /**
+     * Applies this card's character effect to the given player's tribe.
+     *
+     * @param player the player who just acquired this card
+     * @return an {@link EffectOutcome} describing all resource changes produced by the effect
+     */
+    public EffectOutcome applyCharacterEffect(Player player) {
+<span class="fc" id="L64">        return characterEffect.applyEffect(player);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

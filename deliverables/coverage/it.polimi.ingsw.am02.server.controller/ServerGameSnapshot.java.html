@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ServerGameSnapshot.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.controller</a> &gt; <span class="el_source">ServerGameSnapshot.java</span></div><h1>ServerGameSnapshot.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.controller;
+
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
+import it.polimi.ingsw.am02.common.enumerations.PhaseType;
+
+import java.util.*;
+
+/**
+ * Server-side snapshot of the game state, maintained by {@link GameController}
+ * as a passive accumulation of {@code GameObserver} delta-notifications.
+ * Read exclusively by {@link AutoPlayer}; never transmitted to clients.
+ *
+ * &lt;p&gt;Only the fields that AutoPlayer actually needs are tracked.
+ * Card metadata is always queried live from {@code GameRegistry},
+ * which is a read-only singleton — no duplication occurs here.
+ *
+ * &lt;p&gt;All writes happen under {@code GameController}'s monitor,
+ * so no additional synchronization is needed.
+ */
+<span class="fc" id="L21">final class ServerGameSnapshot {</span>
+
+    //Phase / turn
+    private PhaseType currentPhase;
+    private String currentPlayerNickname;
+<span class="fc" id="L26">    private boolean extraTurnMode = false;</span>
+
+    // Tribe-card rows
+<span class="fc" id="L29">    private final List&lt;String&gt; upperRow = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L30">    private final List&lt;String&gt; lowerRow = new ArrayList&lt;&gt;();</span>
+
+    // Offer track
+<span class="fc" id="L33">    private final Map&lt;Character, String&gt; occupantByTile = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc" id="L35">    private final Map&lt;String, Integer&gt; remainingUpper = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L36">    private final Map&lt;String, Integer&gt; remainingLower = new HashMap&lt;&gt;();</span>
+
+    // Getters — package-private, used only by AutoPlayer
+
+    /** @return the current game phase, or {@code null} before setup completes */
+<span class="nc" id="L41">    PhaseType currentPhase() { return currentPhase; }</span>
+
+    /** @return the nickname of the player whose turn it currently is */
+<span class="nc" id="L44">    String    currentPlayerNickname() { return currentPlayerNickname; }</span>
+
+    /** @return an immutable copy of the current upper card row */
+<span class="nc" id="L47">    List&lt;String&gt; upperRow() { return List.copyOf(upperRow); }</span>
+
+    /** @return an immutable copy of the current lower card row */
+<span class="nc" id="L50">    List&lt;String&gt; lowerRow() { return List.copyOf(lowerRow); }</span>
+
+    /**
+     * @param nick the player's nickname
+     * @return the remaining upper-row picks for that player, or 0 if unknown
+     */
+<span class="nc" id="L56">    int remainingUpperOf(String nick) { return remainingUpper.getOrDefault(nick, 0); }</span>
+
+    /**
+     * @param nick the player's nickname
+     * @return the remaining lower-row picks for that player, or 0 if unknown
+     */
+<span class="nc" id="L62">    int remainingLowerOf(String nick) { return remainingLower.getOrDefault(nick, 0); }</span>
+
+    /**
+     * @return a list of offer tile IDs that currently have no occupant,
+     *         in insertion order (tile registration order)
+     */
+    List&lt;Character&gt; freeOfferTiles() {
+<span class="nc" id="L69">        List&lt;Character&gt; free = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        for (Map.Entry&lt;Character, String&gt; entry : occupantByTile.entrySet()) {</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (entry.getValue() == null) {</span>
+<span class="nc" id="L72">                free.add(entry.getKey());</span>
+            }
+<span class="nc" id="L74">        }</span>
+<span class="nc" id="L75">        return free;</span>
+    }
+
+    // Extra turn
+    /**
+     * Sets or clears extra-turn mode.
+     *
+     * @param active {@code true} to enter extra-turn mode, {@code false} to exit
+     */
+<span class="nc" id="L84">    void setExtraTurnMode(boolean active) { this.extraTurnMode = active; }</span>
+
+    /** @return {@code true} if the game is currently in an extra-turn phase */
+<span class="nc" id="L87">    boolean isExtraTurnMode() { return extraTurnMode; }</span>
+
+
+    // Mutators — called exclusively by GameController's GameObserver callbacks
+    /**
+     * Initializes the snapshot from the single {@link BoardSnapshot} emitted
+     * at the end of {@code SetUpState}. After this call, every subsequent
+     * delta keeps the snapshot current without further full-state reads.
+     */
+    void applySetup(BoardSnapshot board) {
+<span class="fc" id="L97">        upperRow.clear();</span>
+<span class="fc" id="L98">        upperRow.addAll(board.upperRowCards());</span>
+
+<span class="fc" id="L100">        lowerRow.clear();</span>
+<span class="fc" id="L101">        lowerRow.addAll(board.lowerRowCards());</span>
+
+        // Initialize every offer tile as free, then mark occupied ones.
+        // Adapt field names to your actual OfferTileInfo record.
+<span class="fc" id="L105">        occupantByTile.clear();</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        for (OfferTileInfo tile : board.offerTiles()) {</span>
+<span class="fc" id="L107">            occupantByTile.put(tile.tileID(), tile.occupantNickname());</span>
+<span class="fc" id="L108">        }</span>
+
+<span class="fc" id="L110">    }</span>
+
+    /**
+     * Updates the current phase and, optionally, the active player nickname.
+     *
+     * @param phase         the new phase
+     * @param currentPlayer the new active player, or {@code null} to leave unchanged
+     */
+    void setPhase(PhaseType phase, String currentPlayer) {
+<span class="fc" id="L119">        this.currentPhase = phase;</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (currentPlayer != null) {</span>
+<span class="fc" id="L121">            this.currentPlayerNickname = currentPlayer;</span>
+        }
+<span class="fc" id="L123">    }</span>
+
+    /**
+     * Updates the active player without changing the phase.
+     *
+     * @param nickname the new active player's nickname
+     */
+    void setCurrentPlayer(String nickname) {
+<span class="fc" id="L131">        this.currentPlayerNickname = nickname;</span>
+<span class="fc" id="L132">    }</span>
+
+    /**
+     * Replaces both card rows with the values from a {@code BoardUpdated} notification.
+     *
+     * @param newUpperRow the new upper row card IDs
+     * @param newLowerRow the new lower row card IDs
+     */
+    void applyBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow) {
+<span class="fc" id="L141">        upperRow.clear();</span>
+<span class="fc" id="L142">        upperRow.addAll(newUpperRow);</span>
+<span class="fc" id="L143">        lowerRow.clear();</span>
+<span class="fc" id="L144">        lowerRow.addAll(newLowerRow);</span>
+<span class="fc" id="L145">    }</span>
+
+    /**
+     * Removes a card from whichever row it currently occupies.
+     *
+     * @param cardId the card ID just taken by a player
+     */
+    void applyCardTaken(String cardId) {
+<span class="fc" id="L153">        upperRow.remove(cardId);</span>
+<span class="fc" id="L154">        lowerRow.remove(cardId);</span>
+<span class="fc" id="L155">    }</span>
+
+    /**
+     * Marks an offer tile as occupied by the given player.
+     *
+     * @param nickname the player who just placed their totem
+     * @param tileId   the tile they placed it on
+     */
+    void applyTotemPlaced(String nickname, char tileId) {
+<span class="fc" id="L164">        occupantByTile.put(tileId, nickname);</span>
+<span class="fc" id="L165">    }</span>
+
+    /**
+     * Clears the offer-tile occupant for the given player (totem returned).
+     *
+     * @param nickname the player whose totem was returned
+     */
+    void applyTotemReturned(String nickname) {
+<span class="fc" id="L173">        occupantByTile.replaceAll((tile, occupant) -&gt;</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">                nickname.equals(occupant) ? null : occupant);</span>
+<span class="fc" id="L175">    }</span>
+
+    /**
+     * Updates the remaining pick counts for a player.
+     *
+     * @param nickname the player's nickname
+     * @param upper    remaining upper-row picks
+     * @param lower    remaining lower-row picks
+     */
+    void setPlayerLimits(String nickname, int upper, int lower) {
+<span class="fc" id="L185">        remainingUpper.put(nickname, upper);</span>
+<span class="fc" id="L186">        remainingLower.put(nickname, lower);</span>
+<span class="fc" id="L187">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

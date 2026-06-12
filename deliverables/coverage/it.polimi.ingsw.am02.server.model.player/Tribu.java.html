@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Tribu.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.player</a> &gt; <span class="el_source">Tribu.java</span></div><h1>Tribu.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.player;
+
+import it.polimi.ingsw.am02.common.dto.EffectOutcome;
+import it.polimi.ingsw.am02.common.dto.ResourceDelta;
+import it.polimi.ingsw.am02.common.enumerations.ResourceType;
+import it.polimi.ingsw.am02.server.model.*;
+import it.polimi.ingsw.am02.server.model.card.BuildingCard;
+import it.polimi.ingsw.am02.server.model.effect.BuildingEffect;
+import it.polimi.ingsw.am02.server.model.effect.BuildingFactory;
+import it.polimi.ingsw.am02.server.model.card.CharacterCard;
+import it.polimi.ingsw.am02.server.model.effect.RegistrationVisitor;
+import it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException;
+import it.polimi.ingsw.am02.server.model.enumerations.CharacterType;
+import it.polimi.ingsw.am02.server.model.enumerations.InventionType;
+import it.polimi.ingsw.am02.server.model.listeners.TribuObserver;
+
+import java.util.*;
+
+/**
+ * Represents a player's tribe — the central aggregate that tracks all resources,
+ * characters, buildings, inventions, and passive effects accumulated during the game.
+ *
+ * &lt;p&gt;Resource fields (food, prestige points, shaman stars, discounts) are accumulated
+ * additively throughout the game. Building effects and character effects are registered
+ * via the observer pattern and fire automatically when the relevant game events occur.
+ */
+public class Tribu {
+
+    private int foodPoints;
+    private int prestigePoints;
+    private int shamanStars;
+    private int totalFoodDiscount;
+    private int totalBuildingDiscount;
+    private int totalPPBuilders;
+    private int totalPPBuildings;
+
+    private final Map&lt;InventionType, Integer&gt; inventionCounts;
+    private final Map&lt;CharacterType, List&lt;String&gt;&gt; characters;
+    private final List&lt;String&gt; buildings;
+    private final List&lt;BuildingEffect&gt; activeBuildingEffects;
+    private final List&lt;TribuObserver&gt; tribuObservers;
+    private boolean immuneToShamanicPenalty;
+
+    private int lastEventBonusReceived;
+
+    /**
+     * Creates a new, empty Tribu with all resource counters initialized to zero.
+     * All character slots, invention counts, and observer lists start empty.
+     */
+<span class="fc" id="L50">    public Tribu() {</span>
+
+<span class="fc" id="L52">        this.foodPoints = 0;</span>
+<span class="fc" id="L53">        this.prestigePoints = 0;</span>
+<span class="fc" id="L54">        this.shamanStars = 0;</span>
+<span class="fc" id="L55">        this.totalFoodDiscount = 0;</span>
+<span class="fc" id="L56">        this.totalBuildingDiscount = 0;</span>
+<span class="fc" id="L57">        this.totalPPBuilders = 0;</span>
+<span class="fc" id="L58">        this.totalPPBuildings = 0;</span>
+
+<span class="fc" id="L60">        this.inventionCounts = new EnumMap&lt;&gt;(InventionType.class);</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        for (InventionType type : InventionType.values()) {</span>
+<span class="fc" id="L62">            this.inventionCounts.put(type, 0);</span>
+        }
+
+<span class="fc" id="L65">        this.characters = new EnumMap&lt;&gt;(CharacterType.class);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        for (CharacterType type : CharacterType.values()) {</span>
+<span class="fc" id="L67">            this.characters.put(type, new ArrayList&lt;&gt;());</span>
+        }
+
+<span class="fc" id="L70">        this.buildings = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L71">        this.activeBuildingEffects = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L72">        this.tribuObservers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L73">        this.immuneToShamanicPenalty = false;</span>
+
+<span class="fc" id="L75">        this.lastEventBonusReceived = 0;</span>
+<span class="fc" id="L76">    }</span>
+
+    /** @return the current food points owned by this tribe */
+<span class="fc" id="L79">    public int getFoodPoints() { return foodPoints; }</span>
+
+    /** @return the current prestige points accumulated by this tribe */
+    public int getPrestigePoints() {
+<span class="fc" id="L83">        return prestigePoints;</span>
+    }
+
+    /** @return the total number of shaman stars held by this tribe */
+    public int getShamanStars() {
+<span class="fc" id="L88">        return shamanStars;</span>
+    }
+
+    /** @return the cumulative food discount applied when paying for tribe sustenance */
+    public int getFoodDiscount() {
+<span class="fc" id="L93">        return totalFoodDiscount;</span>
+    }
+
+    /** @return the cumulative building cost discount applied when purchasing buildings */
+    public int getBuildingDiscount() {
+<span class="fc" id="L98">        return totalBuildingDiscount;</span>
+    }
+
+    /** @return the prestige points contributed by Builder characters */
+    public int getPPBuilders() {
+<span class="fc" id="L103">        return totalPPBuilders;</span>
+    }
+
+    /** @return the prestige points contributed by owned buildings */
+<span class="fc" id="L107">    public int getTotalPPBuildings() { return totalPPBuildings; }</span>
+
+    /**
+     * @param characterType the type of character to count
+     * @return the number of characters of the given type currently in this tribe
+     */
+    public int getCharacterCount(CharacterType characterType) {
+<span class="fc" id="L114">        return characters.get(characterType).size();</span>
+    }
+
+    /** @return the total number of characters of all types in this tribe */
+    public int getNumCharacters() {
+<span class="fc" id="L119">        int count = 0;</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        for (CharacterType characterType : characters.keySet()) {</span>
+<span class="fc" id="L121">            count += characters.get(characterType).size();</span>
+<span class="fc" id="L122">        }</span>
+<span class="fc" id="L123">        return count;</span>
+    }
+
+    /**
+     * @param inventionType the invention type to query
+     * @return the number of inventions of the given type held by this tribe
+     */
+    public int getInventionTypeCount(InventionType inventionType) {
+<span class="fc" id="L131">        return inventionCounts.get(inventionType);</span>
+    }
+
+    /**
+     * Records that this tribe has acquired one more invention of the given type.
+     *
+     * @param inventionType the type of invention to add
+     */
+    public void addInventionType(InventionType inventionType){
+<span class="fc" id="L140">        inventionCounts.put(inventionType, getInventionTypeCount(inventionType) + 1);</span>
+<span class="fc" id="L141">    }</span>
+
+    /**
+     * @return the number of distinct invention types (with at least one copy) held by this tribe.
+     *         Used in final scoring to compute Inventor prestige points.
+     */
+    public int getNumOfDifferentInventionTypes(){
+<span class="fc" id="L148">        int count = 0;</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        for (int val : inventionCounts.values()) {</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            if (val &gt; 0) count++;</span>
+<span class="fc" id="L151">        }</span>
+<span class="fc" id="L152">        return count;</span>
+    }
+
+    /**
+     * Directly sets the food points to an absolute value.
+     * Prefer {@link #addFoodPoints(int)} for incremental changes.
+     *
+     * @param foodPoints the new absolute food value
+     */
+    public void setFoodPoints(int foodPoints) {
+<span class="fc" id="L162">        this.foodPoints = foodPoints;</span>
+<span class="fc" id="L163">    }</span>
+
+    /**
+     * Adds (or subtracts, if negative) food points to this tribe.
+     *
+     * @param foodPoints the amount to add; use a negative value to deduct food
+     */
+    public void addFoodPoints(int foodPoints){
+<span class="fc" id="L171">        this.foodPoints += foodPoints;</span>
+<span class="fc" id="L172">    }</span>
+
+    /**
+     * Adds (or subtracts, if negative) prestige points to this tribe.
+     *
+     * @param prestigePoints the amount to add; use a negative value to deduct prestige
+     */
+<span class="fc" id="L179">    public void addPrestigePoints(int prestigePoints) { this.prestigePoints += prestigePoints; }</span>
+
+    /**
+     * Adds shaman stars to this tribe.
+     *
+     * @param shamanStars the number of shaman stars to add (must be non-negative)
+     */
+    public void addShamanStars(int shamanStars){
+<span class="fc" id="L187">        this.shamanStars += shamanStars;</span>
+<span class="fc" id="L188">    }</span>
+
+    /**
+     * Increases the cumulative food discount for this tribe.
+     *
+     * @param foodDiscount the discount amount to add
+     */
+    public void addFoodDiscount(int foodDiscount){
+<span class="fc" id="L196">        this.totalFoodDiscount += foodDiscount;</span>
+<span class="fc" id="L197">    }</span>
+
+    /**
+     * Increases the cumulative building cost discount for this tribe.
+     *
+     * @param buildingDiscount the discount amount to add
+     */
+    public void addBuildingDiscount(int buildingDiscount){
+<span class="fc" id="L205">        this.totalBuildingDiscount += buildingDiscount;</span>
+<span class="fc" id="L206">    }</span>
+
+    /**
+     * Increases the prestige points credited to Builder characters.
+     *
+     * @param ppBuilders the amount to add
+     */
+    public void addPPBuilders(int ppBuilders){
+<span class="fc" id="L214">        this.totalPPBuilders += ppBuilders;</span>
+<span class="fc" id="L215">    }</span>
+
+    /**
+     * Adds a character card to this tribe and applies its immediate effect.
+     * Also notifies all registered {@link TribuObserver}s of the insertion.
+     *
+     * @param characterID the ID of the character card to insert (must exist in {@link GameRegistry})
+     * @param owner       the player who owns this tribe
+     * @return an {@link EffectOutcome} aggregating all resource deltas produced by the insertion
+     */
+    public EffectOutcome insertCharacter(String characterID, Player owner){
+
+<span class="fc" id="L227">        CharacterCard newInsertion = GameRegistry.getInstance().getCharacter(characterID);</span>
+<span class="fc" id="L228">        CharacterType type = newInsertion.getType();</span>
+
+<span class="fc" id="L230">        characters.get(type).add(characterID);</span>
+
+<span class="fc" id="L232">        List&lt;ResourceDelta&gt; allDeltas = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L234">        EffectOutcome cardOutcome = newInsertion.applyCharacterEffect(owner);</span>
+<span class="pc bpc" id="L235" title="1 of 4 branches missed.">        if (cardOutcome != null &amp;&amp; !cardOutcome.isEmpty()) {</span>
+<span class="fc" id="L236">            allDeltas.addAll(cardOutcome.resourceDeltas());</span>
+        }
+
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        for(TribuObserver observer : tribuObservers) {</span>
+<span class="nc" id="L240">            EffectOutcome obsOutcome = observer.onCharacterInsertion(type);</span>
+<span class="nc bnc" id="L241" title="All 4 branches missed.">            if (obsOutcome != null &amp;&amp; !obsOutcome.isEmpty()) {</span>
+<span class="nc" id="L242">                allDeltas.addAll(obsOutcome.resourceDeltas());</span>
+            }
+<span class="nc" id="L244">        }</span>
+
+<span class="fc" id="L246">        return new EffectOutcome(allDeltas);</span>
+    }
+
+    /**
+     * Adds a building card to this tribe, credits its base prestige points, and registers
+     * its active {@link BuildingEffect} with the appropriate game-level observers.
+     *
+     * @param buildingID the ID of the building card to insert (must exist in {@link GameRegistry})
+     * @param owner      the player who owns this tribe
+     * @param game       the current {@link Game} instance, used to attach phase/event observers
+     * @return an {@link EffectOutcome} containing the prestige-point delta for the building's base PP
+     * @throws CardNotFoundException if the building ID does not exist in the registry
+     */
+    public EffectOutcome insertBuilding(String buildingID, Player owner, Game game) {
+
+<span class="fc" id="L261">        BuildingCard cardTemplate = GameRegistry.getInstance().getBuilding(buildingID);</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        if (cardTemplate == null) throw new CardNotFoundException(buildingID);</span>
+
+<span class="fc" id="L264">        this.buildings.add(buildingID);</span>
+
+<span class="fc" id="L266">        List&lt;ResourceDelta&gt; deltas = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L267">        int pp = cardTemplate.getBuildingPp();</span>
+
+<span class="fc bfc" id="L269" title="All 2 branches covered.">        if (pp &gt; 0) {</span>
+<span class="fc" id="L270">            this.totalPPBuildings += pp;</span>
+
+<span class="fc" id="L272">            deltas.add(new ResourceDelta(</span>
+<span class="fc" id="L273">                    owner.getNickname(),</span>
+                    ResourceType.PP_BUILDINGS,
+                    this.totalPPBuildings,
+                    pp
+            ));
+        }
+
+<span class="fc" id="L280">        BuildingEffect myPersonalEffect = BuildingFactory.createActiveEffect(</span>
+<span class="fc" id="L281">                cardTemplate.getEffectType(),</span>
+<span class="fc" id="L282">                cardTemplate.getEffectParams(),</span>
+                owner,
+                game);
+
+<span class="pc bpc" id="L286" title="1 of 2 branches missed.">        if (myPersonalEffect != null) {</span>
+<span class="fc" id="L287">            this.activeBuildingEffects.add(myPersonalEffect);</span>
+<span class="fc" id="L288">            RegistrationVisitor visitor = new RegistrationVisitor(game, this);</span>
+<span class="fc" id="L289">            myPersonalEffect.accept(visitor);</span>
+        }
+
+<span class="fc" id="L292">        return new EffectOutcome(deltas);</span>
+    }
+
+    /**
+     * Registers a {@link TribuObserver} that will be notified on future character insertions.
+     *
+     * @param effect the observer to attach
+     */
+    public void attachTribuObserver(TribuObserver effect) {
+<span class="nc" id="L301">        tribuObservers.add(effect);</span>
+<span class="nc" id="L302">    }</span>
+
+    /**
+     * Computes the net food cost this tribe must pay during a Sustenance event,
+     * after applying the tribe's cumulative food discount.
+     *
+     * @return the number of food points that must be paid (always {@code &gt;= 0})
+     */
+    public int calculateSustenanceCost(){
+
+        int costPreDiscount;
+<span class="fc" id="L313">        costPreDiscount = characters.values()</span>
+<span class="fc" id="L314">                .stream()</span>
+<span class="fc" id="L315">                .mapToInt(List::size).sum();</span>
+
+<span class="fc" id="L317">        return Math.max(0, costPreDiscount - totalFoodDiscount);</span>
+    }
+
+    /**
+     * Sets or clears immunity to the Shamanic Ritual penalty.
+     * When immune, this tribe does not lose prestige points for having the fewest shaman stars.
+     *
+     * @param status {@code true} to grant immunity, {@code false} to remove it
+     */
+    public void setImmuneToShamanicPenalty(boolean status) {
+<span class="fc" id="L327">        immuneToShamanicPenalty = status;</span>
+<span class="fc" id="L328">    }</span>
+
+    /**
+     * @return {@code true} if this tribe is currently immune to the Shamanic Ritual penalty
+     */
+    public boolean isImmune() {
+<span class="fc" id="L334">        return immuneToShamanicPenalty;</span>
+    }
+
+    /**
+     * Records the prestige-point bonus this tribe received in the most recent event resolution.
+     * Used by building effects that react to event outcomes.
+     *
+     * @param bonus the bonus amount received (0 if none)
+     */
+<span class="fc" id="L343">    public void setLastEventBonusReceived(int bonus) { this.lastEventBonusReceived = bonus; }</span>
+
+    /** @return the prestige-point bonus received in the most recent event resolution */
+<span class="fc" id="L346">    public int getLastEventBonusReceived() { return lastEventBonusReceived; }</span>
+
+
+
+<span class="fc" id="L350">    public List&lt;BuildingEffect&gt; getActiveBuildingEffects() {return activeBuildingEffects; } // For testing</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

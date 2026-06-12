@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InGameMenuOverlay.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">InGameMenuOverlay.java</span></div><h1>InGameMenuOverlay.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
+
+import it.polimi.ingsw.am02.client.view.gui.GuiController;
+import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
+import javafx.animation.FadeTransition;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.util.Duration;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Represents the overlay for the in-game menu.
+ * This overlay allows players to resume the game, view rules, quit to lobby, or exit to desktop.
+ */
+<span class="nc" id="L24">public class InGameMenuOverlay {</span>
+
+    private Font tribalSmall;
+    private Font tribalMedium;
+    private StackPane rulesOverlay;
+    private ImageView rulesImageView;
+<span class="nc" id="L30">    private List&lt;Image&gt; rulesPages = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L31">    private int currentPage = 0;</span>
+
+    /**
+     * Builds the in-game menu overlay node.
+     *
+     * @param controller The GUI controller.
+     * @param onClose    Callback to close the overlay.
+     * @param rootStack  The root stack pane to add the rules overlay to.
+     * @return The constructed VBox representing the menu.
+     */
+    public VBox buildNode(GuiController controller, Runnable onClose, StackPane rootStack) {
+        try {
+<span class="nc" id="L43">            tribalSmall = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 16);</span>
+<span class="nc" id="L44">            tribalMedium = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/tribal.ttf&quot;), 24);</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            if (rulesPages.isEmpty()) {</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">                for (int i = 0; i &lt; 8; i++) {</span>
+<span class="nc" id="L48">                    String path = &quot;/images/rules/page&quot; + i + &quot;.png&quot;;</span>
+<span class="nc" id="L49">                    rulesPages.add(ImageLoader.getImage(path));</span>
+                }
+            }
+<span class="nc" id="L52">        } catch (Exception ignored) {}</span>
+
+<span class="nc" id="L54">        buildRulesOverlay();</span>
+
+<span class="nc" id="L56">        VBox container = new VBox(20);</span>
+<span class="nc" id="L57">        container.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L58">        container.setPadding(new Insets(40));</span>
+<span class="nc" id="L59">        container.setStyle(</span>
+                &quot;-fx-background-color: #1C1C1C;&quot; +
+                        &quot;-fx-background-radius: 14;&quot; +
+                        &quot;-fx-border-color: #F2D5A3;&quot; +
+                        &quot;-fx-border-width: 2;&quot; +
+                        &quot;-fx-border-radius: 14;&quot;
+        );
+<span class="nc" id="L66">        container.setMaxSize(300, 400);</span>
+
+<span class="nc" id="L68">        Label title = new Label(&quot;GAME MENU&quot;);</span>
+<span class="nc" id="L69">        title.setTextFill(Color.web(&quot;#F2D5A3&quot;));</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (tribalMedium != null) title.setFont(tribalMedium);</span>
+
+<span class="nc" id="L72">        Button resumeBtn = createMenuButton(&quot;RESUME&quot;);</span>
+<span class="nc" id="L73">        resumeBtn.setOnAction(e -&gt; onClose.run());</span>
+
+<span class="nc" id="L75">        Button rulesBtn = createMenuButton(&quot;GAME RULES&quot;);</span>
+<span class="nc" id="L76">        rulesBtn.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            if (!rootStack.getChildren().contains(rulesOverlay)) {</span>
+<span class="nc" id="L78">                rootStack.getChildren().add(rulesOverlay);</span>
+            }
+<span class="nc" id="L80">            showRules();</span>
+<span class="nc" id="L81">        });</span>
+
+<span class="nc" id="L83">        Button quitBtn = createMenuButton(&quot;QUIT GAME&quot;);</span>
+<span class="nc" id="L84">        quitBtn.setStyle(&quot;-fx-background-color: #8B0000; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand;&quot;);</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (tribalSmall != null) quitBtn.setFont(tribalSmall);</span>
+<span class="nc" id="L86">        quitBtn.setOnAction(e -&gt; {</span>
+<span class="nc" id="L87">            onClose.run();</span>
+<span class="nc" id="L88">            controller.requestReturnToLobby();</span>
+<span class="nc" id="L89">        });</span>
+
+<span class="nc" id="L91">        Button exitBtn = createMenuButton(&quot;EXIT TO DESKTOP&quot;);</span>
+<span class="nc" id="L92">        exitBtn.setOnAction(e -&gt; System.exit(0));</span>
+
+<span class="nc" id="L94">        container.getChildren().addAll(title, resumeBtn, rulesBtn, quitBtn, exitBtn);</span>
+
+<span class="nc" id="L96">        return container;</span>
+    }
+
+    /**
+     * Builds the rules overlay for viewing game instructions.
+     */
+    private void buildRulesOverlay() {
+<span class="nc" id="L103">        rulesOverlay = new StackPane();</span>
+<span class="nc" id="L104">        rulesOverlay.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.85);&quot;);</span>
+<span class="nc" id="L105">        rulesOverlay.setVisible(false);</span>
+<span class="nc" id="L106">        rulesOverlay.setPadding(new Insets(20));</span>
+
+<span class="nc" id="L108">        VBox content = new VBox(15);</span>
+<span class="nc" id="L109">        content.setAlignment(Pos.CENTER);</span>
+
+<span class="nc" id="L111">        rulesImageView = new ImageView();</span>
+<span class="nc" id="L112">        rulesImageView.setPreserveRatio(true);</span>
+<span class="nc" id="L113">        rulesImageView.setFitHeight(700);</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (!rulesPages.isEmpty()) rulesImageView.setImage(rulesPages.get(0));</span>
+
+<span class="nc" id="L116">        HBox navBar = new HBox(20);</span>
+<span class="nc" id="L117">        navBar.setAlignment(Pos.CENTER);</span>
+
+<span class="nc" id="L119">        Button prevBtn = createMenuButton(&quot;PREV&quot;);</span>
+<span class="nc" id="L120">        prevBtn.setPrefWidth(120);</span>
+<span class="nc" id="L121">        prevBtn.setOnAction(e -&gt; navigateRules(-1));</span>
+
+<span class="nc" id="L123">        Button nextBtn = createMenuButton(&quot;NEXT&quot;);</span>
+<span class="nc" id="L124">        nextBtn.setPrefWidth(120);</span>
+<span class="nc" id="L125">        nextBtn.setOnAction(e -&gt; navigateRules(1));</span>
+
+<span class="nc" id="L127">        Button closeBtn = createMenuButton(&quot;CLOSE&quot;);</span>
+<span class="nc" id="L128">        closeBtn.setPrefWidth(120);</span>
+<span class="nc" id="L129">        closeBtn.setStyle(&quot;-fx-background-color: #8B0000; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 6;&quot;);</span>
+<span class="nc" id="L130">        closeBtn.setOnAction(e -&gt; rulesOverlay.setVisible(false));</span>
+
+<span class="nc" id="L132">        navBar.getChildren().addAll(prevBtn, closeBtn, nextBtn);</span>
+<span class="nc" id="L133">        content.getChildren().addAll(rulesImageView, navBar);</span>
+<span class="nc" id="L134">        rulesOverlay.getChildren().add(content);</span>
+<span class="nc" id="L135">    }</span>
+
+    /**
+     * Displays the rules overlay.
+     */
+    private void showRules() {
+<span class="nc" id="L141">        currentPage = 0;</span>
+<span class="nc" id="L142">        updateRulesDisplay();</span>
+<span class="nc" id="L143">        rulesOverlay.setOpacity(0);</span>
+<span class="nc" id="L144">        rulesOverlay.setVisible(true);</span>
+<span class="nc" id="L145">        FadeTransition ft = new FadeTransition(Duration.millis(300), rulesOverlay);</span>
+<span class="nc" id="L146">        ft.setToValue(1);</span>
+<span class="nc" id="L147">        ft.play();</span>
+<span class="nc" id="L148">    }</span>
+
+    /**
+     * Navigates through the rules pages.
+     *
+     * @param dir The navigation direction (-1 for previous, 1 for next).
+     */
+    private void navigateRules(int dir) {
+<span class="nc" id="L156">        int next = currentPage + dir;</span>
+<span class="nc bnc" id="L157" title="All 4 branches missed.">        if (next &gt;= 0 &amp;&amp; next &lt; rulesPages.size()) {</span>
+<span class="nc" id="L158">            currentPage = next;</span>
+<span class="nc" id="L159">            updateRulesDisplay();</span>
+        }
+<span class="nc" id="L161">    }</span>
+
+    /**
+     * Updates the rules image based on the current page.
+     */
+    private void updateRulesDisplay() {
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        if (!rulesPages.isEmpty()) {</span>
+<span class="nc" id="L168">            rulesImageView.setImage(rulesPages.get(currentPage));</span>
+        }
+<span class="nc" id="L170">    }</span>
+
+    /**
+     * Creates a menu button with the specified text.
+     *
+     * @param text The button text.
+     * @return The constructed Button.
+     */
+    private Button createMenuButton(String text) {
+<span class="nc" id="L179">        Button btn = new Button(text);</span>
+<span class="nc" id="L180">        btn.setPrefWidth(200);</span>
+<span class="nc" id="L181">        btn.setStyle(</span>
+                &quot;-fx-background-color: #3e2a1d; &quot; +
+                        &quot;-fx-text-fill: #F2D5A3; &quot; +
+                        &quot;-fx-padding: 10 20; &quot; +
+                        &quot;-fx-background-radius: 6; &quot; +
+                        &quot;-fx-cursor: hand;&quot;
+        );
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        if (tribalSmall != null) btn.setFont(tribalSmall);</span>
+<span class="nc" id="L189">        return btn;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

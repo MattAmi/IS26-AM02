@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BoardSnapshot.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.common.dto</a> &gt; <span class="el_source">BoardSnapshot.java</span></div><h1>BoardSnapshot.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.common.dto;
+
+import java.io.Serializable;
+import java.util.List;
+
+/**
+ * Immutable snapshot of the full board state at a given point in time.
+ * Sent to clients during game setup ({@link it.polimi.ingsw.am02.common.messages.events.game.GameSetupCompletedEvent})
+ * and used by the server-side to initialize the AutoPlayer view.
+ *
+ * @param upperRowCards       card IDs currently in the upper (character/event) row
+ * @param lowerRowCards       card IDs currently in the lower (character/event) row
+ * @param upperRowBuildings   building card IDs in the upper building market row
+ * @param lowerRowBuildings   building card IDs in the lower building market row
+ * @param offerTiles          the current state of each offer tile on the track
+ * @param turnOrderSlots      the current state of each slot on the turn-order tile
+ * @param tribuDeckSize       the number of cards remaining in the tribe deck
+ */
+<span class="fc" id="L19">public record BoardSnapshot(</span>
+        List&lt;String&gt; upperRowCards,
+        List&lt;String&gt; lowerRowCards,
+        List&lt;String&gt; upperRowBuildings,
+        List&lt;String&gt; lowerRowBuildings,
+        List&lt;OfferTileInfo&gt; offerTiles,
+        List&lt;TurnOrderSlotInfo&gt; turnOrderSlots,
+        int tribuDeckSize
+) implements Serializable {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

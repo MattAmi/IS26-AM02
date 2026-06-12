@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameRuleException.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.exceptions</a> &gt; <span class="el_source">GameRuleException.java</span></div><h1>GameRuleException.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.exceptions;
+
+/**
+ * Abstract base class for all domain-level rule violations.
+ *
+ * &lt;p&gt;Subclasses represent distinct illegal game actions (wrong turn,
+ * card not found, insufficient resources, etc.). The server controller
+ * catches these and forwards the message to the offending client via
+ * {@link it.polimi.ingsw.am02.common.interfaces.VirtualView#notifyError}.
+ */
+public abstract class GameRuleException extends RuntimeException {
+
+    /**
+     * @param message a human-readable description of the violated rule
+     */
+    public GameRuleException(String message) {
+<span class="fc" id="L17">        super(message);</span>
+<span class="fc" id="L18">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

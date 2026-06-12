@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TribuDeck.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.server.model.card</a> &gt; <span class="el_source">TribuDeck.java</span></div><h1>TribuDeck.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.server.model.card;
+
+import it.polimi.ingsw.am02.server.model.GameRegistry;
+
+import java.util.*;
+
+/**
+ * The main draw deck containing all character and non-building event cards,
+ * stacked in era order (Era I on top, final events at the bottom).
+ *
+ * &lt;p&gt;Within each era, cards are shuffled using the provided random source.
+ * Only cards with a {@code minPlayers} value {@code &lt;=} the actual player count are included.
+ */
+public class TribuDeck {
+
+    private final Stack&lt;String&gt; cards;
+
+    /**
+     * Builds and shuffles the deck for the given player count.
+     *
+     * @param numPlayers the number of players (used to filter cards by {@code minPlayers})
+     * @param gameRandom the seeded random source used for shuffling
+     */
+<span class="fc" id="L24">    public TribuDeck(int numPlayers, Random gameRandom) {</span>
+<span class="fc" id="L25">        this.cards = new Stack&lt;&gt;();</span>
+
+<span class="fc" id="L27">        List&lt;String&gt; era1 = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L28">        List&lt;String&gt; era2 = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L29">        List&lt;String&gt; era3 = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L30">        List&lt;String&gt; eventiFinali = new ArrayList&lt;&gt;(); // Ora è una lista a parte, non un'Era</span>
+
+<span class="fc" id="L32">        GameRegistry registry = GameRegistry.getInstance();</span>
+
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        for (String id : registry.getAllCharactersIDs()) {</span>
+<span class="fc" id="L35">            CharacterCard card = registry.getCharacter(id);</span>
+<span class="pc bpc" id="L36" title="1 of 4 branches missed.">            if (card != null &amp;&amp; card.getMinPlayers() &lt;= numPlayers) {</span>
+<span class="pc bpc" id="L37" title="1 of 4 branches missed.">                switch(card.getEra()) {</span>
+<span class="fc" id="L38">                    case I -&gt; era1.add(id);</span>
+<span class="fc" id="L39">                    case II -&gt; era2.add(id);</span>
+<span class="fc" id="L40">                    case III -&gt; era3.add(id); // I personaggi non sono mai finali</span>
+                }
+            }
+<span class="fc" id="L43">        }</span>
+
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        for (String id : registry.getAllEventsIDs()) {</span>
+<span class="fc" id="L46">            EventCard card = registry.getEvent(id);</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">            if (card != null) {</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">                if (card.isFinal()) {</span>
+<span class="fc" id="L49">                    eventiFinali.add(id);</span>
+                } else {
+<span class="pc bpc" id="L51" title="1 of 4 branches missed.">                    switch(card.getEra()) {</span>
+<span class="fc" id="L52">                        case I -&gt; era1.add(id);</span>
+<span class="fc" id="L53">                        case II -&gt; era2.add(id);</span>
+<span class="fc" id="L54">                        case III -&gt; era3.add(id);</span>
+                    }
+                }
+            }
+<span class="fc" id="L58">        }</span>
+
+<span class="fc" id="L60">        Collections.shuffle(eventiFinali, gameRandom);</span>
+<span class="fc" id="L61">        Collections.shuffle(era3, gameRandom);</span>
+<span class="fc" id="L62">        Collections.shuffle(era2, gameRandom);</span>
+<span class="fc" id="L63">        Collections.shuffle(era1, gameRandom);</span>
+
+
+<span class="fc" id="L66">        eventiFinali.forEach(this.cards::push);</span>
+<span class="fc" id="L67">        era3.forEach(this.cards::push);</span>
+<span class="fc" id="L68">        era2.forEach(this.cards::push);</span>
+<span class="fc" id="L69">        era1.forEach(this.cards::push);</span>
+<span class="fc" id="L70">    }</span>
+
+    /**
+     * Draws and removes the top card from the deck.
+     *
+     * @return the card ID of the drawn card, or {@code null} if the deck is empty
+     */
+    public String draw() {
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (!isEmpty()) {</span>
+<span class="fc" id="L79">            return this.cards.pop();</span>
+        }
+<span class="nc" id="L81">        return null;</span>
+    }
+
+    /** @return {@code true} if no cards remain in the deck */
+    public boolean isEmpty() {
+<span class="fc" id="L86">        return this.cards.isEmpty();</span>
+    }
+
+    /** @return the number of cards remaining in the deck */
+    public int getRemainingSize() {
+<span class="fc" id="L91">        return this.cards.size();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VirtualView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.common.interfaces</a> &gt; <span class="el_source">VirtualView.java</span></div><h1>VirtualView.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.common.interfaces;
+
+import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
+import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
+import it.polimi.ingsw.am02.common.enumerations.*;
+
+import java.util.List;
+import java.util.Map;
+
+
+/**
+ * Server-side abstraction of a connected client.
+ * Implemented by {@link it.polimi.ingsw.am02.server.network.rmi.RmiClientHandler}
+ * and {@link it.polimi.ingsw.am02.server.network.socket.SocketClientHandler}.
+ *
+ * &lt;p&gt;{@link it.polimi.ingsw.am02.server.controller.GameController} holds one
+ * {@code VirtualView} per player and calls these methods to push notifications;
+ * each implementation serializes the call for its own transport.
+ *
+ * &lt;p&gt;The static constant {@link #NO_OP} (and factory method {@link #noOp()})
+ * provide a silent no-operation implementation used during server-side game
+ * replay, so that the model can fire notifications without any real clients
+ * being connected.
+ */
+public interface VirtualView {
+
+    /** Silent no-operation implementation used during server-side replay. */
+    final class NoOp implements VirtualView {
+        private NoOp() {}
+<span class="nc" id="L31">        @Override public void notifyGameSetupCompleted(Map&lt;String, Totem&gt; totemByPlayer, List&lt;String&gt; turnOrder, Map&lt;String, Integer&gt; initialFood, BoardSnapshot boardSnapshot) {}</span>
+<span class="nc" id="L32">        @Override public void notifyPhaseChanged(PhaseType phase, String currentPlayer, List&lt;String&gt; resolutionOrder) {}</span>
+<span class="nc" id="L33">        @Override public void notifyCurrentPlayerChanged(String nextPlayer) {}</span>
+<span class="nc" id="L34">        @Override public void notifyTurnOrderEstablished(List&lt;String&gt; turnOrder) {}</span>
+<span class="nc" id="L35">        @Override public void notifyBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow, List&lt;String&gt; discardedCards, List&lt;String&gt; movedToLowerRow, int deckRemainingCount) {}</span>
+<span class="nc" id="L36">        @Override public void notifyEraChanged(Era newEra, List&lt;String&gt; newUpperRowBuildings, List&lt;String&gt; newLowerRowBuildings, List&lt;String&gt; discardedBuildings) {}</span>
+<span class="nc" id="L37">        @Override public void notifyTotemPlaced(String nickname, char tileID) {}</span>
+<span class="nc" id="L38">        @Override public void notifyTotemReturned(String nickname, int turnOrderPosition) {}</span>
+<span class="nc" id="L39">        @Override public void notifyCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {}</span>
+<span class="nc" id="L40">        @Override public void notifyPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) {}</span>
+<span class="nc" id="L41">        @Override public void notifyPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) {}</span>
+<span class="nc" id="L42">        @Override public void notifyPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta) {}</span>
+<span class="nc" id="L43">        @Override public void notifyEventResolved(String eventID, String eventName) {}</span>
+<span class="nc" id="L44">        @Override public void notifyExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {}</span>
+<span class="nc" id="L45">        @Override public void notifyExtraTurnEnded(String nickname) {}</span>
+<span class="nc" id="L46">        @Override public void notifyGameEnded(List&lt;String&gt; winners, List&lt;PlayerFinalScore&gt; finalRankings) {}</span>
+<span class="nc" id="L47">        @Override public void notifyError(String message) {}</span>
+<span class="nc" id="L48">        @Override public void notifyPlayerDisconnected(String nickname) {}</span>
+<span class="nc" id="L49">        @Override public void notifyPlayerReconnected(String nickname) {}</span>
+<span class="nc" id="L50">        @Override public void notifyAutoPlayerTimerStarted(String nickname, long seconds) {}</span>
+<span class="nc" id="L51">        @Override public void notifyAutoPlayerInvoked(String nickname) {}</span>
+<span class="nc" id="L52">        @Override public void notifyGameAborted(String winner) {}</span>
+<span class="nc" id="L53">        @Override public void notifyGameRecoveryFailed() {}</span>
+<span class="nc" id="L54">        @Override public void notifyUsernameResult(String username, boolean isValid, String reason) {}</span>
+<span class="nc" id="L55">        @Override public void notifyGameStarted(String gameId) {}</span>
+<span class="nc" id="L56">        @Override public void notifyAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; lobbies) {}</span>
+<span class="nc" id="L57">        @Override public void notifyCurrentLobbyUpdated(LobbyInfo lobby) {}</span>
+<span class="nc" id="L58">        @Override public void notifyLobbyDissolved(String lobbyID) {}</span>
+<span class="nc" id="L59">        @Override public void notifyGlobalTimerStarted(long seconds) {}</span>
+<span class="nc" id="L60">        @Override public void notifyGlobalTimerCancelled() {}</span>
+    }
+
+
+    /** Shared singleton no-op instance. */
+<span class="nc" id="L65">    VirtualView NO_OP = new NoOp();</span>
+
+    /** @return the shared no-op instance */
+<span class="nc" id="L68">    static VirtualView noOp() { return NO_OP; }</span>
+
+    // Lobby
+    /**
+     * Notifies the client of the result of a username request.
+     *
+     * @param username the requested username
+     * @param isValid  {@code true} if accepted, {@code false} if rejected
+     * @param reason   rejection reason, or {@code null} if accepted
+     */
+    void notifyUsernameResult(String username, boolean isValid, String reason);
+
+    /**
+     * Notifies the client that their lobby's game has started.
+     *
+     * @param gameId the identifier of the started game
+     */
+    void notifyGameStarted(String gameId);
+
+    /**
+     * Pushes an updated list of all available lobbies to a pre-lobby client.
+     *
+     * @param lobbies the current list of open lobbies
+     */
+    void notifyAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; lobbies);
+
+    /**
+     * Pushes the updated state of the lobby this client is currently in.
+     *
+     * @param lobby the updated lobby info
+     */
+    void notifyCurrentLobbyUpdated(LobbyInfo lobby);
+
+    /**
+     * Notifies the client that their current lobby has been dissolved.
+     *
+     * @param lobbyID the identifier of the dissolved lobby
+     */
+    void notifyLobbyDissolved(String lobbyID);
+
+    // Lifecycle
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onGameSetupCompleted */
+    void notifyGameSetupCompleted(Map&lt;String, Totem&gt; totemByPlayer, List&lt;String&gt; turnOrder, Map&lt;String, Integer&gt; initialFood, BoardSnapshot boardSnapshot);
+
+    /**
+     * Notifies the client of a phase transition.
+     *
+     * @param phase           the new game phase
+     * @param currentPlayer   the active player's nickname, or {@code null}
+     * @param resolutionOrder the full ordered nickname list, or {@code null}
+     */
+    void notifyPhaseChanged(PhaseType phase, String currentPlayer, List&lt;String&gt; resolutionOrder);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onCurrentPlayerChanged */
+    void notifyCurrentPlayerChanged(String nextPlayer);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onTurnOrderEstablished */
+    void notifyTurnOrderEstablished(List&lt;String&gt; turnOrder);
+
+    // Board
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onBoardUpdated */
+    void notifyBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow, List&lt;String&gt; discardedCards, List&lt;String&gt; movedToLowerRow, int deckRemainingCount);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onEraChanged */
+    void notifyEraChanged(Era newEra, List&lt;String&gt; newUpperRowBuildings, List&lt;String&gt; newLowerRowBuildings, List&lt;String&gt; discardedBuildings);
+
+    // Player actions
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onTotemPlaced */
+    void notifyTotemPlaced(String nickname, char tileID);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onTotemReturned */
+    void notifyTotemReturned(String nickname, int turnOrderPosition);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onCardTaken */
+    void notifyCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onPlayerLimitsInitialized */
+    void notifyPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onPlayerLimitsUpdated */
+    void notifyPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onPlayerResourceChanged */
+    void notifyPlayerResourceChanged(String nickname, ResourceType resource, int newValue, int delta);
+
+    // Events / turns
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onEventResolved */
+    void notifyEventResolved(String eventID, String eventName);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onExtraTurnStarted */
+    void notifyExtraTurnStarted(String nickname, int remainingUpper, int remainingLower);
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onExtraTurnEnded */
+    void notifyExtraTurnEnded(String nickname);
+
+    // Game end
+
+    /** @see it.polimi.ingsw.am02.server.model.listeners.GameObserver#onGameEnded */
+    void notifyGameEnded(List&lt;String&gt; winners, List&lt;PlayerFinalScore&gt; finalRankings);
+
+    // Connection (transient)
+
+    /**
+     * Sends an error message to this client only (not stored in global history).
+     *
+     * @param message the human-readable error description
+     */
+    void notifyError(String message);
+
+    /**
+     * Notifies all connected players that a specific player has disconnected.
+     *
+     * @param nickname the disconnected player's nickname
+     */
+    void notifyPlayerDisconnected(String nickname);
+
+    /**
+     * Notifies all connected players that a specific player has reconnected.
+     *
+     * @param nickname the reconnected player's nickname
+     */
+    void notifyPlayerReconnected(String nickname);
+
+    /**
+     * Notifies connected players that the AutoPlayer grace timer has started
+     * for a disconnected player.
+     *
+     * @param nickname the disconnected player whose timer is running
+     * @param seconds  the duration of the grace period in seconds
+     */
+    void notifyAutoPlayerTimerStarted(String nickname, long seconds);
+
+    /**
+     * Notifies connected players that the AutoPlayer is about to act
+     * on behalf of a disconnected player.
+     *
+     * @param nickname the disconnected player being substituted
+     */
+    void notifyAutoPlayerInvoked(String nickname);
+
+    /**
+     * Notifies all players that the game was aborted due to forfeit.
+     *
+     * @param winner the nickname of the surviving player who wins by forfeit
+     */
+    void notifyGameAborted(String winner);
+
+    /**
+     * Notifies all players that the server could not complete game recovery
+     * (e.g. no players reconnected within the recovery window).
+     */
+    void notifyGameRecoveryFailed();
+
+    /**
+     * Notifies the client that the global forfeit timer has been armed.
+     *
+     * @param seconds the duration of the forfeit countdown, in seconds
+     */
+    void notifyGlobalTimerStarted(long seconds);
+
+    /**
+     * Notifies the client that the global forfeit timer has been canceled.
+     */
+    void notifyGlobalTimerCancelled();
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

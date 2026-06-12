@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TuiController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.tui</a> &gt; <span class="el_source">TuiController.java</span></div><h1>TuiController.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.tui;
+
+import it.polimi.ingsw.am02.client.controller.ClientController;
+import it.polimi.ingsw.am02.client.model.LobbyModel;
+import it.polimi.ingsw.am02.client.network.ServerProxy;
+import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
+import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.enumerations.NetworkType;
+import it.polimi.ingsw.am02.common.enumerations.Totem;
+
+import java.util.*;
+
+/**
+ * TUI-specific input handler that reads commands from standard input and
+ * dispatches them to the appropriate {@link ClientController} actions.
+ *
+ * &lt;p&gt;Owns the main read-dispatch loop ({@link #run()}) and translates raw
+ * text tokens into typed method calls on the parent controller. The class also
+ * stores the connection parameters ({@code networkType}, {@code host},
+ * {@code port}) needed to rebuild the server proxy after a disconnection.&lt;/p&gt;
+ *
+ * &lt;p&gt;&lt;b&gt;MVC layer:&lt;/b&gt; View — pure input handling; no rendering logic.&lt;/p&gt;
+ */
+public class TuiController extends ClientController {
+
+    /** Direct reference to the TUI view, avoiding repeated casting. */
+    private final TuiView tuiView;
+
+    /** Transport technology chosen by the user at startup (RMI or Socket). */
+    private final NetworkType networkType;
+
+    /** Server hostname or IP address. */
+    private final String host;
+
+    /** Server port number. */
+    private final int port;
+
+    /**
+     * Creates a {@code TuiController} bound to the given proxy, models, and view.
+     *
+     * @param proxy       the server-communication proxy
+     * @param lobbyModel  shared client-side lobby state
+     * @param view        the TUI view that will render output; must be a {@link TuiView}
+     * @param networkType the transport technology chosen at startup
+     * @param host        server hostname or IP address
+     * @param port        server port number
+     */
+    public TuiController(ServerProxy proxy, LobbyModel lobbyModel, ClientView view,
+                         NetworkType networkType, String host, int port) {
+<span class="nc" id="L50">        super(proxy, lobbyModel, view);</span>
+<span class="nc" id="L51">        this.tuiView = (TuiView) view;</span>
+<span class="nc" id="L52">        this.networkType = networkType;</span>
+<span class="nc" id="L53">        this.host = host;</span>
+<span class="nc" id="L54">        this.port = port;</span>
+<span class="nc" id="L55">    }</span>
+
+    /**
+     * Starts the blocking input loop, reading one line at a time from standard
+     * input and forwarding each non-empty line to {@link #dispatch(String)}.
+     *
+     * &lt;p&gt;Runs on the calling thread; designed to be invoked from the application
+     * main thread after all components have been wired up.&lt;/p&gt;
+     */
+    public void run() {
+<span class="nc" id="L65">        Scanner scanner = new Scanner(System.in);</span>
+        while (true) {
+            try {
+<span class="nc" id="L68">                String input = scanner.nextLine().trim();</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                if (input.isEmpty()) continue;</span>
+<span class="nc" id="L70">                dispatch(input);</span>
+<span class="nc" id="L71">            } catch (Exception e) {</span>
+<span class="nc" id="L72">                view.onError(&quot;Fatal system error: &quot; + e.getMessage());</span>
+<span class="nc" id="L73">            }</span>
+        }
+    }
+
+    /**
+     * Parses a single trimmed input line and routes it to the correct handler.
+     *
+     * &lt;p&gt;Recognised top-level commands: {@code nick}, {@code create}, {@code join},
+     * {@code reconnect}, {@code totem}, {@code totems}, {@code leave}, {@code move},
+     * {@code resolve}, {@code summary}, {@code info}, {@code help}, {@code lobby},
+     * {@code quit}. Any unrecognized token is treated as a bare card ID and
+     * forwarded to {@link #handleResolveActions} when it is the local player's turn.
+     * Numeric arguments ({@code create}, {@code join}) are parsed via
+     * {@link #parseNumericArg(String, String)}; invalid or missing values are
+     * rejected without propagating a sentinel.&lt;/p&gt;
+     *
+     * @param input the raw, trimmed input line
+     */
+    private void dispatch(String input) {
+<span class="nc" id="L92">        String[] args = input.split(&quot;\\s+&quot;);</span>
+<span class="nc" id="L93">        String cmd = args[0].toLowerCase();</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        String arg1 = args.length &gt; 1 ? args[1] : &quot;&quot;;</span>
+
+<span class="nc bnc" id="L96" title="All 15 branches missed.">        switch (cmd) {</span>
+<span class="nc" id="L97">            case &quot;nick&quot; -&gt; handleSetNickname(arg1);</span>
+
+<span class="nc" id="L99">            case &quot;create&quot; -&gt; parseNumericArg(arg1, &quot;Usage: create &lt;size&gt;&quot;)</span>
+<span class="nc" id="L100">                    .ifPresent(this::handleCreateLobby);</span>
+
+<span class="nc" id="L102">            case &quot;join&quot; -&gt; parseNumericArg(arg1, &quot;Usage: join &lt;index&gt;&quot;)</span>
+<span class="nc" id="L103">                    .ifPresent(this::handleJoinLobby);</span>
+
+            case &quot;reconnect&quot; -&gt; {
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                if (args.length &lt; 3) {</span>
+<span class="nc" id="L107">                    view.onError(&quot;Usage: reconnect &lt;nickname&gt; &lt;gameId&gt;&quot;);</span>
+                } else {
+<span class="nc" id="L109">                    handleReconnect(args[1], args[2]);</span>
+                }
+<span class="nc" id="L111">            }</span>
+
+            case &quot;totem&quot; -&gt; {
+                try {
+<span class="nc" id="L115">                    handleSelectTotem(Totem.valueOf(arg1.toUpperCase()));</span>
+<span class="nc" id="L116">                } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L117">                    view.onError(&quot;Invalid totem color. Use: WHITE, PURPLE, BLUE, RED, YELLOW.&quot;);</span>
+<span class="nc" id="L118">                }</span>
+<span class="nc" id="L119">            }</span>
+
+<span class="nc" id="L121">            case &quot;totems&quot; -&gt; tuiView.onShowAvailableTotems();</span>
+
+            case &quot;leave&quot; -&gt; {
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                if (lobbyModel.getCurrentLobby() != null) proxy.requestLeaveLobby();</span>
+<span class="nc" id="L125">                else view.onError(&quot;You are not currently in a lobby.&quot;);</span>
+<span class="nc" id="L126">            }</span>
+
+            case &quot;move&quot; -&gt; {
+<span class="nc" id="L129">                String target = arg1.toUpperCase();</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                if (target.equals(&quot;T&quot;)) handleMoveTotem('T');</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">                else if (!target.isEmpty()) handleMoveTotem(target.charAt(0));</span>
+<span class="nc" id="L132">                else view.onError(&quot;Usage: move &lt;tileID&gt; or move T&quot;);</span>
+<span class="nc" id="L133">            }</span>
+
+            case &quot;resolve&quot; -&gt; {
+<span class="nc" id="L136">                List&lt;String&gt; ids = new ArrayList&lt;&gt;(Arrays.asList(args).subList(1, args.length));</span>
+<span class="nc" id="L137">                handleResolveActions(ids);</span>
+<span class="nc" id="L138">            }</span>
+
+            case &quot;summary&quot; -&gt; {
+<span class="nc bnc" id="L141" title="All 4 branches missed.">                boolean inGame = (gameModel != null &amp;&amp; !gameModel.isGameEnded());</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                if (!inGame) {</span>
+<span class="nc" id="L143">                    view.onError(&quot;The 'summary' command is only available during a game.&quot;);</span>
+                } else {
+<span class="nc" id="L145">                    tuiView.onShowSummaryCard();</span>
+                }
+<span class="nc" id="L147">            }</span>
+
+            case &quot;info&quot; -&gt; {
+<span class="nc bnc" id="L150" title="All 2 branches missed.">                if (arg1.isEmpty()) view.onError(&quot;Usage: info &lt;cardID&gt;&quot;);</span>
+<span class="nc" id="L151">                else tuiView.onShowCardInfo(arg1.toUpperCase());</span>
+<span class="nc" id="L152">            }</span>
+
+            case &quot;help&quot; -&gt; {
+<span class="nc bnc" id="L155" title="All 4 branches missed.">                boolean inGame = (gameModel != null &amp;&amp; !gameModel.isGameEnded());</span>
+<span class="nc bnc" id="L156" title="All 4 branches missed.">                boolean inLobby = (!inGame &amp;&amp; lobbyModel.getCurrentLobby() != null);</span>
+<span class="nc bnc" id="L157" title="All 4 branches missed.">                boolean inPreLobby = (!inGame &amp;&amp; !inLobby);</span>
+<span class="nc" id="L158">                tuiView.onShowHelp(inPreLobby, inLobby, inGame);</span>
+<span class="nc" id="L159">            }</span>
+
+            case &quot;lobby&quot; -&gt; {
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                if (gameModel == null) {</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                    if (lobbyModel.getCurrentLobby() != null) {</span>
+<span class="nc" id="L164">                        view.onError(&quot;Action blocked: You are already in the lobby. Use 'leave' to exit.&quot;);</span>
+                    } else {
+<span class="nc" id="L166">                        view.onError(&quot;Action blocked: You are already in the pre-lobby screen.&quot;);</span>
+                    }
+<span class="nc" id="L168">                    return;</span>
+                }
+<span class="nc" id="L170">                performReturnToLobby();</span>
+<span class="nc" id="L171">            }</span>
+
+            case &quot;quit&quot; -&gt; {
+<span class="nc" id="L174">                proxy.disconnect();</span>
+<span class="nc" id="L175">                System.exit(0);</span>
+<span class="nc" id="L176">            }</span>
+
+            default -&gt; {
+<span class="nc bnc" id="L179" title="All 4 branches missed.">                boolean inGame = gameModel != null &amp;&amp; !gameModel.isGameEnded();</span>
+<span class="nc bnc" id="L180" title="All 4 branches missed.">                boolean isMyTurn = inGame &amp;&amp; myNickname().equals(gameModel.getCurrentPlayer());</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                if (isMyTurn) handleResolveActions(List.of(cmd.toUpperCase()));</span>
+<span class="nc" id="L182">                else view.onError(&quot;Unknown command: '&quot; + cmd + &quot;'. Type 'help' for assistance.&quot;);</span>
+            }
+        }
+<span class="nc" id="L185">    }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Rebuilds the server proxy using the connection parameters supplied at
+     * construction time, enabling transparent reconnection after a network fault.&lt;/p&gt;
+     */
+    @Override
+    protected ServerProxy createNewProxy() throws Exception {
+<span class="nc" id="L195">        return ServerProxyFactory.create(networkType, host, port, lobbyModel, view);</span>
+    }
+
+    /**
+     * Attempts to parse {@code input} as an integer.
+     * Displays {@code usage} via the view and returns {@link Optional#empty()}
+     * if the string is empty or not a valid integer.
+     *
+     * @param input the string token to parse
+     * @param usage human-readable usage hint shown on parse failure
+     * @return an {@link Optional} containing the parsed integer,
+     *         or {@link Optional#empty()} if parsing fails
+     */
+    private Optional&lt;Integer&gt; parseNumericArg(String input, String usage) {
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (input.isEmpty()) {</span>
+<span class="nc" id="L210">            view.onError(usage);</span>
+<span class="nc" id="L211">            return Optional.empty();</span>
+        }
+        try {
+<span class="nc" id="L214">            return Optional.of(Integer.parseInt(input));</span>
+<span class="nc" id="L215">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L216">            view.onError(&quot;Error: Argument must be a number.&quot;);</span>
+<span class="nc" id="L217">            return Optional.empty();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

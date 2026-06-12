@@ -33,15 +33,15 @@ public class ProjectInfoScene {
      * @return The constructed Region representing the scene.
      */
     public Region buildNode(Runnable onFinished) {
-        Font introTitle = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 48);
-        Font introText = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 18);
+        Font introTitle = Font.loadFont(getClass().getResourceAsStream("/fonts/intro.ttf"), 48);
+        Font introText = Font.loadFont(getClass().getResourceAsStream("/fonts/intro.ttf"), 18);
 
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");
 
         ImageView backgroundView = new ImageView();
         try {
-            Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/mesos_lobby.png")));
+            Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/mesos_lobby.png")));
             backgroundView.setImage(img);
         } catch (Exception ignored) {}
 

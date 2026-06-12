@@ -136,7 +136,7 @@ public class GameScene {
      */
     public Region buildNode(GuiController controller, Runnable onShowMenu, Runnable onShowSummary) {
         this.controller = controller;
-        this.tribalFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 14);
+        this.tribalFont = Font.loadFont(getClass().getResourceAsStream("/fonts/intro.ttf"), 14);
         if (tribalFont == null) tribalFont = Font.font("System", 14);
 
         baseStack = new StackPane(); baseStack.setMinWidth(1280); baseStack.setMinHeight(800);
@@ -208,7 +208,7 @@ public class GameScene {
         root.setRight(rightSidebar);
 
         StackPane centerLayout = new StackPane();
-        String bgPath = getClass().getResource("/it.polimi.ingsw.am02.images/mesos_box.png").toExternalForm();
+        String bgPath = getClass().getResource("/images/mesos_box.png").toExternalForm();
         centerLayout.setStyle("-fx-background-image: url('" + bgPath + "'); -fx-background-size: 130%; -fx-background-position: center;");
         Region darkOverlay = new Region(); darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.55);");
 
@@ -487,7 +487,7 @@ public class GameScene {
     private HBox createTrackArea(SceneState state) {
         HBox track = new HBox(25); track.setAlignment(Pos.CENTER);
         int displayEra = state.era.ordinal() + 1;
-        String eraPath = "/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png";
+        String eraPath = "/images/cards/eras/back_main_era_" + displayEra + ".png";
         currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
         currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
         applyRoundedCorners(currentDeckView, 10);
@@ -607,7 +607,7 @@ public class GameScene {
 
         double targetHeight = target.getFitHeight() > 0 ? target.getFitHeight() : 170;
 
-        ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/eras/back_main_era_" + displayEra + ".png"));
+        ImageView fly = new ImageView(ImageLoader.getImage("/images/cards/eras/back_main_era_" + displayEra + ".png"));
         fly.setFitHeight(targetHeight);
         fly.setPreserveRatio(true); fly.setManaged(false);
         applyRoundedCorners(fly, 10);
@@ -619,7 +619,7 @@ public class GameScene {
         ScaleTransition st1 = new ScaleTransition(Duration.millis(350), fly); st1.setToX(0);
         st1.setOnFinished(e -> {
             String sub = id.startsWith("C_") ? "characters/" : id.startsWith("B_") ? "buildings/" : "events/";
-            fly.setImage(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/" + sub + id + ".png"));
+            fly.setImage(ImageLoader.getImage("/images/cards/" + sub + id + ".png"));
             ScaleTransition st2 = new ScaleTransition(Duration.millis(350), fly);
             st2.setToX(1.0); st2.play();
         });
@@ -653,7 +653,7 @@ public class GameScene {
      */
     private void executeCardTakenAnimation(String nickname, String cardID, RowPosition source) {
         String sub = cardID.startsWith("C_") ? "characters/" : cardID.startsWith("B_") ? "buildings/" : "events/";
-        ImageView fly = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/" + sub + cardID + ".png"));
+        ImageView fly = new ImageView(ImageLoader.getImage("/images/cards/" + sub + cardID + ".png"));
         fly.setFitHeight(170); fly.setPreserveRatio(true); fly.setTranslateY(source == RowPosition.UPPER ? -150 : 150);
         applyRoundedCorners(fly, 10);
         baseStack.getChildren().add(fly);
@@ -712,7 +712,7 @@ public class GameScene {
     private void executeTotemAnimation(String nickname, char tileID, boolean isReturning, Totem totem) {
         if (totem == null) { playNextAnimation(); return; }
 
-        String path = "/it.polimi.ingsw.am02.images/totems/totem_" + totem.name().toLowerCase() + ".png";
+        String path = "/images/totems/totem_" + totem.name().toLowerCase() + ".png";
         ImageView fly = new ImageView(ImageLoader.getImage(path));
         fly.setFitHeight(120); fly.setPreserveRatio(true); fly.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 15, 0, 0, 5);");
 
@@ -759,7 +759,7 @@ public class GameScene {
     private void showZoomedCard(String cardId) {
         StackPane overlay = new StackPane(); overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85);");
         String sub = cardId.startsWith("C_") ? "characters/" : cardId.startsWith("B_") ? "buildings/" : "events/";
-        String path = "/it.polimi.ingsw.am02.images/cards/" + sub + cardId + ".png";
+        String path = "/images/cards/" + sub + cardId + ".png";
         ImageView bigCard = new ImageView(ImageLoader.getImage(path)); bigCard.setFitHeight(550); bigCard.setPreserveRatio(true);
         applyRoundedCorners(bigCard, 25);
         bigCard.setStyle("-fx-effect: dropshadow(three-pass-box, gold, 40, 0.4, 0, 0);");

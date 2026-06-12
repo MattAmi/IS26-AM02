@@ -5,7 +5,7 @@ public final class ResourcePaths {
 
     private ResourcePaths() {}
 
-    private static final String JSON_ROOT = "/it/polimi/ingsw/am02/json";
+    private static final String JSON_ROOT = "/json";
 
     public static final String CHARACTERS       = JSON_ROOT + "/Characters.json";
     public static final String EVENTS           = JSON_ROOT + "/Events.json";

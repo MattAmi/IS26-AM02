@@ -33,7 +33,7 @@ public class ImageLoader {
     public static void preloadRulesInBackground() {
         CompletableFuture.runAsync(() -> {
             for (int i = 0; i < 8; i++) {
-                String path = "/it.polimi.ingsw.am02.images/rules/page" + i + ".png";
+                String path = "/images/rules/page" + i + ".png";
                 getImage(path);
             }
         });

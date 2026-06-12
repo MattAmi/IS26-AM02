@@ -40,12 +40,12 @@ public class InGameMenuOverlay {
      */
     public VBox buildNode(GuiController controller, Runnable onClose, StackPane rootStack) {
         try {
-            tribalSmall = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 16);
-            tribalMedium = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 24);
+            tribalSmall = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 16);
+            tribalMedium = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 24);
 
             if (rulesPages.isEmpty()) {
                 for (int i = 0; i < 8; i++) {
-                    String path = "/it.polimi.ingsw.am02.images/rules/page" + i + ".png";
+                    String path = "/images/rules/page" + i + ".png";
                     rulesPages.add(ImageLoader.getImage(path));
                 }
             }

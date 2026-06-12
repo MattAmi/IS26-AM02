@@ -64,7 +64,7 @@ public class TurnOrderCaveView extends StackPane {
 
         CaveLayoutConfig config = getLayoutForPlayers(playersCount);
 
-        ImageView caveBg = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/turn_order_tiles/tile_turn_" + playersCount + "p.png"));
+        ImageView caveBg = new ImageView(ImageLoader.getImage("/images/cards/turn_order_tiles/tile_turn_" + playersCount + "p.png"));
         caveBg.setFitHeight(150);
         caveBg.setPreserveRatio(true);
         this.getChildren().add(caveBg);
@@ -95,7 +95,7 @@ public class TurnOrderCaveView extends StackPane {
                 if (slot.occupantNickname() != null) {
                     Totem totem = model.getTotem(slot.occupantNickname());
                     if (totem != null) {
-                        String path = "/it.polimi.ingsw.am02.images/totems/totem_" + totem.name().toLowerCase() + ".png";
+                        String path = "/images/totems/totem_" + totem.name().toLowerCase() + ".png";
                         ImageView tView = new ImageView(ImageLoader.getImage(path));
 
                         tView.setFitHeight(config.totemHeight);

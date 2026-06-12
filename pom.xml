@@ -112,8 +112,8 @@
                                     <excludes>
                                         <exclude>module-info.class</exclude>
                                         <exclude>it/polimi/ingsw/am02/client/**</exclude>
-                                        <exclude>it.polimi.ingsw.am02.images/**</exclude>
-                                        <exclude>it.polimi.ingsw.am02.fonts/**</exclude>
+                                        <exclude>images/**</exclude>
+                                        <exclude>fonts/**</exclude>
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>

@@ -55,12 +55,12 @@ public class GameMenuScene {
         this.controller = controller;
 
         try {
-            tribalSmall = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 16);
-            tribalLarge = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 100);
-            introFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 18);
+            tribalSmall = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 16);
+            tribalLarge = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 100);
+            introFont = Font.loadFont(getClass().getResourceAsStream("/fonts/intro.ttf"), 18);
 
             for (int i = 0; i < 8; i++) {
-                rulesPages.add(ImageLoader.getImage("/it.polimi.ingsw.am02.images/rules/page" + i + ".png"));
+                rulesPages.add(ImageLoader.getImage("/images/rules/page" + i + ".png"));
             }
         } catch (Exception ignored) {}
 
@@ -79,7 +79,7 @@ public class GameMenuScene {
 
         ImageView backgroundView = new ImageView();
         try {
-            Image img = ImageLoader.getImage("/it.polimi.ingsw.am02.images/mesos_box.png");            backgroundView.setImage(img);
+            Image img = ImageLoader.getImage("/images/mesos_box.png");            backgroundView.setImage(img);
             double iw = img.getWidth();
             double ih = img.getHeight();
             double vw = iw * 0.7;

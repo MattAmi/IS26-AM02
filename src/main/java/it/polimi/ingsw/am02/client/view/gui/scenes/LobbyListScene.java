@@ -48,10 +48,10 @@ public class LobbyListScene {
         this.controller = controller;
 
         try {
-            tribalSmall = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 14);
-            tribalMedium = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 20);
-            tribalLarge = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 36);
-            introFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 18);
+            tribalSmall = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 14);
+            tribalMedium = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 20);
+            tribalLarge = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 36);
+            introFont = Font.loadFont(getClass().getResourceAsStream("/fonts/intro.ttf"), 18);
         } catch (Exception ignored) {}
 
         StackPane rootNode = new StackPane();
@@ -69,7 +69,7 @@ public class LobbyListScene {
 
         ImageView backgroundView = new ImageView();
         try {
-            Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/mesos_lobby.png")));
+            Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/mesos_lobby.png")));
             backgroundView.setImage(img);
             double iw = img.getWidth();
             double ih = img.getHeight();

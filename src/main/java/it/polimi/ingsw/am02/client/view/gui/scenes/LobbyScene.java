@@ -66,10 +66,10 @@ public class LobbyScene {
         this.controller = controller;
 
         try {
-            tribalSmall = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 16);
-            tribalMedium = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 24);
-            tribalLarge = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/tribal.ttf"), 48);
-            introFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 18);
+            tribalSmall = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 16);
+            tribalMedium = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 24);
+            tribalLarge = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 48);
+            introFont = Font.loadFont(getClass().getResourceAsStream("/fonts/intro.ttf"), 18);
         } catch (Exception ignored) {
         }
 
@@ -88,7 +88,7 @@ public class LobbyScene {
 
         ImageView backgroundView = new ImageView();
         try {
-            Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/mesos_lobby.png")));
+            Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/mesos_lobby.png")));
             backgroundView.setImage(img);
             double iw = img.getWidth();
             double ih = img.getHeight();
@@ -177,7 +177,7 @@ public class LobbyScene {
             ImageView view = new ImageView();
             String colorName = getTotemColorName(totem);
             try {
-                Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/totems/totem_" + colorName + ".png")));
+                Image img = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/images/totems/totem_" + colorName + ".png")));
                 view.setImage(img);
             } catch (Exception ignored) {
             }

@@ -24,14 +24,14 @@ public class SummaryCardOverlay {
      */
     public VBox buildNode(Runnable onClose) {
 
-        Font introFont = Font.loadFont(getClass().getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 13);
+        Font introFont = Font.loadFont(getClass().getResourceAsStream("/fonts/intro.ttf"), 13);
         if (introFont == null) introFont = Font.font("System", 13);
 
         Image frontImage = new Image(
-                getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/summary_card_front.png")
+                getClass().getResourceAsStream("/images/summary_card_front.png")
         );
         Image backImage = new Image(
-                getClass().getResourceAsStream("/it.polimi.ingsw.am02.images/summary_card_back.png")
+                getClass().getResourceAsStream("/images/summary_card_back.png")
         );
 
         ImageView cardView = new ImageView(frontImage);

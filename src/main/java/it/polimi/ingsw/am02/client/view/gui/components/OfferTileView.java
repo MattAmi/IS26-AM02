@@ -26,7 +26,7 @@ public class OfferTileView extends StackPane {
     public OfferTileView(OfferTileInfo info, Totem occupantTotem, GuiController controller) {
         this.setCursor(Cursor.HAND);
 
-        ImageView bgImage = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/cards/offer_tiles/tile_offer_" + info.tileID() + ".png"));
+        ImageView bgImage = new ImageView(ImageLoader.getImage("/images/cards/offer_tiles/tile_offer_" + info.tileID() + ".png"));
         bgImage.setFitHeight(150);
         bgImage.setPreserveRatio(true);
         this.getChildren().add(bgImage);
@@ -45,7 +45,7 @@ public class OfferTileView extends StackPane {
         bgImage.setClip(clip);
 
         if (occupantTotem != null) {
-            String path = "/it.polimi.ingsw.am02.images/totems/totem_" + occupantTotem.name().toLowerCase() + ".png";
+            String path = "/images/totems/totem_" + occupantTotem.name().toLowerCase() + ".png";
             ImageView totemView = new ImageView(ImageLoader.getImage(path));
 
             totemView.setFitHeight(40);

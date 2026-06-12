@@ -30,7 +30,7 @@ public class IntroScene {
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: #000000;");
 
-        String fontUrl = getClass().getResource("/it.polimi.ingsw.am02.fonts/intro.ttf").toExternalForm();
+        String fontUrl = getClass().getResource("/fonts/intro.ttf").toExternalForm();
         Font baseFont = Font.loadFont(fontUrl, 25);
         if (baseFont != null) {
             customFontFamily = baseFont.getFamily();

@@ -96,6 +96,6 @@ public class GameCardView extends VBox {
      */
     private String getCardPath(String id) {
         String subDir = id.startsWith("C_") ? "characters/" : id.startsWith("B_") ? "buildings/" : "events/";
-        return "/it.polimi.ingsw.am02.images/cards/" + subDir + id + ".png";
+        return "/images/cards/" + subDir + id + ".png";
     }
 }

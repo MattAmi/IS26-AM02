@@ -53,7 +53,7 @@ public class PlayerSidebarItem extends VBox {
 
         // Load and add Totem icon if present
         if (totem != null) {
-            String totemPath = "/it.polimi.ingsw.am02.images/totems/totem_" + totem.name().toLowerCase() + ".png";
+            String totemPath = "/images/totems/totem_" + totem.name().toLowerCase() + ".png";
             ImageView totemIcon = new ImageView(ImageLoader.getImage(totemPath));
             totemIcon.setFitHeight(20);
             totemIcon.setPreserveRatio(true);
@@ -75,7 +75,7 @@ public class PlayerSidebarItem extends VBox {
 
         HBox foodBox = new HBox(4);
         foodBox.setAlignment(Pos.CENTER_LEFT);
-        ImageView foodIcon = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/icons/food_point.png"));
+        ImageView foodIcon = new ImageView(ImageLoader.getImage("/images/icons/food_point.png"));
         foodIcon.setFitHeight(12);
         foodIcon.setPreserveRatio(true);
         Label foodLabel = new Label(String.valueOf(food));
@@ -87,7 +87,7 @@ public class PlayerSidebarItem extends VBox {
 
         HBox ppBox = new HBox(4);
         ppBox.setAlignment(Pos.CENTER_LEFT);
-        ImageView ppIcon = new ImageView(ImageLoader.getImage("/it.polimi.ingsw.am02.images/icons/prestige_point.png"));
+        ImageView ppIcon = new ImageView(ImageLoader.getImage("/images/icons/prestige_point.png"));
         ppIcon.setFitHeight(12);
         ppIcon.setPreserveRatio(true);
         Label ppLabel = new Label(String.valueOf(pp));

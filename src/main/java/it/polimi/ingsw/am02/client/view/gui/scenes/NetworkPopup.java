@@ -52,13 +52,13 @@ public class NetworkPopup {
         Font introFontSmall = Font.font("System", 14);
         Font introFontMedium = Font.font("System", 20);
         try {
-            introFontSmall = Font.loadFont(NetworkPopup.class.getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 14);
-            introFontMedium = Font.loadFont(NetworkPopup.class.getResourceAsStream("/it.polimi.ingsw.am02.fonts/intro.ttf"), 20);
+            introFontSmall = Font.loadFont(NetworkPopup.class.getResourceAsStream("/fonts/intro.ttf"), 14);
+            introFontMedium = Font.loadFont(NetworkPopup.class.getResourceAsStream("/fonts/intro.ttf"), 20);
         } catch (Exception ignored) {}
 
         ImageView background = new ImageView();
         try {
-            var imageUrl = NetworkPopup.class.getResource("/it.polimi.ingsw.am02.images/mesos_lobby.png");
+            var imageUrl = NetworkPopup.class.getResource("/images/mesos_lobby.png");
             if (imageUrl != null) {
                 Image img = new Image(imageUrl.toExternalForm());
                 background.setImage(img);

@@ -16,19 +16,6 @@
     </properties>
 
     <dependencies>
-        <!-- Standard JavaFX: These auto-detect the local OS for development/testing -->
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <version>${javafx.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <version>${javafx.version}</version>
-        </dependency>
-
-        <!-- Testing Dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -54,7 +41,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- JSON Library -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -74,7 +60,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Surefire configured for Java 25 and Module System -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -94,7 +79,6 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.5.1</version>
                 <executions>
-                    <!-- SERVER JAR: Optimized for size (KB range logic) -->
                     <execution>
                         <id>server-build</id>
                         <phase>package</phase>
@@ -128,7 +112,6 @@
                         </configuration>
                     </execution>
 
-                    <!-- CLIENT JAR -->
                     <execution>
                         <id>client-build</id>
                         <phase>package</phase>
@@ -165,7 +148,6 @@
                 </executions>
             </plugin>
 
-            <!-- Clean up stale default artifacts -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -185,7 +167,6 @@
         </plugins>
     </build>
 
-    <!-- Profiles for advanced build modes -->
     <profiles>
         <profile>
             <id>universal</id>
@@ -193,19 +174,21 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <dependencies>
-                <!-- Include every platform classifier for a universal client.jar -->
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>linux</classifier></dependency>
-                <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>mac-aarch64</classifier></dependency>
+
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version><classifier>linux</classifier></dependency>
-                <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>${javafx.version}</version><classifier>mac-aarch64</classifier></dependency>
+
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>${javafx.version}</version><classifier>linux</classifier></dependency>
-                <dependency><groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>${javafx.version}</version><classifier>mac-aarch64</classifier></dependency>
+
+                <dependency><groupId>org.openjfx</groupId><artifactId>javafx-fxml</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
+                <dependency><groupId>org.openjfx</groupId><artifactId>javafx-fxml</artifactId><version>${javafx.version}</version><classifier>linux</classifier></dependency>
+                <dependency><groupId>org.openjfx</groupId><artifactId>javafx-fxml</artifactId><version>${javafx.version}</version><classifier>mac-aarch64</classifier></dependency>
             </dependencies>
         </profile>
     </profiles>

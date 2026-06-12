@@ -12,6 +12,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests the {@link ShamanicRitualEffect}, verifying that the shaman-star
+ * majority is rewarded and the minority penalised, that a shared majority grants
+ * no exclusive bonus, and that immune tribù avoid the malus.
+ */
 class ShamanicRitualEffectTest {
 
     private Player p1, p2, p3;
@@ -39,6 +44,7 @@ class ShamanicRitualEffectTest {
         effect = new ShamanicRitualEffect(BONUS, MALUS);
     }
 
+    /** Verifies the clear star majority gets the bonus and the minority the malus. */
     @Test
     void applyEffect_clearMajorityAndMinority() {
         when(t1.getShamanStars()).thenReturn(5); // Majority
@@ -55,6 +61,7 @@ class ShamanicRitualEffectTest {
         assertEquals(2, outcome.resourceDeltas().size());
     }
 
+    /** Verifies a tied majority still earns the bonus but is not marked an exclusive winner. */
     @Test
     void applyEffect_sharedMajority_noExclusiveWinner() {
         when(t1.getShamanStars()).thenReturn(5); // Majority shared
@@ -69,6 +76,7 @@ class ShamanicRitualEffectTest {
         verify(t2).setLastEventBonusReceived(0); // Not exclusive
     }
 
+    /** Verifies an immune minority tribù receives no prestige malus. */
     @Test
     void applyEffect_minorityImmune_noMalus() {
         when(t1.getShamanStars()).thenReturn(5);

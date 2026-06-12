@@ -12,6 +12,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests the client-side {@link LobbyModel}, verifying observer registration and
+ * the state updates (nickname, available lobbies, current lobby, errors) it
+ * propagates to the registered {@link ClientView}.
+ */
 class LobbyModelTest {
 
     private LobbyModel lobbyModel;
@@ -23,6 +28,10 @@ class LobbyModelTest {
         mockView = Mockito.mock(ClientView.class);
     }
 
+    /**
+     * Verifies that observers are registered only once and stop receiving
+     * updates after being removed.
+     */
     @Test
     void testAddRemoveObserver() {
         lobbyModel.addObserver(mockView);
@@ -40,6 +49,10 @@ class LobbyModelTest {
         verify(mockView, never()).onError("test error 3");
     }
 
+    /**
+     * Verifies that the nickname is stored only on a successful username result
+     * and left unchanged on failure.
+     */
     @Test
     void testUpdateUsernameResult() {
         lobbyModel.addObserver(mockView);
@@ -55,6 +68,10 @@ class LobbyModelTest {
         verify(mockView).onUsernameResult("user2", false, "reason");
     }
 
+    /**
+     * Verifies that refreshing the available lobbies clears the cached nickname
+     * and current lobby and notifies the view.
+     */
     @Test
     void testUpdateAvailableLobbies() {
         lobbyModel.addObserver(mockView);
@@ -73,6 +90,9 @@ class LobbyModelTest {
         verify(mockView).onAvailableLobbiesUpdated(lobbies);
     }
 
+    /**
+     * Verifies that the current lobby is stored and the view is notified.
+     */
     @Test
     void testUpdateCurrentLobby() {
         lobbyModel.addObserver(mockView);
@@ -86,6 +106,10 @@ class LobbyModelTest {
         verify(mockView).onCurrentLobbyUpdated(lobby);
     }
 
+    /**
+     * Verifies that dissolving a lobby clears the current lobby and notifies the
+     * view.
+     */
     @Test
     void testUpdateLobbyDissolved() {
         lobbyModel.addObserver(mockView);
@@ -98,6 +122,9 @@ class LobbyModelTest {
         verify(mockView).onLobbyDissolved();
     }
 
+    /**
+     * Verifies that error messages are forwarded to the view.
+     */
     @Test
     void testUpdateError() {
         lobbyModel.addObserver(mockView);
@@ -105,6 +132,9 @@ class LobbyModelTest {
         verify(mockView).onError("error message");
     }
 
+    /**
+     * Verifies the default state of the model before any update is applied.
+     */
     @Test
     void testGetters() {
         assertNull(lobbyModel.getMyNickname());

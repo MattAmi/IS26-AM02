@@ -17,8 +17,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests {@link EventCard}, verifying its accessors and that resolving an event
+ * combines the card's own effect with the deltas contributed by registered
+ * {@link EventObserver}s.
+ */
 class EventCardTest {
 
+    /** Verifies the event card exposes the properties it was constructed with. */
     @Test
     void testEventCardProperties() {
         EventEffect mockEffect = Mockito.mock(EventEffect.class);
@@ -31,6 +37,7 @@ class EventCardTest {
         assertEquals(1, card.getPriority());
     }
 
+    /** Verifies that the event effect and observers' post-resolution deltas are merged. */
     @Test
     void testApplyEventEffectWithObservers() {
         EventEffect mockEffect = Mockito.mock(EventEffect.class);

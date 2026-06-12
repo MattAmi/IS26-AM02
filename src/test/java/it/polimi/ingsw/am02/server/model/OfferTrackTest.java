@@ -14,6 +14,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests {@link OfferTrack}, verifying tile creation per player count, tile
+ * occupancy (including occupied-tile and unknown-tile errors), player lookup and
+ * the left-to-right ordering of placed players by tile ID.
+ */
 class OfferTrackTest {
 
     private OfferTrack offerTrack;
@@ -45,6 +50,7 @@ class OfferTrackTest {
 
     // Constructor & setUpTiles
 
+    /** Verifies a freshly created track has no players placed yet. */
     @Test
     void constructorWithTwoPlayersCreatesCorrectNumberOfTiles() {
         // getOrderedPlayers on a fresh track returns an empty list (no one is placed yet)
@@ -53,6 +59,7 @@ class OfferTrackTest {
                 "No players should be on the track initially");
     }
 
+    /** Verifies a 5-player track exposes more tiles than a 2-player one. */
     @Test
     void constructorWithFivePlayersCreatesMoreTiles() {
 
@@ -66,6 +73,7 @@ class OfferTrackTest {
 
     // occupyTile — happy path
 
+    /** Verifies a player can occupy a valid tile and is then retrievable on it. */
     @Test
     void occupyTileValidTileAndPlayerOccupiesSuccessfully() {
         offerTrack.occupyTile(player1, firstTileID);
@@ -77,6 +85,7 @@ class OfferTrackTest {
         assertEquals(player1, tile.getOccupyingPlayer());
     }
 
+    /** Verifies two players can occupy two distinct tiles. */
     @Test
     void occupyTileTwoDifferentTilesBothOccupied() {
         offerTrack.occupyTile(player1, firstTileID);
@@ -89,6 +98,7 @@ class OfferTrackTest {
 
     // occupyTile — error cases
 
+    /** Verifies occupying an already-taken tile throws {@link TileOccupiedException}. */
     @Test
     void occupyTileAlreadyOccupiedThrowsTileOccupiedException() {
         offerTrack.occupyTile(player1, firstTileID);
@@ -97,6 +107,7 @@ class OfferTrackTest {
                 () -> offerTrack.occupyTile(player2, firstTileID));
     }
 
+    /** Verifies occupying a non-existent tile ID throws {@link TileNotFoundException}. */
     @Test
     void occupyTileInvalidTileIDThrowsTileNotFoundException() {
         assertThrows(TileNotFoundException.class,
@@ -105,12 +116,14 @@ class OfferTrackTest {
 
     // getOrderedPlayers
 
+    /** Verifies the ordered-players list is empty when no one is placed. */
     @Test
     void getOrderedPlayersNoPlayersPlacedReturnsEmptyList() {
         List<Player> ordered = offerTrack.getOrderedPlayers();
         assertTrue(ordered.isEmpty());
     }
 
+    /** Verifies a single placed player yields a one-element ordered list. */
     @Test
     void getOrderedPlayersOnePlayerPlacedReturnsSingletonList() {
         offerTrack.occupyTile(player1, secondTileID);
@@ -120,6 +133,7 @@ class OfferTrackTest {
         assertEquals(player1, ordered.getFirst());
     }
 
+    /** Verifies two placed players are ordered by ascending tile ID. */
     @Test
     void getOrderedPlayersTwoPlayersPlacedReturnsInTileOrder() {
         // Player2 on first tile, Player1 on second tile
@@ -135,6 +149,7 @@ class OfferTrackTest {
                 "Player on the second tile (higher ID) should come second");
     }
 
+    /** Verifies ordering follows tile ID even when players are placed in reverse order. */
     @Test
     void getOrderedPlayersReverseInsertionOrderStillReturnsTileOrder() {
         // Place in reverse order to verify ordering is by tile, not insertion
@@ -149,6 +164,7 @@ class OfferTrackTest {
 
     // getTileByPlayer
 
+    /** Verifies a placed player resolves to the tile it occupies. */
     @Test
     void getTileByPlayerPlayerIsOnTrackReturnsCorrectTile() {
         offerTrack.occupyTile(player1, firstTileID);
@@ -157,12 +173,14 @@ class OfferTrackTest {
         assertEquals(firstTileID, result.getTileID());
     }
 
+    /** Verifies looking up an unplaced player throws {@link PlayerNotOnTileException}. */
     @Test
     void getTileByPlayerPlayerNotOnTrackThrowsPlayerNotOnTileException() {
         assertThrows(PlayerNotOnTileException.class,
                 () -> offerTrack.getTileByPlayer(player1));
     }
 
+    /** Verifies looking up a player not on the track fails even when others are placed. */
     @Test
     void getTileByPlayerDifferentPlayerOnTrackThrowsForAbsentPlayer() {
         offerTrack.occupyTile(player1, firstTileID);
@@ -174,6 +192,7 @@ class OfferTrackTest {
 
     // Integration: occupy + getTileByPlayer + getOrderedPlayers
 
+    /** End-to-end: occupy tiles, query both players, confirm order and reject an absent player. */
     @Test
     void fullCycleOccupyAllTilesThenQueryOrder() {
         offerTrack.occupyTile(player1, firstTileID);
@@ -192,6 +211,7 @@ class OfferTrackTest {
                 () -> offerTrack.getTileByPlayer(player3));
     }
 
+    /** Verifies a full 5-player track returns players ordered by tile ID. */
     @Test
     void fivePlayerTrack_allTilesOccupied_orderedCorrectly() {
         OfferTrack bigTrack = new OfferTrack(5);

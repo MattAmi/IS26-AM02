@@ -2,6 +2,10 @@ package it.polimi.ingsw.am02.server.model;
 
 import it.polimi.ingsw.am02.server.model.GameRegistry;
 
+/**
+ * Shared test utility that loads the {@link GameRegistry} singleton once for the
+ * whole test suite, so tests relying on game data do not reload it repeatedly.
+ */
 public final class TestHelper {
 
     private static boolean registryLoaded = false;

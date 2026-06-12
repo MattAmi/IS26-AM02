@@ -13,6 +13,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests the {@link HuntEffect}, verifying that each player gains food and
+ * prestige proportional to their hunter count, and that players with no hunters
+ * are unaffected.
+ */
 class HuntEffectTest {
 
     private Player p1, p2;
@@ -36,6 +41,7 @@ class HuntEffectTest {
         effect = new HuntEffect(FOOD_PER_HUNTER, PP_PER_HUNTER);
     }
 
+    /** Verifies players with hunters gain the per-hunter food and prestige rewards. */
     @Test
     void applyEffect_withHunters_addsFoodAndPP() {
         when(t1.getCharacterCount(CharacterType.HUNTER)).thenReturn(2);
@@ -52,6 +58,7 @@ class HuntEffectTest {
         assertEquals(2, outcome.resourceDeltas().size());
     }
 
+    /** Verifies a player with no hunters receives nothing and the outcome is empty. */
     @Test
     void applyEffect_noHunters_doesNothing() {
         when(t1.getCharacterCount(CharacterType.HUNTER)).thenReturn(0);

@@ -12,6 +12,11 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests the {@link Game} lifecycle: FSM startup and observer notification,
+ * rejection of moves before the game starts, the test-only building injection
+ * hook and {@link GameObserver} registration/removal.
+ */
 class GameTest {
 
     private Game game;
@@ -28,6 +33,7 @@ class GameTest {
         game.addGameObserver(observer);
     }
 
+    /** Verifies starting the FSM notifies observers and initializes turn order. */
     @Test
     void testStartFSM() {
         game.startFSM();
@@ -38,12 +44,14 @@ class GameTest {
         assertNotNull(game.getTurnOrder());
     }
 
+    /** Verifies a move attempted before the FSM is started fails. */
     @Test
     void testInvalidMoveBeforeStart() {
         assertThrows(NullPointerException.class, () -> game.moveTotem("Alice", 'A'));
         // Or if currentState is not set, we shouldn't be able to move.
     }
 
+    /** Verifies the test-only hook injects a building effect into a player's tribù. */
     @Test
     void testInjectBuildingForTesting() {
         game.startFSM();
@@ -52,6 +60,7 @@ class GameTest {
         assertNotNull(alice.getTribu().getActiveBuildingEffects());
     }
 
+    /** Verifies a removed observer no longer receives game notifications. */
     @Test
     void testRemoveObserver() {
         game.removeGameObserver(observer);

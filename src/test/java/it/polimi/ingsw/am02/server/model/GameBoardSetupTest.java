@@ -16,6 +16,11 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+/**
+ * Tests {@link GameBoard#setUpInitialTurnOrder}, verifying that players are
+ * registered on the {@link TurnOrderTile} in the given order and that each
+ * receives the correct starting food bonus for its position and player count.
+ */
 class GameBoardSetupTest {
 
     private GameBoard gameBoard;
@@ -40,6 +45,7 @@ class GameBoardSetupTest {
         Collections.addAll(players, p1, p2, p3, p4, p5);
     }
 
+    /** Verifies all players are registered on the turn-order tile in input order. */
     @Test
     void setUpInitialTurnOrderRegistersPlayersInCorrectOrder() {
         gameBoard.setUpInitialTurnOrder(players);
@@ -57,6 +63,7 @@ class GameBoardSetupTest {
         }
     }
 
+    /** Verifies the positional starting food bonuses (2,3,3,4,4) for a 5-player game. */
     @Test
     void setUpInitialTurnOrderAssignsCorrectInitialFood() {
         // Verify all players start with 0 food before setup
@@ -74,6 +81,7 @@ class GameBoardSetupTest {
         }
     }
 
+    /** Verifies food bonuses (2,3,3) and registration order for a 3-player game. */
     @Test
     void setUpInitialTurnOrderWithFewerPlayers() {
         // Test with 3 players — only first 3 food bonuses apply (2, 3, 3)
@@ -103,6 +111,7 @@ class GameBoardSetupTest {
         }
     }
 
+    /** Verifies food bonuses (2,3) for the minimum 2-player game. */
     @Test
     void setUpInitialTurnOrderWithTwoPlayers() {
         // Test with 2 players — minimum count, food: (2, 3)

@@ -9,6 +9,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests {@link OfferTile}, verifying idempotent food crediting, the
+ * remaining-picks / satisfied bookkeeping and player occupancy management.
+ */
 class OfferTileTest {
 
     private OfferTile tileA;
@@ -24,6 +28,7 @@ class OfferTileTest {
         husnain = new Player("Husnain", Totem.RED);
     }
 
+    /** Verifies a food-giving tile credits its food only on the first resolution. */
     @Test
     @DisplayName("resolveFoodOffer on tile A (Matteo) should credit food exactly once")
     void shouldCreditFoodOnlyOnceTileAMatteo() {
@@ -39,6 +44,7 @@ class OfferTileTest {
         assertEquals(initialFood + 3, matteo.getTribu().getFoodPoints());
     }
 
+    /** Verifies a zero-food tile leaves food unchanged across repeated resolutions. */
     @Test
     @DisplayName("resolveFoodOffer on tile G (Husnain) should credit food exactly once")
     void shouldCreditFoodOnlyOnceTileGHusnain() {
@@ -54,6 +60,7 @@ class OfferTileTest {
         assertEquals(initialFood, husnain.getTribu().getFoodPoints());
     }
 
+    /** Verifies the tile is satisfied only once both upper and lower picks reach zero. */
     @Test
     @DisplayName("setRemainingPicks and isSatisfied should work correctly")
     void shouldTrackRemainingPicks() {
@@ -70,6 +77,7 @@ class OfferTileTest {
         assertTrue(tileA.isSatisfied());  // both at 0
     }
 
+    /** Verifies a tile with no required picks is immediately satisfied. */
     @Test
     @DisplayName("isSatisfied should return true when both pick quotas start at zero")
     void shouldBeSatisfiedWhenNoPicksRequired() {
@@ -77,6 +85,7 @@ class OfferTileTest {
         assertTrue(tileA.isSatisfied());
     }
 
+    /** Verifies accepting a player sets it as the tile's occupant. */
     @Test
     @DisplayName("acceptPlayer should assign the player to the tile")
     void shouldAcceptPlayer() {
@@ -84,6 +93,7 @@ class OfferTileTest {
         assertSame(matteo, tileA.getOccupyingPlayer());
     }
 
+    /** Verifies removing a player clears the tile's occupant. */
     @Test
     @DisplayName("removePlayer should clear the occupant")
     void shouldRemovePlayer() {
@@ -92,6 +102,7 @@ class OfferTileTest {
         assertNull(tileA.getOccupyingPlayer());
     }
 
+    /** Verifies the tile itself overwrites its occupant without throwing (occupancy is guarded by OfferTrack). */
     @Test
     @DisplayName("acceptPlayer should silently overwrite the previous occupant (OfferTrack guards occupancy)")
     void shouldOverwriteOccupantSilently() {

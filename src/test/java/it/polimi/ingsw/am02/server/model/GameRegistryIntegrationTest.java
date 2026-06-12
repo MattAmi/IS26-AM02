@@ -35,6 +35,7 @@ class GameRegistryIntegrationTest {
 
     // 1. CHARACTER CARDS
 
+    /** Loading and field validation of the 84 character cards. */
     @Nested
     @DisplayName("Character cards loading")
     class CharacterCardTests {
@@ -147,6 +148,7 @@ class GameRegistryIntegrationTest {
             assertEquals(2, card.getMinPlayers());
         }
 
+        /** Spot-checks C_011's era, type and minPlayers against the JSON. */
         @Test
         @DisplayName("Spot check: C_011 is Era I BUILDER with minPlayers 5")
         void spotCheckC011() {
@@ -156,6 +158,7 @@ class GameRegistryIntegrationTest {
             assertEquals(5, card.getMinPlayers());
         }
 
+        /** Spot-checks C_059's era and type against the JSON. */
         @Test
         @DisplayName("Spot check: C_059 is Era III INVENTOR")
         void spotCheckC059() {
@@ -193,6 +196,7 @@ class GameRegistryIntegrationTest {
 
     // 2. EVENT CARDS
 
+    /** Loading, field validation and priority rules of the 12 event cards. */
     @Nested
     @DisplayName("Event cards loading")
     class EventCardTests {
@@ -383,6 +387,7 @@ class GameRegistryIntegrationTest {
 
     // 3. BUILDING CARDS
 
+    /** Loading, field validation and effect-param parsing of the 21 building cards. */
     @Nested
     @DisplayName("Building cards loading")
     class BuildingCardTests {
@@ -556,6 +561,7 @@ class GameRegistryIntegrationTest {
 
     // 4. OFFER TILES
 
+    /** Availability and field validation of the offer tiles per player count. */
     @Nested
     @DisplayName("Offer tiles loading")
     class OfferTileTests {
@@ -690,6 +696,7 @@ class GameRegistryIntegrationTest {
 
     // 5. TURN ORDER TILES
 
+    /** Availability of the turn-order tiles for each supported player count. */
     @Nested
     @DisplayName("Turn order tiles loading")
     class TurnOrderTileTests {
@@ -763,6 +770,7 @@ class GameRegistryIntegrationTest {
 
         // 6. CROSS-DOMAIN CONSISTENCY
 
+        /** Consistency across card domains: unique IDs and correct type classification. */
         @Nested
         @DisplayName("Cross-domain consistency checks")
         class CrossDomainTests {

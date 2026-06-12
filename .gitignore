@@ -4,6 +4,8 @@
 target/
 *.class
 *.jar
+# Exception: ship the built jars as deliverables
+!deliverables/jar/*.jar
 *.war
 *.ear
 *.zip

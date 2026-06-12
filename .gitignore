@@ -6,6 +6,8 @@ target/
 *.jar
 # Exception: ship the built jars as deliverables
 !deliverables/jar/*.jar
+# Exception: commit the Maven wrapper jar for reproducible builds
+!.mvn/wrapper/maven-wrapper.jar
 *.war
 *.ear
 *.zip

@@ -5,6 +5,7 @@ import it.polimi.ingsw.am02.client.model.LobbyModel;
 import it.polimi.ingsw.am02.client.network.ClientNetworkDispatcher;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.view.ClientView;
+import it.polimi.ingsw.am02.common.NetworkDefaults;
 import it.polimi.ingsw.am02.common.dto.BoardSnapshot;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
@@ -232,7 +233,7 @@ public class RmiServerProxy extends UnicastRemoteObject implements ServerProxy, 
 
         RmiServerFactory factory = (RmiServerFactory)
                 java.rmi.registry.LocateRegistry.getRegistry(host, port)
-                        .lookup("AM02-GameServer");
+                        .lookup(NetworkDefaults.RMI_REGISTRY_NAME);
 
         this.serverStub = factory.registerClient(this);
         this.connected  = true;

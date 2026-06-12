@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02;
 
+import it.polimi.ingsw.am02.common.NetworkDefaults;
 import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import it.polimi.ingsw.am02.server.controller.ControllerManager;
 import it.polimi.ingsw.am02.server.model.GameRegistry;
@@ -30,13 +31,13 @@ public class ServerApp {
             // Critical for LAN multiplayer in RMI
             System.setProperty("java.rmi.server.hostname", rmiHost);
 
-            System.out.print("Enter RMI Port [default: 1099]: ");
+            System.out.print("Enter RMI Port [default: " + NetworkDefaults.DEFAULT_RMI_PORT + "]: ");
             String rmiPortStr = scanner.nextLine().trim();
-            int rmiPort = rmiPortStr.isEmpty() ? 1099 : Integer.parseInt(rmiPortStr);
+            int rmiPort = rmiPortStr.isEmpty() ? NetworkDefaults.DEFAULT_RMI_PORT : Integer.parseInt(rmiPortStr);
 
-            System.out.print("Enter Socket Port [default: 1100]: ");
+            System.out.print("Enter Socket Port [default: " + NetworkDefaults.DEFAULT_SOCKET_PORT + "]: ");
             String socketPortStr = scanner.nextLine().trim();
-            int socketPort = socketPortStr.isEmpty() ? 1100 : Integer.parseInt(socketPortStr);
+            int socketPort = socketPortStr.isEmpty() ? NetworkDefaults.DEFAULT_SOCKET_PORT : Integer.parseInt(socketPortStr);
 
             System.out.println("\n[INFO] Starting server on " + rmiHost + "...");
 

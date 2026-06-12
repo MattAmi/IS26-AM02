@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.client.view.gui.scenes;
 
+import it.polimi.ingsw.am02.common.NetworkDefaults;
 import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -100,13 +101,13 @@ public class NetworkPopup {
         ipField.setStyle("-fx-background-color: rgba(26, 26, 26, 0.7); -fx-text-fill: white; -fx-border-color: #F2D5A3;");
         ipField.setMaxWidth(200); ipField.setFont(introFontSmall);
 
-        TextField portField = new TextField("1099");
+        TextField portField = new TextField(String.valueOf(NetworkDefaults.DEFAULT_RMI_PORT));
         portField.setStyle("-fx-background-color: rgba(26, 26, 26, 0.7); -fx-text-fill: white; -fx-border-color: #F2D5A3;");
         portField.setMaxWidth(200);
         portField.setFont(introFontSmall);
 
-        rmiBtn.setOnAction(e -> portField.setText("1099"));
-        socketBtn.setOnAction(e -> portField.setText("1100"));
+        rmiBtn.setOnAction(e -> portField.setText(String.valueOf(NetworkDefaults.DEFAULT_RMI_PORT)));
+        socketBtn.setOnAction(e -> portField.setText(String.valueOf(NetworkDefaults.DEFAULT_SOCKET_PORT)));
 
         Button connectBtn = new Button("CONNECT");
         connectBtn.setPrefSize(160, 45);

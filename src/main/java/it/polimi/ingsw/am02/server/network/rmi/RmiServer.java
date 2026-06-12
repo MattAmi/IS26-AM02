@@ -1,5 +1,6 @@
 package it.polimi.ingsw.am02.server.network.rmi;
 
+import it.polimi.ingsw.am02.common.NetworkDefaults;
 import it.polimi.ingsw.am02.common.network.rmi.RmiClientRemote;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerFactory;
 import it.polimi.ingsw.am02.common.network.rmi.RmiServerRemote;
@@ -16,7 +17,7 @@ import java.rmi.server.UnicastRemoteObject;
  * <p>On {@link #start(int)}, attempts to reuse an existing RMI registry on the
  * given port (useful after a crash within the same JVM process); if none is
  * reachable, a new one is created. A {@link RmiServerFactory} is then exported
- * and bound to the registry under the name {@code "AM02-GameServer"}.
+ * and bound to the registry under the name {@code NetworkDefaults.RMI_REGISTRY_NAME}.
  *
  * <p>Each connecting client invokes {@link RmiServerFactory#registerClient},
  * which instantiates an {@link RmiClientHandler} and exports it as a
@@ -49,11 +50,11 @@ public class RmiServer implements NetworkServer {
 
             factory = clientCallback -> {
                 RmiClientHandler handler = new RmiClientHandler(clientCallback);
-                return (RmiServerRemote) UnicastRemoteObject.exportObject(handler, 1099);
+                return (RmiServerRemote) UnicastRemoteObject.exportObject(handler, 0);
             };
 
-            RmiServerFactory stub = (RmiServerFactory) UnicastRemoteObject.exportObject(factory, 1099);
-            registry.rebind("AM02-GameServer", stub);
+            RmiServerFactory stub = (RmiServerFactory) UnicastRemoteObject.exportObject(factory, 0);
+            registry.rebind(NetworkDefaults.RMI_REGISTRY_NAME, stub);
 
             System.out.println("[READY] RMI server listening on port " + port);
 
@@ -70,7 +71,7 @@ public class RmiServer implements NetworkServer {
     public void stop() {
         try {
             if (registry != null) {
-                registry.unbind("AM02-GameServer");
+                registry.unbind(NetworkDefaults.RMI_REGISTRY_NAME);
                 UnicastRemoteObject.unexportObject(registry, true);
             }
         } catch (Exception e) {

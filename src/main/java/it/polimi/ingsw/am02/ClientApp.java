@@ -10,6 +10,7 @@ import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
 import it.polimi.ingsw.am02.client.view.gui.SceneRouter;
 import it.polimi.ingsw.am02.client.view.tui.TuiController;
 import it.polimi.ingsw.am02.client.view.tui.TuiView;
+import it.polimi.ingsw.am02.common.NetworkDefaults;
 import it.polimi.ingsw.am02.common.enumerations.NetworkType;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -60,7 +61,7 @@ public class ClientApp extends Application {
                 if (host.isEmpty()) host = "127.0.0.1";
 
                 // Dynamic Port request with auto-detection of default based on protocol
-                int defaultPort = (networkType == NetworkType.SOCKET) ? 1100 : 1099;
+                int defaultPort = (networkType == NetworkType.SOCKET) ? NetworkDefaults.DEFAULT_SOCKET_PORT : NetworkDefaults.DEFAULT_RMI_PORT;
                 System.out.print("Server Port [default: " + defaultPort + "]: ");
                 String portStr = setupScanner.nextLine().trim();
                 int port = portStr.isEmpty() ? defaultPort : Integer.parseInt(portStr);

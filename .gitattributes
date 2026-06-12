@@ -1,3 +1,8 @@
 # Generated JaCoCo coverage report: store verbatim, no EOL conversion.
 # Avoids LF/CRLF normalization warnings on a non-diffable deliverable.
 deliverables/coverage/** -text
+
+# Shell launch scripts must stay LF so they run on Linux/macOS
+# even when checked out on Windows (avoids "bad interpreter" on CRLF).
+*.command text eol=lf
+*.sh      text eol=lf

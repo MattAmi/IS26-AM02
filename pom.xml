@@ -100,7 +100,7 @@
                         <phase>package</phase>
                         <goals><goal>shade</goal></goals>
                         <configuration>
-                            <outputFile>${project.build.directory}/Server.jar</outputFile>
+                            <outputFile>${project.build.directory}/server.jar</outputFile>
                             <artifactSet>
                                 <excludes>
                                     <exclude>org.openjfx:*:*:*</exclude>
@@ -134,7 +134,7 @@
                         <phase>package</phase>
                         <goals><goal>shade</goal></goals>
                         <configuration>
-                            <outputFile>${project.build.directory}/Client.jar</outputFile>
+                            <outputFile>${project.build.directory}/client.jar</outputFile>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -189,8 +189,11 @@
     <profiles>
         <profile>
             <id>universal</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <dependencies>
-                <!-- Include every platform classifier for a universal Client.jar -->
+                <!-- Include every platform classifier for a universal client.jar -->
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>win</classifier></dependency>
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>linux</classifier></dependency>
                 <dependency><groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>${javafx.version}</version><classifier>mac</classifier></dependency>

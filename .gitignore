@@ -9,6 +9,7 @@ target/
 *.zip
 *.tar.gz
 hs_err_pid*
+dependency-reduced-pom.xml
 
 # ==========================================
 # INTELLIJ IDEA (Crucial for your team)

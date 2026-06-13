@@ -36,7 +36,7 @@ This project implements the **Complete Rules** of the game (not the simplified s
 | **Disconnection resilience** | ✅ Yes |
 | Game-ranking database (MySQL/PostgreSQL) | ❌ **Not chosen** |
 
-**Disconnection resilience & AutoPlayer.** Disconnected players (network drop or client crash) can reconnect with the same nickname and resume play. While a player is offline the game keeps going and their turns are handled automatically by the **AutoPlayer**, so the match never stalls. If only one player remains connected, the game is suspended until another reconnects or a timeout expires, awarding the win to the last connected player. Connection health is tracked with a heartbeat (ping/pong) mechanism.
+**Disconnection resilience & AutoPlayer.** Disconnected players (network drop or client crash) can reconnect with the same nickname and resume play. While a player is offline the game keeps going and their turns are handled automatically by the **AutoPlayer**, so the match never stalls. If only one player remains connected, the game keeps running (the lone player plays on, with the AutoPlayer covering the absent ones) and a forfeit timer starts: if someone reconnects before it expires the timer is cancelled, otherwise when it expires the last connected player wins by forfeit. Connection health is tracked with a heartbeat (ping/pong) mechanism.
 
 ### Architectural note — nickname uniqueness (differs from the official spec)
 
@@ -69,6 +69,20 @@ Testing focuses on the **Model** (the game logic), which is the core of the appl
 | `client.model` | 99% | 78% |
 | `common.dto` | 100% | 75% |
 | `common.enumerations` | 92% | — |
+
+---
+
+## API Documentation (Javadoc)
+
+The full Javadoc generated from the source code is in [`deliverables/apidocs/`](deliverables/apidocs/index.html) — open `index.html`.
+
+It can be regenerated from source with the Maven wrapper (no local Maven needed):
+
+```bash
+./mvnw javadoc:javadoc   # Windows: .\mvnw.cmd javadoc:javadoc
+```
+
+The docs are written to `deliverables/apidocs/` as configured by the `maven-javadoc-plugin` in the `pom.xml`.
 
 ---
 

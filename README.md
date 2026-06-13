@@ -67,28 +67,44 @@ The full-resolution diagram is in [`deliverables/class-diagrams/00_Architecture_
 
 ## Screenshots
 
-### Graphical interface (GUI)
+Both the **GUI** and the **TUI** implement the complete game. The screenshots below follow a match from browsing the lobbies to in-game play; where the same step exists in both interfaces, they are shown side by side.
+
+### Lobby browser
+
+<table>
+<tr><th width="50%">GUI</th><th width="50%">TUI</th></tr>
+<tr>
+<td><img src="docs/images/lobbySelectionGui.png" alt="Available lobbies (GUI)"></td>
+<td><img src="docs/images/lobbySelectionTui.png" alt="Available lobbies (TUI)"></td>
+</tr>
+<tr><td colspan="2" align="center"><sub>Browse the available lobbies, then create a new one or join an existing one.</sub></td></tr>
+</table>
+
+### Lobby — nickname & totem selection
+
+<table>
+<tr><th width="50%">GUI</th><th width="50%">TUI</th></tr>
+<tr>
+<td><img src="docs/images/lobbyGui.png" alt="Lobby, totem selection (GUI)"></td>
+<td><img src="docs/images/lobbyTui.png" alt="Lobby, totem selection (TUI)"></td>
+</tr>
+<tr><td colspan="2" align="center"><sub>Inside a lobby: set your nickname and pick a totem before the game starts.</sub></td></tr>
+</table>
+
+### In game
+
+The full **GUI** game board is shown in the banner at the top of this README. Below, the **New Era** transition (GUI) and the complete board rendered as text by the **TUI**:
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/lobbyGui.png" alt="Lobby (GUI)"></td>
 <td width="50%"><img src="docs/images/newEraGui.png" alt="New Era transition (GUI)"></td>
+<td width="50%"><img src="docs/images/gameSceneTui.png" alt="In-game board (TUI)"></td>
 </tr>
 <tr>
-<td align="center"><sub><b>Lobby</b> — players pick their totem before the game starts.</sub></td>
-<td align="center"><sub><b>New Era</b> — the animated transition between the three Eras.</sub></td>
+<td align="center"><sub><b>New Era</b> (GUI) — the animated transition between the three Eras.</sub></td>
+<td align="center"><sub><b>Game board</b> (TUI) — the full game state in the terminal.</sub></td>
 </tr>
 </table>
-
-The full in-game GUI is shown in the banner at the top of this README.
-
-### Text interface (TUI)
-
-The same game is fully playable from the terminal, with the complete board state rendered as text.
-
-<p align="center">
-  <img src="docs/images/gameSceneTui.png" alt="In-game TUI" width="55%">
-</p>
 
 ### Disconnection resilience & AutoPlayer in action
 

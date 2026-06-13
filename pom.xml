@@ -80,6 +80,7 @@
                 <version>3.2.5</version>
                 <configuration>
                     <argLine>
+                        --enable-native-access=javafx.graphics
                         --add-reads it.polimi.ingsw.am02=ALL-UNNAMED
                         --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.server.model=ALL-UNNAMED
                         --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.server.model.enumerations=ALL-UNNAMED
@@ -153,6 +154,7 @@
                                     <manifestEntries>
                                         <Main-Class>it.polimi.ingsw.am02.ClientLauncher</Main-Class>
                                         <Add-Opens>java.base/java.lang=ALL-UNNAMED</Add-Opens>
+                                        <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
                                         <JAVA_TOOL_OPTIONS>-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8</JAVA_TOOL_OPTIONS>
                                     </manifestEntries>
                                 </transformer>

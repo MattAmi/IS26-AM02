@@ -5,6 +5,10 @@ Politecnico di Milano — A.Y. 2025/2026 — Prof. Alessandro Margara — Group 
 
 A distributed, client–server software implementation of the board game **Mesos**, built in Java with an MVC architecture. The server hosts the game logic and rules; players connect with one client each, over **Socket** or **RMI**, using a **TUI** or a **GUI**.
 
+<p align="center">
+  <img src="docs/images/gameSceneGui.png" alt="Mesos — in-game graphical interface" width="100%">
+</p>
+
 ---
 
 ## The Game: Mesos
@@ -58,6 +62,51 @@ The application follows a **Model–View–Controller (MVC)** design split acros
 </p>
 
 The full-resolution diagram is in [`deliverables/class-diagrams/00_Architecture_Overview.pdf`](deliverables/class-diagrams/00_Architecture_Overview.pdf); the detailed per-layer class diagrams are in [`deliverables/class-diagrams/`](deliverables/class-diagrams/).
+
+---
+
+## Screenshots
+
+### Graphical interface (GUI)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/lobbyGui.png" alt="Lobby (GUI)"></td>
+<td width="50%"><img src="docs/images/newEraGui.png" alt="New Era transition (GUI)"></td>
+</tr>
+<tr>
+<td align="center"><sub><b>Lobby</b> — players pick their totem before the game starts.</sub></td>
+<td align="center"><sub><b>New Era</b> — the animated transition between the three Eras.</sub></td>
+</tr>
+</table>
+
+The full in-game GUI is shown in the banner at the top of this README.
+
+### Text interface (TUI)
+
+The same game is fully playable from the terminal, with the complete board state rendered as text.
+
+<p align="center">
+  <img src="docs/images/gameSceneTui.png" alt="In-game TUI" width="55%">
+</p>
+
+### Disconnection resilience & AutoPlayer in action
+
+When a player drops, the match never stalls: the **AutoPlayer** takes over their turns, and a disconnected client automatically attempts to reconnect using its **Game ID**. Both interfaces surface these states clearly.
+
+<table>
+<tr><th width="50%">GUI</th><th width="50%">TUI</th></tr>
+<tr>
+<td><img src="docs/images/playerDisconnectedAndAutoPlayerGui.png" alt="Player disconnected, AutoPlayer takes over (GUI)"></td>
+<td><img src="docs/images/playerDisconnectedAndAutoPlayerTui.png" alt="Player disconnected, AutoPlayer takes over (TUI)"></td>
+</tr>
+<tr><td colspan="2" align="center"><sub>A player disconnects — the <b>AutoPlayer</b> takes over their turns so the game keeps going.</sub></td></tr>
+<tr>
+<td><img src="docs/images/serverConnectionLostInGameGui.png" alt="Server connection lost, auto-reconnecting (GUI)"></td>
+<td><img src="docs/images/serverConnectionLostInGameTui.png" alt="Server connection lost, auto-reconnecting (TUI)"></td>
+</tr>
+<tr><td colspan="2" align="center"><sub>The server becomes unreachable — the client reports it and <b>auto-reconnects</b> using the Game ID.</sub></td></tr>
+</table>
 
 ---
 

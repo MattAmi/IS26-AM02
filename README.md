@@ -49,6 +49,18 @@ This is a deliberate design choice that fits the *multiple simultaneous games* f
 
 ---
 
+## Architecture
+
+The application follows a **Model–View–Controller (MVC)** design split across a **client–server** boundary. The **server** owns the authoritative game state (the Model) and the controllers that enforce the rules; each **client** runs its own lightweight view-side model and a View that can be either **TUI** or **GUI**. Communication happens through a network layer that is transparent to the rest of the code: the same game logic runs whether a player is connected over **Socket (TCP)** or **RMI**, and the two can even coexist in the same game.
+
+<p align="center">
+  <img src="docs/images/architecture-overview.png" alt="High-level architecture: client/server split, MVC layers, Socket/RMI networking, persistence" width="100%">
+</p>
+
+The full-resolution diagram is in [`deliverables/class-diagrams/00_Architecture_Overview.pdf`](deliverables/class-diagrams/00_Architecture_Overview.pdf); the detailed per-layer class diagrams are in [`deliverables/class-diagrams/`](deliverables/class-diagrams/).
+
+---
+
 ## Test Coverage
 
 Coverage was measured with **JaCoCo**. The full HTML report is at [`deliverables/coverage/index.html`](deliverables/coverage/index.html).

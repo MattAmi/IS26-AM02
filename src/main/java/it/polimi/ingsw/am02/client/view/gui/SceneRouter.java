@@ -324,7 +324,7 @@ public class SceneRouter {
             alertBox.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
 
             Label tL = new Label(title); tL.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
-            Label wL = new Label("Winners: " + String.join(", ", winners));
+            Label wL = new Label((winners.size() == 1 ? "Winner: " : "Winners: ") + String.join(", ", winners));
             wL.setStyle("-fx-text-fill: white; -fx-font-size: 14px;"); wL.setWrapText(true); wL.setAlignment(Pos.CENTER);
 
             Label rankHeader = new Label("FINAL RANKINGS");

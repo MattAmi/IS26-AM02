@@ -629,7 +629,7 @@ public class TuiView extends AbstractClientView {
             clearScreen();
             printHeader();
             System.out.println(GREEN + BOLD + "=== GAME OVER ===" + RESET);
-            System.out.println("Winners: " + String.join(", ", winners));
+            System.out.println((winners.size() == 1 ? "Winner: " : "Winners: ") + String.join(", ", winners));
             System.out.println("\n" + PURPLE + "--- FINAL RANKINGS ---" + RESET);
             for (int i = 0; i < finalRankings.size(); i++) {
                 PlayerFinalScore s = finalRankings.get(i);

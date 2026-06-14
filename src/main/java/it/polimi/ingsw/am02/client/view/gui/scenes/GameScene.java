@@ -938,6 +938,8 @@ public class GameScene {
             refreshAllInternal(lastState);
             return;
         }
+        // Event cards (E_*) can never be taken by a player, so they stay unselectable.
+        if (CardCatalog.getInstance().isEvent(id)) return;
         if (!isRowSelectable(id)) return;
         selected.add(id);
         refreshAllInternal(lastState);

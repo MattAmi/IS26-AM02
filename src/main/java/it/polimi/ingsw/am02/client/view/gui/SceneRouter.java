@@ -297,14 +297,39 @@ public class SceneRouter {
         runOnUi(() -> {
             VBox alertBox = new VBox(20);
             alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(450, 250);
-            alertBox.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
 
             Label tL = new Label(title); tL.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
             Label cL = new Label(content); cL.setStyle("-fx-text-fill: white; -fx-font-size: 14px;"); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);
 
             alertBox.getChildren().addAll(tL, cL, buildGameOverButtons());
 
-            modalLayer.getChildren().setAll(alertBox);
+            // Background: the lobby art (mesos_lobby.png) zoomed onto the central
+            // bonfire-and-dancers scene via a viewport crop, dimmed by a dark
+            // scrim so the white/gold text stays legible.
+            ImageView bg = new ImageView(ImageLoader.getImage("/images/mesos_lobby.png"));
+            bg.setPreserveRatio(false);
+            // Crop region (in source-image pixels) around the fire and figures.
+            bg.setViewport(new Rectangle2D(245, 483, 735, 740));
+
+            Region scrim = new Region();
+            scrim.setStyle("-fx-background-color: rgba(20, 10, 6, 0.72);");
+
+            StackPane backdrop = new StackPane(bg, scrim);
+            bg.fitWidthProperty().bind(backdrop.widthProperty());
+            bg.fitHeightProperty().bind(backdrop.heightProperty());
+
+            Rectangle clip = new Rectangle();
+            clip.setArcWidth(22); clip.setArcHeight(22);
+            clip.widthProperty().bind(backdrop.widthProperty());
+            clip.heightProperty().bind(backdrop.heightProperty());
+            backdrop.setClip(clip);
+
+            StackPane card = new StackPane(backdrop, alertBox);
+            card.setMaxSize(450, 250);
+            card.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; "
+                    + "-fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+
+            modalLayer.getChildren().setAll(card);
             modalLayer.setVisible(true);
         });
     }

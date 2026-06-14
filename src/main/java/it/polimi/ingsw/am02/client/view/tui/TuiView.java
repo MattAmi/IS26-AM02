@@ -660,22 +660,12 @@ public class TuiView extends AbstractClientView {
         });
     }
 
-    /**
-     * Clears the game model and informs the user that the post-crash
-     * reconnection window expired before enough players returned.
-     */
-    @Override
-    public void onGameRecoveryFailed() {
-        eventQueue.add(() -> {
-            this.gameModel = null;
-            clearScreen();
-            printHeader();
-            System.out.println(RED + BOLD + "=== GAME RECOVERY FAILED ===" + RESET);
-            System.out.println("Not all players reconnected in time. The game has been terminated.");
-            System.out.println("\nType 'lobby' to return to lobby, or 'quit' to exit.");
-            System.out.print("\n" + CYAN + "> " + RESET);
-        });
-    }
+    // onGameRecoveryFailed is intentionally not overridden: it is a defensive
+    // server-side fallback (see GameController) that only fires when the global
+    // timer expires with no active player — a "should never happen" terminal
+    // state in which no client is connected to display anything. The TUI
+    // inherits the no-op default from AbstractClientView. The full pipeline is
+    // kept for a future view that may want to surface this state.
 
     /**
      * Appends a notification that the global forfeit countdown has started.

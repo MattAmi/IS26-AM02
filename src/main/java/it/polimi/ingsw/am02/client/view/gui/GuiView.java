@@ -391,13 +391,12 @@ public class GuiView extends AbstractClientView {
         sceneRouter.showGameOverPopup("Game Aborted", "Game ended. Last standing: " + lastManStanding);
     }
 
-    /**
-     * Handles a failure to recover the game state.
-     */
-    @Override
-    public void onGameRecoveryFailed() {
-        sceneRouter.showGameOverPopup("Error", "Recovery failed. Not all players reconnected in time.");
-    }
+    // onGameRecoveryFailed is intentionally not overridden: it is a defensive
+    // server-side fallback (see GameController) that only fires when the global
+    // timer expires with no active player — a "should never happen" terminal
+    // state in which no client is connected to display anything. The GUI
+    // inherits the no-op default from AbstractClientView. The full pipeline is
+    // kept for a future view that may want to surface this state.
 
     /**
      * Handles the reconnection of a player.

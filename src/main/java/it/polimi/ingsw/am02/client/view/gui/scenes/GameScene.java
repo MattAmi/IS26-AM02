@@ -931,8 +931,42 @@ public class GameScene {
      */
     private void toggleCardSelection(String id) {
         if (isAnimating || !cardActionsAllowed()) return;
-        if (selected.contains(id)) selected.remove(id); else selected.add(id);
+        // Deselecting an already-picked card is always allowed; only adding a new
+        // selection is gated by the row's remaining pick limit.
+        if (selected.contains(id)) {
+            selected.remove(id);
+            refreshAllInternal(lastState);
+            return;
+        }
+        if (!isRowSelectable(id)) return;
+        selected.add(id);
         refreshAllInternal(lastState);
+    }
+
+    /**
+     * Determines whether the card identified by {@code id} may be picked from the
+     * board given the local player's remaining pick limits for the row it sits in.
+     *
+     * <p>Mirrors the rule the player sees on their sidebar: a card in the upper row
+     * (characters/events <em>or</em> buildings) is pickable only while the player
+     * still has upper-row picks left, and likewise for the lower row. When a row's
+     * limit is exhausted its cards become unclickable; when both rows have picks the
+     * whole board is free. This is purely a click gate — the card's appearance is
+     * left untouched.
+     *
+     * @param id the board card identifier
+     * @return {@code true} if the card may currently be selected
+     */
+    private boolean isRowSelectable(String id) {
+        if (lastState == null) return true;
+        String me = lastState.myNickname;
+        if (lastState.upperRow.contains(id) || lastState.upperRowBuildings.contains(id)) {
+            return lastState.remainingUpper.getOrDefault(me, 0) > 0;
+        }
+        if (lastState.lowerRow.contains(id) || lastState.lowerRowBuildings.contains(id)) {
+            return lastState.remainingLower.getOrDefault(me, 0) > 0;
+        }
+        return true;
     }
 
     /**

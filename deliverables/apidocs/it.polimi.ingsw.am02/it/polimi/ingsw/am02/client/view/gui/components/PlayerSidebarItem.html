@@ -61,7 +61,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
 <ol class="toc-list">
-<li><a href="#%3Cinit%3E(java.lang.String,boolean,boolean,boolean,boolean,int,int,it.polimi.ingsw.am02.common.enumerations.Totem,javafx.scene.text.Font,java.lang.Runnable)" tabindex="0">PlayerSidebarItem(String, boolean, boolean, boolean, boolean, int, int, Totem, Font, Runnable)</a></li>
+<li><a href="#%3Cinit%3E(java.lang.String,boolean,boolean,boolean,boolean,int,int,int,int,it.polimi.ingsw.am02.common.enumerations.Totem,javafx.scene.text.Font,java.lang.Runnable)" tabindex="0">PlayerSidebarItem(String, boolean, boolean, boolean, boolean, int, int, int, int, Totem, Font, Runnable)</a></li>
 </ol>
 </li>
 </ol>
@@ -137,13 +137,15 @@ This class displays player information such as nickname, totem, food, and presti
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
-<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.lang.String,boolean,boolean,boolean,boolean,int,int,it.polimi.ingsw.am02.common.enumerations.Totem,javafx.scene.text.Font,java.lang.Runnable)" class="member-name-link">PlayerSidebarItem</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.lang.String,boolean,boolean,boolean,boolean,int,int,int,int,it.polimi.ingsw.am02.common.enumerations.Totem,javafx.scene.text.Font,java.lang.Runnable)" class="member-name-link">PlayerSidebarItem</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
  boolean&nbsp;isMe,
  boolean&nbsp;isActive,
  boolean&nbsp;isOffline,
  boolean&nbsp;isViewed,
  int&nbsp;food,
  int&nbsp;pp,
+ int&nbsp;picksUp,
+ int&nbsp;picksLow,
  <a href="../../../../common/enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&nbsp;totem,
  javafx.scene.text.Font&nbsp;tribalFont,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&nbsp;onClick)</code></div>
@@ -190,7 +192,7 @@ This class displays player information such as nickname, totem, food, and presti
 <h2>Constructor Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="&lt;init&gt;(java.lang.String,boolean,boolean,boolean,boolean,int,int,it.polimi.ingsw.am02.common.enumerations.Totem,javafx.scene.text.Font,java.lang.Runnable)">
+<section class="detail" id="&lt;init&gt;(java.lang.String,boolean,boolean,boolean,boolean,int,int,int,int,it.polimi.ingsw.am02.common.enumerations.Totem,javafx.scene.text.Font,java.lang.Runnable)">
 <h3>PlayerSidebarItem</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">PlayerSidebarItem</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
@@ -200,6 +202,8 @@ This class displays player information such as nickname, totem, food, and presti
  boolean&nbsp;isViewed,
  int&nbsp;food,
  int&nbsp;pp,
+ int&nbsp;picksUp,
+ int&nbsp;picksLow,
  <a href="../../../../common/enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&nbsp;totem,
  javafx.scene.text.Font&nbsp;tribalFont,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&nbsp;onClick)</span></div>
@@ -213,6 +217,8 @@ This class displays player information such as nickname, totem, food, and presti
 <dd><code>isViewed</code> - True if this player's hand is currently being viewed.</dd>
 <dd><code>food</code> - The player's current food count.</dd>
 <dd><code>pp</code> - The player's current prestige points.</dd>
+<dd><code>picksUp</code> - Remaining upper-row picks (shown only in ACTION_RESOLUTION; 0 otherwise).</dd>
+<dd><code>picksLow</code> - Remaining lower-row picks (shown only in ACTION_RESOLUTION; 0 otherwise).</dd>
 <dd><code>totem</code> - The totem color assigned to the player.</dd>
 <dd><code>tribalFont</code> - The font to use for text display.</dd>
 <dd><code>onClick</code> - The action to perform when the item is clicked.</dd>

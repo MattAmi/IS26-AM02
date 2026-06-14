@@ -3906,15 +3906,6 @@ the lobby model to the game model, and injects the model into the view.</div>
 <div class="block">Called when the server could not complete crash recovery
 (no players reconnected within the recovery window).</div>
 </dd>
-<dt><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/GuiView.html#onGameRecoveryFailed()" class="member-name-link">onGameRecoveryFailed()</a> - Method in class it.polimi.ingsw.am02.client.view.gui.<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/GuiView.html" title="class in it.polimi.ingsw.am02.client.view.gui">GuiView</a></dt>
-<dd>
-<div class="block">Handles a failure to recover the game state.</div>
-</dd>
-<dt><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/tui/TuiView.html#onGameRecoveryFailed()" class="member-name-link">onGameRecoveryFailed()</a> - Method in class it.polimi.ingsw.am02.client.view.tui.<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/tui/TuiView.html" title="class in it.polimi.ingsw.am02.client.view.tui">TuiView</a></dt>
-<dd>
-<div class="block">Clears the game model and informs the user that the post-crash
-reconnection window expired before enough players returned.</div>
-</dd>
 <dt><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/AbstractClientView.html#onGameSetupCompleted(java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">onGameSetupCompleted(List, Map, BoardSnapshot)</a> - Method in class it.polimi.ingsw.am02.client.view.<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/ClientView.html#onGameSetupCompleted(java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">onGameSetupCompleted(List, Map, BoardSnapshot)</a> - Method in interface it.polimi.ingsw.am02.client.view.<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></dt>
@@ -4432,7 +4423,7 @@ that player.</div>
 <dd>
 <div class="block">Represents an item in the player sidebar of the GUI.</div>
 </dd>
-<dt><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/components/PlayerSidebarItem.html#%3Cinit%3E(java.lang.String,boolean,boolean,boolean,boolean,int,int,it.polimi.ingsw.am02.common.enumerations.Totem,javafx.scene.text.Font,java.lang.Runnable)" class="member-name-link">PlayerSidebarItem(String, boolean, boolean, boolean, boolean, int, int, Totem, Font, Runnable)</a> - Constructor for class it.polimi.ingsw.am02.client.view.gui.components.<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/components/PlayerSidebarItem.html" title="class in it.polimi.ingsw.am02.client.view.gui.components">PlayerSidebarItem</a></dt>
+<dt><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/components/PlayerSidebarItem.html#%3Cinit%3E(java.lang.String,boolean,boolean,boolean,boolean,int,int,int,int,it.polimi.ingsw.am02.common.enumerations.Totem,javafx.scene.text.Font,java.lang.Runnable)" class="member-name-link">PlayerSidebarItem(String, boolean, boolean, boolean, boolean, int, int, int, int, Totem, Font, Runnable)</a> - Constructor for class it.polimi.ingsw.am02.client.view.gui.components.<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/components/PlayerSidebarItem.html" title="class in it.polimi.ingsw.am02.client.view.gui.components">PlayerSidebarItem</a></dt>
 <dd>
 <div class="block">Constructs a new PlayerSidebarItem.</div>
 </dd>
@@ -5204,6 +5195,11 @@ the Shamanic Ritual event.</div>
 <dt><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/SceneRouter.html#showGameOverPopup(java.lang.String,java.lang.String)" class="member-name-link">showGameOverPopup(String, String)</a> - Method in class it.polimi.ingsw.am02.client.view.gui.<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/SceneRouter.html" title="class in it.polimi.ingsw.am02.client.view.gui">SceneRouter</a></dt>
 <dd>
 <div class="block">Displays a game over popup with options to return to menu or exit.</div>
+</dd>
+<dt><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/SceneRouter.html#showGameOverPopup(java.lang.String,java.util.List,java.util.List)" class="member-name-link">showGameOverPopup(String, List, List)</a> - Method in class it.polimi.ingsw.am02.client.view.gui.<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/SceneRouter.html" title="class in it.polimi.ingsw.am02.client.view.gui">SceneRouter</a></dt>
+<dd>
+<div class="block">Displays the end-of-game popup with the winners and the full final
+rankings, mirroring the TUI's game-over screen.</div>
 </dd>
 <dt><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/SceneRouter.html#showInGameMenu()" class="member-name-link">showInGameMenu()</a> - Method in class it.polimi.ingsw.am02.client.view.gui.<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/SceneRouter.html" title="class in it.polimi.ingsw.am02.client.view.gui">SceneRouter</a></dt>
 <dd>

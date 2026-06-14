@@ -78,6 +78,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#showToast(java.lang.String,java.lang.String,javafx.scene.control.Alert.AlertType)" tabindex="0">showToast(String, String, Alert.AlertType)</a></li>
 <li><a href="#showBlockingAlert(java.lang.String,java.lang.String,javafx.scene.control.Alert.AlertType)" tabindex="0">showBlockingAlert(String, String, Alert.AlertType)</a></li>
 <li><a href="#showGameOverPopup(java.lang.String,java.lang.String)" tabindex="0">showGameOverPopup(String, String)</a></li>
+<li><a href="#showGameOverPopup(java.lang.String,java.util.List,java.util.List)" tabindex="0">showGameOverPopup(String, List, List)</a></li>
 <li><a href="#showInGameMenu()" tabindex="0">showInGameMenu()</a></li>
 <li><a href="#showSummaryCard()" tabindex="0">showSummaryCard()</a></li>
 <li><a href="#hideModal()" tabindex="0">hideModal()</a></li>
@@ -194,50 +195,58 @@ alerts, and notifications.</div>
 <div class="block">Displays a game over popup with options to return to menu or exit.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showInGameMenu()" class="member-name-link">showInGameMenu</a>()</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showGameOverPopup(java.lang.String,java.util.List,java.util.List)" class="member-name-link">showGameOverPopup</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;title,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;winners,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="../../../common/dto/PlayerFinalScore.html" title="class in it.polimi.ingsw.am02.common.dto">PlayerFinalScore</a>&gt;&nbsp;finalRankings)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Displays the end-of-game popup with the winners and the full final
+rankings, mirroring the TUI's game-over screen.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showInGameMenu()" class="member-name-link">showInGameMenu</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Displays the in-game menu overlay.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showIntroScene()" class="member-name-link">showIntroScene</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showIntroScene()" class="member-name-link">showIntroScene</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Displays the introduction scene.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showLobbyListScene(java.util.List)" class="member-name-link">showLobbyListScene</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="../../../common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a>&gt;&nbsp;lobbies)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showLobbyListScene(java.util.List)" class="member-name-link">showLobbyListScene</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="../../../common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a>&gt;&nbsp;lobbies)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Displays the lobby list scene.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showLobbyScene(it.polimi.ingsw.am02.common.dto.LobbyInfo)" class="member-name-link">showLobbyScene</a><wbr>(<a href="../../../common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a>&nbsp;currentLobby)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showLobbyScene(it.polimi.ingsw.am02.common.dto.LobbyInfo)" class="member-name-link">showLobbyScene</a><wbr>(<a href="../../../common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a>&nbsp;currentLobby)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Displays the current lobby scene.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showPlayerDisconnectedPopup(java.lang.String)" class="member-name-link">showPlayerDisconnectedPopup</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;n)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showPlayerDisconnectedPopup(java.lang.String)" class="member-name-link">showPlayerDisconnectedPopup</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;n)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Displays a popup when a player disconnects.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showProjectInfoScene(java.lang.Runnable)" class="member-name-link">showProjectInfoScene</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&nbsp;onExit)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showProjectInfoScene(java.lang.Runnable)" class="member-name-link">showProjectInfoScene</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&nbsp;onExit)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Displays the project information scene.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showSummaryCard()" class="member-name-link">showSummaryCard</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showSummaryCard()" class="member-name-link">showSummaryCard</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Displays the summary card overlay.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showToast(java.lang.String,java.lang.String,javafx.scene.control.Alert.AlertType)" class="member-name-link">showToast</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;title,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showToast(java.lang.String,java.lang.String,javafx.scene.control.Alert.AlertType)" class="member-name-link">showToast</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;title,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;content,
  javafx.scene.control.Alert.AlertType&nbsp;type)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Shows a toast notification.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#switchToGameScene(it.polimi.ingsw.am02.client.model.GameModel)" class="member-name-link">switchToGameScene</a><wbr>(<a href="../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model">GameModel</a>&nbsp;gameModel)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#switchToGameScene(it.polimi.ingsw.am02.client.model.GameModel)" class="member-name-link">switchToGameScene</a><wbr>(<a href="../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model">GameModel</a>&nbsp;gameModel)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Switches to the game scene.</div>
 </div>
 </div>
@@ -454,6 +463,26 @@ alerts, and notifications.</div>
 <dt>Parameters:</dt>
 <dd><code>title</code> - The title of the popup.</dd>
 <dd><code>content</code> - The message content.</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="showGameOverPopup(java.lang.String,java.util.List,java.util.List)">
+<h3>showGameOverPopup</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">showGameOverPopup</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;title,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;winners,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="../../../common/dto/PlayerFinalScore.html" title="class in it.polimi.ingsw.am02.common.dto">PlayerFinalScore</a>&gt;&nbsp;finalRankings)</span></div>
+<div class="block">Displays the end-of-game popup with the winners and the full final
+rankings, mirroring the TUI's game-over screen. Each ranking row shows the
+position, the player's nickname and their total prestige points next to the
+prestige-point icon.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>title</code> - The title of the popup.</dd>
+<dd><code>winners</code> - The nicknames of the winning players.</dd>
+<dd><code>finalRankings</code> - The final score rankings, in ranking order.</dd>
 </dl>
 </div>
 </section>

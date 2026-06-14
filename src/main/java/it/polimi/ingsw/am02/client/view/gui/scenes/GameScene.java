@@ -463,7 +463,7 @@ public class GameScene {
      */
     private void updateStatusBanner(SceneState state) {
         statusBox.getChildren().clear();
-        String activePlayer = state.currentPlayer != null ? state.currentPlayer.toUpperCase() : "...";
+        String activePlayer = state.currentPlayer != null ? state.currentPlayer : "...";
         String currentPhase = state.currentPhase != null ? state.currentPhase.toString().replace("_", " ") : "WAITING";
 
         Label eraTxt = new Label("ERA " + state.era + "  |"); eraTxt.setTextFill(Color.WHITE); eraTxt.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 18));
@@ -594,7 +594,7 @@ public class GameScene {
      */
     private void updateHandDisplay(SceneState state) {
         handCardsBox.getChildren().clear();
-        handTitle.setText("TRIBE OF: " + viewedPlayerHand.toUpperCase());
+        handTitle.setText(viewedPlayerHand + "'s TRIBE");
 
         List<String> chars = state.charactersByPlayer.getOrDefault(viewedPlayerHand, List.of());
         List<String> buildings = state.buildingsByPlayer.getOrDefault(viewedPlayerHand, List.of());
@@ -778,9 +778,9 @@ public class GameScene {
         actionLabel.setStyle("-fx-background-color: rgba(0,0,0,0.8); -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: gold; -fx-border-radius: 10;");
 
         if (isReturning) {
-            actionLabel.setText(nickname.toUpperCase() + " RETURNS TO CAVE"); fly.setTranslateY(-300);
+            actionLabel.setText(nickname + " RETURNS TO CAVE"); fly.setTranslateY(-300);
         } else {
-            actionLabel.setText(nickname.toUpperCase() + " PLACES ON TILE " + tileID); fly.setTranslateY(300);
+            actionLabel.setText(nickname + " PLACES ON TILE " + tileID); fly.setTranslateY(300);
         }
 
         VBox animBox = new VBox(20, fly, actionLabel); animBox.setAlignment(Pos.CENTER);
@@ -977,7 +977,7 @@ public class GameScene {
             Label icon = new Label("✓");
             icon.setStyle("-fx-font-size: 28; -fx-text-fill: #4CAF50;");
 
-            Label msg = new Label(nickname.toUpperCase() + " HAS RECONNECTED!");
+            Label msg = new Label(nickname + " HAS RECONNECTED!");
             msg.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;");
             if (tribalFont != null) msg.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 14));
 

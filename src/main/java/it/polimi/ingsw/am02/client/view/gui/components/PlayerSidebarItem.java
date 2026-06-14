@@ -61,7 +61,7 @@ public class PlayerSidebarItem extends VBox {
         }
 
         // Setup player name
-        String displayName = nickname.toUpperCase() + (isMe ? " (YOU)" : "");
+        String displayName = nickname + (isMe ? " (YOU)" : "");
         Label nameLabel = new Label(displayName);
         nameLabel.setTextFill(isActive ? Color.GOLD : Color.WHITE);
         if (tribalFont != null) {

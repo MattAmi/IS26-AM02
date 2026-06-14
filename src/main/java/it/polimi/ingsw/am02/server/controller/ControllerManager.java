@@ -412,7 +412,10 @@ public class ControllerManager implements VirtualControllerManager {
         } catch (IOException e) {
             System.err.println("[ControllerManager] Could not delete log file for game " + gameId + ": " + e.getMessage());
         }
-        broadcastToPreLobbyClients();
+        // No lobby-list broadcast here: the lobby for this game was already removed
+        // from `lobbies` when the game started (see startGame), so games never appear
+        // in getLobbyInfoList(). Removing the game controller leaves the pre-lobby
+        // list unchanged, making a broadcast a no-op refresh of identical data.
     }
 
     private void broadcastToPreLobbyClients() {

@@ -822,10 +822,13 @@ public class GameScene {
      * @param source   The row position from which the card was taken.
      */
     public void animateCardTaken(String nickname, String cardID, CardType type, RowPosition source) {
-        Platform.runLater(() -> {
-            animationQueue.add(() -> executeCardTakenAnimation(nickname, cardID, source));
-            if (!isAnimating) playNextAnimation();
-        });
+        // Called on the FX thread (via GuiView.withGameScene), so enqueue directly:
+        // an extra Platform.runLater here would push this animation one FX pulse
+        // behind the single-deferred board renders, so during a fast replay every
+        // card-taken would slip past the renders and the whole batch would bunch up
+        // at the end instead of flying in event order, frame by frame.
+        animationQueue.add(() -> executeCardTakenAnimation(nickname, cardID, source));
+        if (!isAnimating) playNextAnimation();
     }
 
     /**
@@ -864,11 +867,10 @@ public class GameScene {
      * @param tileID   The ID of the offer tile.
      */
     public void animateTotemPlacement(String nickname, char tileID) {
+        // FX-thread only; enqueue directly to stay in event order (see animateCardTaken).
         Totem totem = model.getTotem(nickname);
-        Platform.runLater(() -> {
-            animationQueue.add(() -> executeTotemAnimation(nickname, tileID, false, totem));
-            if (!isAnimating) playNextAnimation();
-        });
+        animationQueue.add(() -> executeTotemAnimation(nickname, tileID, false, totem));
+        if (!isAnimating) playNextAnimation();
     }
 
     /**
@@ -878,11 +880,10 @@ public class GameScene {
      * @param position The position index.
      */
     public void animateTotemReturn(String nickname, int position) {
+        // FX-thread only; enqueue directly to stay in event order (see animateCardTaken).
         Totem totem = model.getTotem(nickname);
-        Platform.runLater(() -> {
-            animationQueue.add(() -> executeTotemAnimation(nickname, 'T', true, totem));
-            if (!isAnimating) playNextAnimation();
-        });
+        animationQueue.add(() -> executeTotemAnimation(nickname, 'T', true, totem));
+        if (!isAnimating) playNextAnimation();
     }
 
     /**

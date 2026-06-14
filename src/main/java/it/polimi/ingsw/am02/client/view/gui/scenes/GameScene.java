@@ -82,9 +82,18 @@ public class GameScene {
     }
 
     /**
-     * Inner class representing a snapshot of the game state for rendering and animations.
+     * Immutable snapshot of the game state for rendering and animations.
+     *
+     * <p>Built exclusively from {@link GameModel}'s {@code synchronized} getters
+     * (each returning a defensive copy), so a snapshot can be taken safely from
+     * <em>any</em> thread — in particular the network thread, the instant an event
+     * is applied. Capturing on the network thread (in event order) and only then
+     * marshalling the already-frozen snapshot to the FX thread is what lets a
+     * reconnection replay render frame-by-frame in order, instead of every deferred
+     * render lazily re-reading a model that the network thread has already
+     * fast-forwarded to its final state.
      */
-    private static class SceneState {
+    public static class SceneState {
         String gameId; String currentPlayer; PhaseType currentPhase; Era era; String myNickname;
         List<String> turnOrder; Map<String, Integer> foodByPlayer; Map<String, Integer> ppByPlayer;
         Map<String, Totem> totems; List<String> upperRow; List<String> upperRowBuildings;
@@ -429,16 +438,58 @@ public class GameScene {
     public void refreshAll(GameModel model) {
         if (model == null) return;
         this.model = model;
-        if (viewedPlayerHand == null) viewedPlayerHand = model.getMyNickname();
-
+        // Capture on the caller's thread (synchronized model getters make this safe
+        // from any thread), then hand the frozen snapshot to the FX thread.
         SceneState snapshot = new SceneState(model);
-        this.lastState = snapshot;
+        Platform.runLater(() -> render(snapshot));
+    }
 
-        Platform.runLater(() -> {
-            if (isReplaying) armReplayWatchdog();
-            animationQueue.add(() -> refreshAllInternal(snapshot));
-            if (!isAnimating) playNextAnimation();
-        });
+    /**
+     * Captures an immutable snapshot of the given model. Safe to call from any
+     * thread (see {@link SceneState}). Callers that observe events on the network
+     * thread should snapshot here, in event order, and pass the result to
+     * {@link #render(SceneState)} on the FX thread.
+     *
+     * @param model the model to snapshot
+     * @return a frozen view of the model's current state
+     */
+    public static SceneState snapshot(GameModel model) {
+        return new SceneState(model);
+    }
+
+    /**
+     * Binds the live {@link GameModel} to this scene without triggering a render.
+     *
+     * <p>Rendering uses immutable {@link SceneState} snapshots, but a few helpers
+     * (the turn-order cave, the card-taken/totem animations) still read the live
+     * model for stable, session-constant data such as totem colours and the local
+     * nickname. When the scene is created lazily on a setup/phase event we build it
+     * without an auto-refresh and bind the model here, so those helpers have a
+     * non-null reference before the first {@link #render(SceneState)}.
+     *
+     * @param model the live game model for this session
+     */
+    public void setModel(GameModel model) {
+        this.model = model;
+    }
+
+    /**
+     * Renders a previously captured {@link SceneState}.
+     *
+     * <p><b>Must be called on the JavaFX application thread.</b> It mutates
+     * FX-thread-only state ({@link #lastState}, {@link #viewedPlayerHand}, the
+     * animation queue) and schedules the actual node updates, so that the FX thread
+     * remains the single thread that ever touches the GUI.
+     *
+     * @param snapshot the frozen state to render
+     */
+    public void render(SceneState snapshot) {
+        if (snapshot == null) return;
+        this.lastState = snapshot;
+        if (viewedPlayerHand == null && snapshot.myNickname != null) viewedPlayerHand = snapshot.myNickname;
+        if (isReplaying) armReplayWatchdog();
+        animationQueue.add(() -> refreshAllInternal(snapshot));
+        if (!isAnimating) playNextAnimation();
     }
 
     /**
@@ -771,10 +822,13 @@ public class GameScene {
      * @param source   The row position from which the card was taken.
      */
     public void animateCardTaken(String nickname, String cardID, CardType type, RowPosition source) {
-        Platform.runLater(() -> {
-            animationQueue.add(() -> executeCardTakenAnimation(nickname, cardID, source));
-            if (!isAnimating) playNextAnimation();
-        });
+        // Called on the FX thread (via GuiView.withGameScene), so enqueue directly:
+        // an extra Platform.runLater here would push this animation one FX pulse
+        // behind the single-deferred board renders, so during a fast replay every
+        // card-taken would slip past the renders and the whole batch would bunch up
+        // at the end instead of flying in event order, frame by frame.
+        animationQueue.add(() -> executeCardTakenAnimation(nickname, cardID, source));
+        if (!isAnimating) playNextAnimation();
     }
 
     /**
@@ -813,11 +867,10 @@ public class GameScene {
      * @param tileID   The ID of the offer tile.
      */
     public void animateTotemPlacement(String nickname, char tileID) {
+        // FX-thread only; enqueue directly to stay in event order (see animateCardTaken).
         Totem totem = model.getTotem(nickname);
-        Platform.runLater(() -> {
-            animationQueue.add(() -> executeTotemAnimation(nickname, tileID, false, totem));
-            if (!isAnimating) playNextAnimation();
-        });
+        animationQueue.add(() -> executeTotemAnimation(nickname, tileID, false, totem));
+        if (!isAnimating) playNextAnimation();
     }
 
     /**
@@ -827,11 +880,10 @@ public class GameScene {
      * @param position The position index.
      */
     public void animateTotemReturn(String nickname, int position) {
+        // FX-thread only; enqueue directly to stay in event order (see animateCardTaken).
         Totem totem = model.getTotem(nickname);
-        Platform.runLater(() -> {
-            animationQueue.add(() -> executeTotemAnimation(nickname, 'T', true, totem));
-            if (!isAnimating) playNextAnimation();
-        });
+        animationQueue.add(() -> executeTotemAnimation(nickname, 'T', true, totem));
+        if (!isAnimating) playNextAnimation();
     }
 
     /**
@@ -879,8 +931,44 @@ public class GameScene {
      */
     private void toggleCardSelection(String id) {
         if (isAnimating || !cardActionsAllowed()) return;
-        if (selected.contains(id)) selected.remove(id); else selected.add(id);
+        // Deselecting an already-picked card is always allowed; only adding a new
+        // selection is gated by the row's remaining pick limit.
+        if (selected.contains(id)) {
+            selected.remove(id);
+            refreshAllInternal(lastState);
+            return;
+        }
+        // Event cards (E_*) can never be taken by a player, so they stay unselectable.
+        if (CardCatalog.getInstance().isEvent(id)) return;
+        if (!isRowSelectable(id)) return;
+        selected.add(id);
         refreshAllInternal(lastState);
+    }
+
+    /**
+     * Determines whether the card identified by {@code id} may be picked from the
+     * board given the local player's remaining pick limits for the row it sits in.
+     *
+     * <p>Mirrors the rule the player sees on their sidebar: a card in the upper row
+     * (characters/events <em>or</em> buildings) is pickable only while the player
+     * still has upper-row picks left, and likewise for the lower row. When a row's
+     * limit is exhausted its cards become unclickable; when both rows have picks the
+     * whole board is free. This is purely a click gate — the card's appearance is
+     * left untouched.
+     *
+     * @param id the board card identifier
+     * @return {@code true} if the card may currently be selected
+     */
+    private boolean isRowSelectable(String id) {
+        if (lastState == null) return true;
+        String me = lastState.myNickname;
+        if (lastState.upperRow.contains(id) || lastState.upperRowBuildings.contains(id)) {
+            return lastState.remainingUpper.getOrDefault(me, 0) > 0;
+        }
+        if (lastState.lowerRow.contains(id) || lastState.lowerRowBuildings.contains(id)) {
+            return lastState.remainingLower.getOrDefault(me, 0) > 0;
+        }
+        return true;
     }
 
     /**
@@ -944,29 +1032,34 @@ public class GameScene {
     /**
      * Displays an animation for the beginning of a new era.
      *
+     * <p><b>Must be called on the JavaFX application thread.</b> The board is
+     * refreshed from the supplied (event-ordered) snapshot and the era overlay is
+     * appended right after it in the same animation queue, so the "ERA n" banner
+     * plays in lockstep with the board frame that introduced the new era — even
+     * while a reconnection history is being replayed.
+     *
+     * @param snapshot the frozen state captured when the era-change event arrived.
      * @param newEra               The new era.
      * @param u                    New upper row buildings.
      * @param l                    New lower row buildings.
      */
-    public void showNewEraAnimation(Era newEra, List<String> u, List<String> l) {
-        refreshAll(model);
+    public void showNewEraAnimation(SceneState snapshot, Era newEra, List<String> u, List<String> l) {
+        render(snapshot);
 
-        Platform.runLater(() -> {
-            animationQueue.add(() -> {
-                root.setEffect(new GaussianBlur(12));
+        animationQueue.add(() -> {
+            root.setEffect(new GaussianBlur(12));
 
-                NewEraOverlay overlay = new NewEraOverlay();
-                StackPane node = overlay.buildNode(newEra, () -> {
-                    root.setEffect(null);
-                    modalLayer.setVisible(false);
-                    modalLayer.getChildren().clear();
-                    playNextAnimation();
-                });
-                modalLayer.getChildren().setAll(node);
-                modalLayer.setVisible(true);
+            NewEraOverlay overlay = new NewEraOverlay();
+            StackPane node = overlay.buildNode(newEra, () -> {
+                root.setEffect(null);
+                modalLayer.setVisible(false);
+                modalLayer.getChildren().clear();
+                playNextAnimation();
             });
-            if (!isAnimating) playNextAnimation();
+            modalLayer.getChildren().setAll(node);
+            modalLayer.setVisible(true);
         });
+        if (!isAnimating) playNextAnimation();
     }
 
     /**
@@ -983,8 +1076,42 @@ public class GameScene {
      */
     public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }
 
+    /**
+     * Queues the forfeit banner into the animation FIFO. Must be called on the FX
+     * thread.
+     *
+     * <p>The banner is intentionally routed through the same {@link #animationQueue}
+     * as every other on-screen step rather than shown immediately: the server fires
+     * the global-timer notification at the <em>end</em> of a reconnection replay, so
+     * if the banner were raised on its own {@code Platform.runLater} it would jump
+     * the fast FX-pulse queue and appear <em>before</em> the still-draining visual
+     * replay (the infamous "120s shown first"). Enqueuing it guarantees it surfaces
+     * only after everything queued ahead of it has played out.
+     *
+     * @param seconds the forfeit countdown value supplied by the server
+     */
+    public void enqueueForfeitBanner(long seconds) {
+        animationQueue.add(() -> { showForfeitBannerNow(seconds); playNextAnimation(); });
+        if (!isAnimating) playNextAnimation();
+    }
+
+    /**
+     * Queues the dismissal of the forfeit banner into the animation FIFO. Must be
+     * called on the FX thread. Routed through the queue for the same reason as
+     * {@link #enqueueForfeitBanner(long)} and, crucially, so the dismissal can never
+     * overtake a still-queued show (which would leave the banner stuck on screen).
+     */
+    public void enqueueDismissForfeitBanner() {
+        animationQueue.add(() -> { dismissForfeitBannerNow(); playNextAnimation(); });
+        if (!isAnimating) playNextAnimation();
+    }
+
     public void showForfeitBanner(long seconds) {
-        Platform.runLater(() -> {
+        Platform.runLater(() -> showForfeitBannerNow(seconds));
+    }
+
+    private void showForfeitBannerNow(long seconds) {
+        {
             if (forfeitBanner != null) baseStack.getChildren().remove(forfeitBanner);
 
             Label icon = new Label("⚠");
@@ -1023,21 +1150,23 @@ public class GameScene {
             fadeIn.play();
 
             addLogEntry("[!] ", "You are alone — forfeit win in about " + seconds + "s if no one reconnects.", Color.web("#FF4444"));
-        });
+        }
     }
 
     public void dismissForfeitBanner() {
-        Platform.runLater(() -> {
-            if (forfeitBanner != null) {
-                VBox bannerRef = forfeitBanner;
-                forfeitBanner = null;
-                FadeTransition fadeOut = new FadeTransition(Duration.millis(400), bannerRef);
-                fadeOut.setToValue(0);
-                fadeOut.setOnFinished(e -> baseStack.getChildren().remove(bannerRef));
-                fadeOut.play();
-                addLogEntry("[!] ", "A player reconnected — forfeit countdown cancelled.", Color.web("#4CAF50"));
-            }
-        });
+        Platform.runLater(this::dismissForfeitBannerNow);
+    }
+
+    private void dismissForfeitBannerNow() {
+        if (forfeitBanner != null) {
+            VBox bannerRef = forfeitBanner;
+            forfeitBanner = null;
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(400), bannerRef);
+            fadeOut.setToValue(0);
+            fadeOut.setOnFinished(e -> baseStack.getChildren().remove(bannerRef));
+            fadeOut.play();
+            addLogEntry("[!] ", "A player reconnected — forfeit countdown cancelled.", Color.web("#4CAF50"));
+        }
     }
 
     public void logPlayerReconnected(String nickname) {

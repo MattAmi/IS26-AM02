@@ -18,6 +18,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -87,6 +89,18 @@ public class SceneRouter {
 
         rootContainer = new StackPane(baseLayer, modalLayer, toastLayer);
         Scene mainScene = new Scene(rootContainer, 400, 450);
+
+        // Global full-screen toggle: the scene outlives every view swap (only
+        // baseLayer's content changes), so a single filter here makes F11 work at
+        // any moment of the application — crucially letting the user re-enter full
+        // screen after leaving it, which ESC alone never allowed.
+        mainScene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            if (e.getCode() == KeyCode.F11) {
+                primaryStage.setResizable(true);
+                primaryStage.setFullScreen(!primaryStage.isFullScreen());
+                e.consume();
+            }
+        });
 
         primaryStage.setTitle("Mesos - Board Game");
         primaryStage.setScene(mainScene);
@@ -297,14 +311,39 @@ public class SceneRouter {
         runOnUi(() -> {
             VBox alertBox = new VBox(20);
             alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(450, 250);
-            alertBox.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
 
             Label tL = new Label(title); tL.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
             Label cL = new Label(content); cL.setStyle("-fx-text-fill: white; -fx-font-size: 14px;"); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);
 
             alertBox.getChildren().addAll(tL, cL, buildGameOverButtons());
 
-            modalLayer.getChildren().setAll(alertBox);
+            // Background: the lobby art (mesos_lobby.png) zoomed onto the central
+            // bonfire-and-dancers scene via a viewport crop, dimmed by a dark
+            // scrim so the white/gold text stays legible.
+            ImageView bg = new ImageView(ImageLoader.getImage("/images/mesos_lobby.png"));
+            bg.setPreserveRatio(false);
+            // Crop region (in source-image pixels) around the fire and figures.
+            bg.setViewport(new Rectangle2D(245, 483, 735, 740));
+
+            Region scrim = new Region();
+            scrim.setStyle("-fx-background-color: rgba(20, 10, 6, 0.72);");
+
+            StackPane backdrop = new StackPane(bg, scrim);
+            bg.fitWidthProperty().bind(backdrop.widthProperty());
+            bg.fitHeightProperty().bind(backdrop.heightProperty());
+
+            Rectangle clip = new Rectangle();
+            clip.setArcWidth(22); clip.setArcHeight(22);
+            clip.widthProperty().bind(backdrop.widthProperty());
+            clip.heightProperty().bind(backdrop.heightProperty());
+            backdrop.setClip(clip);
+
+            StackPane card = new StackPane(backdrop, alertBox);
+            card.setMaxSize(450, 250);
+            card.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; "
+                    + "-fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+
+            modalLayer.getChildren().setAll(card);
             modalLayer.setVisible(true);
         });
     }

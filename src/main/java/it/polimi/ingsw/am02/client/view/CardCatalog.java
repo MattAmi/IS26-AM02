@@ -37,6 +37,21 @@ public class CardCatalog {
     /** @return the singleton instance */
     public static CardCatalog getInstance() { return INSTANCE; }
 
+    /**
+     * Reports whether the given card is an Event card.
+     *
+     * <p>Event IDs use the {@code E_} prefix — the same discriminator this class
+     * relies on internally (see {@link #format(String)}) to route a card to its
+     * event formatter. Events can never be picked from the board by a player, so
+     * the GUI uses this to keep them unselectable.
+     *
+     * @param cardId the card identifier (e.g. {@code "E_005"}), may be {@code null}
+     * @return {@code true} if the ID denotes an Event card
+     */
+    public boolean isEvent(String cardId) {
+        return cardId != null && cardId.startsWith("E_");
+    }
+
     private void loadJson(String resourcePath) {
         try (InputStream is = CardCatalog.class.getResourceAsStream(resourcePath)) {
             JsonNode root = mapper.readTree(is);

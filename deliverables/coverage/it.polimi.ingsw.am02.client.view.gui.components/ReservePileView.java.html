@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReservePileView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Mesos</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.components</a> &gt; <span class="el_source">ReservePileView.java</span></div><h1>ReservePileView.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.components;
+
+import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+
+/**
+ * Graphical representation of the common reserve in the GUI.
+ * &lt;p&gt;
+ * Mirrors the &quot;riserva comune&quot; of the physical board game: two heaps of tokens
+ * (prestige points on top, food below) shown to the right of the offer track.
+ * The reserve is intentionally &lt;em&gt;infinite&lt;/em&gt; &amp;mdash; there is no server-side
+ * supply to track &amp;mdash; so each heap is purely decorative and is annotated with
+ * an infinity glyph rather than a count.
+ */
+public class ReservePileView extends VBox {
+
+    private static final String DIR = &quot;/images/icons/reserve/&quot;;
+
+    /** A single token placement within a heap: image + (x, y) offset from centre. */
+<span class="nc" id="L27">    private record Token(String file, double dx, double dy) {}</span>
+
+    /**
+     * Prestige heap: every denomination (positive gold, negative red), scattered
+     * back-to-front so the heap reads as a loose pile.
+     */
+<span class="nc" id="L33">    private static final Token[] PRESTIGE = {</span>
+            new Token(&quot;pp_p5.png&quot;, -30, -12), new Token(&quot;pp_p10.png&quot;, -10, -14),
+            new Token(&quot;pp_p20.png&quot;, 12, -12), new Token(&quot;pp_m5.png&quot;, 32, -10),
+            new Token(&quot;pp_p1.png&quot;, -34, 2),   new Token(&quot;pp_p3.png&quot;, -14, 0),
+            new Token(&quot;pp_m20.png&quot;, 8, 1),    new Token(&quot;pp_m10.png&quot;, 28, 2),
+            new Token(&quot;pp_m1.png&quot;, -22, 13),  new Token(&quot;pp_m3.png&quot;, 2, 12)
+    };
+
+    /** Food heap: both denominations (meat &quot;1&quot; and fish &quot;5&quot;) mixed into a pile. */
+<span class="nc" id="L42">    private static final Token[] FOOD = {</span>
+            new Token(&quot;food_5.png&quot;, -20, -8), new Token(&quot;food_1.png&quot;, 4, -9),
+            new Token(&quot;food_5.png&quot;, 24, -7),  new Token(&quot;food_1.png&quot;, -26, 9),
+            new Token(&quot;food_5.png&quot;, -2, 10),  new Token(&quot;food_1.png&quot;, 20, 9)
+    };
+
+    private static final double PP_TOKEN_H = 30;
+    private static final double FOOD_TOKEN_H = 34;
+
+    /**
+     * Constructs the reserve view.
+     *
+     * @param tribalFont the font used for the title and infinity glyph; may be {@code null}.
+     */
+    public ReservePileView(Font tribalFont) {
+<span class="nc" id="L57">        super(2);</span>
+<span class="nc" id="L58">        this.setAlignment(Pos.TOP_CENTER);</span>
+<span class="nc" id="L59">        this.setPadding(new Insets(8, 12, 8, 12));</span>
+<span class="nc" id="L60">        this.setStyle(&quot;-fx-background-color: rgba(26, 15, 7, 0.55);&quot;</span>
+                + &quot; -fx-background-radius: 8;&quot;
+                + &quot; -fx-border-color: #3e2a1d; -fx-border-width: 1; -fx-border-radius: 8;&quot;);
+
+<span class="nc" id="L64">        Label title = new Label(&quot;RESERVE&quot;);</span>
+<span class="nc" id="L65">        title.setTextFill(Color.web(&quot;#F2D5A3&quot;));</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (tribalFont != null) title.setFont(Font.font(tribalFont.getFamily(), 12));</span>
+
+<span class="nc" id="L68">        this.getChildren().addAll(</span>
+                title,
+<span class="nc" id="L70">                heap(PRESTIGE, PP_TOKEN_H, 124, 62, tribalFont),</span>
+<span class="nc" id="L71">                heap(FOOD, FOOD_TOKEN_H, 100, 54, tribalFont)</span>
+        );
+<span class="nc" id="L73">    }</span>
+
+    /**
+     * Builds a decorative heap of overlapping tokens topped with an infinity glyph
+     * to convey that the supply is unlimited. Tokens are drawn in array order, so
+     * earlier entries sit behind later ones.
+     *
+     * @param tokens     the token placements.
+     * @param tokenH     display height of each token.
+     * @param w          preferred heap width.
+     * @param h          preferred heap height.
+     * @param tribalFont font for the infinity glyph; may be {@code null}.
+     * @return a {@link StackPane} containing the heap.
+     */
+    private StackPane heap(Token[] tokens, double tokenH, double w, double h, Font tribalFont) {
+<span class="nc" id="L88">        StackPane pile = new StackPane();</span>
+<span class="nc" id="L89">        pile.setPrefSize(w, h);</span>
+<span class="nc" id="L90">        pile.setMinSize(w, h);</span>
+
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        for (Token t : tokens) {</span>
+<span class="nc" id="L93">            ImageView iv = new ImageView(ImageLoader.getImage(DIR + t.file()));</span>
+<span class="nc" id="L94">            iv.setFitHeight(tokenH);</span>
+<span class="nc" id="L95">            iv.setPreserveRatio(true);</span>
+<span class="nc" id="L96">            iv.setTranslateX(t.dx());</span>
+<span class="nc" id="L97">            iv.setTranslateY(t.dy());</span>
+<span class="nc" id="L98">            iv.setStyle(&quot;-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 4, 0, 1, 1);&quot;);</span>
+<span class="nc" id="L99">            pile.getChildren().add(iv);</span>
+        }
+
+<span class="nc" id="L102">        Label infinity = new Label(&quot;∞&quot;);</span>
+<span class="nc" id="L103">        infinity.setTextFill(Color.WHITE);</span>
+<span class="nc" id="L104">        infinity.setStyle(&quot;-fx-background-color: rgba(0,0,0,0.7); -fx-padding: 0 5; -fx-background-radius: 8;&quot;);</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (tribalFont != null) infinity.setFont(Font.font(tribalFont.getFamily(), 13));</span>
+<span class="nc" id="L106">        StackPane.setAlignment(infinity, Pos.BOTTOM_RIGHT);</span>
+<span class="nc" id="L107">        infinity.setTranslateX(8);</span>
+<span class="nc" id="L108">        infinity.setTranslateY(6);</span>
+<span class="nc" id="L109">        pile.getChildren().add(infinity);</span>
+
+<span class="nc" id="L111">        return pile;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

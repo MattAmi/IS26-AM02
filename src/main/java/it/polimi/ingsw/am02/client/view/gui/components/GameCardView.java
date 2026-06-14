@@ -58,10 +58,11 @@ public class GameCardView extends VBox {
         }
 
         try {
-            Tooltip tooltip = new Tooltip(CardCatalog.getInstance().format(cardId));
+            Tooltip tooltip = new Tooltip(CardCatalog.getInstance().getFullDescription(cardId));
             tooltip.setWrapText(true);
-            tooltip.setPrefWidth(250);
-            tooltip.setShowDelay(Duration.seconds(1));
+            tooltip.setMaxWidth(360);
+            tooltip.setShowDelay(Duration.seconds(0.4));
+            tooltip.setShowDuration(Duration.INDEFINITE);
             Tooltip.install(this, tooltip);
         } catch (Exception ignored) { }
 
@@ -73,7 +74,11 @@ public class GameCardView extends VBox {
             this.setTranslateY(baseTranslateY - 10);
             this.setScaleX(1.1);
             this.setScaleY(1.1);
-            this.toFront();
+            // Bring the hovered card above its neighbours WITHOUT reordering the
+            // StackPane's children: toFront() mutates the child list mid-dispatch,
+            // which re-fires enter/exit and makes the cards jitter. A negative
+            // viewOrder renders this node on top while leaving the list untouched.
+            this.setViewOrder(-1);
             if (!isSelected) {
                 this.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(255,255,255,0.7), 15, 0.4, 0, 0);");
             }
@@ -83,6 +88,7 @@ public class GameCardView extends VBox {
             this.setTranslateY(baseTranslateY);
             this.setScaleX(1.0);
             this.setScaleY(1.0);
+            this.setViewOrder(0);
             hovered = false;
             this.setStyle(isSelected ? "-fx-effect: dropshadow(three-pass-box, gold, 15, 0.6, 0, 0);" : "");
         });

@@ -71,12 +71,17 @@ public class GuiView extends AbstractClientView {
     private void refreshGameIfActive() {
         if (sceneRouter.getGameScene() != null && gameModel != null) {
             GameScene gs = sceneRouter.getGameScene();
-            // Flush a forfeit banner that arrived before the scene existed.
-            if (pendingForfeitSeconds != null) {
-                long s = pendingForfeitSeconds;
-                pendingForfeitSeconds = null;
-                gs.showForfeitBanner(s);
-            }
+            // Flush a forfeit banner that arrived before the scene existed. Done on
+            // the FX thread so all access to pendingForfeitSeconds stays single-
+            // threaded (it is also written from the FX thread in the global-timer
+            // handlers), keeping the check-then-clear atomic and race-free.
+            javafx.application.Platform.runLater(() -> {
+                if (pendingForfeitSeconds != null) {
+                    long s = pendingForfeitSeconds;
+                    pendingForfeitSeconds = null;
+                    gs.showForfeitBanner(s);
+                }
+            });
             gs.refreshAll(gameModel);
         }
     }

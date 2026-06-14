@@ -270,3 +270,14 @@ Listed in alphabetical order by surname.
 **Mesos** is a board game distributed in Italy by **Cranio Creations**. All rights to the game — including its rules, artwork, graphics and other original assets — belong to **Cranio Creations** ©.
 
 This project is a non-commercial software implementation developed **for educational purposes only**, as part of the Software Engineering Final Project at Politecnico di Milano. It is not affiliated with, endorsed by, or sponsored by Cranio Creations.
+
+### Fonts
+
+The GUI bundles two third-party fonts (full notices in [`src/main/resources/fonts/`](src/main/resources/fonts/)):
+
+| Font (file) | Designer | License | Source |
+|-------------|----------|---------|--------|
+| **Tribal** (`tribal.ttf`) | Des — Apostrophic Laboratories | Freeware | [fonts2u.com](https://fonts2u.com/tribal.font) |
+| **c Caves** (`intro.ttf`) | Wahyu Eka Prasetya (*wep*) | Donationware — free for personal use | [dafont.com](https://www.dafont.com/c-caves.font) · [wepfont.com](https://wepfont.com) |
+
+> **Note:** *c Caves* is **donationware** (free for personal use). It is used here only for this non-commercial, educational project; any commercial use would require the author's permission.

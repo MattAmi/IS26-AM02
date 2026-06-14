@@ -150,7 +150,7 @@ public class LobbyScene {
         confirmNick.setPrefSize(200, 50);
         confirmNick.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3;");
         if (tribalSmall != null) confirmNick.setFont(tribalSmall);
-        confirmNick.setOnAction(e -> {
+        javafx.event.EventHandler<javafx.event.ActionEvent> confirmNickAction = e -> {
             String inputText = nickField.getText();
             if (!inputText.isBlank()) {
                 if (inputText.equals(myNickname)) {
@@ -163,7 +163,9 @@ public class LobbyScene {
                     controller.requestSetUsername(inputText);
                 }
             }
-        });
+        };
+        confirmNick.setOnAction(confirmNickAction);
+        nickField.setOnAction(confirmNickAction);
         nicknameBox.getChildren().addAll(nickLabel, nickField, confirmNick);
 
         totemBox = new VBox(20);

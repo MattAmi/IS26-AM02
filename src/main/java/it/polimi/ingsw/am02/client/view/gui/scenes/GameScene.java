@@ -615,8 +615,13 @@ public class GameScene {
      * @return The constructed StackPane representing the cascading stack.
      */
     private StackPane createCascadingStack(String category, List<String> cardIds) {
-        StackPane stack = new StackPane(); stack.setAlignment(Pos.TOP_CENTER); int offsetPerCard = 25;
+        StackPane stack = new StackPane(); stack.setAlignment(Pos.TOP_CENTER);
         if (cardIds.isEmpty()) { stack.setPrefWidth(90); return stack; }
+        // Cascade cards downward, but cap the total spread to a fixed budget so large stacks
+        // (e.g. dozens of cards of the same type) stay within the hand area instead of overflowing
+        // past the clipped, non-scrolling viewport. With few cards the offset stays at the full 25px.
+        int spreadBudget = 80;
+        int offsetPerCard = cardIds.size() <= 1 ? 0 : Math.min(25, spreadBudget / (cardIds.size() - 1));
         stack.setPadding(new Insets(20, 0, Math.max(0, cardIds.size() - 1) * offsetPerCard, 0));
 
         for (int i = 0; i < cardIds.size(); i++) {

@@ -56,7 +56,6 @@ public class GameScene {
     private VBox logContainer;
 
     private VBox forfeitBanner;
-    private Timeline forfeitCountdownTimeline;
 
     private final List<String> selected = new ArrayList<>();
     private final List<String> offlinePlayers = new ArrayList<>();
@@ -91,6 +90,7 @@ public class GameScene {
         Map<String, Totem> totems; List<String> upperRow; List<String> upperRowBuildings;
         List<String> lowerRow; List<String> lowerRowBuildings; List<OfferTileInfo> offerTiles;
         List<TurnOrderSlotInfo> turnOrderSlots;
+        Map<String, Integer> remainingUpper; Map<String, Integer> remainingLower;
         Map<String, List<String>> charactersByPlayer; Map<String, List<String>> buildingsByPlayer;
 
         public SceneState(GameModel m) {
@@ -114,6 +114,8 @@ public class GameScene {
             this.lowerRowBuildings = m.getLowerRowBuildings() != null ? new ArrayList<>(m.getLowerRowBuildings()) : new ArrayList<>();
             this.offerTiles = m.getOfferTiles() != null ? new ArrayList<>(m.getOfferTiles()) : new ArrayList<>();
             this.turnOrderSlots = m.getTurnOrderSlots() != null ? new ArrayList<>(m.getTurnOrderSlots()) : new ArrayList<>();
+            this.remainingUpper = m.getRemainingUpper() != null ? new HashMap<>(m.getRemainingUpper()) : new HashMap<>();
+            this.remainingLower = m.getRemainingLower() != null ? new HashMap<>(m.getRemainingLower()) : new HashMap<>();
             this.charactersByPlayer = new HashMap<>();
             if (m.getCharactersByPlayer() != null) m.getCharactersByPlayer().forEach((k, v) -> this.charactersByPlayer.put(k, new ArrayList<>(v)));
             this.buildingsByPlayer = new HashMap<>();
@@ -220,21 +222,27 @@ public class GameScene {
         centerLayout.setStyle("-fx-background-image: url('" + bgPath + "'); -fx-background-size: 130%; -fx-background-position: center;");
         Region darkOverlay = new Region(); darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.55);");
 
-        mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 250, 20)); mainBoardArea.setAlignment(Pos.CENTER);
+        // Fixed bottom reservation for the overlaid hand/TRIBE strip. The strip is
+        // height-bounded below (fixed tribe-card size + capped cascade spread + tight
+        // paddings), so it never grows past this reservation as a tribe accumulates
+        // cards. A fixed value (rather than one bound to the strip height) keeps the
+        // board from scrolling, while still guaranteeing the lower row is never
+        // covered, for any tribe size and 2-5 players.
+        mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 255, 20)); mainBoardArea.setAlignment(Pos.CENTER);
         ScrollPane scrollPane = new ScrollPane(mainBoardArea); scrollPane.setFitToWidth(true); scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
         VBox bottomLayout = new VBox(0); bottomLayout.setMaxHeight(Region.USE_PREF_SIZE); bottomLayout.setAlignment(Pos.BOTTOM_CENTER);
 
-        VBox handArea = new VBox(5); handArea.setPadding(new Insets(10, 10, 30, 10));
+        VBox handArea = new VBox(5); handArea.setPadding(new Insets(10, 10, 12, 10));
         handArea.setStyle("-fx-background-color: rgba(26, 15, 7, 0.90); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;");
         handTitle = new Label("TRIBE"); handTitle.setTextFill(Color.web("#F2D5A3")); handTitle.setFont(Font.font(tribalFont.getFamily(), 14));
 
-        handCardsBox = new HBox(15); handCardsBox.setAlignment(Pos.TOP_CENTER); handCardsBox.setMinHeight(220);
+        handCardsBox = new HBox(15); handCardsBox.setAlignment(Pos.TOP_CENTER); handCardsBox.setMinHeight(155);
         ScrollPane handScroll = new ScrollPane(handCardsBox); handScroll.setFitToHeight(true); handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         handScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         handArea.getChildren().addAll(handTitle, handScroll);
 
-        HBox bottomButtons = new HBox(25); bottomButtons.setPadding(new Insets(15)); bottomButtons.setAlignment(Pos.CENTER);
+        HBox bottomButtons = new HBox(25); bottomButtons.setPadding(new Insets(10)); bottomButtons.setAlignment(Pos.CENTER);
         bottomButtons.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
 
         String idleStyle = "-fx-background-color: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + fName + "\"; -fx-border-color: #4A3B32; -fx-border-radius: 3; -fx-border-width: 1;";
@@ -497,16 +505,23 @@ public class GameScene {
         List<String> players = state.turnOrder;
         if (players.isEmpty() || players.get(0).matches("\\d+")) players = new ArrayList<>(state.foodByPlayer.keySet());
 
+        // Remaining picks are only meaningful during ACTION_RESOLUTION; the model
+        // keeps the last values around between turns, so outside that phase we
+        // force them to 0 to match the TUI's per-phase semantics.
+        boolean inActionResolution = state.currentPhase == PhaseType.ACTION_RESOLUTION;
+
         for (String nick : players) {
             boolean isActive = nick.equals(state.currentPlayer);
             boolean isOffline = offlinePlayers.contains(nick);
             boolean isViewed = nick.equals(viewedPlayerHand);
             int food = state.foodByPlayer.getOrDefault(nick, 0);
             int pp = state.ppByPlayer.getOrDefault(nick, 0);
+            int picksUp = inActionResolution ? state.remainingUpper.getOrDefault(nick, 0) : 0;
+            int picksLow = inActionResolution ? state.remainingLower.getOrDefault(nick, 0) : 0;
 
             PlayerSidebarItem pBox = new PlayerSidebarItem(
                     nick, nick.equals(state.myNickname), isActive, isOffline, isViewed,
-                    food, pp, state.totems.get(nick), tribalFont,
+                    food, pp, picksUp, picksLow, state.totems.get(nick), tribalFont,
                     () -> { viewedPlayerHand = nick; refreshAllInternal(lastState); }
             );
             rightSidebar.getChildren().add(pBox);
@@ -530,16 +545,31 @@ public class GameScene {
 
         int spacing = numPlayers >= 4 ? 6 : 12;
 
-        HBox upperBand = new HBox(40); upperBand.setAlignment(Pos.CENTER);
+        // Covered building decks for future eras (rulebook 6b) float ABOVE and
+        // centred over the revealed buildings (6a) of the upper row, emulating the
+        // physical layout where the face-down Era II/III decks sit on top of the
+        // Tribu/Edificio rows. They are stacked in a VBox over the building group;
+        // the deck strip is empty (and collapses) once the final era is reached.
+        HBox coveredDecks = createCoveredBuildingDecks(state, (int) (boardCardHeight * 0.7));
+        VBox upperBuildingsColumn = new VBox(8); upperBuildingsColumn.setAlignment(Pos.BOTTOM_CENTER);
+        if (!coveredDecks.getChildren().isEmpty()) upperBuildingsColumn.getChildren().add(coveredDecks);
+        upperBuildingsColumn.getChildren().add(createCardGroup(state.upperRowBuildings, localDeals, boardCardHeight, spacing));
+
+        // fillHeight=false keeps the character group at its natural height so it
+        // bottom-aligns with the revealed buildings (same row); otherwise the HBox
+        // stretches it to the taller buildings-column height and centres it, leaving
+        // the characters floating above the buildings. The covered decks then sit on
+        // their own row directly above the revealed buildings.
+        HBox upperBand = new HBox(40); upperBand.setAlignment(Pos.BOTTOM_CENTER); upperBand.setFillHeight(false);
         upperBand.getChildren().addAll(
-                createCardGroup(state.upperRowBuildings, localDeals, boardCardHeight, spacing),
-                createCardGroup(state.upperRow, localDeals, boardCardHeight, spacing)
+                createCardGroup(state.upperRow, localDeals, boardCardHeight, spacing),
+                upperBuildingsColumn
         );
 
         HBox lowerBand = new HBox(40); lowerBand.setAlignment(Pos.CENTER);
         lowerBand.getChildren().addAll(
-                createCardGroup(state.lowerRowBuildings, localDeals, boardCardHeight, spacing),
-                createCardGroup(state.lowerRow, localDeals, boardCardHeight, spacing)
+                createCardGroup(state.lowerRow, localDeals, boardCardHeight, spacing),
+                createCardGroup(state.lowerRowBuildings, localDeals, boardCardHeight, spacing)
         );
 
         mainBoardArea.getChildren().addAll(upperBand, createTrackArea(state), lowerBand);
@@ -554,10 +584,12 @@ public class GameScene {
     private HBox createTrackArea(SceneState state) {
         HBox track = new HBox(25); track.setAlignment(Pos.CENTER);
         int displayEra = state.era.ordinal() + 1;
-        String eraPath = "/images/cards/eras/back_main_era_" + displayEra + ".png";
+        // The draw pile is rendered as a "mazzetto" (stacked-deck) graphic so the
+        // pile reads as a stack rather than a single card. The stack image already
+        // bakes in its own rounded corners and shadow, so no extra clipping here.
+        String eraPath = "/images/cards/eras/deck_main_era_" + displayEra + ".png";
         currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
-        currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
-        applyRoundedCorners(currentDeckView, 10);
+        currentDeckView.setFitHeight(165); currentDeckView.setPreserveRatio(true);
 
         int numPlayers = Math.max(2, state.turnOrder.size());
         TurnOrderCaveView turnOrderCave = new TurnOrderCaveView(numPlayers, state.turnOrderSlots, model);
@@ -570,6 +602,33 @@ public class GameScene {
         }
         track.getChildren().addAll(currentDeckView, turnOrderCave, offerTiles, new ReservePileView(tribalFont));
         return track;
+    }
+
+    /**
+     * Builds the face-down building decks for the eras that have not yet entered
+     * play (rulebook step 6b). At setup both the Era II and Era III building decks
+     * sit covered beside the board; each is shown as a "mazzetto" stack graphic.
+     * Once an era begins its buildings are revealed in the rows, so its covered
+     * deck is no longer rendered — the deck for an era {@code n} appears only while
+     * the current era is strictly earlier than {@code n}. The result is therefore a
+     * pure function of the current era and works identically for 2–5 players.
+     *
+     * @param state      the current state snapshot
+     * @param cardHeight the board card height, so the decks match the row scale
+     * @return an HBox of covered deck views (possibly empty in the final era)
+     */
+    private HBox createCoveredBuildingDecks(SceneState state, int cardHeight) {
+        HBox decks = new HBox(10); decks.setAlignment(Pos.CENTER);
+        int displayEra = state.era.ordinal() + 1;
+        for (int era = 2; era <= 3; era++) {
+            if (displayEra < era) {
+                ImageView deckView = new ImageView(
+                        ImageLoader.getImage("/images/cards/buildings_retro/deck_build_era_" + era + ".png"));
+                deckView.setFitHeight(cardHeight); deckView.setPreserveRatio(true);
+                decks.getChildren().add(deckView);
+            }
+        }
+        return decks;
     }
 
     /**
@@ -630,13 +689,15 @@ public class GameScene {
         // Cascade cards downward, but cap the total spread to a fixed budget so large stacks
         // (e.g. dozens of cards of the same type) stay within the hand area instead of overflowing
         // past the clipped, non-scrolling viewport. With few cards the offset stays at the full 25px.
-        int spreadBudget = 80;
+        // The budget plus the card height below must fit the fixed strip height (see the
+        // handCardsBox minHeight / mainBoardArea bottom reservation) so the strip never grows.
+        int spreadBudget = 30;
         int offsetPerCard = cardIds.size() <= 1 ? 0 : Math.min(25, spreadBudget / (cardIds.size() - 1));
         stack.setPadding(new Insets(20, 0, Math.max(0, cardIds.size() - 1) * offsetPerCard, 0));
 
         for (int i = 0; i < cardIds.size(); i++) {
             String id = cardIds.get(i);
-            GameCardView cardView = new GameCardView(id, false, 130, () -> showZoomedCard(id));
+            GameCardView cardView = new GameCardView(id, false, 105, () -> showZoomedCard(id));
             cardView.setTranslateY(i * offsetPerCard); stack.getChildren().add(cardView);
         }
 
@@ -924,7 +985,6 @@ public class GameScene {
 
     public void showForfeitBanner(long seconds) {
         Platform.runLater(() -> {
-            if (forfeitCountdownTimeline != null) forfeitCountdownTimeline.stop();
             if (forfeitBanner != null) baseStack.getChildren().remove(forfeitBanner);
 
             Label icon = new Label("⚠");
@@ -934,7 +994,12 @@ public class GameScene {
             titleLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-weight: bold; -fx-font-size: 15;");
             if (tribalFont != null) titleLabel.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));
 
-            Label countdownLabel = new Label("Win by forfeit in " + seconds + "s if no one reconnects.");
+            // Deliberately "about Ns", not a live countdown: the server fires the
+            // notification at the END of the catch-up replay and the FX queue may be
+            // backed up, so a precise client-side counter would drift behind the
+            // server's authoritative deadline. The approximate value uses the
+            // server-supplied {@code seconds} so it tracks any future timeout change.
+            Label countdownLabel = new Label("Win by forfeit in about " + seconds + "s if no one reconnects.");
             countdownLabel.setStyle("-fx-text-fill: white; -fx-font-size: 13;");
             if (tribalFont != null) countdownLabel.setFont(Font.font(tribalFont.getFamily(), 13));
 
@@ -951,27 +1016,18 @@ public class GameScene {
             forfeitBanner.setMaxSize(420, Region.USE_PREF_SIZE);
             StackPane.setAlignment(forfeitBanner, Pos.CENTER);
 
-            final long[] remaining = {seconds};
-            forfeitCountdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-                remaining[0]--;
-                if (remaining[0] >= 0) countdownLabel.setText("Win by forfeit in " + remaining[0] + "s if no one reconnects.");
-            }));
-            forfeitCountdownTimeline.setCycleCount((int) seconds);
-
             baseStack.getChildren().add(forfeitBanner);
             forfeitBanner.setOpacity(0);
             FadeTransition fadeIn = new FadeTransition(Duration.millis(300), forfeitBanner);
             fadeIn.setToValue(1.0);
-            fadeIn.setOnFinished(ev -> forfeitCountdownTimeline.play());
             fadeIn.play();
 
-            addLogEntry("[!] ", "You are alone — forfeit win in " + seconds + "s if no one reconnects.", Color.web("#FF4444"));
+            addLogEntry("[!] ", "You are alone — forfeit win in about " + seconds + "s if no one reconnects.", Color.web("#FF4444"));
         });
     }
 
     public void dismissForfeitBanner() {
         Platform.runLater(() -> {
-            if (forfeitCountdownTimeline != null) { forfeitCountdownTimeline.stop(); forfeitCountdownTimeline = null; }
             if (forfeitBanner != null) {
                 VBox bannerRef = forfeitBanner;
                 forfeitBanner = null;
@@ -1067,6 +1123,15 @@ public class GameScene {
      * the fast-forward event stream has gone quiet.
      */
     private void enterReplayUiState() {
+        // Wipe the log drawer so the fast-forward repopulates it from scratch,
+        // mirroring the TUI which re-prints the history on catch-up. Without this
+        // the pre-disconnect entries linger at the top while the replayed entries
+        // get pushed out by the 10-line cap, leaving the drawer "stuck on the old
+        // logs". Running here (on the FX thread, queued at the first replay event)
+        // guarantees the clear happens before any replayed log line is appended.
+        // No marker line is added: this path also runs on a normal game start,
+        // where a "recovered/replaying" note would be misleading.
+        if (logContainer != null) logContainer.getChildren().clear();
         updateActionButtonsState();
         armReplayWatchdog();
     }

@@ -11,10 +11,12 @@ import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
+import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Graphical User Interface (GUI) implementation of the client view.
@@ -26,6 +28,13 @@ public class GuiView extends AbstractClientView {
     private SceneRouter sceneRouter;
     private final LobbyModel lobbyModel;
     private GameModel gameModel;
+
+    /**
+     * Forfeit countdown received while the game scene did not yet exist. Held here
+     * so a later render can surface the banner that would otherwise have been
+     * dropped. Only touched on the FX thread.
+     */
+    private Long pendingForfeitSeconds;
 
     /**
      * Constructs a new GuiView.
@@ -54,17 +63,56 @@ public class GuiView extends AbstractClientView {
         this.gameModel = gameModel;
         if (this.gameModel != null) {
             this.gameModel.addObserver(this);
-            if (sceneRouter.getGameScene() != null) sceneRouter.getGameScene().refreshAll(gameModel);
+            refreshGameIfActive();
         }
+    }
+
+    /**
+     * Runs an action against the active {@link GameScene} on the JavaFX thread,
+     * skipping it if no scene is active yet.
+     *
+     * <p>Every game callback arrives on the network thread, but the scene is
+     * created on the FX thread (inside {@code SceneRouter.switchToGameScene}'s
+     * {@code Platform.runLater}). Reading {@code getGameScene()} directly from the
+     * network thread therefore races that creation: around reconnection it can
+     * see {@code null} and silently drop the update. Deferring the read to the FX
+     * thread removes the race entirely — by FX FIFO ordering the scene-creating
+     * event's task has already run, and the field is read on the same thread it is
+     * written. The scene's own methods already marshal to the FX thread, so this
+     * is harmless (and slightly more efficient) for the common in-game case too.
+     *
+     * @param action the work to perform with the live scene
+     */
+    private void withGameScene(Consumer<GameScene> action) {
+        Platform.runLater(() -> {
+            GameScene gs = sceneRouter.getGameScene();
+            if (gs != null) action.accept(gs);
+        });
+    }
+
+    /**
+     * Pushes the latest model state to the given scene. Must be called on the FX
+     * thread (see {@link #withGameScene(Consumer)}), which keeps all access to
+     * {@code pendingForfeitSeconds} single-threaded and the check-then-clear
+     * atomic.
+     *
+     * @param gs the active game scene
+     */
+    private void renderScene(GameScene gs) {
+        if (gameModel == null) return;
+        if (pendingForfeitSeconds != null) {
+            long s = pendingForfeitSeconds;
+            pendingForfeitSeconds = null;
+            gs.showForfeitBanner(s);
+        }
+        gs.refreshAll(gameModel);
     }
 
     /**
      * Refreshes the game scene if it is currently active.
      */
     private void refreshGameIfActive() {
-        if (sceneRouter.getGameScene() != null && gameModel != null) {
-            sceneRouter.getGameScene().refreshAll(gameModel);
-        }
+        withGameScene(this::renderScene);
     }
 
     /**
@@ -140,14 +188,19 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot board) {
-        if (sceneRouter.getGameScene() != null) {
-            sceneRouter.getGameScene().prepareForReplay();
-        }
-
-        if (sceneRouter.getGameScene() == null) {
-            sceneRouter.hideModal();
-            sceneRouter.switchToGameScene(gameModel);
-        } else refreshGameIfActive();
+        // Decide create-vs-refresh on the FX thread so the scene field is read on
+        // the same thread it is written, preventing both dropped updates and a
+        // duplicate scene being created if this races a pending scene creation.
+        Platform.runLater(() -> {
+            GameScene gs = sceneRouter.getGameScene();
+            if (gs != null) {
+                gs.prepareForReplay();
+                renderScene(gs);
+            } else {
+                sceneRouter.hideModal();
+                sceneRouter.switchToGameScene(gameModel);
+            }
+        });
     }
 
     /**
@@ -159,10 +212,13 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
-        if (sceneRouter.getGameScene() == null) {
-            sceneRouter.hideModal();
-            sceneRouter.switchToGameScene(gameModel);
-        } else refreshGameIfActive();
+        Platform.runLater(() -> {
+            GameScene gs = sceneRouter.getGameScene();
+            if (gs == null) {
+                sceneRouter.hideModal();
+                sceneRouter.switchToGameScene(gameModel);
+            } else renderScene(gs);
+        });
     }
 
     /**
@@ -189,9 +245,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onTotemPlaced(String nickname, char tileID) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logTotemPlaced(nickname, tileID);
-        refreshGameIfActive();
+        withGameScene(gs -> {
+            gs.logTotemPlaced(nickname, tileID);
+            renderScene(gs);
+        });
     }
 
     /**
@@ -202,9 +259,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onTotemReturned(String nickname, int turnOrderPosition) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logTotemReturned(nickname, turnOrderPosition);
-        refreshGameIfActive();
+        withGameScene(gs -> {
+            gs.logTotemReturned(nickname, turnOrderPosition);
+            renderScene(gs);
+        });
     }
 
     /**
@@ -234,12 +292,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) {
-            gs.showNewEraAnimation(newEra, newUpperRowBuildings, newLowerRowBuildings);
-        } else {
-            refreshGameIfActive();
-        }
+        withGameScene(gs -> gs.showNewEraAnimation(newEra, newUpperRowBuildings, newLowerRowBuildings));
     }
 
     /**
@@ -272,11 +325,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) {
+        withGameScene(gs -> {
             gs.logCardTaken(nickname, cardID);
             gs.animateCardTaken(nickname, cardID, cardType, sourceRow);
-        }
+        });
     }
 
     /**
@@ -288,9 +340,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logExtraTurnStarted(nickname, remainingUpper, remainingLower);
-        refreshGameIfActive();
+        withGameScene(gs -> {
+            gs.logExtraTurnStarted(nickname, remainingUpper, remainingLower);
+            renderScene(gs);
+        });
     }
 
     /**
@@ -300,9 +353,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onExtraTurnEnded(String nickname) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logExtraTurnEnded(nickname);
-        refreshGameIfActive();
+        withGameScene(gs -> {
+            gs.logExtraTurnEnded(nickname);
+            renderScene(gs);
+        });
     }
 
     /**
@@ -313,7 +367,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
-        sceneRouter.showGameOverPopup("Game Over", "Winners: " + String.join(", ", winners));
+        sceneRouter.showGameOverPopup("=== GAME OVER ===", winners, finalRankings);
     }
 
     /**
@@ -323,8 +377,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerDisconnected(String nickname) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.setPlayerOffline(nickname);
+        withGameScene(gs -> gs.setPlayerOffline(nickname));
         sceneRouter.showPlayerDisconnectedPopup(nickname);
     }
 
@@ -338,13 +391,12 @@ public class GuiView extends AbstractClientView {
         sceneRouter.showGameOverPopup("Game Aborted", "Game ended. Last standing: " + lastManStanding);
     }
 
-    /**
-     * Handles a failure to recover the game state.
-     */
-    @Override
-    public void onGameRecoveryFailed() {
-        sceneRouter.showGameOverPopup("Error", "Recovery failed. Not all players reconnected in time.");
-    }
+    // onGameRecoveryFailed is intentionally not overridden: it is a defensive
+    // server-side fallback (see GameController) that only fires when the global
+    // timer expires with no active player — a "should never happen" terminal
+    // state in which no client is connected to display anything. The GUI
+    // inherits the no-op default from AbstractClientView. The full pipeline is
+    // kept for a future view that may want to surface this state.
 
     /**
      * Handles the reconnection of a player.
@@ -353,11 +405,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerReconnected(String nickname) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) {
+        withGameScene(gs -> {
             gs.setPlayerOnline(nickname);
             gs.logPlayerReconnected(nickname);
-        }
+        });
     }
 
     /**
@@ -381,9 +432,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logResourceChanged(nickname, resource, newValue);
-        refreshGameIfActive();
+        withGameScene(gs -> {
+            gs.logResourceChanged(nickname, resource, newValue);
+            renderScene(gs);
+        });
     }
 
     /**
@@ -394,9 +446,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onEventResolved(String eventID, String eventName) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logEventResolved(eventName);
-        refreshGameIfActive();
+        withGameScene(gs -> {
+            gs.logEventResolved(eventName);
+            renderScene(gs);
+        });
     }
 
     /**
@@ -406,8 +459,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onAutoPlayerTimerStarted(String nickname, long seconds) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logAutoPlayerTimerStarted(nickname, seconds);
+        withGameScene(gs -> gs.logAutoPlayerTimerStarted(nickname, seconds));
     }
 
     /**
@@ -417,23 +469,43 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onAutoPlayerInvoked(String nickname) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.logAutoPlayerInvoked(nickname);
+        withGameScene(gs -> gs.logAutoPlayerInvoked(nickname));
     }
 
     /**
      * Handles the loss of connection to the server.
+     *
+     * <p>Marshalled onto the FX thread on purpose. The scene is created inside a
+     * {@code Platform.runLater} (see {@code SceneRouter.switchToGameScene}), so on
+     * reconnection — where the server arms the global timer right after the replay
+     * drain — reading {@code getGameScene()} straight from the network thread
+     * races that still-pending FX task and intermittently sees {@code null},
+     * silently dropping the banner. Deferring here lets FX FIFO ordering guarantee
+     * the scene-creating event's task has already run. If the scene still is not
+     * available (e.g. an out-of-order transport), the value is remembered and
+     * flushed by {@link #refreshGameIfActive()} on the next render.
      */
     @Override
     public void onGlobalTimerStarted(long seconds) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.showForfeitBanner(seconds);
+        Platform.runLater(() -> {
+            // Reset first so the direct-show path and the pending fallback are
+            // mutually exclusive: the banner can be raised by exactly one of them,
+            // never by both (which would otherwise restart the countdown on the
+            // next render).
+            pendingForfeitSeconds = null;
+            GameScene gs = sceneRouter.getGameScene();
+            if (gs != null) gs.showForfeitBanner(seconds);
+            else pendingForfeitSeconds = seconds;
+        });
     }
 
     @Override
     public void onGlobalTimerCancelled() {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.dismissForfeitBanner();
+        Platform.runLater(() -> {
+            pendingForfeitSeconds = null;
+            GameScene gs = sceneRouter.getGameScene();
+            if (gs != null) gs.dismissForfeitBanner();
+        });
     }
 
     @Override

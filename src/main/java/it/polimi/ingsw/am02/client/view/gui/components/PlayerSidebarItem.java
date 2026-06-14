@@ -29,11 +29,13 @@ public class PlayerSidebarItem extends VBox {
      * @param isViewed    True if this player's hand is currently being viewed.
      * @param food        The player's current food count.
      * @param pp          The player's current prestige points.
+     * @param picksUp     Remaining upper-row picks (shown only in ACTION_RESOLUTION; 0 otherwise).
+     * @param picksLow    Remaining lower-row picks (shown only in ACTION_RESOLUTION; 0 otherwise).
      * @param totem       The totem color assigned to the player.
      * @param tribalFont  The font to use for text display.
      * @param onClick     The action to perform when the item is clicked.
      */
-    public PlayerSidebarItem(String nickname, boolean isMe, boolean isActive, boolean isOffline, boolean isViewed, int food, int pp, Totem totem, Font tribalFont, Runnable onClick) {
+    public PlayerSidebarItem(String nickname, boolean isMe, boolean isActive, boolean isOffline, boolean isViewed, int food, int pp, int picksUp, int picksLow, Totem totem, Font tribalFont, Runnable onClick) {
         super(5);
 
         this.setPadding(new Insets(10));
@@ -97,9 +99,42 @@ public class PlayerSidebarItem extends VBox {
         }
         ppBox.getChildren().addAll(ppIcon, ppLabel);
 
-        statsRow.getChildren().addAll(foodBox, ppBox);
+        // Remaining pickable cards (upper/lower row), mirroring the TUI's
+        // "Picks (Up/Low)". Drawn as a green up-arrow and a red down-arrow each
+        // followed by their count, placed right after the prestige points.
+        HBox picksBox = new HBox(6);
+        picksBox.setAlignment(Pos.CENTER_LEFT);
+        picksBox.getChildren().addAll(
+                buildPickBadge("/images/icons/pick_up.png", picksUp, tribalFont),
+                buildPickBadge("/images/icons/pick_down.png", picksLow, tribalFont)
+        );
+
+        statsRow.getChildren().addAll(foodBox, ppBox, picksBox);
 
         this.getChildren().addAll(nameRow, statsRow);
         this.setOnMouseClicked(e -> onClick.run());
+    }
+
+    /**
+     * Builds a small "arrow + count" badge for the remaining pickable cards.
+     *
+     * @param iconPath   resource path of the up/down arrow icon
+     * @param count      remaining picks for that row
+     * @param tribalFont the font to use, or {@code null} for the default
+     * @return an HBox containing the arrow icon and its count
+     */
+    private HBox buildPickBadge(String iconPath, int count, Font tribalFont) {
+        HBox box = new HBox(3);
+        box.setAlignment(Pos.CENTER_LEFT);
+        ImageView icon = new ImageView(ImageLoader.getImage(iconPath));
+        icon.setFitHeight(13);
+        icon.setPreserveRatio(true);
+        Label label = new Label(String.valueOf(count));
+        label.setTextFill(count > 0 ? Color.web("#F2D5A3") : Color.GRAY);
+        if (tribalFont != null) {
+            label.setFont(Font.font(tribalFont.getFamily(), 12));
+        }
+        box.getChildren().addAll(icon, label);
+        return box;
     }
 }

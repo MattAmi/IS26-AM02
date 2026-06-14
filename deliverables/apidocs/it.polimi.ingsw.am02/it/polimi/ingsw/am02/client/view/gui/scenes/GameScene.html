@@ -55,6 +55,7 @@ loadScripts(document, 'script');</script>
 <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" disabled placeholder="Filter contents (type .)" aria-label="Filter table of contents" autocomplete="off" spellcheck="false"><input type="reset" class="reset-filter" disabled tabindex="-1" value="Reset"></div>
 <ol class="toc-list" tabindex="-1">
 <li><a href="#" tabindex="0">Description</a></li>
+<li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
 <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
@@ -75,12 +76,17 @@ loadScripts(document, 'script');</script>
 <li><a href="#logAutoPlayerTimerStarted(java.lang.String,long)" tabindex="0">logAutoPlayerTimerStarted(String, long)</a></li>
 <li><a href="#logAutoPlayerInvoked(java.lang.String)" tabindex="0">logAutoPlayerInvoked(String)</a></li>
 <li><a href="#refreshAll(it.polimi.ingsw.am02.client.model.GameModel)" tabindex="0">refreshAll(GameModel)</a></li>
+<li><a href="#snapshot(it.polimi.ingsw.am02.client.model.GameModel)" tabindex="0">snapshot(GameModel)</a></li>
+<li><a href="#setModel(it.polimi.ingsw.am02.client.model.GameModel)" tabindex="0">setModel(GameModel)</a></li>
+<li><a href="#render(it.polimi.ingsw.am02.client.view.gui.scenes.GameScene.SceneState)" tabindex="0">render(GameScene.SceneState)</a></li>
 <li><a href="#animateCardTaken(java.lang.String,java.lang.String,it.polimi.ingsw.am02.common.enumerations.CardType,it.polimi.ingsw.am02.common.enumerations.RowPosition)" tabindex="0">animateCardTaken(String, String, CardType, RowPosition)</a></li>
 <li><a href="#animateTotemPlacement(java.lang.String,char)" tabindex="0">animateTotemPlacement(String, char)</a></li>
 <li><a href="#animateTotemReturn(java.lang.String,int)" tabindex="0">animateTotemReturn(String, int)</a></li>
-<li><a href="#showNewEraAnimation(it.polimi.ingsw.am02.common.enumerations.Era,java.util.List,java.util.List)" tabindex="0">showNewEraAnimation(Era, List, List)</a></li>
+<li><a href="#showNewEraAnimation(it.polimi.ingsw.am02.client.view.gui.scenes.GameScene.SceneState,it.polimi.ingsw.am02.common.enumerations.Era,java.util.List,java.util.List)" tabindex="0">showNewEraAnimation(GameScene.SceneState, Era, List, List)</a></li>
 <li><a href="#setPlayerOffline(java.lang.String)" tabindex="0">setPlayerOffline(String)</a></li>
 <li><a href="#setPlayerOnline(java.lang.String)" tabindex="0">setPlayerOnline(String)</a></li>
+<li><a href="#enqueueForfeitBanner(long)" tabindex="0">enqueueForfeitBanner(long)</a></li>
+<li><a href="#enqueueDismissForfeitBanner()" tabindex="0">enqueueDismissForfeitBanner()</a></li>
 <li><a href="#showForfeitBanner(long)" tabindex="0">showForfeitBanner(long)</a></li>
 <li><a href="#dismissForfeitBanner()" tabindex="0">dismissForfeitBanner()</a></li>
 <li><a href="#logPlayerReconnected(java.lang.String)" tabindex="0">logPlayerReconnected(String)</a></li>
@@ -109,6 +115,23 @@ and animations for various game events.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<li>
+<section class="nested-class-summary" id="nested-class-summary">
+<h2>Nested Class Summary</h2>
+<div class="caption"><span>Nested Classes</span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Class</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="GameScene.SceneState.html" class="type-name-link" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">GameScene.SceneState</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Immutable snapshot of the game state for rendering and animations.</div>
+</div>
+</div>
+</section>
+</li>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 <li>
 <section class="constructor-summary" id="constructor-summary">
@@ -127,7 +150,7 @@ and animations for various game events.</div>
 <section class="method-summary" id="method-summary">
 <h2>Method Summary</h2>
 <div id="method-summary-table">
-<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="table-tab">Concrete Methods</button></div>
+<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab1" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab1', 3)" class="table-tab">Static Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="table-tab">Concrete Methods</button></div>
 <div id="method-summary-table.tabpanel" role="tabpanel" aria-labelledby="method-summary-table-tab0">
 <div class="summary-table three-column-summary">
 <div class="table-header col-first">Modifier and Type</div>
@@ -163,6 +186,16 @@ and animations for various game events.</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#dismissForfeitBanner()" class="member-name-link">dismissForfeitBanner</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#enqueueDismissForfeitBanner()" class="member-name-link">enqueueDismissForfeitBanner</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Queues the dismissal of the forfeit banner into the animation FIFO.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#enqueueForfeitBanner(long)" class="member-name-link">enqueueForfeitBanner</a><wbr>(long&nbsp;seconds)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Queues the forfeit banner into the animation FIFO.</div>
+</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#logAutoPlayerInvoked(java.lang.String)" class="member-name-link">logAutoPlayerInvoked</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
@@ -230,6 +263,16 @@ and animations for various game events.</div>
 <div class="block">Refreshes the entire game scene based on the current model state.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#render(it.polimi.ingsw.am02.client.view.gui.scenes.GameScene.SceneState)" class="member-name-link">render</a><wbr>(<a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">GameScene.SceneState</a>&nbsp;snapshot)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Renders a previously captured <a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes"><code>GameScene.SceneState</code></a>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setModel(it.polimi.ingsw.am02.client.model.GameModel)" class="member-name-link">setModel</a><wbr>(<a href="../../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model">GameModel</a>&nbsp;model)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Binds the live <a href="../../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model"><code>GameModel</code></a> to this scene without triggering a render.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setPlayerOffline(java.lang.String)" class="member-name-link">setPlayerOffline</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;n)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Marks a player as offline and refreshes the scene.</div>
@@ -243,11 +286,17 @@ and animations for various game events.</div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showForfeitBanner(long)" class="member-name-link">showForfeitBanner</a><wbr>(long&nbsp;seconds)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showNewEraAnimation(it.polimi.ingsw.am02.common.enumerations.Era,java.util.List,java.util.List)" class="member-name-link">showNewEraAnimation</a><wbr>(<a href="../../../../common/enumerations/Era.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Era</a>&nbsp;newEra,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#showNewEraAnimation(it.polimi.ingsw.am02.client.view.gui.scenes.GameScene.SceneState,it.polimi.ingsw.am02.common.enumerations.Era,java.util.List,java.util.List)" class="member-name-link">showNewEraAnimation</a><wbr>(<a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">GameScene.SceneState</a>&nbsp;snapshot,
+ <a href="../../../../common/enumerations/Era.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Era</a>&nbsp;newEra,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;u,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;l)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Displays an animation for the beginning of a new era.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">GameScene.SceneState</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#snapshot(it.polimi.ingsw.am02.client.model.GameModel)" class="member-name-link">snapshot</a><wbr>(<a href="../../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model">GameModel</a>&nbsp;model)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Captures an immutable snapshot of the given model.</div>
 </div>
 </div>
 </div>
@@ -453,6 +502,62 @@ Takes a snapshot of the model to ensure thread safety during rendering.</div>
 </section>
 </li>
 <li>
+<section class="detail" id="snapshot(it.polimi.ingsw.am02.client.model.GameModel)">
+<h3>snapshot</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">GameScene.SceneState</a></span>&nbsp;<span class="element-name">snapshot</span><wbr><span class="parameters">(<a href="../../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model">GameModel</a>&nbsp;model)</span></div>
+<div class="block">Captures an immutable snapshot of the given model. Safe to call from any
+thread (see <a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes"><code>GameScene.SceneState</code></a>). Callers that observe events on the network
+thread should snapshot here, in event order, and pass the result to
+<a href="#render(it.polimi.ingsw.am02.client.view.gui.scenes.GameScene.SceneState)"><code>render(SceneState)</code></a> on the FX thread.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>model</code> - the model to snapshot</dd>
+<dt>Returns:</dt>
+<dd>a frozen view of the model's current state</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="setModel(it.polimi.ingsw.am02.client.model.GameModel)">
+<h3>setModel</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setModel</span><wbr><span class="parameters">(<a href="../../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model">GameModel</a>&nbsp;model)</span></div>
+<div class="block">Binds the live <a href="../../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model"><code>GameModel</code></a> to this scene without triggering a render.
+
+<p>Rendering uses immutable <a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes"><code>GameScene.SceneState</code></a> snapshots, but a few helpers
+(the turn-order cave, the card-taken/totem animations) still read the live
+model for stable, session-constant data such as totem colours and the local
+nickname. When the scene is created lazily on a setup/phase event we build it
+without an auto-refresh and bind the model here, so those helpers have a
+non-null reference before the first <a href="#render(it.polimi.ingsw.am02.client.view.gui.scenes.GameScene.SceneState)"><code>render(SceneState)</code></a>.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>model</code> - the live game model for this session</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="render(it.polimi.ingsw.am02.client.view.gui.scenes.GameScene.SceneState)">
+<h3>render</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">render</span><wbr><span class="parameters">(<a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">GameScene.SceneState</a>&nbsp;snapshot)</span></div>
+<div class="block">Renders a previously captured <a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes"><code>GameScene.SceneState</code></a>.
+
+<p><b>Must be called on the JavaFX application thread.</b> It mutates
+FX-thread-only state (<code>lastState</code>, <code>viewedPlayerHand</code>, the
+animation queue) and schedules the actual node updates, so that the FX thread
+remains the single thread that ever touches the GUI.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>snapshot</code> - the frozen state to render</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="animateCardTaken(java.lang.String,java.lang.String,it.polimi.ingsw.am02.common.enumerations.CardType,it.polimi.ingsw.am02.common.enumerations.RowPosition)">
 <h3>animateCardTaken</h3>
 <div class="horizontal-scroll">
@@ -502,15 +607,23 @@ Takes a snapshot of the model to ensure thread safety during rendering.</div>
 </section>
 </li>
 <li>
-<section class="detail" id="showNewEraAnimation(it.polimi.ingsw.am02.common.enumerations.Era,java.util.List,java.util.List)">
+<section class="detail" id="showNewEraAnimation(it.polimi.ingsw.am02.client.view.gui.scenes.GameScene.SceneState,it.polimi.ingsw.am02.common.enumerations.Era,java.util.List,java.util.List)">
 <h3>showNewEraAnimation</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">showNewEraAnimation</span><wbr><span class="parameters">(<a href="../../../../common/enumerations/Era.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Era</a>&nbsp;newEra,
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">showNewEraAnimation</span><wbr><span class="parameters">(<a href="GameScene.SceneState.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">GameScene.SceneState</a>&nbsp;snapshot,
+ <a href="../../../../common/enumerations/Era.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Era</a>&nbsp;newEra,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;u,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;l)</span></div>
-<div class="block">Displays an animation for the beginning of a new era.</div>
+<div class="block">Displays an animation for the beginning of a new era.
+
+<p><b>Must be called on the JavaFX application thread.</b> The board is
+refreshed from the supplied (event-ordered) snapshot and the era overlay is
+appended right after it in the same animation queue, so the "ERA n" banner
+plays in lockstep with the board frame that introduced the new era — even
+while a reconnection history is being replayed.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
+<dd><code>snapshot</code> - the frozen state captured when the era-change event arrived.</dd>
 <dd><code>newEra</code> - The new era.</dd>
 <dd><code>u</code> - New upper row buildings.</dd>
 <dd><code>l</code> - New lower row buildings.</dd>
@@ -541,6 +654,40 @@ Takes a snapshot of the model to ensure thread safety during rendering.</div>
 <dt>Parameters:</dt>
 <dd><code>n</code> - The player nickname.</dd>
 </dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="enqueueForfeitBanner(long)">
+<h3>enqueueForfeitBanner</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">enqueueForfeitBanner</span><wbr><span class="parameters">(long&nbsp;seconds)</span></div>
+<div class="block">Queues the forfeit banner into the animation FIFO. Must be called on the FX
+thread.
+
+<p>The banner is intentionally routed through the same <code>animationQueue</code>
+as every other on-screen step rather than shown immediately: the server fires
+the global-timer notification at the <em>end</em> of a reconnection replay, so
+if the banner were raised on its own <code>Platform.runLater</code> it would jump
+the fast FX-pulse queue and appear <em>before</em> the still-draining visual
+replay (the infamous "120s shown first"). Enqueuing it guarantees it surfaces
+only after everything queued ahead of it has played out.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>seconds</code> - the forfeit countdown value supplied by the server</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="enqueueDismissForfeitBanner()">
+<h3>enqueueDismissForfeitBanner</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">enqueueDismissForfeitBanner</span>()</div>
+<div class="block">Queues the dismissal of the forfeit banner into the animation FIFO. Must be
+called on the FX thread. Routed through the queue for the same reason as
+<a href="#enqueueForfeitBanner(long)"><code>enqueueForfeitBanner(long)</code></a> and, crucially, so the dismissal can never
+overtake a still-queued show (which would leave the banner stuck on screen).</div>
 </div>
 </section>
 </li>

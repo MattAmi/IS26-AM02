@@ -18,6 +18,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -52,10 +54,10 @@ public class SceneRouter {
      *
      * @param primaryStage The primary stage of the JavaFX application.
      */
-<span class="nc" id="L55">    public SceneRouter(Stage primaryStage) {</span>
-<span class="nc" id="L56">        this.primaryStage = primaryStage;</span>
-<span class="nc" id="L57">        initWindowArchitecture();</span>
-<span class="nc" id="L58">    }</span>
+<span class="nc" id="L57">    public SceneRouter(Stage primaryStage) {</span>
+<span class="nc" id="L58">        this.primaryStage = primaryStage;</span>
+<span class="nc" id="L59">        initWindowArchitecture();</span>
+<span class="nc" id="L60">    }</span>
 
     /**
      * Sets the GUI controller for the router.
@@ -63,36 +65,48 @@ public class SceneRouter {
      * @param guiController The GuiController instance.
      */
     public void setGuiController(GuiController guiController) {
-<span class="nc" id="L66">        this.guiController = guiController;</span>
-<span class="nc" id="L67">    }</span>
+<span class="nc" id="L68">        this.guiController = guiController;</span>
+<span class="nc" id="L69">    }</span>
 
     /**
      * Initializes the basic window architecture with layers for base content,
      * modals, and toast notifications.
      */
     private void initWindowArchitecture() {
-<span class="nc" id="L74">        baseLayer = new StackPane();</span>
-<span class="nc" id="L75">        baseLayer.setStyle(&quot;-fx-background-color: #1a1a1a;&quot;);</span>
+<span class="nc" id="L76">        baseLayer = new StackPane();</span>
+<span class="nc" id="L77">        baseLayer.setStyle(&quot;-fx-background-color: #1a1a1a;&quot;);</span>
 
-<span class="nc" id="L77">        modalLayer = new StackPane();</span>
-<span class="nc" id="L78">        modalLayer.setStyle(&quot;-fx-background-color: transparent;&quot;);</span>
-<span class="nc" id="L79">        modalLayer.setPickOnBounds(false);</span>
-<span class="nc" id="L80">        modalLayer.setVisible(false);</span>
-<span class="nc" id="L81">        modalLayer.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L79">        modalLayer = new StackPane();</span>
+<span class="nc" id="L80">        modalLayer.setStyle(&quot;-fx-background-color: transparent;&quot;);</span>
+<span class="nc" id="L81">        modalLayer.setPickOnBounds(false);</span>
+<span class="nc" id="L82">        modalLayer.setVisible(false);</span>
+<span class="nc" id="L83">        modalLayer.setAlignment(Pos.CENTER);</span>
 
-<span class="nc" id="L83">        toastLayer = new VBox(10);</span>
-<span class="nc" id="L84">        toastLayer.setAlignment(Pos.TOP_RIGHT);</span>
-<span class="nc" id="L85">        toastLayer.setPadding(new Insets(20));</span>
-<span class="nc" id="L86">        toastLayer.setPickOnBounds(false);</span>
+<span class="nc" id="L85">        toastLayer = new VBox(10);</span>
+<span class="nc" id="L86">        toastLayer.setAlignment(Pos.TOP_RIGHT);</span>
+<span class="nc" id="L87">        toastLayer.setPadding(new Insets(20));</span>
+<span class="nc" id="L88">        toastLayer.setPickOnBounds(false);</span>
 
-<span class="nc" id="L88">        rootContainer = new StackPane(baseLayer, modalLayer, toastLayer);</span>
-<span class="nc" id="L89">        Scene mainScene = new Scene(rootContainer, 400, 450);</span>
+<span class="nc" id="L90">        rootContainer = new StackPane(baseLayer, modalLayer, toastLayer);</span>
+<span class="nc" id="L91">        Scene mainScene = new Scene(rootContainer, 400, 450);</span>
 
-<span class="nc" id="L91">        primaryStage.setTitle(&quot;Mesos - Board Game&quot;);</span>
-<span class="nc" id="L92">        primaryStage.setScene(mainScene);</span>
-<span class="nc" id="L93">        primaryStage.setResizable(false);</span>
-<span class="nc" id="L94">        primaryStage.setFullScreenExitHint(&quot;Press ESC to exit full screen&quot;);</span>
-<span class="nc" id="L95">    }</span>
+        // Global full-screen toggle: the scene outlives every view swap (only
+        // baseLayer's content changes), so a single filter here makes F11 work at
+        // any moment of the application — crucially letting the user re-enter full
+        // screen after leaving it, which ESC alone never allowed.
+<span class="nc" id="L97">        mainScene.addEventFilter(KeyEvent.KEY_PRESSED, e -&gt; {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (e.getCode() == KeyCode.F11) {</span>
+<span class="nc" id="L99">                primaryStage.setResizable(true);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                primaryStage.setFullScreen(!primaryStage.isFullScreen());</span>
+<span class="nc" id="L101">                e.consume();</span>
+            }
+<span class="nc" id="L103">        });</span>
+
+<span class="nc" id="L105">        primaryStage.setTitle(&quot;Mesos - Board Game&quot;);</span>
+<span class="nc" id="L106">        primaryStage.setScene(mainScene);</span>
+<span class="nc" id="L107">        primaryStage.setResizable(false);</span>
+<span class="nc" id="L108">        primaryStage.setFullScreenExitHint(&quot;Press ESC to exit full screen&quot;);</span>
+<span class="nc" id="L109">    }</span>
 
     /**
      * Utility method to run a task on the JavaFX Application Thread.
@@ -100,28 +114,28 @@ public class SceneRouter {
      * @param action The Runnable task to execute.
      */
     private void runOnUi(Runnable action) {
-<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (Platform.isFxApplicationThread()) {</span>
-<span class="nc" id="L104">            action.run();</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (Platform.isFxApplicationThread()) {</span>
+<span class="nc" id="L118">            action.run();</span>
         } else {
-<span class="nc" id="L106">            Platform.runLater(action);</span>
+<span class="nc" id="L120">            Platform.runLater(action);</span>
         }
-<span class="nc" id="L108">    }</span>
+<span class="nc" id="L122">    }</span>
 
     /**
      * Shows the primary stage.
      */
     public void show() {
-<span class="nc" id="L114">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L115">            primaryStage.show();</span>
+<span class="nc" id="L128">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L129">            primaryStage.show();</span>
             // Bring the window (and thus the connection popup) to the foreground so
             // the user doesn't have to hunt for it behind other windows at launch.
-<span class="nc" id="L118">            primaryStage.setIconified(false);</span>
-<span class="nc" id="L119">            primaryStage.setAlwaysOnTop(true);</span>
-<span class="nc" id="L120">            primaryStage.toFront();</span>
-<span class="nc" id="L121">            primaryStage.requestFocus();</span>
-<span class="nc" id="L122">            primaryStage.setAlwaysOnTop(false);</span>
-<span class="nc" id="L123">        });</span>
-<span class="nc" id="L124">    }</span>
+<span class="nc" id="L132">            primaryStage.setIconified(false);</span>
+<span class="nc" id="L133">            primaryStage.setAlwaysOnTop(true);</span>
+<span class="nc" id="L134">            primaryStage.toFront();</span>
+<span class="nc" id="L135">            primaryStage.requestFocus();</span>
+<span class="nc" id="L136">            primaryStage.setAlwaysOnTop(false);</span>
+<span class="nc" id="L137">        });</span>
+<span class="nc" id="L138">    }</span>
 
     /**
      * Switches the base view to a new node.
@@ -129,8 +143,8 @@ public class SceneRouter {
      * @param newView The new Region to display.
      */
     private void switchView(Region newView) {
-<span class="nc" id="L132">        runOnUi(() -&gt; baseLayer.getChildren().setAll(newView));</span>
-<span class="nc" id="L133">    }</span>
+<span class="nc" id="L146">        runOnUi(() -&gt; baseLayer.getChildren().setAll(newView));</span>
+<span class="nc" id="L147">    }</span>
 
     /**
      * Displays the project information scene.
@@ -138,42 +152,42 @@ public class SceneRouter {
      * @param onExit Callback to execute when exiting the scene.
      */
     public void showProjectInfoScene(Runnable onExit) {
-<span class="nc" id="L141">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L142">            this.gameScene = null;</span>
-<span class="nc" id="L143">            this.lobbyScene = null;</span>
-<span class="nc" id="L144">            this.lobbyListScene = null;</span>
-<span class="nc" id="L145">            ProjectInfoScene infoScene = new ProjectInfoScene();</span>
-<span class="nc" id="L146">            switchView(infoScene.buildNode(onExit));</span>
-<span class="nc" id="L147">        });</span>
-<span class="nc" id="L148">    }</span>
+<span class="nc" id="L155">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L156">            this.gameScene = null;</span>
+<span class="nc" id="L157">            this.lobbyScene = null;</span>
+<span class="nc" id="L158">            this.lobbyListScene = null;</span>
+<span class="nc" id="L159">            ProjectInfoScene infoScene = new ProjectInfoScene();</span>
+<span class="nc" id="L160">            switchView(infoScene.buildNode(onExit));</span>
+<span class="nc" id="L161">        });</span>
+<span class="nc" id="L162">    }</span>
 
     /**
      * Displays the introduction scene.
      */
     public void showIntroScene() {
-<span class="nc" id="L154">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L155">            primaryStage.setResizable(true);</span>
-<span class="nc" id="L156">            primaryStage.setFullScreen(true);</span>
-<span class="nc" id="L157">            primaryStage.centerOnScreen();</span>
-<span class="nc" id="L158">            switchView(new IntroScene().buildNode(this::showGameMenuScene));</span>
-<span class="nc" id="L159">        });</span>
-<span class="nc" id="L160">    }</span>
+<span class="nc" id="L168">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L169">            primaryStage.setResizable(true);</span>
+<span class="nc" id="L170">            primaryStage.setFullScreen(true);</span>
+<span class="nc" id="L171">            primaryStage.centerOnScreen();</span>
+<span class="nc" id="L172">            switchView(new IntroScene().buildNode(this::showGameMenuScene));</span>
+<span class="nc" id="L173">        });</span>
+<span class="nc" id="L174">    }</span>
 
     /**
      * Displays the game menu scene.
      */
     public void showGameMenuScene() {
-<span class="nc" id="L166">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L167">            this.gameScene = null;</span>
-<span class="nc" id="L168">            this.lobbyScene = null;</span>
-<span class="nc" id="L169">            this.lobbyListScene = null;</span>
-<span class="nc" id="L170">            switchView(new GameMenuScene().buildNode(</span>
+<span class="nc" id="L180">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L181">            this.gameScene = null;</span>
+<span class="nc" id="L182">            this.lobbyScene = null;</span>
+<span class="nc" id="L183">            this.lobbyListScene = null;</span>
+<span class="nc" id="L184">            switchView(new GameMenuScene().buildNode(</span>
                     guiController,
-<span class="nc" id="L172">                    () -&gt; showLobbyListScene(guiController.getAvailableLobbies()),</span>
-<span class="nc" id="L173">                    msg -&gt; showToast(&quot;Error&quot;, msg, Alert.AlertType.WARNING)</span>
+<span class="nc" id="L186">                    () -&gt; showLobbyListScene(guiController.getAvailableLobbies()),</span>
+<span class="nc" id="L187">                    msg -&gt; showToast(&quot;Error&quot;, msg, Alert.AlertType.WARNING)</span>
             ));
-<span class="nc" id="L175">        });</span>
-<span class="nc" id="L176">    }</span>
+<span class="nc" id="L189">        });</span>
+<span class="nc" id="L190">    }</span>
 
     /**
      * Displays the lobby list scene.
@@ -181,14 +195,14 @@ public class SceneRouter {
      * @param lobbies The list of initial lobbies to display.
      */
     public void showLobbyListScene(List&lt;LobbyInfo&gt; lobbies) {
-<span class="nc" id="L184">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L185">            this.gameScene = null;</span>
-<span class="nc" id="L186">            this.lobbyScene = null;</span>
-<span class="nc" id="L187">            this.lobbyListScene = new LobbyListScene();</span>
-<span class="nc" id="L188">            switchView(lobbyListScene.buildNode(guiController, this::showGameMenuScene));</span>
-<span class="nc bnc" id="L189" title="All 2 branches missed.">            if (lobbies != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies);</span>
-<span class="nc" id="L190">        });</span>
-<span class="nc" id="L191">    }</span>
+<span class="nc" id="L198">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L199">            this.gameScene = null;</span>
+<span class="nc" id="L200">            this.lobbyScene = null;</span>
+<span class="nc" id="L201">            this.lobbyListScene = new LobbyListScene();</span>
+<span class="nc" id="L202">            switchView(lobbyListScene.buildNode(guiController, this::showGameMenuScene));</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">            if (lobbies != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies);</span>
+<span class="nc" id="L204">        });</span>
+<span class="nc" id="L205">    }</span>
 
     /**
      * Displays the current lobby scene.
@@ -196,14 +210,14 @@ public class SceneRouter {
      * @param currentLobby The information of the lobby to display.
      */
     public void showLobbyScene(LobbyInfo currentLobby) {
-<span class="nc" id="L199">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L200">            this.gameScene = null;</span>
-<span class="nc" id="L201">            this.lobbyListScene = null;</span>
-<span class="nc" id="L202">            this.lobbyScene = new LobbyScene();</span>
-<span class="nc" id="L203">            switchView(lobbyScene.buildNode(guiController));</span>
-<span class="nc bnc" id="L204" title="All 2 branches missed.">            if (currentLobby != null) lobbyScene.updateLobbyState(currentLobby);</span>
-<span class="nc" id="L205">        });</span>
-<span class="nc" id="L206">    }</span>
+<span class="nc" id="L213">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L214">            this.gameScene = null;</span>
+<span class="nc" id="L215">            this.lobbyListScene = null;</span>
+<span class="nc" id="L216">            this.lobbyScene = new LobbyScene();</span>
+<span class="nc" id="L217">            switchView(lobbyScene.buildNode(guiController));</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (currentLobby != null) lobbyScene.updateLobbyState(currentLobby);</span>
+<span class="nc" id="L219">        });</span>
+<span class="nc" id="L220">    }</span>
 
     /**
      * Switches to the game scene.
@@ -211,37 +225,37 @@ public class SceneRouter {
      * @param gameModel The game model to use for the scene.
      */
     public void switchToGameScene(GameModel gameModel) {
-<span class="nc" id="L214">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L215">            this.lobbyScene = null;</span>
-<span class="nc" id="L216">            this.lobbyListScene = null;</span>
-<span class="nc" id="L217">            this.gameScene = new GameScene();</span>
-<span class="nc" id="L218">            primaryStage.setResizable(true);</span>
-<span class="nc" id="L219">            primaryStage.centerOnScreen();</span>
-<span class="nc" id="L220">            switchView(this.gameScene.buildNode(guiController, this::showInGameMenu, this::showSummaryCard));</span>
-<span class="nc bnc" id="L221" title="All 2 branches missed.">            if (gameModel != null) this.gameScene.refreshAll(gameModel);</span>
-<span class="nc" id="L222">        });</span>
-<span class="nc" id="L223">    }</span>
+<span class="nc" id="L228">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L229">            this.lobbyScene = null;</span>
+<span class="nc" id="L230">            this.lobbyListScene = null;</span>
+<span class="nc" id="L231">            this.gameScene = new GameScene();</span>
+<span class="nc" id="L232">            primaryStage.setResizable(true);</span>
+<span class="nc" id="L233">            primaryStage.centerOnScreen();</span>
+<span class="nc" id="L234">            switchView(this.gameScene.buildNode(guiController, this::showInGameMenu, this::showSummaryCard));</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">            if (gameModel != null) this.gameScene.refreshAll(gameModel);</span>
+<span class="nc" id="L236">        });</span>
+<span class="nc" id="L237">    }</span>
 
     /**
      * Returns the current LobbyListScene instance.
      *
      * @return The LobbyListScene or null if not active.
      */
-<span class="nc" id="L230">    public LobbyListScene getLobbyListScene() { return lobbyListScene; }</span>
+<span class="nc" id="L244">    public LobbyListScene getLobbyListScene() { return lobbyListScene; }</span>
 
     /**
      * Returns the current LobbyScene instance.
      *
      * @return The LobbyScene or null if not active.
      */
-<span class="nc" id="L237">    public LobbyScene getLobbyScene() { return lobbyScene; }</span>
+<span class="nc" id="L251">    public LobbyScene getLobbyScene() { return lobbyScene; }</span>
 
     /**
      * Returns the current GameScene instance.
      *
      * @return The GameScene or null if not active.
      */
-<span class="nc" id="L244">    public GameScene getGameScene() { return gameScene; }</span>
+<span class="nc" id="L258">    public GameScene getGameScene() { return gameScene; }</span>
 
     /**
      * Shows a toast notification.
@@ -251,19 +265,19 @@ public class SceneRouter {
      * @param type    The type of alert for styling purposes.
      */
     public void showToast(String title, String content, Alert.AlertType type) {
-<span class="nc" id="L254">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L255">            VBox toast = new VBox(5);</span>
-<span class="nc bnc" id="L256" title="All 4 branches missed.">            String borderColor = type == Alert.AlertType.ERROR ? &quot;#ff4444&quot; : (type == Alert.AlertType.WARNING ? &quot;#ffbb33&quot; : &quot;#00C851&quot;);</span>
-<span class="nc" id="L257">            toast.setStyle(&quot;-fx-background-color: #2b2b2b; -fx-border-color: &quot; + borderColor + &quot;; -fx-border-width: 0 0 0 4; -fx-padding: 15;&quot;);</span>
-<span class="nc" id="L258">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-weight: bold; -fx-text-fill: white;&quot;);</span>
-<span class="nc" id="L259">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: lightgray;&quot;); cL.setWrapText(true);</span>
-<span class="nc" id="L260">            toast.getChildren().addAll(tL, cL);</span>
-<span class="nc" id="L261">            toastLayer.getChildren().add(toast);</span>
-<span class="nc" id="L262">            PauseTransition delay = new PauseTransition(Duration.seconds(3));</span>
-<span class="nc" id="L263">            delay.setOnFinished(e -&gt; toastLayer.getChildren().remove(toast));</span>
-<span class="nc" id="L264">            delay.play();</span>
-<span class="nc" id="L265">        });</span>
-<span class="nc" id="L266">    }</span>
+<span class="nc" id="L268">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L269">            VBox toast = new VBox(5);</span>
+<span class="nc bnc" id="L270" title="All 4 branches missed.">            String borderColor = type == Alert.AlertType.ERROR ? &quot;#ff4444&quot; : (type == Alert.AlertType.WARNING ? &quot;#ffbb33&quot; : &quot;#00C851&quot;);</span>
+<span class="nc" id="L271">            toast.setStyle(&quot;-fx-background-color: #2b2b2b; -fx-border-color: &quot; + borderColor + &quot;; -fx-border-width: 0 0 0 4; -fx-padding: 15;&quot;);</span>
+<span class="nc" id="L272">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-weight: bold; -fx-text-fill: white;&quot;);</span>
+<span class="nc" id="L273">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: lightgray;&quot;); cL.setWrapText(true);</span>
+<span class="nc" id="L274">            toast.getChildren().addAll(tL, cL);</span>
+<span class="nc" id="L275">            toastLayer.getChildren().add(toast);</span>
+<span class="nc" id="L276">            PauseTransition delay = new PauseTransition(Duration.seconds(3));</span>
+<span class="nc" id="L277">            delay.setOnFinished(e -&gt; toastLayer.getChildren().remove(toast));</span>
+<span class="nc" id="L278">            delay.play();</span>
+<span class="nc" id="L279">        });</span>
+<span class="nc" id="L280">    }</span>
 
     /**
      * Displays a blocking alert modal.
@@ -273,19 +287,19 @@ public class SceneRouter {
      * @param type    The alert type.
      */
     public void showBlockingAlert(String title, String content, Alert.AlertType type) {
-<span class="nc" id="L276">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L277">            VBox alertBox = new VBox(20);</span>
-<span class="nc" id="L278">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(400, 200);</span>
-<span class="nc" id="L279">            alertBox.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;&quot;);</span>
-<span class="nc" id="L280">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
-<span class="nc" id="L281">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: white;&quot;); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L282">            Button okBtn = new Button(&quot;OK&quot;); okBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white;&quot;);</span>
-<span class="nc" id="L283">            okBtn.setOnAction(e -&gt; hideModal());</span>
-<span class="nc" id="L284">            alertBox.getChildren().addAll(tL, cL, okBtn);</span>
-<span class="nc" id="L285">            modalLayer.getChildren().setAll(alertBox);</span>
-<span class="nc" id="L286">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L287">        });</span>
-<span class="nc" id="L288">    }</span>
+<span class="nc" id="L290">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L291">            VBox alertBox = new VBox(20);</span>
+<span class="nc" id="L292">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(400, 200);</span>
+<span class="nc" id="L293">            alertBox.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;&quot;);</span>
+<span class="nc" id="L294">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
+<span class="nc" id="L295">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: white;&quot;); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L296">            Button okBtn = new Button(&quot;OK&quot;); okBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white;&quot;);</span>
+<span class="nc" id="L297">            okBtn.setOnAction(e -&gt; hideModal());</span>
+<span class="nc" id="L298">            alertBox.getChildren().addAll(tL, cL, okBtn);</span>
+<span class="nc" id="L299">            modalLayer.getChildren().setAll(alertBox);</span>
+<span class="nc" id="L300">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L301">        });</span>
+<span class="nc" id="L302">    }</span>
 
     /**
      * Displays a game over popup with options to return to menu or exit.
@@ -294,20 +308,45 @@ public class SceneRouter {
      * @param content The message content.
      */
     public void showGameOverPopup(String title, String content) {
-<span class="nc" id="L297">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L298">            VBox alertBox = new VBox(20);</span>
-<span class="nc" id="L299">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(450, 250);</span>
-<span class="nc" id="L300">            alertBox.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
+<span class="nc" id="L311">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L312">            VBox alertBox = new VBox(20);</span>
+<span class="nc" id="L313">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(450, 250);</span>
 
-<span class="nc" id="L302">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
-<span class="nc" id="L303">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 14px;&quot;); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L315">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
+<span class="nc" id="L316">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 14px;&quot;); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);</span>
 
-<span class="nc" id="L305">            alertBox.getChildren().addAll(tL, cL, buildGameOverButtons());</span>
+<span class="nc" id="L318">            alertBox.getChildren().addAll(tL, cL, buildGameOverButtons());</span>
 
-<span class="nc" id="L307">            modalLayer.getChildren().setAll(alertBox);</span>
-<span class="nc" id="L308">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L309">        });</span>
-<span class="nc" id="L310">    }</span>
+            // Background: the lobby art (mesos_lobby.png) zoomed onto the central
+            // bonfire-and-dancers scene via a viewport crop, dimmed by a dark
+            // scrim so the white/gold text stays legible.
+<span class="nc" id="L323">            ImageView bg = new ImageView(ImageLoader.getImage(&quot;/images/mesos_lobby.png&quot;));</span>
+<span class="nc" id="L324">            bg.setPreserveRatio(false);</span>
+            // Crop region (in source-image pixels) around the fire and figures.
+<span class="nc" id="L326">            bg.setViewport(new Rectangle2D(245, 483, 735, 740));</span>
+
+<span class="nc" id="L328">            Region scrim = new Region();</span>
+<span class="nc" id="L329">            scrim.setStyle(&quot;-fx-background-color: rgba(20, 10, 6, 0.72);&quot;);</span>
+
+<span class="nc" id="L331">            StackPane backdrop = new StackPane(bg, scrim);</span>
+<span class="nc" id="L332">            bg.fitWidthProperty().bind(backdrop.widthProperty());</span>
+<span class="nc" id="L333">            bg.fitHeightProperty().bind(backdrop.heightProperty());</span>
+
+<span class="nc" id="L335">            Rectangle clip = new Rectangle();</span>
+<span class="nc" id="L336">            clip.setArcWidth(22); clip.setArcHeight(22);</span>
+<span class="nc" id="L337">            clip.widthProperty().bind(backdrop.widthProperty());</span>
+<span class="nc" id="L338">            clip.heightProperty().bind(backdrop.heightProperty());</span>
+<span class="nc" id="L339">            backdrop.setClip(clip);</span>
+
+<span class="nc" id="L341">            StackPane card = new StackPane(backdrop, alertBox);</span>
+<span class="nc" id="L342">            card.setMaxSize(450, 250);</span>
+<span class="nc" id="L343">            card.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; &quot;</span>
+                    + &quot;-fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);
+
+<span class="nc" id="L346">            modalLayer.getChildren().setAll(card);</span>
+<span class="nc" id="L347">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L348">        });</span>
+<span class="nc" id="L349">    }</span>
 
     /**
      * Displays the end-of-game popup with the winners and the full final
@@ -320,79 +359,79 @@ public class SceneRouter {
      * @param finalRankings The final score rankings, in ranking order.
      */
     public void showGameOverPopup(String title, List&lt;String&gt; winners, List&lt;PlayerFinalScore&gt; finalRankings) {
-<span class="nc" id="L323">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L324">            VBox alertBox = new VBox(16);</span>
-<span class="nc" id="L325">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(440, 500);</span>
+<span class="nc" id="L362">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L363">            VBox alertBox = new VBox(16);</span>
+<span class="nc" id="L364">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(440, 500);</span>
 
-<span class="nc" id="L327">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
-<span class="nc bnc" id="L328" title="All 2 branches missed.">            Label wL = new Label((winners.size() == 1 ? &quot;Winner: &quot; : &quot;Winners: &quot;) + String.join(&quot;, &quot;, winners));</span>
-<span class="nc" id="L329">            wL.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 14px;&quot;); wL.setWrapText(true); wL.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L366">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
+<span class="nc bnc" id="L367" title="All 2 branches missed.">            Label wL = new Label((winners.size() == 1 ? &quot;Winner: &quot; : &quot;Winners: &quot;) + String.join(&quot;, &quot;, winners));</span>
+<span class="nc" id="L368">            wL.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 14px;&quot;); wL.setWrapText(true); wL.setAlignment(Pos.CENTER);</span>
 
-<span class="nc" id="L331">            Label rankHeader = new Label(&quot;FINAL RANKINGS&quot;);</span>
-<span class="nc" id="L332">            rankHeader.setStyle(&quot;-fx-text-fill: #C9A0DC; -fx-font-size: 13px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L370">            Label rankHeader = new Label(&quot;FINAL RANKINGS&quot;);</span>
+<span class="nc" id="L371">            rankHeader.setStyle(&quot;-fx-text-fill: #C9A0DC; -fx-font-size: 13px; -fx-font-weight: bold;&quot;);</span>
 
-<span class="nc" id="L334">            VBox rankingsBox = new VBox(8);</span>
-<span class="nc" id="L335">            rankingsBox.setAlignment(Pos.CENTER_LEFT);</span>
-<span class="nc bnc" id="L336" title="All 2 branches missed.">            for (int i = 0; i &lt; finalRankings.size(); i++) {</span>
-<span class="nc" id="L337">                PlayerFinalScore s = finalRankings.get(i);</span>
+<span class="nc" id="L373">            VBox rankingsBox = new VBox(8);</span>
+<span class="nc" id="L374">            rankingsBox.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">            for (int i = 0; i &lt; finalRankings.size(); i++) {</span>
+<span class="nc" id="L376">                PlayerFinalScore s = finalRankings.get(i);</span>
 
-<span class="nc" id="L339">                Label pos = new Label((i + 1) + &quot;.&quot;);</span>
-<span class="nc" id="L340">                pos.setStyle(&quot;-fx-text-fill: #F2D5A3; -fx-font-weight: bold; -fx-font-size: 13px;&quot;);</span>
-<span class="nc" id="L341">                pos.setMinWidth(22);</span>
+<span class="nc" id="L378">                Label pos = new Label((i + 1) + &quot;.&quot;);</span>
+<span class="nc" id="L379">                pos.setStyle(&quot;-fx-text-fill: #F2D5A3; -fx-font-weight: bold; -fx-font-size: 13px;&quot;);</span>
+<span class="nc" id="L380">                pos.setMinWidth(22);</span>
 
-<span class="nc" id="L343">                Label name = new Label(s.nickname());</span>
-<span class="nc" id="L344">                name.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13px;&quot;);</span>
-<span class="nc" id="L345">                HBox.setHgrow(name, javafx.scene.layout.Priority.ALWAYS);</span>
-<span class="nc" id="L346">                name.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L382">                Label name = new Label(s.nickname());</span>
+<span class="nc" id="L383">                name.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13px;&quot;);</span>
+<span class="nc" id="L384">                HBox.setHgrow(name, javafx.scene.layout.Priority.ALWAYS);</span>
+<span class="nc" id="L385">                name.setMaxWidth(Double.MAX_VALUE);</span>
 
-<span class="nc" id="L348">                ImageView ppIcon = new ImageView(ImageLoader.getImage(&quot;/images/icons/prestige_point.png&quot;));</span>
-<span class="nc" id="L349">                ppIcon.setFitHeight(16); ppIcon.setPreserveRatio(true);</span>
+<span class="nc" id="L387">                ImageView ppIcon = new ImageView(ImageLoader.getImage(&quot;/images/icons/prestige_point.png&quot;));</span>
+<span class="nc" id="L388">                ppIcon.setFitHeight(16); ppIcon.setPreserveRatio(true);</span>
 
-<span class="nc" id="L351">                Label ppLabel = new Label(String.valueOf(s.totalPrestigePoints()));</span>
-<span class="nc" id="L352">                ppLabel.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L390">                Label ppLabel = new Label(String.valueOf(s.totalPrestigePoints()));</span>
+<span class="nc" id="L391">                ppLabel.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;&quot;);</span>
 
-<span class="nc" id="L354">                HBox row = new HBox(8, pos, name, ppIcon, ppLabel);</span>
-<span class="nc" id="L355">                row.setAlignment(Pos.CENTER_LEFT);</span>
-<span class="nc" id="L356">                rankingsBox.getChildren().add(row);</span>
+<span class="nc" id="L393">                HBox row = new HBox(8, pos, name, ppIcon, ppLabel);</span>
+<span class="nc" id="L394">                row.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L395">                rankingsBox.getChildren().add(row);</span>
             }
 
-<span class="nc" id="L359">            ScrollPane scroll = new ScrollPane(rankingsBox);</span>
-<span class="nc" id="L360">            scroll.setFitToWidth(true);</span>
-<span class="nc" id="L361">            scroll.setMaxHeight(220);</span>
-<span class="nc" id="L362">            scroll.setStyle(&quot;-fx-background: transparent; -fx-background-color: transparent;&quot;);</span>
+<span class="nc" id="L398">            ScrollPane scroll = new ScrollPane(rankingsBox);</span>
+<span class="nc" id="L399">            scroll.setFitToWidth(true);</span>
+<span class="nc" id="L400">            scroll.setMaxHeight(220);</span>
+<span class="nc" id="L401">            scroll.setStyle(&quot;-fx-background: transparent; -fx-background-color: transparent;&quot;);</span>
 
-<span class="nc" id="L364">            alertBox.getChildren().addAll(tL, wL, rankHeader, scroll, buildGameOverButtons());</span>
+<span class="nc" id="L403">            alertBox.getChildren().addAll(tL, wL, rankHeader, scroll, buildGameOverButtons());</span>
 
             // Background: the box art (mesos_box.png) zoomed onto the central
             // bonfire-and-dancers scene via a viewport crop, dimmed by a dark
             // scrim so the white/gold text stays legible.
-<span class="nc" id="L369">            ImageView bg = new ImageView(ImageLoader.getImage(&quot;/images/mesos_box.png&quot;));</span>
-<span class="nc" id="L370">            bg.setPreserveRatio(false);</span>
+<span class="nc" id="L408">            ImageView bg = new ImageView(ImageLoader.getImage(&quot;/images/mesos_box.png&quot;));</span>
+<span class="nc" id="L409">            bg.setPreserveRatio(false);</span>
             // Crop region (in source-image pixels) around the fire and figures.
-<span class="nc" id="L372">            bg.setViewport(new Rectangle2D(95, 175, 410, 400));</span>
+<span class="nc" id="L411">            bg.setViewport(new Rectangle2D(95, 175, 410, 400));</span>
 
-<span class="nc" id="L374">            Region scrim = new Region();</span>
-<span class="nc" id="L375">            scrim.setStyle(&quot;-fx-background-color: rgba(20, 10, 6, 0.72);&quot;);</span>
+<span class="nc" id="L413">            Region scrim = new Region();</span>
+<span class="nc" id="L414">            scrim.setStyle(&quot;-fx-background-color: rgba(20, 10, 6, 0.72);&quot;);</span>
 
-<span class="nc" id="L377">            StackPane backdrop = new StackPane(bg, scrim);</span>
-<span class="nc" id="L378">            bg.fitWidthProperty().bind(backdrop.widthProperty());</span>
-<span class="nc" id="L379">            bg.fitHeightProperty().bind(backdrop.heightProperty());</span>
+<span class="nc" id="L416">            StackPane backdrop = new StackPane(bg, scrim);</span>
+<span class="nc" id="L417">            bg.fitWidthProperty().bind(backdrop.widthProperty());</span>
+<span class="nc" id="L418">            bg.fitHeightProperty().bind(backdrop.heightProperty());</span>
 
-<span class="nc" id="L381">            Rectangle clip = new Rectangle();</span>
-<span class="nc" id="L382">            clip.setArcWidth(22); clip.setArcHeight(22);</span>
-<span class="nc" id="L383">            clip.widthProperty().bind(backdrop.widthProperty());</span>
-<span class="nc" id="L384">            clip.heightProperty().bind(backdrop.heightProperty());</span>
-<span class="nc" id="L385">            backdrop.setClip(clip);</span>
+<span class="nc" id="L420">            Rectangle clip = new Rectangle();</span>
+<span class="nc" id="L421">            clip.setArcWidth(22); clip.setArcHeight(22);</span>
+<span class="nc" id="L422">            clip.widthProperty().bind(backdrop.widthProperty());</span>
+<span class="nc" id="L423">            clip.heightProperty().bind(backdrop.heightProperty());</span>
+<span class="nc" id="L424">            backdrop.setClip(clip);</span>
 
-<span class="nc" id="L387">            StackPane card = new StackPane(backdrop, alertBox);</span>
-<span class="nc" id="L388">            card.setMaxSize(440, 500);</span>
-<span class="nc" id="L389">            card.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; &quot;</span>
+<span class="nc" id="L426">            StackPane card = new StackPane(backdrop, alertBox);</span>
+<span class="nc" id="L427">            card.setMaxSize(440, 500);</span>
+<span class="nc" id="L428">            card.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; &quot;</span>
                     + &quot;-fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);
 
-<span class="nc" id="L392">            modalLayer.getChildren().setAll(card);</span>
-<span class="nc" id="L393">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L394">        });</span>
-<span class="nc" id="L395">    }</span>
+<span class="nc" id="L431">            modalLayer.getChildren().setAll(card);</span>
+<span class="nc" id="L432">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L433">        });</span>
+<span class="nc" id="L434">    }</span>
 
     /**
      * Builds the shared &quot;return to menu / exit&quot; button row used by the
@@ -401,59 +440,59 @@ public class SceneRouter {
      * @return the configured button bar.
      */
     private HBox buildGameOverButtons() {
-<span class="nc" id="L404">        HBox buttons = new HBox(20);</span>
-<span class="nc" id="L405">        buttons.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L443">        HBox buttons = new HBox(20);</span>
+<span class="nc" id="L444">        buttons.setAlignment(Pos.CENTER);</span>
 
-<span class="nc" id="L407">        Button menuBtn = new Button(&quot;RETURN TO MENU&quot;);</span>
-<span class="nc" id="L408">        menuBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
-<span class="nc" id="L409">        menuBtn.setPrefHeight(40);</span>
-<span class="nc" id="L410">        menuBtn.setOnAction(e -&gt; {</span>
-<span class="nc" id="L411">            hideModal();</span>
-<span class="nc" id="L412">            guiController.requestReturnToLobby();</span>
-<span class="nc" id="L413">        });</span>
+<span class="nc" id="L446">        Button menuBtn = new Button(&quot;RETURN TO MENU&quot;);</span>
+<span class="nc" id="L447">        menuBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L448">        menuBtn.setPrefHeight(40);</span>
+<span class="nc" id="L449">        menuBtn.setOnAction(e -&gt; {</span>
+<span class="nc" id="L450">            hideModal();</span>
+<span class="nc" id="L451">            guiController.requestReturnToLobby();</span>
+<span class="nc" id="L452">        });</span>
 
-<span class="nc" id="L415">        Button exitBtn = new Button(&quot;EXIT GAME&quot;);</span>
-<span class="nc" id="L416">        exitBtn.setStyle(&quot;-fx-base: #8B0000; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
-<span class="nc" id="L417">        exitBtn.setPrefHeight(40);</span>
-<span class="nc" id="L418">        exitBtn.setOnAction(e -&gt; System.exit(0));</span>
+<span class="nc" id="L454">        Button exitBtn = new Button(&quot;EXIT GAME&quot;);</span>
+<span class="nc" id="L455">        exitBtn.setStyle(&quot;-fx-base: #8B0000; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L456">        exitBtn.setPrefHeight(40);</span>
+<span class="nc" id="L457">        exitBtn.setOnAction(e -&gt; System.exit(0));</span>
 
-<span class="nc" id="L420">        buttons.getChildren().addAll(menuBtn, exitBtn);</span>
-<span class="nc" id="L421">        return buttons;</span>
+<span class="nc" id="L459">        buttons.getChildren().addAll(menuBtn, exitBtn);</span>
+<span class="nc" id="L460">        return buttons;</span>
     }
 
     /**
      * Displays the in-game menu overlay.
      */
     public void showInGameMenu() {
-<span class="nc" id="L428">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L429">            InGameMenuOverlay overlay = new InGameMenuOverlay();</span>
-<span class="nc" id="L430">            VBox node = overlay.buildNode(guiController, this::hideModal, modalLayer);</span>
-<span class="nc" id="L431">            modalLayer.getChildren().setAll(node);</span>
-<span class="nc" id="L432">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L433">        });</span>
-<span class="nc" id="L434">    }</span>
+<span class="nc" id="L467">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L468">            InGameMenuOverlay overlay = new InGameMenuOverlay();</span>
+<span class="nc" id="L469">            VBox node = overlay.buildNode(guiController, this::hideModal, modalLayer);</span>
+<span class="nc" id="L470">            modalLayer.getChildren().setAll(node);</span>
+<span class="nc" id="L471">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L472">        });</span>
+<span class="nc" id="L473">    }</span>
 
     /**
      * Displays the summary card overlay.
      */
     public void showSummaryCard() {
-<span class="nc" id="L440">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L441">            SummaryCardOverlay overlay = new SummaryCardOverlay();</span>
-<span class="nc" id="L442">            VBox node = overlay.buildNode(this::hideModal);</span>
-<span class="nc" id="L443">            modalLayer.getChildren().setAll(node);</span>
-<span class="nc" id="L444">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L445">        });</span>
-<span class="nc" id="L446">    }</span>
+<span class="nc" id="L479">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L480">            SummaryCardOverlay overlay = new SummaryCardOverlay();</span>
+<span class="nc" id="L481">            VBox node = overlay.buildNode(this::hideModal);</span>
+<span class="nc" id="L482">            modalLayer.getChildren().setAll(node);</span>
+<span class="nc" id="L483">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L484">        });</span>
+<span class="nc" id="L485">    }</span>
 
     /**
      * Hides any visible modal overlay.
      */
     public void hideModal() {
-<span class="nc" id="L452">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L453">            modalLayer.setVisible(false);</span>
-<span class="nc" id="L454">            modalLayer.getChildren().clear();</span>
-<span class="nc" id="L455">        });</span>
-<span class="nc" id="L456">    }</span>
+<span class="nc" id="L491">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L492">            modalLayer.setVisible(false);</span>
+<span class="nc" id="L493">            modalLayer.getChildren().clear();</span>
+<span class="nc" id="L494">        });</span>
+<span class="nc" id="L495">    }</span>
 
     /**
      * Displays a popup when a player disconnects.
@@ -461,39 +500,39 @@ public class SceneRouter {
      * @param n The nickname of the disconnected player.
      */
     public void showPlayerDisconnectedPopup(String n) {
-<span class="nc" id="L464">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L465">            VBox alertBox = new VBox(20);</span>
-<span class="nc" id="L466">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(420, 220);</span>
-<span class="nc" id="L467">            alertBox.setStyle(&quot;-fx-background-color: #1C1C1C; -fx-border-color: #E67E22; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
-<span class="nc" id="L468">            Label icon = new Label(&quot;📡&quot;); icon.setStyle(&quot;-fx-font-size: 32;&quot;);</span>
-<span class="nc" id="L469">            Label title = new Label(&quot;Player Disconnected&quot;); title.setStyle(&quot;-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #E67E22;&quot;);</span>
-<span class="nc" id="L470">            Label body = new Label(&quot;\&quot;&quot; + n + &quot;\&quot; has disconnected from the game.\nThe game will continue with an auto-player.&quot;);</span>
-<span class="nc" id="L471">            body.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13;&quot;); body.setWrapText(true); body.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L472">            Button okBtn = new Button(&quot;OK&quot;); okBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
-<span class="nc" id="L473">            okBtn.setPrefSize(100, 36); okBtn.setOnAction(e -&gt; hideModal());</span>
-<span class="nc" id="L474">            alertBox.getChildren().addAll(icon, title, body, okBtn);</span>
-<span class="nc" id="L475">            modalLayer.getChildren().setAll(alertBox);</span>
-<span class="nc" id="L476">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L477">        });</span>
-<span class="nc" id="L478">    }</span>
+<span class="nc" id="L503">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L504">            VBox alertBox = new VBox(20);</span>
+<span class="nc" id="L505">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(420, 220);</span>
+<span class="nc" id="L506">            alertBox.setStyle(&quot;-fx-background-color: #1C1C1C; -fx-border-color: #E67E22; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
+<span class="nc" id="L507">            Label icon = new Label(&quot;📡&quot;); icon.setStyle(&quot;-fx-font-size: 32;&quot;);</span>
+<span class="nc" id="L508">            Label title = new Label(&quot;Player Disconnected&quot;); title.setStyle(&quot;-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #E67E22;&quot;);</span>
+<span class="nc" id="L509">            Label body = new Label(&quot;\&quot;&quot; + n + &quot;\&quot; has disconnected from the game.\nThe game will continue with an auto-player.&quot;);</span>
+<span class="nc" id="L510">            body.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13;&quot;); body.setWrapText(true); body.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L511">            Button okBtn = new Button(&quot;OK&quot;); okBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L512">            okBtn.setPrefSize(100, 36); okBtn.setOnAction(e -&gt; hideModal());</span>
+<span class="nc" id="L513">            alertBox.getChildren().addAll(icon, title, body, okBtn);</span>
+<span class="nc" id="L514">            modalLayer.getChildren().setAll(alertBox);</span>
+<span class="nc" id="L515">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L516">        });</span>
+<span class="nc" id="L517">    }</span>
 
     /**
      * Displays an overlay indicating that connection to the server was lost.
      */
     public void showConnectionLost() {
-<span class="nc" id="L484">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L485">            VBox alertBox = new VBox(16);</span>
-<span class="nc" id="L486">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(32)); alertBox.setMaxSize(400, 250);</span>
-<span class="nc" id="L487">            alertBox.setStyle(&quot;-fx-background-color: #1C1C1C; -fx-border-color: #C0392B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
-<span class="nc" id="L488">            Label icon = new Label(&quot;⚠&quot;); icon.setStyle(&quot;-fx-font-size: 36; -fx-text-fill: #C0392B;&quot;);</span>
-<span class="nc" id="L489">            Label title = new Label(&quot;Connection to the server has been lost&quot;); title.setStyle(&quot;-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;&quot;);</span>
-<span class="nc" id="L490">            Label subtitle = new Label(&quot;Attempting to automatically reconnect...&quot;); subtitle.setStyle(&quot;-fx-font-size: 12; -fx-text-fill: #AAAAAA;&quot;); subtitle.setWrapText(true);</span>
-<span class="nc" id="L491">            ProgressIndicator spinner = new ProgressIndicator(); spinner.setMaxSize(40, 40); spinner.setStyle(&quot;-fx-accent: #E67E22;&quot;);</span>
-<span class="nc" id="L492">            alertBox.getChildren().addAll(icon, title, subtitle, spinner);</span>
-<span class="nc" id="L493">            modalLayer.getChildren().setAll(alertBox);</span>
-<span class="nc" id="L494">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L495">        });</span>
-<span class="nc" id="L496">    }</span>
+<span class="nc" id="L523">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L524">            VBox alertBox = new VBox(16);</span>
+<span class="nc" id="L525">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(32)); alertBox.setMaxSize(400, 250);</span>
+<span class="nc" id="L526">            alertBox.setStyle(&quot;-fx-background-color: #1C1C1C; -fx-border-color: #C0392B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
+<span class="nc" id="L527">            Label icon = new Label(&quot;⚠&quot;); icon.setStyle(&quot;-fx-font-size: 36; -fx-text-fill: #C0392B;&quot;);</span>
+<span class="nc" id="L528">            Label title = new Label(&quot;Connection to the server has been lost&quot;); title.setStyle(&quot;-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;&quot;);</span>
+<span class="nc" id="L529">            Label subtitle = new Label(&quot;Attempting to automatically reconnect...&quot;); subtitle.setStyle(&quot;-fx-font-size: 12; -fx-text-fill: #AAAAAA;&quot;); subtitle.setWrapText(true);</span>
+<span class="nc" id="L530">            ProgressIndicator spinner = new ProgressIndicator(); spinner.setMaxSize(40, 40); spinner.setStyle(&quot;-fx-accent: #E67E22;&quot;);</span>
+<span class="nc" id="L531">            alertBox.getChildren().addAll(icon, title, subtitle, spinner);</span>
+<span class="nc" id="L532">            modalLayer.getChildren().setAll(alertBox);</span>
+<span class="nc" id="L533">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L534">        });</span>
+<span class="nc" id="L535">    }</span>
 
     /**
      * Prompts the user for connection details and attempts to connect.
@@ -502,39 +541,39 @@ public class SceneRouter {
      * @param clientView The client view to associate with the connection.
      */
     public void promptConnectionAndRetry(it.polimi.ingsw.am02.client.model.LobbyModel lobbyModel, it.polimi.ingsw.am02.client.view.ClientView clientView) {
-<span class="nc" id="L505">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L506">            StackPane connectionForm = NetworkPopup.buildNode((config, onError) -&gt; {</span>
-<span class="nc" id="L507">                Thread connectionThread = new Thread(() -&gt; {</span>
+<span class="nc" id="L544">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L545">            StackPane connectionForm = NetworkPopup.buildNode((config, onError) -&gt; {</span>
+<span class="nc" id="L546">                Thread connectionThread = new Thread(() -&gt; {</span>
                     try {
-<span class="nc" id="L509">                        ServerProxy newProxy = ServerProxyFactory.create(</span>
-<span class="nc" id="L510">                                config.type(), config.host(), config.port(), lobbyModel, clientView);</span>
-<span class="nc" id="L511">                        guiController.setServerProxy(newProxy);</span>
-<span class="nc" id="L512">                        newProxy.setClientController(guiController);</span>
-<span class="nc" id="L513">                        newProxy.connect();</span>
-<span class="nc" id="L514">                        guiController.setConnectionConfig(config.type(), config.host(), config.port());</span>
-<span class="nc" id="L515">                        showToast(&quot;Connected&quot;, &quot;Successfully connected via &quot; + config.type(), Alert.AlertType.INFORMATION);</span>
+<span class="nc" id="L548">                        ServerProxy newProxy = ServerProxyFactory.create(</span>
+<span class="nc" id="L549">                                config.type(), config.host(), config.port(), lobbyModel, clientView);</span>
+<span class="nc" id="L550">                        guiController.setServerProxy(newProxy);</span>
+<span class="nc" id="L551">                        newProxy.setClientController(guiController);</span>
+<span class="nc" id="L552">                        newProxy.connect();</span>
+<span class="nc" id="L553">                        guiController.setConnectionConfig(config.type(), config.host(), config.port());</span>
+<span class="nc" id="L554">                        showToast(&quot;Connected&quot;, &quot;Successfully connected via &quot; + config.type(), Alert.AlertType.INFORMATION);</span>
 
-<span class="nc" id="L517">                        hideModal();</span>
+<span class="nc" id="L556">                        hideModal();</span>
 
                         // Once IP/port are set and we're connected, switch the window
                         // to full screen right away so the whole experience (starting
                         // with the project-info scene) is shown maximised.
-<span class="nc" id="L522">                        runOnUi(() -&gt; {</span>
-<span class="nc" id="L523">                            primaryStage.setResizable(true);</span>
-<span class="nc" id="L524">                            primaryStage.setFullScreen(true);</span>
-<span class="nc" id="L525">                            primaryStage.centerOnScreen();</span>
-<span class="nc" id="L526">                        });</span>
+<span class="nc" id="L561">                        runOnUi(() -&gt; {</span>
+<span class="nc" id="L562">                            primaryStage.setResizable(true);</span>
+<span class="nc" id="L563">                            primaryStage.setFullScreen(true);</span>
+<span class="nc" id="L564">                            primaryStage.centerOnScreen();</span>
+<span class="nc" id="L565">                        });</span>
 
-<span class="nc" id="L528">                        showProjectInfoScene(this::showIntroScene);</span>
+<span class="nc" id="L567">                        showProjectInfoScene(this::showIntroScene);</span>
 
-<span class="nc" id="L530">                    } catch (Exception ex) { onError.accept(ex.getMessage()); }</span>
-<span class="nc" id="L531">                });</span>
-<span class="nc" id="L532">                connectionThread.setDaemon(true);</span>
-<span class="nc" id="L533">                connectionThread.start();</span>
-<span class="nc" id="L534">            });</span>
-<span class="nc" id="L535">            modalLayer.getChildren().setAll(connectionForm);</span>
-<span class="nc" id="L536">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L537">        });</span>
-<span class="nc" id="L538">    }</span>
+<span class="nc" id="L569">                    } catch (Exception ex) { onError.accept(ex.getMessage()); }</span>
+<span class="nc" id="L570">                });</span>
+<span class="nc" id="L571">                connectionThread.setDaemon(true);</span>
+<span class="nc" id="L572">                connectionThread.start();</span>
+<span class="nc" id="L573">            });</span>
+<span class="nc" id="L574">            modalLayer.getChildren().setAll(connectionForm);</span>
+<span class="nc" id="L575">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L576">        });</span>
+<span class="nc" id="L577">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

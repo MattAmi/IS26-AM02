@@ -82,9 +82,18 @@ import java.util.stream.Collectors;
     }
 
     /**
-     * Inner class representing a snapshot of the game state for rendering and animations.
+     * Immutable snapshot of the game state for rendering and animations.
+     *
+     * &lt;p&gt;Built exclusively from {@link GameModel}'s {@code synchronized} getters
+     * (each returning a defensive copy), so a snapshot can be taken safely from
+     * &lt;em&gt;any&lt;/em&gt; thread — in particular the network thread, the instant an event
+     * is applied. Capturing on the network thread (in event order) and only then
+     * marshalling the already-frozen snapshot to the FX thread is what lets a
+     * reconnection replay render frame-by-frame in order, instead of every deferred
+     * render lazily re-reading a model that the network thread has already
+     * fast-forwarded to its final state.
      */
-    private static class SceneState {
+    public static class SceneState {
         String gameId; String currentPlayer; PhaseType currentPhase; Era era; String myNickname;
         List&lt;String&gt; turnOrder; Map&lt;String, Integer&gt; foodByPlayer; Map&lt;String, Integer&gt; ppByPlayer;
         Map&lt;String, Totem&gt; totems; List&lt;String&gt; upperRow; List&lt;String&gt; upperRowBuildings;
@@ -93,48 +102,48 @@ import java.util.stream.Collectors;
         Map&lt;String, Integer&gt; remainingUpper; Map&lt;String, Integer&gt; remainingLower;
         Map&lt;String, List&lt;String&gt;&gt; charactersByPlayer; Map&lt;String, List&lt;String&gt;&gt; buildingsByPlayer;
 
-<span class="nc" id="L96">        public SceneState(GameModel m) {</span>
-<span class="nc" id="L97">            this.gameId = m.getGameId(); this.currentPlayer = m.getCurrentPlayer();</span>
-<span class="nc" id="L98">            this.currentPhase = m.getCurrentPhase();</span>
-<span class="nc bnc" id="L99" title="All 2 branches missed.">            this.era = m.getCurrentEra() != null ? m.getCurrentEra() : Era.I;</span>
-<span class="nc" id="L100">            this.myNickname = m.getMyNickname();</span>
-<span class="nc bnc" id="L101" title="All 2 branches missed.">            this.turnOrder = m.getTurnOrder() != null ? new ArrayList&lt;&gt;(m.getTurnOrder()) : new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L102" title="All 2 branches missed.">            this.foodByPlayer = m.getFoodByPlayer() != null ? new HashMap&lt;&gt;(m.getFoodByPlayer()) : new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L103" title="All 2 branches missed.">            this.ppByPlayer = m.getPpByPlayer() != null ? new HashMap&lt;&gt;(m.getPpByPlayer()) : new HashMap&lt;&gt;();</span>
-<span class="nc" id="L104">            this.totems = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (m.getTurnOrder() != null) {</span>
-<span class="nc bnc" id="L106" title="All 2 branches missed.">                for (String p : m.getTurnOrder()) {</span>
-<span class="nc" id="L107">                    Totem t = m.getTotem(p);</span>
-<span class="nc bnc" id="L108" title="All 2 branches missed.">                    if (t != null) this.totems.put(p, t);</span>
-<span class="nc" id="L109">                }</span>
+<span class="nc" id="L105">        public SceneState(GameModel m) {</span>
+<span class="nc" id="L106">            this.gameId = m.getGameId(); this.currentPlayer = m.getCurrentPlayer();</span>
+<span class="nc" id="L107">            this.currentPhase = m.getCurrentPhase();</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            this.era = m.getCurrentEra() != null ? m.getCurrentEra() : Era.I;</span>
+<span class="nc" id="L109">            this.myNickname = m.getMyNickname();</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            this.turnOrder = m.getTurnOrder() != null ? new ArrayList&lt;&gt;(m.getTurnOrder()) : new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">            this.foodByPlayer = m.getFoodByPlayer() != null ? new HashMap&lt;&gt;(m.getFoodByPlayer()) : new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            this.ppByPlayer = m.getPpByPlayer() != null ? new HashMap&lt;&gt;(m.getPpByPlayer()) : new HashMap&lt;&gt;();</span>
+<span class="nc" id="L113">            this.totems = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            if (m.getTurnOrder() != null) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                for (String p : m.getTurnOrder()) {</span>
+<span class="nc" id="L116">                    Totem t = m.getTotem(p);</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                    if (t != null) this.totems.put(p, t);</span>
+<span class="nc" id="L118">                }</span>
             }
-<span class="nc bnc" id="L111" title="All 2 branches missed.">            this.upperRow = m.getUpperRow() != null ? new ArrayList&lt;&gt;(m.getUpperRow()) : new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L112" title="All 2 branches missed.">            this.upperRowBuildings = m.getUpperRowBuildings() != null ? new ArrayList&lt;&gt;(m.getUpperRowBuildings()) : new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L113" title="All 2 branches missed.">            this.lowerRow = m.getLowerRow() != null ? new ArrayList&lt;&gt;(m.getLowerRow()) : new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L114" title="All 2 branches missed.">            this.lowerRowBuildings = m.getLowerRowBuildings() != null ? new ArrayList&lt;&gt;(m.getLowerRowBuildings()) : new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L115" title="All 2 branches missed.">            this.offerTiles = m.getOfferTiles() != null ? new ArrayList&lt;&gt;(m.getOfferTiles()) : new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L116" title="All 2 branches missed.">            this.turnOrderSlots = m.getTurnOrderSlots() != null ? new ArrayList&lt;&gt;(m.getTurnOrderSlots()) : new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L117" title="All 2 branches missed.">            this.remainingUpper = m.getRemainingUpper() != null ? new HashMap&lt;&gt;(m.getRemainingUpper()) : new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L118" title="All 2 branches missed.">            this.remainingLower = m.getRemainingLower() != null ? new HashMap&lt;&gt;(m.getRemainingLower()) : new HashMap&lt;&gt;();</span>
-<span class="nc" id="L119">            this.charactersByPlayer = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L120" title="All 2 branches missed.">            if (m.getCharactersByPlayer() != null) m.getCharactersByPlayer().forEach((k, v) -&gt; this.charactersByPlayer.put(k, new ArrayList&lt;&gt;(v)));</span>
-<span class="nc" id="L121">            this.buildingsByPlayer = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L122" title="All 2 branches missed.">            if (m.getBuildingsByPlayer() != null) m.getBuildingsByPlayer().forEach((k, v) -&gt; this.buildingsByPlayer.put(k, new ArrayList&lt;&gt;(v)));</span>
-<span class="nc" id="L123">        }</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            this.upperRow = m.getUpperRow() != null ? new ArrayList&lt;&gt;(m.getUpperRow()) : new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">            this.upperRowBuildings = m.getUpperRowBuildings() != null ? new ArrayList&lt;&gt;(m.getUpperRowBuildings()) : new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            this.lowerRow = m.getLowerRow() != null ? new ArrayList&lt;&gt;(m.getLowerRow()) : new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">            this.lowerRowBuildings = m.getLowerRowBuildings() != null ? new ArrayList&lt;&gt;(m.getLowerRowBuildings()) : new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            this.offerTiles = m.getOfferTiles() != null ? new ArrayList&lt;&gt;(m.getOfferTiles()) : new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">            this.turnOrderSlots = m.getTurnOrderSlots() != null ? new ArrayList&lt;&gt;(m.getTurnOrderSlots()) : new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            this.remainingUpper = m.getRemainingUpper() != null ? new HashMap&lt;&gt;(m.getRemainingUpper()) : new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            this.remainingLower = m.getRemainingLower() != null ? new HashMap&lt;&gt;(m.getRemainingLower()) : new HashMap&lt;&gt;();</span>
+<span class="nc" id="L128">            this.charactersByPlayer = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (m.getCharactersByPlayer() != null) m.getCharactersByPlayer().forEach((k, v) -&gt; this.charactersByPlayer.put(k, new ArrayList&lt;&gt;(v)));</span>
+<span class="nc" id="L130">            this.buildingsByPlayer = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            if (m.getBuildingsByPlayer() != null) m.getBuildingsByPlayer().forEach((k, v) -&gt; this.buildingsByPlayer.put(k, new ArrayList&lt;&gt;(v)));</span>
+<span class="nc" id="L132">        }</span>
     }
 
     /**
      * Plays the next animation in the queue.
      */
     private void playNextAnimation() {
-<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (animationQueue.isEmpty()) {</span>
-<span class="nc" id="L131">            isAnimating = false;</span>
-<span class="nc" id="L132">            return;</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (animationQueue.isEmpty()) {</span>
+<span class="nc" id="L140">            isAnimating = false;</span>
+<span class="nc" id="L141">            return;</span>
         }
-<span class="nc" id="L134">        isAnimating = true;</span>
-<span class="nc" id="L135">        Runnable next = animationQueue.poll();</span>
-<span class="nc" id="L136">        next.run();</span>
-<span class="nc" id="L137">    }</span>
+<span class="nc" id="L143">        isAnimating = true;</span>
+<span class="nc" id="L144">        Runnable next = animationQueue.poll();</span>
+<span class="nc" id="L145">        next.run();</span>
+<span class="nc" id="L146">    }</span>
 
     /**
      * Builds the game scene node.
@@ -145,82 +154,82 @@ import java.util.stream.Collectors;
      * @return The constructed Region representing the scene.
      */
     public Region buildNode(GuiController controller, Runnable onShowMenu, Runnable onShowSummary) {
-<span class="nc" id="L148">        this.controller = controller;</span>
-<span class="nc" id="L149">        this.tribalFont = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/intro.ttf&quot;), 14);</span>
-<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (tribalFont == null) tribalFont = Font.font(&quot;System&quot;, 14);</span>
+<span class="nc" id="L157">        this.controller = controller;</span>
+<span class="nc" id="L158">        this.tribalFont = Font.loadFont(getClass().getResourceAsStream(&quot;/fonts/intro.ttf&quot;), 14);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        if (tribalFont == null) tribalFont = Font.font(&quot;System&quot;, 14);</span>
 
-<span class="nc" id="L152">        baseStack = new StackPane(); baseStack.setMinWidth(1280); baseStack.setMinHeight(800);</span>
-<span class="nc" id="L153">        baseStack.setStyle(&quot;-fx-background-color: #0a0a0a;&quot;);</span>
-<span class="nc" id="L154">        root = new BorderPane();</span>
+<span class="nc" id="L161">        baseStack = new StackPane(); baseStack.setMinWidth(1280); baseStack.setMinHeight(800);</span>
+<span class="nc" id="L162">        baseStack.setStyle(&quot;-fx-background-color: #0a0a0a;&quot;);</span>
+<span class="nc" id="L163">        root = new BorderPane();</span>
 
-<span class="nc" id="L156">        StackPane topBanner = new StackPane();</span>
-<span class="nc" id="L157">        topBanner.setPadding(new Insets(10, 20, 10, 20)); topBanner.setStyle(&quot;-fx-background-color: #A31D1D;&quot;);</span>
+<span class="nc" id="L165">        StackPane topBanner = new StackPane();</span>
+<span class="nc" id="L166">        topBanner.setPadding(new Insets(10, 20, 10, 20)); topBanner.setStyle(&quot;-fx-background-color: #A31D1D;&quot;);</span>
 
-<span class="nc" id="L159">        HBox idBox = new HBox(10); idBox.setAlignment(Pos.CENTER_LEFT);</span>
-<span class="nc" id="L160">        idBox.setPickOnBounds(false);</span>
-<span class="nc" id="L161">        gameIdLabel = new Label(&quot;ID: ---&quot;); gameIdLabel.setTextFill(Color.WHITE); gameIdLabel.setFont(Font.font(tribalFont.getFamily(), 14));</span>
+<span class="nc" id="L168">        HBox idBox = new HBox(10); idBox.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L169">        idBox.setPickOnBounds(false);</span>
+<span class="nc" id="L170">        gameIdLabel = new Label(&quot;ID: ---&quot;); gameIdLabel.setTextFill(Color.WHITE); gameIdLabel.setFont(Font.font(tribalFont.getFamily(), 14));</span>
 
-<span class="nc" id="L163">        Button copyBtn = new Button(&quot;COPY ID&quot;);</span>
-<span class="nc" id="L164">        copyBtn.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);</span>
-<span class="nc bnc" id="L165" title="All 2 branches missed.">        String fName = tribalFont != null ? tribalFont.getFamily() : &quot;System&quot;;</span>
-<span class="nc" id="L166">        String btnIdle = &quot;-fx-background-color: rgba(255,255,255,0.15); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-family: \&quot;&quot; + fName + &quot;\&quot;; -fx-font-size: 12;&quot;;</span>
-<span class="nc" id="L167">        String btnHover = &quot;-fx-background-color: rgba(255,255,255,0.3); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-family: \&quot;&quot; + fName + &quot;\&quot;; -fx-font-size: 12;&quot;;</span>
-<span class="nc" id="L168">        copyBtn.setStyle(btnIdle);</span>
-<span class="nc" id="L169">        copyBtn.setOnMouseEntered(e -&gt; copyBtn.setStyle(btnHover)); copyBtn.setOnMouseExited(e -&gt; copyBtn.setStyle(btnIdle));</span>
+<span class="nc" id="L172">        Button copyBtn = new Button(&quot;COPY ID&quot;);</span>
+<span class="nc" id="L173">        copyBtn.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        String fName = tribalFont != null ? tribalFont.getFamily() : &quot;System&quot;;</span>
+<span class="nc" id="L175">        String btnIdle = &quot;-fx-background-color: rgba(255,255,255,0.15); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-family: \&quot;&quot; + fName + &quot;\&quot;; -fx-font-size: 12;&quot;;</span>
+<span class="nc" id="L176">        String btnHover = &quot;-fx-background-color: rgba(255,255,255,0.3); -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-padding: 4 12; -fx-font-family: \&quot;&quot; + fName + &quot;\&quot;; -fx-font-size: 12;&quot;;</span>
+<span class="nc" id="L177">        copyBtn.setStyle(btnIdle);</span>
+<span class="nc" id="L178">        copyBtn.setOnMouseEntered(e -&gt; copyBtn.setStyle(btnHover)); copyBtn.setOnMouseExited(e -&gt; copyBtn.setStyle(btnIdle));</span>
 
-<span class="nc" id="L171">        Label toastLabel = new Label(&quot;COPIED!&quot;);</span>
-<span class="nc" id="L172">        toastLabel.setStyle(&quot;-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 4 10; -fx-background-radius: 15; -fx-font-weight: bold;&quot;);</span>
-<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (tribalFont != null) toastLabel.setFont(Font.font(tribalFont.getFamily(), 10));</span>
-<span class="nc" id="L174">        toastLabel.setOpacity(0);</span>
-<span class="nc" id="L175">        toastLabel.setMouseTransparent(true);</span>
+<span class="nc" id="L180">        Label toastLabel = new Label(&quot;COPIED!&quot;);</span>
+<span class="nc" id="L181">        toastLabel.setStyle(&quot;-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 4 10; -fx-background-radius: 15; -fx-font-weight: bold;&quot;);</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (tribalFont != null) toastLabel.setFont(Font.font(tribalFont.getFamily(), 10));</span>
+<span class="nc" id="L183">        toastLabel.setOpacity(0);</span>
+<span class="nc" id="L184">        toastLabel.setMouseTransparent(true);</span>
 
-<span class="nc" id="L177">        StackPane copyContainer = new StackPane();</span>
-<span class="nc" id="L178">        copyContainer.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L179">        copyContainer.getChildren().addAll(copyBtn, toastLabel);</span>
+<span class="nc" id="L186">        StackPane copyContainer = new StackPane();</span>
+<span class="nc" id="L187">        copyContainer.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L188">        copyContainer.getChildren().addAll(copyBtn, toastLabel);</span>
 
-<span class="nc" id="L181">        copyBtn.setOnAction(e -&gt; {</span>
-<span class="nc bnc" id="L182" title="All 4 branches missed.">            if (model != null &amp;&amp; model.getGameId() != null) {</span>
-<span class="nc" id="L183">                Clipboard clipboard = Clipboard.getSystemClipboard(); ClipboardContent content = new ClipboardContent();</span>
-<span class="nc" id="L184">                content.putString(model.getGameId()); clipboard.setContent(content);</span>
+<span class="nc" id="L190">        copyBtn.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L191" title="All 4 branches missed.">            if (model != null &amp;&amp; model.getGameId() != null) {</span>
+<span class="nc" id="L192">                Clipboard clipboard = Clipboard.getSystemClipboard(); ClipboardContent content = new ClipboardContent();</span>
+<span class="nc" id="L193">                content.putString(model.getGameId()); clipboard.setContent(content);</span>
 
-<span class="nc" id="L186">                toastLabel.setTranslateY(0);</span>
-<span class="nc" id="L187">                FadeTransition fadeIn = new FadeTransition(Duration.millis(200), toastLabel); fadeIn.setFromValue(0); fadeIn.setToValue(1);</span>
-<span class="nc" id="L188">                TranslateTransition moveUp = new TranslateTransition(Duration.millis(200), toastLabel);</span>
-<span class="nc" id="L189">                moveUp.setByY(-25);</span>
-<span class="nc" id="L190">                FadeTransition fadeOut = new FadeTransition(Duration.seconds(1), toastLabel); fadeOut.setDelay(Duration.seconds(1.5)); fadeOut.setFromValue(1); fadeOut.setToValue(0);</span>
-<span class="nc" id="L191">                ParallelTransition pt = new ParallelTransition(fadeIn, moveUp); pt.setOnFinished(ev -&gt; fadeOut.play()); pt.play();</span>
+<span class="nc" id="L195">                toastLabel.setTranslateY(0);</span>
+<span class="nc" id="L196">                FadeTransition fadeIn = new FadeTransition(Duration.millis(200), toastLabel); fadeIn.setFromValue(0); fadeIn.setToValue(1);</span>
+<span class="nc" id="L197">                TranslateTransition moveUp = new TranslateTransition(Duration.millis(200), toastLabel);</span>
+<span class="nc" id="L198">                moveUp.setByY(-25);</span>
+<span class="nc" id="L199">                FadeTransition fadeOut = new FadeTransition(Duration.seconds(1), toastLabel); fadeOut.setDelay(Duration.seconds(1.5)); fadeOut.setFromValue(1); fadeOut.setToValue(0);</span>
+<span class="nc" id="L200">                ParallelTransition pt = new ParallelTransition(fadeIn, moveUp); pt.setOnFinished(ev -&gt; fadeOut.play()); pt.play();</span>
             }
-<span class="nc" id="L193">        });</span>
+<span class="nc" id="L202">        });</span>
 
-<span class="nc" id="L195">        idBox.getChildren().addAll(gameIdLabel, copyContainer);</span>
-<span class="nc" id="L196">        StackPane.setAlignment(idBox, Pos.CENTER_LEFT);</span>
+<span class="nc" id="L204">        idBox.getChildren().addAll(gameIdLabel, copyContainer);</span>
+<span class="nc" id="L205">        StackPane.setAlignment(idBox, Pos.CENTER_LEFT);</span>
 
-<span class="nc" id="L198">        HBox rightControls = new HBox(15);</span>
-<span class="nc" id="L199">        rightControls.setAlignment(Pos.CENTER_RIGHT);</span>
-<span class="nc" id="L200">        rightControls.setPickOnBounds(false);</span>
+<span class="nc" id="L207">        HBox rightControls = new HBox(15);</span>
+<span class="nc" id="L208">        rightControls.setAlignment(Pos.CENTER_RIGHT);</span>
+<span class="nc" id="L209">        rightControls.setPickOnBounds(false);</span>
 
-<span class="nc" id="L202">        Button logsBtn = new Button(&quot;▼&quot;);</span>
-<span class="nc" id="L203">        logsBtn.setFont(Font.font(tribalFont.getFamily(), 8));</span>
-<span class="nc" id="L204">        logsBtn.setStyle(&quot;-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;&quot;);</span>
+<span class="nc" id="L211">        Button logsBtn = new Button(&quot;▼&quot;);</span>
+<span class="nc" id="L212">        logsBtn.setFont(Font.font(tribalFont.getFamily(), 8));</span>
+<span class="nc" id="L213">        logsBtn.setStyle(&quot;-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;&quot;);</span>
 
-<span class="nc" id="L206">        Button burgerMenuBtn = new Button(&quot;☰&quot;); burgerMenuBtn.setFont(Font.font(tribalFont.getFamily(), 20));</span>
-<span class="nc" id="L207">        burgerMenuBtn.setStyle(&quot;-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;&quot;);</span>
-<span class="nc" id="L208">        burgerMenuBtn.setOnAction(e -&gt; onShowMenu.run()); StackPane.setAlignment(burgerMenuBtn, Pos.CENTER_RIGHT);</span>
+<span class="nc" id="L215">        Button burgerMenuBtn = new Button(&quot;☰&quot;); burgerMenuBtn.setFont(Font.font(tribalFont.getFamily(), 20));</span>
+<span class="nc" id="L216">        burgerMenuBtn.setStyle(&quot;-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;&quot;);</span>
+<span class="nc" id="L217">        burgerMenuBtn.setOnAction(e -&gt; onShowMenu.run()); StackPane.setAlignment(burgerMenuBtn, Pos.CENTER_RIGHT);</span>
 
-<span class="nc" id="L210">        rightControls.getChildren().addAll(logsBtn, burgerMenuBtn);</span>
-<span class="nc" id="L211">        StackPane.setAlignment(rightControls, Pos.CENTER_RIGHT);</span>
+<span class="nc" id="L219">        rightControls.getChildren().addAll(logsBtn, burgerMenuBtn);</span>
+<span class="nc" id="L220">        StackPane.setAlignment(rightControls, Pos.CENTER_RIGHT);</span>
 
-<span class="nc" id="L213">        statusBox = new HBox(15); statusBox.setAlignment(Pos.CENTER); statusBox.setMouseTransparent(true);</span>
-<span class="nc" id="L214">        topBanner.getChildren().addAll(statusBox, idBox, rightControls); root.setTop(topBanner);</span>
+<span class="nc" id="L222">        statusBox = new HBox(15); statusBox.setAlignment(Pos.CENTER); statusBox.setMouseTransparent(true);</span>
+<span class="nc" id="L223">        topBanner.getChildren().addAll(statusBox, idBox, rightControls); root.setTop(topBanner);</span>
 
-<span class="nc" id="L216">        rightSidebar = new VBox(15); rightSidebar.setPadding(new Insets(20)); rightSidebar.setPrefWidth(260);</span>
-<span class="nc" id="L217">        rightSidebar.setStyle(&quot;-fx-background-color: #1a0f07; -fx-border-color: #3e2a1d; -fx-border-width: 0 0 0 4;&quot;);</span>
-<span class="nc" id="L218">        root.setRight(rightSidebar);</span>
+<span class="nc" id="L225">        rightSidebar = new VBox(15); rightSidebar.setPadding(new Insets(20)); rightSidebar.setPrefWidth(260);</span>
+<span class="nc" id="L226">        rightSidebar.setStyle(&quot;-fx-background-color: #1a0f07; -fx-border-color: #3e2a1d; -fx-border-width: 0 0 0 4;&quot;);</span>
+<span class="nc" id="L227">        root.setRight(rightSidebar);</span>
 
-<span class="nc" id="L220">        StackPane centerLayout = new StackPane();</span>
-<span class="nc" id="L221">        String bgPath = getClass().getResource(&quot;/images/mesos_box.png&quot;).toExternalForm();</span>
-<span class="nc" id="L222">        centerLayout.setStyle(&quot;-fx-background-image: url('&quot; + bgPath + &quot;'); -fx-background-size: 130%; -fx-background-position: center;&quot;);</span>
-<span class="nc" id="L223">        Region darkOverlay = new Region(); darkOverlay.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.55);&quot;);</span>
+<span class="nc" id="L229">        StackPane centerLayout = new StackPane();</span>
+<span class="nc" id="L230">        String bgPath = getClass().getResource(&quot;/images/mesos_box.png&quot;).toExternalForm();</span>
+<span class="nc" id="L231">        centerLayout.setStyle(&quot;-fx-background-image: url('&quot; + bgPath + &quot;'); -fx-background-size: 130%; -fx-background-position: center;&quot;);</span>
+<span class="nc" id="L232">        Region darkOverlay = new Region(); darkOverlay.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.55);&quot;);</span>
 
         // Fixed bottom reservation for the overlaid hand/TRIBE strip. The strip is
         // height-bounded below (fixed tribe-card size + capped cascade spread + tight
@@ -228,70 +237,70 @@ import java.util.stream.Collectors;
         // cards. A fixed value (rather than one bound to the strip height) keeps the
         // board from scrolling, while still guaranteeing the lower row is never
         // covered, for any tribe size and 2-5 players.
-<span class="nc" id="L231">        mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 255, 20)); mainBoardArea.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L232">        ScrollPane scrollPane = new ScrollPane(mainBoardArea); scrollPane.setFitToWidth(true); scrollPane.setStyle(&quot;-fx-background: transparent; -fx-background-color: transparent;&quot;);</span>
+<span class="nc" id="L240">        mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 255, 20)); mainBoardArea.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L241">        ScrollPane scrollPane = new ScrollPane(mainBoardArea); scrollPane.setFitToWidth(true); scrollPane.setStyle(&quot;-fx-background: transparent; -fx-background-color: transparent;&quot;);</span>
 
-<span class="nc" id="L234">        VBox bottomLayout = new VBox(0); bottomLayout.setMaxHeight(Region.USE_PREF_SIZE); bottomLayout.setAlignment(Pos.BOTTOM_CENTER);</span>
+<span class="nc" id="L243">        VBox bottomLayout = new VBox(0); bottomLayout.setMaxHeight(Region.USE_PREF_SIZE); bottomLayout.setAlignment(Pos.BOTTOM_CENTER);</span>
 
-<span class="nc" id="L236">        VBox handArea = new VBox(5); handArea.setPadding(new Insets(10, 10, 12, 10));</span>
-<span class="nc" id="L237">        handArea.setStyle(&quot;-fx-background-color: rgba(26, 15, 7, 0.90); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;&quot;);</span>
-<span class="nc" id="L238">        handTitle = new Label(&quot;TRIBE&quot;); handTitle.setTextFill(Color.web(&quot;#F2D5A3&quot;)); handTitle.setFont(Font.font(tribalFont.getFamily(), 14));</span>
+<span class="nc" id="L245">        VBox handArea = new VBox(5); handArea.setPadding(new Insets(10, 10, 12, 10));</span>
+<span class="nc" id="L246">        handArea.setStyle(&quot;-fx-background-color: rgba(26, 15, 7, 0.90); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;&quot;);</span>
+<span class="nc" id="L247">        handTitle = new Label(&quot;TRIBE&quot;); handTitle.setTextFill(Color.web(&quot;#F2D5A3&quot;)); handTitle.setFont(Font.font(tribalFont.getFamily(), 14));</span>
 
-<span class="nc" id="L240">        handCardsBox = new HBox(15); handCardsBox.setAlignment(Pos.TOP_CENTER); handCardsBox.setMinHeight(155);</span>
-<span class="nc" id="L241">        ScrollPane handScroll = new ScrollPane(handCardsBox); handScroll.setFitToHeight(true); handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
-<span class="nc" id="L242">        handScroll.setStyle(&quot;-fx-background: transparent; -fx-background-color: transparent;&quot;);</span>
-<span class="nc" id="L243">        handArea.getChildren().addAll(handTitle, handScroll);</span>
+<span class="nc" id="L249">        handCardsBox = new HBox(15); handCardsBox.setAlignment(Pos.TOP_CENTER); handCardsBox.setMinHeight(155);</span>
+<span class="nc" id="L250">        ScrollPane handScroll = new ScrollPane(handCardsBox); handScroll.setFitToHeight(true); handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
+<span class="nc" id="L251">        handScroll.setStyle(&quot;-fx-background: transparent; -fx-background-color: transparent;&quot;);</span>
+<span class="nc" id="L252">        handArea.getChildren().addAll(handTitle, handScroll);</span>
 
-<span class="nc" id="L245">        HBox bottomButtons = new HBox(25); bottomButtons.setPadding(new Insets(10)); bottomButtons.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L246">        bottomButtons.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.5);&quot;);</span>
+<span class="nc" id="L254">        HBox bottomButtons = new HBox(25); bottomButtons.setPadding(new Insets(10)); bottomButtons.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L255">        bottomButtons.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.5);&quot;);</span>
 
-<span class="nc" id="L248">        String idleStyle = &quot;-fx-background-color: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \&quot;&quot; + fName + &quot;\&quot;; -fx-border-color: #4A3B32; -fx-border-radius: 3; -fx-border-width: 1;&quot;;</span>
-<span class="nc" id="L249">        String hoverStyle = &quot;-fx-background-color: #4e3219; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-font-family: \&quot;&quot; + fName + &quot;\&quot;; -fx-border-color: #F2D5A3; -fx-border-radius: 3; -fx-border-width: 1;&quot;;</span>
+<span class="nc" id="L257">        String idleStyle = &quot;-fx-background-color: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \&quot;&quot; + fName + &quot;\&quot;; -fx-border-color: #4A3B32; -fx-border-radius: 3; -fx-border-width: 1;&quot;;</span>
+<span class="nc" id="L258">        String hoverStyle = &quot;-fx-background-color: #4e3219; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-font-family: \&quot;&quot; + fName + &quot;\&quot;; -fx-border-color: #F2D5A3; -fx-border-radius: 3; -fx-border-width: 1;&quot;;</span>
 
-<span class="nc" id="L251">        confirmBtn = new Button(&quot;CONFIRM PICK&quot;); confirmBtn.setStyle(idleStyle);</span>
-<span class="nc" id="L252">        confirmBtn.setOnMouseEntered(e -&gt; confirmBtn.setStyle(hoverStyle)); confirmBtn.setOnMouseExited(e -&gt; confirmBtn.setStyle(idleStyle));</span>
-<span class="nc bnc" id="L253" title="All 2 branches missed.">        confirmBtn.setOnAction(e -&gt; { if (!actionsAllowed()) return; controller.resolveActions(new ArrayList&lt;&gt;(selected)); selected.clear(); });</span>
+<span class="nc" id="L260">        confirmBtn = new Button(&quot;CONFIRM PICK&quot;); confirmBtn.setStyle(idleStyle);</span>
+<span class="nc" id="L261">        confirmBtn.setOnMouseEntered(e -&gt; confirmBtn.setStyle(hoverStyle)); confirmBtn.setOnMouseExited(e -&gt; confirmBtn.setStyle(idleStyle));</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        confirmBtn.setOnAction(e -&gt; { if (!cardActionsAllowed()) return; controller.resolveActions(new ArrayList&lt;&gt;(selected)); selected.clear(); });</span>
 
-<span class="nc" id="L255">        endTurnBtn = new Button(&quot;END TURN&quot;); endTurnBtn.setStyle(idleStyle);</span>
-<span class="nc" id="L256">        endTurnBtn.setOnMouseEntered(e -&gt; endTurnBtn.setStyle(hoverStyle)); endTurnBtn.setOnMouseExited(e -&gt; endTurnBtn.setStyle(idleStyle));</span>
-<span class="nc bnc" id="L257" title="All 2 branches missed.">        endTurnBtn.setOnAction(e -&gt; { if (!actionsAllowed()) return; controller.moveTotem('T'); });</span>
+<span class="nc" id="L264">        endTurnBtn = new Button(&quot;END TURN&quot;); endTurnBtn.setStyle(idleStyle);</span>
+<span class="nc" id="L265">        endTurnBtn.setOnMouseEntered(e -&gt; endTurnBtn.setStyle(hoverStyle)); endTurnBtn.setOnMouseExited(e -&gt; endTurnBtn.setStyle(idleStyle));</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        endTurnBtn.setOnAction(e -&gt; { if (!actionsAllowed()) return; controller.moveTotem('T'); });</span>
 
-<span class="nc" id="L259">        Button summaryBtn = new Button(&quot;SUMMARY&quot;); summaryBtn.setStyle(idleStyle);</span>
-<span class="nc" id="L260">        summaryBtn.setOnMouseEntered(e -&gt; summaryBtn.setStyle(hoverStyle)); summaryBtn.setOnMouseExited(e -&gt; summaryBtn.setStyle(idleStyle));</span>
-<span class="nc" id="L261">        summaryBtn.setOnAction(e -&gt; onShowSummary.run());</span>
+<span class="nc" id="L268">        Button summaryBtn = new Button(&quot;SUMMARY&quot;); summaryBtn.setStyle(idleStyle);</span>
+<span class="nc" id="L269">        summaryBtn.setOnMouseEntered(e -&gt; summaryBtn.setStyle(hoverStyle)); summaryBtn.setOnMouseExited(e -&gt; summaryBtn.setStyle(idleStyle));</span>
+<span class="nc" id="L270">        summaryBtn.setOnAction(e -&gt; onShowSummary.run());</span>
 
-<span class="nc" id="L263">        bottomButtons.getChildren().addAll(confirmBtn, endTurnBtn, summaryBtn);</span>
-<span class="nc" id="L264">        bottomLayout.getChildren().addAll(handArea, bottomButtons);</span>
-<span class="nc" id="L265">        StackPane.setAlignment(bottomLayout, Pos.BOTTOM_CENTER);</span>
-<span class="nc" id="L266">        centerLayout.getChildren().addAll(darkOverlay, scrollPane, bottomLayout);</span>
-<span class="nc" id="L267">        root.setCenter(centerLayout); baseStack.getChildren().add(root);</span>
+<span class="nc" id="L272">        bottomButtons.getChildren().addAll(confirmBtn, endTurnBtn, summaryBtn);</span>
+<span class="nc" id="L273">        bottomLayout.getChildren().addAll(handArea, bottomButtons);</span>
+<span class="nc" id="L274">        StackPane.setAlignment(bottomLayout, Pos.BOTTOM_CENTER);</span>
+<span class="nc" id="L275">        centerLayout.getChildren().addAll(darkOverlay, scrollPane, bottomLayout);</span>
+<span class="nc" id="L276">        root.setCenter(centerLayout); baseStack.getChildren().add(root);</span>
 
-<span class="nc" id="L269">        notificationPanel = new VBox(10);</span>
-<span class="nc" id="L270">        notificationPanel.setMaxSize(380, Region.USE_PREF_SIZE);</span>
-<span class="nc" id="L271">        notificationPanel.setStyle(&quot;-fx-background-color: rgba(26, 15, 7, 0.95); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 5; -fx-background-radius: 5; -fx-padding: 10;&quot;);</span>
-<span class="nc" id="L272">        notificationPanel.setVisible(false);</span>
+<span class="nc" id="L278">        notificationPanel = new VBox(10);</span>
+<span class="nc" id="L279">        notificationPanel.setMaxSize(380, Region.USE_PREF_SIZE);</span>
+<span class="nc" id="L280">        notificationPanel.setStyle(&quot;-fx-background-color: rgba(26, 15, 7, 0.95); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 5; -fx-background-radius: 5; -fx-padding: 10;&quot;);</span>
+<span class="nc" id="L281">        notificationPanel.setVisible(false);</span>
 
-<span class="nc" id="L274">        Label logTitle = new Label(&quot;RECENT LOGS&quot;);</span>
-<span class="nc" id="L275">        logTitle.setTextFill(Color.web(&quot;#F2D5A3&quot;));</span>
-<span class="nc" id="L276">        logTitle.setFont(Font.font(tribalFont.getFamily(), 14));</span>
+<span class="nc" id="L283">        Label logTitle = new Label(&quot;RECENT LOGS&quot;);</span>
+<span class="nc" id="L284">        logTitle.setTextFill(Color.web(&quot;#F2D5A3&quot;));</span>
+<span class="nc" id="L285">        logTitle.setFont(Font.font(tribalFont.getFamily(), 14));</span>
 
-<span class="nc" id="L278">        logContainer = new VBox(5);</span>
-<span class="nc" id="L279">        notificationPanel.getChildren().addAll(logTitle, logContainer);</span>
+<span class="nc" id="L287">        logContainer = new VBox(5);</span>
+<span class="nc" id="L288">        notificationPanel.getChildren().addAll(logTitle, logContainer);</span>
 
-<span class="nc" id="L281">        StackPane.setAlignment(notificationPanel, Pos.TOP_RIGHT);</span>
-<span class="nc" id="L282">        StackPane.setMargin(notificationPanel, new Insets(60, 20, 0, 0));</span>
-<span class="nc" id="L283">        baseStack.getChildren().add(notificationPanel);</span>
+<span class="nc" id="L290">        StackPane.setAlignment(notificationPanel, Pos.TOP_RIGHT);</span>
+<span class="nc" id="L291">        StackPane.setMargin(notificationPanel, new Insets(60, 20, 0, 0));</span>
+<span class="nc" id="L292">        baseStack.getChildren().add(notificationPanel);</span>
 
-<span class="nc" id="L285">        logsBtn.setOnAction(e -&gt; {</span>
-<span class="nc bnc" id="L286" title="All 2 branches missed.">            notificationPanel.setVisible(!notificationPanel.isVisible());</span>
-<span class="nc bnc" id="L287" title="All 2 branches missed.">            logsBtn.setText(notificationPanel.isVisible() ? &quot;▲&quot; : &quot;▼&quot;);</span>
-<span class="nc" id="L288">        });</span>
+<span class="nc" id="L294">        logsBtn.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">            notificationPanel.setVisible(!notificationPanel.isVisible());</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">            logsBtn.setText(notificationPanel.isVisible() ? &quot;▲&quot; : &quot;▼&quot;);</span>
+<span class="nc" id="L297">        });</span>
 
-<span class="nc" id="L290">        modalLayer = new StackPane();</span>
-<span class="nc" id="L291">        modalLayer.setVisible(false);</span>
-<span class="nc" id="L292">        modalLayer.setStyle(&quot;-fx-background-color: transparent;&quot;);</span>
-<span class="nc" id="L293">        baseStack.getChildren().add(modalLayer);</span>
-<span class="nc" id="L294">        return baseStack;</span>
+<span class="nc" id="L299">        modalLayer = new StackPane();</span>
+<span class="nc" id="L300">        modalLayer.setVisible(false);</span>
+<span class="nc" id="L301">        modalLayer.setStyle(&quot;-fx-background-color: transparent;&quot;);</span>
+<span class="nc" id="L302">        baseStack.getChildren().add(modalLayer);</span>
+<span class="nc" id="L303">        return baseStack;</span>
     }
 
     /**
@@ -300,10 +309,10 @@ import java.util.stream.Collectors;
      * @param eventName The name of the event.
      */
     public void logEventResolved(String eventName) {
-<span class="nc" id="L303">        Platform.runLater(() -&gt; {</span>
-<span class="nc" id="L304">            addLogEntry(&quot;[EVENT] &quot;, &quot;Resolved: &quot; + eventName, Color.web(&quot;#9C27B0&quot;));</span>
-<span class="nc" id="L305">        });</span>
-<span class="nc" id="L306">    }</span>
+<span class="nc" id="L312">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L313">            addLogEntry(&quot;[EVENT] &quot;, &quot;Resolved: &quot; + eventName, Color.web(&quot;#9C27B0&quot;));</span>
+<span class="nc" id="L314">        });</span>
+<span class="nc" id="L315">    }</span>
 
     /**
      * Logs a resource change for a player.
@@ -313,10 +322,10 @@ import java.util.stream.Collectors;
      * @param newValue The new value of the resource.
      */
     public void logResourceChanged(String nickname, ResourceType resource, int newValue) {
-<span class="nc" id="L316">        Platform.runLater(() -&gt; {</span>
-<span class="nc" id="L317">            addLogEntry(&quot;[RESOURCE] &quot;, nickname + &quot; now has &quot; + newValue + &quot; &quot; + resource, Color.GOLD);</span>
-<span class="nc" id="L318">        });</span>
-<span class="nc" id="L319">    }</span>
+<span class="nc" id="L325">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L326">            addLogEntry(&quot;[RESOURCE] &quot;, nickname + &quot; now has &quot; + newValue + &quot; &quot; + resource, Color.GOLD);</span>
+<span class="nc" id="L327">        });</span>
+<span class="nc" id="L328">    }</span>
 
     /**
      * Logs that a player placed their totem on an offer tile.
@@ -326,8 +335,8 @@ import java.util.stream.Collectors;
      * @param tileID   The tile the totem was placed on.
      */
     public void logTotemPlaced(String nickname, char tileID) {
-<span class="nc" id="L329">        Platform.runLater(() -&gt; addLogEntry(&quot;[BOARD] &quot;, nickname + &quot; placed their totem on tile &quot; + tileID, Color.WHITE));</span>
-<span class="nc" id="L330">    }</span>
+<span class="nc" id="L338">        Platform.runLater(() -&gt; addLogEntry(&quot;[BOARD] &quot;, nickname + &quot; placed their totem on tile &quot; + tileID, Color.WHITE));</span>
+<span class="nc" id="L339">    }</span>
 
     /**
      * Logs that a player's totem returned to the turn-order tile.
@@ -337,8 +346,8 @@ import java.util.stream.Collectors;
      * @param position The zero-based turn-order slot index.
      */
     public void logTotemReturned(String nickname, int position) {
-<span class="nc" id="L340">        Platform.runLater(() -&gt; addLogEntry(&quot;[BOARD] &quot;, nickname + &quot; returned to turn-order slot &quot; + (position + 1), Color.WHITE));</span>
-<span class="nc" id="L341">    }</span>
+<span class="nc" id="L349">        Platform.runLater(() -&gt; addLogEntry(&quot;[BOARD] &quot;, nickname + &quot; returned to turn-order slot &quot; + (position + 1), Color.WHITE));</span>
+<span class="nc" id="L350">    }</span>
 
     /**
      * Logs that a player took a card from the board.
@@ -348,8 +357,8 @@ import java.util.stream.Collectors;
      * @param cardID   The ID of the card taken.
      */
     public void logCardTaken(String nickname, String cardID) {
-<span class="nc" id="L351">        Platform.runLater(() -&gt; addLogEntry(&quot;[ACTION] &quot;, nickname + &quot; took &quot; + CardCatalog.getInstance().format(cardID), Color.web(&quot;#4DD0E1&quot;)));</span>
-<span class="nc" id="L352">    }</span>
+<span class="nc" id="L360">        Platform.runLater(() -&gt; addLogEntry(&quot;[ACTION] &quot;, nickname + &quot; took &quot; + CardCatalog.getInstance().format(cardID), Color.web(&quot;#4DD0E1&quot;)));</span>
+<span class="nc" id="L361">    }</span>
 
     /**
      * Logs that a player gained an extra turn.
@@ -360,10 +369,10 @@ import java.util.stream.Collectors;
      * @param remainingLower Remaining lower-row picks.
      */
     public void logExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-<span class="nc" id="L363">        Platform.runLater(() -&gt; addLogEntry(&quot;[EXTRA] &quot;,</span>
+<span class="nc" id="L372">        Platform.runLater(() -&gt; addLogEntry(&quot;[EXTRA] &quot;,</span>
                 nickname + &quot; gained an extra turn! (Up:&quot; + remainingUpper + &quot; Lw:&quot; + remainingLower + &quot;)&quot;,
-<span class="nc" id="L365">                Color.web(&quot;#4CAF50&quot;)));</span>
-<span class="nc" id="L366">    }</span>
+<span class="nc" id="L374">                Color.web(&quot;#4CAF50&quot;)));</span>
+<span class="nc" id="L375">    }</span>
 
     /**
      * Logs that a player's extra turn ended.
@@ -372,8 +381,8 @@ import java.util.stream.Collectors;
      * @param nickname The nickname of the player.
      */
     public void logExtraTurnEnded(String nickname) {
-<span class="nc" id="L375">        Platform.runLater(() -&gt; addLogEntry(&quot;[EXTRA] &quot;, nickname + &quot;'s extra turn ended.&quot;, Color.GOLD));</span>
-<span class="nc" id="L376">    }</span>
+<span class="nc" id="L384">        Platform.runLater(() -&gt; addLogEntry(&quot;[EXTRA] &quot;, nickname + &quot;'s extra turn ended.&quot;, Color.GOLD));</span>
+<span class="nc" id="L385">    }</span>
 
     /**
      * Logs the start of the auto-player timer.
@@ -381,10 +390,10 @@ import java.util.stream.Collectors;
      * @param nickname The nickname of the disconnected player.
      */
     public void logAutoPlayerTimerStarted(String nickname, long seconds) {
-<span class="nc" id="L384">        Platform.runLater(() -&gt; {</span>
-<span class="nc" id="L385">            addLogEntry(&quot;[BOT] &quot;, nickname + &quot; disconnected — AutoPlayer takes over in &quot; + seconds + &quot;s.&quot;, Color.GOLD);</span>
-<span class="nc" id="L386">        });</span>
-<span class="nc" id="L387">    }</span>
+<span class="nc" id="L393">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L394">            addLogEntry(&quot;[BOT] &quot;, nickname + &quot; disconnected — AutoPlayer takes over in &quot; + seconds + &quot;s.&quot;, Color.GOLD);</span>
+<span class="nc" id="L395">        });</span>
+<span class="nc" id="L396">    }</span>
 
     /**
      * Logs the invocation of the auto-player.
@@ -392,10 +401,10 @@ import java.util.stream.Collectors;
      * @param nickname The nickname of the player being substituted.
      */
     public void logAutoPlayerInvoked(String nickname) {
-<span class="nc" id="L395">        Platform.runLater(() -&gt; {</span>
-<span class="nc" id="L396">            addLogEntry(&quot;[BOT] &quot;, &quot;AutoPlayer acting for &quot; + nickname + &quot;...&quot;, Color.web(&quot;#9C27B0&quot;));</span>
-<span class="nc" id="L397">        });</span>
-<span class="nc" id="L398">    }</span>
+<span class="nc" id="L404">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L405">            addLogEntry(&quot;[BOT] &quot;, &quot;AutoPlayer acting for &quot; + nickname + &quot;...&quot;, Color.web(&quot;#9C27B0&quot;));</span>
+<span class="nc" id="L406">        });</span>
+<span class="nc" id="L407">    }</span>
 
     /**
      * Adds an entry to the log container.
@@ -405,20 +414,20 @@ import java.util.stream.Collectors;
      * @param prefixColor The color for the prefix text.
      */
     private void addLogEntry(String prefix, String message, Color prefixColor) {
-<span class="nc" id="L408">        Text pText = new Text(prefix);</span>
-<span class="nc" id="L409">        pText.setFill(prefixColor);</span>
-<span class="nc bnc" id="L410" title="All 2 branches missed.">        if (tribalFont != null) pText.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 14));</span>
+<span class="nc" id="L417">        Text pText = new Text(prefix);</span>
+<span class="nc" id="L418">        pText.setFill(prefixColor);</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">        if (tribalFont != null) pText.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 14));</span>
 
-<span class="nc" id="L412">        Text mText = new Text(message);</span>
-<span class="nc" id="L413">        mText.setFill(Color.WHITE);</span>
-<span class="nc bnc" id="L414" title="All 2 branches missed.">        if (tribalFont != null) mText.setFont(Font.font(tribalFont.getFamily(), 14));</span>
+<span class="nc" id="L421">        Text mText = new Text(message);</span>
+<span class="nc" id="L422">        mText.setFill(Color.WHITE);</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        if (tribalFont != null) mText.setFont(Font.font(tribalFont.getFamily(), 14));</span>
 
-<span class="nc" id="L416">        TextFlow tf = new TextFlow(pText, mText);</span>
-<span class="nc" id="L417">        tf.setStyle(&quot;-fx-background-color: rgba(255,255,255,0.05); -fx-padding: 5; -fx-background-radius: 3;&quot;);</span>
+<span class="nc" id="L425">        TextFlow tf = new TextFlow(pText, mText);</span>
+<span class="nc" id="L426">        tf.setStyle(&quot;-fx-background-color: rgba(255,255,255,0.05); -fx-padding: 5; -fx-background-radius: 3;&quot;);</span>
 
-<span class="nc" id="L419">        logContainer.getChildren().add(tf);</span>
-<span class="nc bnc" id="L420" title="All 2 branches missed.">        if (logContainer.getChildren().size() &gt; 10) logContainer.getChildren().remove(0);</span>
-<span class="nc" id="L421">    }</span>
+<span class="nc" id="L428">        logContainer.getChildren().add(tf);</span>
+<span class="nc bnc" id="L429" title="All 2 branches missed.">        if (logContainer.getChildren().size() &gt; 10) logContainer.getChildren().remove(0);</span>
+<span class="nc" id="L430">    }</span>
 
     /**
      * Refreshes the entire game scene based on the current model state.
@@ -427,19 +436,61 @@ import java.util.stream.Collectors;
      * @param model The current game model.
      */
     public void refreshAll(GameModel model) {
-<span class="nc bnc" id="L430" title="All 2 branches missed.">        if (model == null) return;</span>
-<span class="nc" id="L431">        this.model = model;</span>
-<span class="nc bnc" id="L432" title="All 2 branches missed.">        if (viewedPlayerHand == null) viewedPlayerHand = model.getMyNickname();</span>
+<span class="nc bnc" id="L439" title="All 2 branches missed.">        if (model == null) return;</span>
+<span class="nc" id="L440">        this.model = model;</span>
+        // Capture on the caller's thread (synchronized model getters make this safe
+        // from any thread), then hand the frozen snapshot to the FX thread.
+<span class="nc" id="L443">        SceneState snapshot = new SceneState(model);</span>
+<span class="nc" id="L444">        Platform.runLater(() -&gt; render(snapshot));</span>
+<span class="nc" id="L445">    }</span>
 
-<span class="nc" id="L434">        SceneState snapshot = new SceneState(model);</span>
-<span class="nc" id="L435">        this.lastState = snapshot;</span>
+    /**
+     * Captures an immutable snapshot of the given model. Safe to call from any
+     * thread (see {@link SceneState}). Callers that observe events on the network
+     * thread should snapshot here, in event order, and pass the result to
+     * {@link #render(SceneState)} on the FX thread.
+     *
+     * @param model the model to snapshot
+     * @return a frozen view of the model's current state
+     */
+    public static SceneState snapshot(GameModel model) {
+<span class="nc" id="L457">        return new SceneState(model);</span>
+    }
 
-<span class="nc" id="L437">        Platform.runLater(() -&gt; {</span>
-<span class="nc bnc" id="L438" title="All 2 branches missed.">            if (isReplaying) armReplayWatchdog();</span>
-<span class="nc" id="L439">            animationQueue.add(() -&gt; refreshAllInternal(snapshot));</span>
-<span class="nc bnc" id="L440" title="All 2 branches missed.">            if (!isAnimating) playNextAnimation();</span>
-<span class="nc" id="L441">        });</span>
-<span class="nc" id="L442">    }</span>
+    /**
+     * Binds the live {@link GameModel} to this scene without triggering a render.
+     *
+     * &lt;p&gt;Rendering uses immutable {@link SceneState} snapshots, but a few helpers
+     * (the turn-order cave, the card-taken/totem animations) still read the live
+     * model for stable, session-constant data such as totem colours and the local
+     * nickname. When the scene is created lazily on a setup/phase event we build it
+     * without an auto-refresh and bind the model here, so those helpers have a
+     * non-null reference before the first {@link #render(SceneState)}.
+     *
+     * @param model the live game model for this session
+     */
+    public void setModel(GameModel model) {
+<span class="nc" id="L473">        this.model = model;</span>
+<span class="nc" id="L474">    }</span>
+
+    /**
+     * Renders a previously captured {@link SceneState}.
+     *
+     * &lt;p&gt;&lt;b&gt;Must be called on the JavaFX application thread.&lt;/b&gt; It mutates
+     * FX-thread-only state ({@link #lastState}, {@link #viewedPlayerHand}, the
+     * animation queue) and schedules the actual node updates, so that the FX thread
+     * remains the single thread that ever touches the GUI.
+     *
+     * @param snapshot the frozen state to render
+     */
+    public void render(SceneState snapshot) {
+<span class="nc bnc" id="L487" title="All 2 branches missed.">        if (snapshot == null) return;</span>
+<span class="nc" id="L488">        this.lastState = snapshot;</span>
+<span class="nc bnc" id="L489" title="All 4 branches missed.">        if (viewedPlayerHand == null &amp;&amp; snapshot.myNickname != null) viewedPlayerHand = snapshot.myNickname;</span>
+<span class="nc bnc" id="L490" title="All 2 branches missed.">        if (isReplaying) armReplayWatchdog();</span>
+<span class="nc" id="L491">        animationQueue.add(() -&gt; refreshAllInternal(snapshot));</span>
+<span class="nc bnc" id="L492" title="All 2 branches missed.">        if (!isAnimating) playNextAnimation();</span>
+<span class="nc" id="L493">    }</span>
 
     /**
      * Internal refresh method that updates all UI components based on a state snapshot.
@@ -447,32 +498,32 @@ import java.util.stream.Collectors;
      * @param state The state snapshot to render.
      */
     private void refreshAllInternal(SceneState state) {
-<span class="nc bnc" id="L450" title="All 2 branches missed.">        gameIdLabel.setText(&quot;ID: &quot; + (state.gameId != null ? state.gameId : &quot;---&quot;));</span>
-<span class="nc" id="L451">        updateStatusBanner(state);</span>
-<span class="nc" id="L452">        updateSidebar(state);</span>
+<span class="nc bnc" id="L501" title="All 2 branches missed.">        gameIdLabel.setText(&quot;ID: &quot; + (state.gameId != null ? state.gameId : &quot;---&quot;));</span>
+<span class="nc" id="L502">        updateStatusBanner(state);</span>
+<span class="nc" id="L503">        updateSidebar(state);</span>
 
-<span class="nc" id="L454">        List&lt;DealTask&gt; localDeals = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L455">        updateMainBoard(state, localDeals);</span>
-<span class="nc" id="L456">        updateHandDisplay(state);</span>
-<span class="nc" id="L457">        updateActionButtonsState();</span>
+<span class="nc" id="L505">        List&lt;DealTask&gt; localDeals = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L506">        updateMainBoard(state, localDeals);</span>
+<span class="nc" id="L507">        updateHandDisplay(state);</span>
+<span class="nc" id="L508">        updateActionButtonsState();</span>
 
-<span class="nc" id="L459">        root.applyCss();</span>
-<span class="nc" id="L460">        root.layout();</span>
+<span class="nc" id="L510">        root.applyCss();</span>
+<span class="nc" id="L511">        root.layout();</span>
 
-<span class="nc bnc" id="L462" title="All 2 branches missed.">        if (!localDeals.isEmpty()) {</span>
-<span class="nc" id="L463">            ParallelTransition allDeals = new ParallelTransition();</span>
-<span class="nc bnc" id="L464" title="All 2 branches missed.">            for (DealTask task : localDeals) {</span>
-<span class="nc" id="L465">                allDeals.getChildren().add(createSingleDealAnimation(task.id, task.target, state.era.ordinal() + 1));</span>
-<span class="nc" id="L466">            }</span>
-<span class="nc" id="L467">            allDeals.setOnFinished(e -&gt; {</span>
-<span class="nc bnc" id="L468" title="All 2 branches missed.">                for (DealTask task : localDeals) task.target.setOpacity(1.0);</span>
-<span class="nc" id="L469">                playNextAnimation();</span>
-<span class="nc" id="L470">            });</span>
-<span class="nc" id="L471">            allDeals.play();</span>
-<span class="nc" id="L472">        } else {</span>
-<span class="nc" id="L473">            playNextAnimation();</span>
+<span class="nc bnc" id="L513" title="All 2 branches missed.">        if (!localDeals.isEmpty()) {</span>
+<span class="nc" id="L514">            ParallelTransition allDeals = new ParallelTransition();</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">            for (DealTask task : localDeals) {</span>
+<span class="nc" id="L516">                allDeals.getChildren().add(createSingleDealAnimation(task.id, task.target, state.era.ordinal() + 1));</span>
+<span class="nc" id="L517">            }</span>
+<span class="nc" id="L518">            allDeals.setOnFinished(e -&gt; {</span>
+<span class="nc bnc" id="L519" title="All 2 branches missed.">                for (DealTask task : localDeals) task.target.setOpacity(1.0);</span>
+<span class="nc" id="L520">                playNextAnimation();</span>
+<span class="nc" id="L521">            });</span>
+<span class="nc" id="L522">            allDeals.play();</span>
+<span class="nc" id="L523">        } else {</span>
+<span class="nc" id="L524">            playNextAnimation();</span>
         }
-<span class="nc" id="L475">    }</span>
+<span class="nc" id="L526">    }</span>
 
     /**
      * Updates the status banner with the current era, phase, and active player.
@@ -480,16 +531,16 @@ import java.util.stream.Collectors;
      * @param state The current state snapshot.
      */
     private void updateStatusBanner(SceneState state) {
-<span class="nc" id="L483">        statusBox.getChildren().clear();</span>
-<span class="nc bnc" id="L484" title="All 2 branches missed.">        String activePlayer = state.currentPlayer != null ? state.currentPlayer : &quot;...&quot;;</span>
-<span class="nc bnc" id="L485" title="All 2 branches missed.">        String currentPhase = state.currentPhase != null ? state.currentPhase.toString().replace(&quot;_&quot;, &quot; &quot;) : &quot;WAITING&quot;;</span>
+<span class="nc" id="L534">        statusBox.getChildren().clear();</span>
+<span class="nc bnc" id="L535" title="All 2 branches missed.">        String activePlayer = state.currentPlayer != null ? state.currentPlayer : &quot;...&quot;;</span>
+<span class="nc bnc" id="L536" title="All 2 branches missed.">        String currentPhase = state.currentPhase != null ? state.currentPhase.toString().replace(&quot;_&quot;, &quot; &quot;) : &quot;WAITING&quot;;</span>
 
-<span class="nc" id="L487">        Label eraTxt = new Label(&quot;ERA &quot; + state.era + &quot;  |&quot;); eraTxt.setTextFill(Color.WHITE); eraTxt.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 18));</span>
-<span class="nc" id="L488">        Label phaseTxt = new Label(currentPhase + &quot;  |&quot;); phaseTxt.setTextFill(Color.LIGHTGRAY); phaseTxt.setFont(Font.font(tribalFont.getFamily(), 16));</span>
-<span class="nc" id="L489">        Label p1 = new Label(&quot;PLAYER&quot;); p1.setTextFill(Color.WHITE); p1.setFont(Font.font(tribalFont.getFamily(), 16));</span>
-<span class="nc" id="L490">        Label p2 = new Label(activePlayer); p2.setTextFill(Color.GOLD); p2.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 18));</span>
-<span class="nc" id="L491">        statusBox.getChildren().addAll(eraTxt, phaseTxt, p1, p2);</span>
-<span class="nc" id="L492">    }</span>
+<span class="nc" id="L538">        Label eraTxt = new Label(&quot;ERA &quot; + state.era + &quot;  |&quot;); eraTxt.setTextFill(Color.WHITE); eraTxt.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 18));</span>
+<span class="nc" id="L539">        Label phaseTxt = new Label(currentPhase + &quot;  |&quot;); phaseTxt.setTextFill(Color.LIGHTGRAY); phaseTxt.setFont(Font.font(tribalFont.getFamily(), 16));</span>
+<span class="nc" id="L540">        Label p1 = new Label(&quot;PLAYER&quot;); p1.setTextFill(Color.WHITE); p1.setFont(Font.font(tribalFont.getFamily(), 16));</span>
+<span class="nc" id="L541">        Label p2 = new Label(activePlayer); p2.setTextFill(Color.GOLD); p2.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 18));</span>
+<span class="nc" id="L542">        statusBox.getChildren().addAll(eraTxt, phaseTxt, p1, p2);</span>
+<span class="nc" id="L543">    }</span>
 
     /**
      * Updates the sidebar with the list of players and their status.
@@ -497,36 +548,36 @@ import java.util.stream.Collectors;
      * @param state The current state snapshot.
      */
     private void updateSidebar(SceneState state) {
-<span class="nc" id="L500">        rightSidebar.getChildren().clear();</span>
-<span class="nc" id="L501">        Label sidebarTitle = new Label(&quot;PLAYERS&quot;); sidebarTitle.setTextFill(Color.WHITE); sidebarTitle.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));</span>
-<span class="nc" id="L502">        sidebarTitle.setMaxWidth(Double.MAX_VALUE); sidebarTitle.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L503">        rightSidebar.getChildren().add(sidebarTitle);</span>
+<span class="nc" id="L551">        rightSidebar.getChildren().clear();</span>
+<span class="nc" id="L552">        Label sidebarTitle = new Label(&quot;PLAYERS&quot;); sidebarTitle.setTextFill(Color.WHITE); sidebarTitle.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 20));</span>
+<span class="nc" id="L553">        sidebarTitle.setMaxWidth(Double.MAX_VALUE); sidebarTitle.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L554">        rightSidebar.getChildren().add(sidebarTitle);</span>
 
-<span class="nc" id="L505">        List&lt;String&gt; players = state.turnOrder;</span>
-<span class="nc bnc" id="L506" title="All 4 branches missed.">        if (players.isEmpty() || players.get(0).matches(&quot;\\d+&quot;)) players = new ArrayList&lt;&gt;(state.foodByPlayer.keySet());</span>
+<span class="nc" id="L556">        List&lt;String&gt; players = state.turnOrder;</span>
+<span class="nc bnc" id="L557" title="All 4 branches missed.">        if (players.isEmpty() || players.get(0).matches(&quot;\\d+&quot;)) players = new ArrayList&lt;&gt;(state.foodByPlayer.keySet());</span>
 
         // Remaining picks are only meaningful during ACTION_RESOLUTION; the model
         // keeps the last values around between turns, so outside that phase we
         // force them to 0 to match the TUI's per-phase semantics.
-<span class="nc bnc" id="L511" title="All 2 branches missed.">        boolean inActionResolution = state.currentPhase == PhaseType.ACTION_RESOLUTION;</span>
+<span class="nc bnc" id="L562" title="All 2 branches missed.">        boolean inActionResolution = state.currentPhase == PhaseType.ACTION_RESOLUTION;</span>
 
-<span class="nc bnc" id="L513" title="All 2 branches missed.">        for (String nick : players) {</span>
-<span class="nc" id="L514">            boolean isActive = nick.equals(state.currentPlayer);</span>
-<span class="nc" id="L515">            boolean isOffline = offlinePlayers.contains(nick);</span>
-<span class="nc" id="L516">            boolean isViewed = nick.equals(viewedPlayerHand);</span>
-<span class="nc" id="L517">            int food = state.foodByPlayer.getOrDefault(nick, 0);</span>
-<span class="nc" id="L518">            int pp = state.ppByPlayer.getOrDefault(nick, 0);</span>
-<span class="nc bnc" id="L519" title="All 2 branches missed.">            int picksUp = inActionResolution ? state.remainingUpper.getOrDefault(nick, 0) : 0;</span>
-<span class="nc bnc" id="L520" title="All 2 branches missed.">            int picksLow = inActionResolution ? state.remainingLower.getOrDefault(nick, 0) : 0;</span>
+<span class="nc bnc" id="L564" title="All 2 branches missed.">        for (String nick : players) {</span>
+<span class="nc" id="L565">            boolean isActive = nick.equals(state.currentPlayer);</span>
+<span class="nc" id="L566">            boolean isOffline = offlinePlayers.contains(nick);</span>
+<span class="nc" id="L567">            boolean isViewed = nick.equals(viewedPlayerHand);</span>
+<span class="nc" id="L568">            int food = state.foodByPlayer.getOrDefault(nick, 0);</span>
+<span class="nc" id="L569">            int pp = state.ppByPlayer.getOrDefault(nick, 0);</span>
+<span class="nc bnc" id="L570" title="All 2 branches missed.">            int picksUp = inActionResolution ? state.remainingUpper.getOrDefault(nick, 0) : 0;</span>
+<span class="nc bnc" id="L571" title="All 2 branches missed.">            int picksLow = inActionResolution ? state.remainingLower.getOrDefault(nick, 0) : 0;</span>
 
-<span class="nc" id="L522">            PlayerSidebarItem pBox = new PlayerSidebarItem(</span>
-<span class="nc" id="L523">                    nick, nick.equals(state.myNickname), isActive, isOffline, isViewed,</span>
-<span class="nc" id="L524">                    food, pp, picksUp, picksLow, state.totems.get(nick), tribalFont,</span>
-<span class="nc" id="L525">                    () -&gt; { viewedPlayerHand = nick; refreshAllInternal(lastState); }</span>
+<span class="nc" id="L573">            PlayerSidebarItem pBox = new PlayerSidebarItem(</span>
+<span class="nc" id="L574">                    nick, nick.equals(state.myNickname), isActive, isOffline, isViewed,</span>
+<span class="nc" id="L575">                    food, pp, picksUp, picksLow, state.totems.get(nick), tribalFont,</span>
+<span class="nc" id="L576">                    () -&gt; { viewedPlayerHand = nick; refreshAllInternal(lastState); }</span>
             );
-<span class="nc" id="L527">            rightSidebar.getChildren().add(pBox);</span>
-<span class="nc" id="L528">        }</span>
-<span class="nc" id="L529">    }</span>
+<span class="nc" id="L578">            rightSidebar.getChildren().add(pBox);</span>
+<span class="nc" id="L579">        }</span>
+<span class="nc" id="L580">    }</span>
 
     /**
      * Updates the main board area with the card rows and offer tiles.
@@ -535,45 +586,45 @@ import java.util.stream.Collectors;
      * @param localDeals Output list to store tasks for new card deal animations.
      */
     private void updateMainBoard(SceneState state, List&lt;DealTask&gt; localDeals) {
-<span class="nc" id="L538">        mainBoardArea.getChildren().clear();</span>
+<span class="nc" id="L589">        mainBoardArea.getChildren().clear();</span>
 
-<span class="nc" id="L540">        int numPlayers = Math.max(2, state.turnOrder.size());</span>
-<span class="nc" id="L541">        int boardCardHeight = 170;</span>
-<span class="nc bnc" id="L542" title="All 2 branches missed.">        if (numPlayers == 3) boardCardHeight = 150;</span>
-<span class="nc bnc" id="L543" title="All 2 branches missed.">        if (numPlayers == 4) boardCardHeight = 135;</span>
-<span class="nc bnc" id="L544" title="All 2 branches missed.">        if (numPlayers &gt;= 5) boardCardHeight = 115;</span>
+<span class="nc" id="L591">        int numPlayers = Math.max(2, state.turnOrder.size());</span>
+<span class="nc" id="L592">        int boardCardHeight = 170;</span>
+<span class="nc bnc" id="L593" title="All 2 branches missed.">        if (numPlayers == 3) boardCardHeight = 150;</span>
+<span class="nc bnc" id="L594" title="All 2 branches missed.">        if (numPlayers == 4) boardCardHeight = 135;</span>
+<span class="nc bnc" id="L595" title="All 2 branches missed.">        if (numPlayers &gt;= 5) boardCardHeight = 115;</span>
 
-<span class="nc bnc" id="L546" title="All 2 branches missed.">        int spacing = numPlayers &gt;= 4 ? 6 : 12;</span>
+<span class="nc bnc" id="L597" title="All 2 branches missed.">        int spacing = numPlayers &gt;= 4 ? 6 : 12;</span>
 
         // Covered building decks for future eras (rulebook 6b) float ABOVE and
         // centred over the revealed buildings (6a) of the upper row, emulating the
         // physical layout where the face-down Era II/III decks sit on top of the
         // Tribu/Edificio rows. They are stacked in a VBox over the building group;
         // the deck strip is empty (and collapses) once the final era is reached.
-<span class="nc" id="L553">        HBox coveredDecks = createCoveredBuildingDecks(state, (int) (boardCardHeight * 0.7));</span>
-<span class="nc" id="L554">        VBox upperBuildingsColumn = new VBox(8); upperBuildingsColumn.setAlignment(Pos.BOTTOM_CENTER);</span>
-<span class="nc bnc" id="L555" title="All 2 branches missed.">        if (!coveredDecks.getChildren().isEmpty()) upperBuildingsColumn.getChildren().add(coveredDecks);</span>
-<span class="nc" id="L556">        upperBuildingsColumn.getChildren().add(createCardGroup(state.upperRowBuildings, localDeals, boardCardHeight, spacing));</span>
+<span class="nc" id="L604">        HBox coveredDecks = createCoveredBuildingDecks(state, (int) (boardCardHeight * 0.7));</span>
+<span class="nc" id="L605">        VBox upperBuildingsColumn = new VBox(8); upperBuildingsColumn.setAlignment(Pos.BOTTOM_CENTER);</span>
+<span class="nc bnc" id="L606" title="All 2 branches missed.">        if (!coveredDecks.getChildren().isEmpty()) upperBuildingsColumn.getChildren().add(coveredDecks);</span>
+<span class="nc" id="L607">        upperBuildingsColumn.getChildren().add(createCardGroup(state.upperRowBuildings, localDeals, boardCardHeight, spacing));</span>
 
         // fillHeight=false keeps the character group at its natural height so it
         // bottom-aligns with the revealed buildings (same row); otherwise the HBox
         // stretches it to the taller buildings-column height and centres it, leaving
         // the characters floating above the buildings. The covered decks then sit on
         // their own row directly above the revealed buildings.
-<span class="nc" id="L563">        HBox upperBand = new HBox(40); upperBand.setAlignment(Pos.BOTTOM_CENTER); upperBand.setFillHeight(false);</span>
-<span class="nc" id="L564">        upperBand.getChildren().addAll(</span>
-<span class="nc" id="L565">                createCardGroup(state.upperRow, localDeals, boardCardHeight, spacing),</span>
+<span class="nc" id="L614">        HBox upperBand = new HBox(40); upperBand.setAlignment(Pos.BOTTOM_CENTER); upperBand.setFillHeight(false);</span>
+<span class="nc" id="L615">        upperBand.getChildren().addAll(</span>
+<span class="nc" id="L616">                createCardGroup(state.upperRow, localDeals, boardCardHeight, spacing),</span>
                 upperBuildingsColumn
         );
 
-<span class="nc" id="L569">        HBox lowerBand = new HBox(40); lowerBand.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L570">        lowerBand.getChildren().addAll(</span>
-<span class="nc" id="L571">                createCardGroup(state.lowerRow, localDeals, boardCardHeight, spacing),</span>
-<span class="nc" id="L572">                createCardGroup(state.lowerRowBuildings, localDeals, boardCardHeight, spacing)</span>
+<span class="nc" id="L620">        HBox lowerBand = new HBox(40); lowerBand.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L621">        lowerBand.getChildren().addAll(</span>
+<span class="nc" id="L622">                createCardGroup(state.lowerRow, localDeals, boardCardHeight, spacing),</span>
+<span class="nc" id="L623">                createCardGroup(state.lowerRowBuildings, localDeals, boardCardHeight, spacing)</span>
         );
 
-<span class="nc" id="L575">        mainBoardArea.getChildren().addAll(upperBand, createTrackArea(state), lowerBand);</span>
-<span class="nc" id="L576">    }</span>
+<span class="nc" id="L626">        mainBoardArea.getChildren().addAll(upperBand, createTrackArea(state), lowerBand);</span>
+<span class="nc" id="L627">    }</span>
 
     /**
      * Creates the track area containing the deck, turn order cave, and offer tiles.
@@ -582,26 +633,26 @@ import java.util.stream.Collectors;
      * @return The constructed HBox representing the track area.
      */
     private HBox createTrackArea(SceneState state) {
-<span class="nc" id="L585">        HBox track = new HBox(25); track.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L586">        int displayEra = state.era.ordinal() + 1;</span>
+<span class="nc" id="L636">        HBox track = new HBox(25); track.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L637">        int displayEra = state.era.ordinal() + 1;</span>
         // The draw pile is rendered as a &quot;mazzetto&quot; (stacked-deck) graphic so the
         // pile reads as a stack rather than a single card. The stack image already
         // bakes in its own rounded corners and shadow, so no extra clipping here.
-<span class="nc" id="L590">        String eraPath = &quot;/images/cards/eras/deck_main_era_&quot; + displayEra + &quot;.png&quot;;</span>
-<span class="nc" id="L591">        currentDeckView = new ImageView(ImageLoader.getImage(eraPath));</span>
-<span class="nc" id="L592">        currentDeckView.setFitHeight(165); currentDeckView.setPreserveRatio(true);</span>
+<span class="nc" id="L641">        String eraPath = &quot;/images/cards/eras/deck_main_era_&quot; + displayEra + &quot;.png&quot;;</span>
+<span class="nc" id="L642">        currentDeckView = new ImageView(ImageLoader.getImage(eraPath));</span>
+<span class="nc" id="L643">        currentDeckView.setFitHeight(165); currentDeckView.setPreserveRatio(true);</span>
 
-<span class="nc" id="L594">        int numPlayers = Math.max(2, state.turnOrder.size());</span>
-<span class="nc" id="L595">        TurnOrderCaveView turnOrderCave = new TurnOrderCaveView(numPlayers, state.turnOrderSlots, model);</span>
+<span class="nc" id="L645">        int numPlayers = Math.max(2, state.turnOrder.size());</span>
+<span class="nc" id="L646">        TurnOrderCaveView turnOrderCave = new TurnOrderCaveView(numPlayers, state.turnOrderSlots, model);</span>
 
-<span class="nc" id="L597">        HBox offerTiles = new HBox(5);</span>
-<span class="nc bnc" id="L598" title="All 2 branches missed.">        for (OfferTileInfo t : state.offerTiles) {</span>
-<span class="nc bnc" id="L599" title="All 2 branches missed.">            Totem occupantTotem = t.occupantNickname() != null ? state.totems.get(t.occupantNickname()) : null;</span>
-<span class="nc" id="L600">            OfferTileView tileView = new OfferTileView(t, occupantTotem, controller);</span>
-<span class="nc" id="L601">            offerTiles.getChildren().add(tileView);</span>
-<span class="nc" id="L602">        }</span>
-<span class="nc" id="L603">        track.getChildren().addAll(currentDeckView, turnOrderCave, offerTiles, new ReservePileView(tribalFont));</span>
-<span class="nc" id="L604">        return track;</span>
+<span class="nc" id="L648">        HBox offerTiles = new HBox(5);</span>
+<span class="nc bnc" id="L649" title="All 2 branches missed.">        for (OfferTileInfo t : state.offerTiles) {</span>
+<span class="nc bnc" id="L650" title="All 2 branches missed.">            Totem occupantTotem = t.occupantNickname() != null ? state.totems.get(t.occupantNickname()) : null;</span>
+<span class="nc" id="L651">            OfferTileView tileView = new OfferTileView(t, occupantTotem, controller);</span>
+<span class="nc" id="L652">            offerTiles.getChildren().add(tileView);</span>
+<span class="nc" id="L653">        }</span>
+<span class="nc" id="L654">        track.getChildren().addAll(currentDeckView, turnOrderCave, offerTiles, new ReservePileView(tribalFont));</span>
+<span class="nc" id="L655">        return track;</span>
     }
 
     /**
@@ -618,17 +669,17 @@ import java.util.stream.Collectors;
      * @return an HBox of covered deck views (possibly empty in the final era)
      */
     private HBox createCoveredBuildingDecks(SceneState state, int cardHeight) {
-<span class="nc" id="L621">        HBox decks = new HBox(10); decks.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L622">        int displayEra = state.era.ordinal() + 1;</span>
-<span class="nc bnc" id="L623" title="All 2 branches missed.">        for (int era = 2; era &lt;= 3; era++) {</span>
-<span class="nc bnc" id="L624" title="All 2 branches missed.">            if (displayEra &lt; era) {</span>
-<span class="nc" id="L625">                ImageView deckView = new ImageView(</span>
-<span class="nc" id="L626">                        ImageLoader.getImage(&quot;/images/cards/buildings_retro/deck_build_era_&quot; + era + &quot;.png&quot;));</span>
-<span class="nc" id="L627">                deckView.setFitHeight(cardHeight); deckView.setPreserveRatio(true);</span>
-<span class="nc" id="L628">                decks.getChildren().add(deckView);</span>
+<span class="nc" id="L672">        HBox decks = new HBox(10); decks.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L673">        int displayEra = state.era.ordinal() + 1;</span>
+<span class="nc bnc" id="L674" title="All 2 branches missed.">        for (int era = 2; era &lt;= 3; era++) {</span>
+<span class="nc bnc" id="L675" title="All 2 branches missed.">            if (displayEra &lt; era) {</span>
+<span class="nc" id="L676">                ImageView deckView = new ImageView(</span>
+<span class="nc" id="L677">                        ImageLoader.getImage(&quot;/images/cards/buildings_retro/deck_build_era_&quot; + era + &quot;.png&quot;));</span>
+<span class="nc" id="L678">                deckView.setFitHeight(cardHeight); deckView.setPreserveRatio(true);</span>
+<span class="nc" id="L679">                decks.getChildren().add(deckView);</span>
             }
         }
-<span class="nc" id="L631">        return decks;</span>
+<span class="nc" id="L682">        return decks;</span>
     }
 
     /**
@@ -639,21 +690,21 @@ import java.util.stream.Collectors;
      * @return The constructed HBox representing the card group.
      */
     private HBox createCardGroup(List&lt;String&gt; ids, List&lt;DealTask&gt; localDeals) {
-<span class="nc" id="L642">        HBox hb = new HBox(12); hb.setAlignment(Pos.CENTER);</span>
-<span class="nc bnc" id="L643" title="All 2 branches missed.">        if (ids != null) {</span>
-<span class="nc bnc" id="L644" title="All 2 branches missed.">            for (String id : ids) {</span>
-<span class="nc bnc" id="L645" title="All 2 branches missed.">                boolean isNew = !knownCardsOnBoard.contains(id);</span>
-<span class="nc bnc" id="L646" title="All 2 branches missed.">                if (isNew) knownCardsOnBoard.add(id);</span>
+<span class="nc" id="L693">        HBox hb = new HBox(12); hb.setAlignment(Pos.CENTER);</span>
+<span class="nc bnc" id="L694" title="All 2 branches missed.">        if (ids != null) {</span>
+<span class="nc bnc" id="L695" title="All 2 branches missed.">            for (String id : ids) {</span>
+<span class="nc bnc" id="L696" title="All 2 branches missed.">                boolean isNew = !knownCardsOnBoard.contains(id);</span>
+<span class="nc bnc" id="L697" title="All 2 branches missed.">                if (isNew) knownCardsOnBoard.add(id);</span>
 
-<span class="nc" id="L648">                GameCardView cardView = new GameCardView(id, selected.contains(id), 170, () -&gt; toggleCardSelection(id));</span>
-<span class="nc bnc" id="L649" title="All 2 branches missed.">                if (isNew) {</span>
-<span class="nc" id="L650">                    cardView.getCardImageView().setOpacity(0.0);</span>
-<span class="nc" id="L651">                    localDeals.add(new DealTask(id, cardView.getCardImageView()));</span>
+<span class="nc" id="L699">                GameCardView cardView = new GameCardView(id, selected.contains(id), 170, () -&gt; toggleCardSelection(id));</span>
+<span class="nc bnc" id="L700" title="All 2 branches missed.">                if (isNew) {</span>
+<span class="nc" id="L701">                    cardView.getCardImageView().setOpacity(0.0);</span>
+<span class="nc" id="L702">                    localDeals.add(new DealTask(id, cardView.getCardImageView()));</span>
                 }
-<span class="nc" id="L653">                hb.getChildren().add(cardView);</span>
-<span class="nc" id="L654">            }</span>
+<span class="nc" id="L704">                hb.getChildren().add(cardView);</span>
+<span class="nc" id="L705">            }</span>
         }
-<span class="nc" id="L656">        return hb;</span>
+<span class="nc" id="L707">        return hb;</span>
     }
 
     /**
@@ -662,19 +713,19 @@ import java.util.stream.Collectors;
      * @param state The current state snapshot.
      */
     private void updateHandDisplay(SceneState state) {
-<span class="nc" id="L665">        handCardsBox.getChildren().clear();</span>
-<span class="nc" id="L666">        handTitle.setText(viewedPlayerHand + &quot;'s TRIBE&quot;);</span>
+<span class="nc" id="L716">        handCardsBox.getChildren().clear();</span>
+<span class="nc" id="L717">        handTitle.setText(viewedPlayerHand + &quot;'s TRIBE&quot;);</span>
 
-<span class="nc" id="L668">        List&lt;String&gt; chars = state.charactersByPlayer.getOrDefault(viewedPlayerHand, List.of());</span>
-<span class="nc" id="L669">        List&lt;String&gt; buildings = state.buildingsByPlayer.getOrDefault(viewedPlayerHand, List.of());</span>
-<span class="nc" id="L670">        List&lt;String&gt; allCards = new ArrayList&lt;&gt;(chars); allCards.addAll(buildings);</span>
+<span class="nc" id="L719">        List&lt;String&gt; chars = state.charactersByPlayer.getOrDefault(viewedPlayerHand, List.of());</span>
+<span class="nc" id="L720">        List&lt;String&gt; buildings = state.buildingsByPlayer.getOrDefault(viewedPlayerHand, List.of());</span>
+<span class="nc" id="L721">        List&lt;String&gt; allCards = new ArrayList&lt;&gt;(chars); allCards.addAll(buildings);</span>
 
-<span class="nc" id="L672">        String[] columnOrder = {&quot;INVENTOR&quot;, &quot;BUILDER&quot;, &quot;GATHERER&quot;, &quot;ARTIST&quot;, &quot;SHAMAN&quot;, &quot;HUNTER&quot;, &quot;BUILDING&quot;};</span>
-<span class="nc bnc" id="L673" title="All 2 branches missed.">        for (String category : columnOrder) {</span>
-<span class="nc" id="L674">            List&lt;String&gt; cardsInCategory = allCards.stream().filter(id -&gt; extractCategoryFromId(id).equals(category)).collect(Collectors.toList());</span>
-<span class="nc" id="L675">            handCardsBox.getChildren().add(createCascadingStack(category, cardsInCategory));</span>
+<span class="nc" id="L723">        String[] columnOrder = {&quot;INVENTOR&quot;, &quot;BUILDER&quot;, &quot;GATHERER&quot;, &quot;ARTIST&quot;, &quot;SHAMAN&quot;, &quot;HUNTER&quot;, &quot;BUILDING&quot;};</span>
+<span class="nc bnc" id="L724" title="All 2 branches missed.">        for (String category : columnOrder) {</span>
+<span class="nc" id="L725">            List&lt;String&gt; cardsInCategory = allCards.stream().filter(id -&gt; extractCategoryFromId(id).equals(category)).collect(Collectors.toList());</span>
+<span class="nc" id="L726">            handCardsBox.getChildren().add(createCascadingStack(category, cardsInCategory));</span>
         }
-<span class="nc" id="L677">    }</span>
+<span class="nc" id="L728">    }</span>
 
     /**
      * Creates a cascading stack of card views for a specific category in the hand.
@@ -684,42 +735,42 @@ import java.util.stream.Collectors;
      * @return The constructed StackPane representing the cascading stack.
      */
     private StackPane createCascadingStack(String category, List&lt;String&gt; cardIds) {
-<span class="nc" id="L687">        StackPane stack = new StackPane(); stack.setAlignment(Pos.TOP_CENTER);</span>
-<span class="nc bnc" id="L688" title="All 2 branches missed.">        if (cardIds.isEmpty()) { stack.setPrefWidth(90); return stack; }</span>
+<span class="nc" id="L738">        StackPane stack = new StackPane(); stack.setAlignment(Pos.TOP_CENTER);</span>
+<span class="nc bnc" id="L739" title="All 2 branches missed.">        if (cardIds.isEmpty()) { stack.setPrefWidth(90); return stack; }</span>
         // Cascade cards downward, but cap the total spread to a fixed budget so large stacks
         // (e.g. dozens of cards of the same type) stay within the hand area instead of overflowing
         // past the clipped, non-scrolling viewport. With few cards the offset stays at the full 25px.
         // The budget plus the card height below must fit the fixed strip height (see the
         // handCardsBox minHeight / mainBoardArea bottom reservation) so the strip never grows.
-<span class="nc" id="L694">        int spreadBudget = 30;</span>
-<span class="nc bnc" id="L695" title="All 2 branches missed.">        int offsetPerCard = cardIds.size() &lt;= 1 ? 0 : Math.min(25, spreadBudget / (cardIds.size() - 1));</span>
-<span class="nc" id="L696">        stack.setPadding(new Insets(20, 0, Math.max(0, cardIds.size() - 1) * offsetPerCard, 0));</span>
+<span class="nc" id="L745">        int spreadBudget = 30;</span>
+<span class="nc bnc" id="L746" title="All 2 branches missed.">        int offsetPerCard = cardIds.size() &lt;= 1 ? 0 : Math.min(25, spreadBudget / (cardIds.size() - 1));</span>
+<span class="nc" id="L747">        stack.setPadding(new Insets(20, 0, Math.max(0, cardIds.size() - 1) * offsetPerCard, 0));</span>
 
-<span class="nc bnc" id="L698" title="All 2 branches missed.">        for (int i = 0; i &lt; cardIds.size(); i++) {</span>
-<span class="nc" id="L699">            String id = cardIds.get(i);</span>
-<span class="nc" id="L700">            GameCardView cardView = new GameCardView(id, false, 105, () -&gt; showZoomedCard(id));</span>
-<span class="nc" id="L701">            cardView.setTranslateY(i * offsetPerCard); stack.getChildren().add(cardView);</span>
+<span class="nc bnc" id="L749" title="All 2 branches missed.">        for (int i = 0; i &lt; cardIds.size(); i++) {</span>
+<span class="nc" id="L750">            String id = cardIds.get(i);</span>
+<span class="nc" id="L751">            GameCardView cardView = new GameCardView(id, false, 105, () -&gt; showZoomedCard(id));</span>
+<span class="nc" id="L752">            cardView.setTranslateY(i * offsetPerCard); stack.getChildren().add(cardView);</span>
         }
 
-<span class="nc" id="L704">        int totaleStelle = 0; int totaleScontoEdifici = 0; int totalePP = 0; int totaleScontoCibo = 0; long simboliInventoreUnici = 0;</span>
-<span class="nc bnc" id="L705" title="All 2 branches missed.">        if (category.equals(&quot;SHAMAN&quot;)) totaleStelle = cardIds.stream().mapToInt(this::extractShamanStars).sum();</span>
-<span class="nc bnc" id="L706" title="All 2 branches missed.">        else if (category.equals(&quot;BUILDER&quot;)) { totaleScontoEdifici = cardIds.stream().mapToInt(this::extractBuilderDiscount).sum(); totalePP = cardIds.stream().mapToInt(this::extractPrestigePoints).sum(); }</span>
-<span class="nc bnc" id="L707" title="All 2 branches missed.">        else if (category.equals(&quot;GATHERER&quot;)) totaleScontoCibo = cardIds.stream().mapToInt(this::extractGathererDiscount).sum();</span>
-<span class="nc bnc" id="L708" title="All 4 branches missed.">        else if (category.equals(&quot;INVENTOR&quot;)) simboliInventoreUnici = cardIds.stream().map(this::extractInventorSymbol).filter(s -&gt; !s.isEmpty()).distinct().count();</span>
+<span class="nc" id="L755">        int totaleStelle = 0; int totaleScontoEdifici = 0; int totalePP = 0; int totaleScontoCibo = 0; long simboliInventoreUnici = 0;</span>
+<span class="nc bnc" id="L756" title="All 2 branches missed.">        if (category.equals(&quot;SHAMAN&quot;)) totaleStelle = cardIds.stream().mapToInt(this::extractShamanStars).sum();</span>
+<span class="nc bnc" id="L757" title="All 2 branches missed.">        else if (category.equals(&quot;BUILDER&quot;)) { totaleScontoEdifici = cardIds.stream().mapToInt(this::extractBuilderDiscount).sum(); totalePP = cardIds.stream().mapToInt(this::extractPrestigePoints).sum(); }</span>
+<span class="nc bnc" id="L758" title="All 2 branches missed.">        else if (category.equals(&quot;GATHERER&quot;)) totaleScontoCibo = cardIds.stream().mapToInt(this::extractGathererDiscount).sum();</span>
+<span class="nc bnc" id="L759" title="All 4 branches missed.">        else if (category.equals(&quot;INVENTOR&quot;)) simboliInventoreUnici = cardIds.stream().map(this::extractInventorSymbol).filter(s -&gt; !s.isEmpty()).distinct().count();</span>
 
-<span class="nc" id="L710">        String countBadge = &quot;(x&quot; + cardIds.size() + &quot;)&quot;; String infoText = &quot;&quot;;</span>
-<span class="nc bnc" id="L711" title="All 4 branches missed.">        if (category.equals(&quot;SHAMAN&quot;) &amp;&amp; totaleStelle &gt; 0) infoText = countBadge + &quot; | &quot; + totaleStelle + &quot; ⭐&quot;;</span>
-<span class="nc bnc" id="L712" title="All 2 branches missed.">        else if (category.equals(&quot;BUILDER&quot;)) infoText = countBadge + &quot; | -&quot; + totaleScontoEdifici + &quot; Cost | &quot; + totalePP + &quot; PP&quot;;</span>
-<span class="nc bnc" id="L713" title="All 4 branches missed.">        else if (category.equals(&quot;GATHERER&quot;) &amp;&amp; totaleScontoCibo &gt; 0) infoText = countBadge + &quot; | -&quot; + totaleScontoCibo + &quot; Food&quot;;</span>
-<span class="nc bnc" id="L714" title="All 4 branches missed.">        else if (category.equals(&quot;INVENTOR&quot;) &amp;&amp; simboliInventoreUnici &gt; 0) infoText = countBadge + &quot; | &quot; + simboliInventoreUnici + &quot; 💡&quot;;</span>
-<span class="nc" id="L715">        else infoText = category.substring(0, Math.min(3, category.length())) + &quot; &quot; + countBadge;</span>
+<span class="nc" id="L761">        String countBadge = &quot;(x&quot; + cardIds.size() + &quot;)&quot;; String infoText = &quot;&quot;;</span>
+<span class="nc bnc" id="L762" title="All 4 branches missed.">        if (category.equals(&quot;SHAMAN&quot;) &amp;&amp; totaleStelle &gt; 0) infoText = countBadge + &quot; | &quot; + totaleStelle + &quot; ⭐&quot;;</span>
+<span class="nc bnc" id="L763" title="All 2 branches missed.">        else if (category.equals(&quot;BUILDER&quot;)) infoText = countBadge + &quot; | -&quot; + totaleScontoEdifici + &quot; Cost | &quot; + totalePP + &quot; PP&quot;;</span>
+<span class="nc bnc" id="L764" title="All 4 branches missed.">        else if (category.equals(&quot;GATHERER&quot;) &amp;&amp; totaleScontoCibo &gt; 0) infoText = countBadge + &quot; | -&quot; + totaleScontoCibo + &quot; Food&quot;;</span>
+<span class="nc bnc" id="L765" title="All 4 branches missed.">        else if (category.equals(&quot;INVENTOR&quot;) &amp;&amp; simboliInventoreUnici &gt; 0) infoText = countBadge + &quot; | &quot; + simboliInventoreUnici + &quot; 💡&quot;;</span>
+<span class="nc" id="L766">        else infoText = category.substring(0, Math.min(3, category.length())) + &quot; &quot; + countBadge;</span>
 
-<span class="nc" id="L717">        Label infoBadge = new Label(infoText);</span>
-<span class="nc" id="L718">        infoBadge.setStyle(&quot;-fx-background-color: rgba(0,0,0,0.85); -fx-text-fill: gold; -fx-padding: 3 8; -fx-background-radius: 5; -fx-border-color: gold; -fx-border-radius: 5;&quot;);</span>
-<span class="nc bnc" id="L719" title="All 2 branches missed.">        if (tribalFont != null) infoBadge.setFont(Font.font(tribalFont.getFamily(), 10));</span>
-<span class="nc" id="L720">        infoBadge.setTranslateY(-15); StackPane.setAlignment(infoBadge, Pos.TOP_CENTER);</span>
-<span class="nc" id="L721">        stack.getChildren().add(infoBadge);</span>
-<span class="nc" id="L722">        return stack;</span>
+<span class="nc" id="L768">        Label infoBadge = new Label(infoText);</span>
+<span class="nc" id="L769">        infoBadge.setStyle(&quot;-fx-background-color: rgba(0,0,0,0.85); -fx-text-fill: gold; -fx-padding: 3 8; -fx-background-radius: 5; -fx-border-color: gold; -fx-border-radius: 5;&quot;);</span>
+<span class="nc bnc" id="L770" title="All 2 branches missed.">        if (tribalFont != null) infoBadge.setFont(Font.font(tribalFont.getFamily(), 10));</span>
+<span class="nc" id="L771">        infoBadge.setTranslateY(-15); StackPane.setAlignment(infoBadge, Pos.TOP_CENTER);</span>
+<span class="nc" id="L772">        stack.getChildren().add(infoBadge);</span>
+<span class="nc" id="L773">        return stack;</span>
     }
 
     /**
@@ -731,35 +782,35 @@ import java.util.stream.Collectors;
      * @return The constructed Animation instance.
      */
     private Animation createSingleDealAnimation(String id, ImageView target, int era) {
-<span class="nc bnc" id="L734" title="All 6 branches missed.">        if (currentDeckView == null || currentDeckView.getScene() == null || target.getScene() == null) {</span>
-<span class="nc" id="L735">            target.setOpacity(1.0); return new PauseTransition(Duration.millis(1));</span>
+<span class="nc bnc" id="L785" title="All 6 branches missed.">        if (currentDeckView == null || currentDeckView.getScene() == null || target.getScene() == null) {</span>
+<span class="nc" id="L786">            target.setOpacity(1.0); return new PauseTransition(Duration.millis(1));</span>
         }
-<span class="nc" id="L737">        javafx.geometry.Point2D start = currentDeckView.localToScene(0, 0);</span>
-<span class="nc" id="L738">        javafx.geometry.Point2D end = target.localToScene(0, 0);</span>
-<span class="nc" id="L739">        int displayEra = Math.min(era, 3);</span>
+<span class="nc" id="L788">        javafx.geometry.Point2D start = currentDeckView.localToScene(0, 0);</span>
+<span class="nc" id="L789">        javafx.geometry.Point2D end = target.localToScene(0, 0);</span>
+<span class="nc" id="L790">        int displayEra = Math.min(era, 3);</span>
 
-<span class="nc bnc" id="L741" title="All 2 branches missed.">        double targetHeight = target.getFitHeight() &gt; 0 ? target.getFitHeight() : 170;</span>
+<span class="nc bnc" id="L792" title="All 2 branches missed.">        double targetHeight = target.getFitHeight() &gt; 0 ? target.getFitHeight() : 170;</span>
 
-<span class="nc" id="L743">        ImageView fly = new ImageView(ImageLoader.getImage(&quot;/images/cards/eras/back_main_era_&quot; + displayEra + &quot;.png&quot;));</span>
-<span class="nc" id="L744">        fly.setFitHeight(targetHeight);</span>
-<span class="nc" id="L745">        fly.setPreserveRatio(true); fly.setManaged(false);</span>
-<span class="nc" id="L746">        applyRoundedCorners(fly, 10);</span>
-<span class="nc" id="L747">        fly.relocate(start.getX(), start.getY()); baseStack.getChildren().add(fly);</span>
+<span class="nc" id="L794">        ImageView fly = new ImageView(ImageLoader.getImage(&quot;/images/cards/eras/back_main_era_&quot; + displayEra + &quot;.png&quot;));</span>
+<span class="nc" id="L795">        fly.setFitHeight(targetHeight);</span>
+<span class="nc" id="L796">        fly.setPreserveRatio(true); fly.setManaged(false);</span>
+<span class="nc" id="L797">        applyRoundedCorners(fly, 10);</span>
+<span class="nc" id="L798">        fly.relocate(start.getX(), start.getY()); baseStack.getChildren().add(fly);</span>
 
-<span class="nc" id="L749">        TranslateTransition tt = new TranslateTransition(Duration.millis(700), fly);</span>
-<span class="nc" id="L750">        tt.setToX(end.getX() - start.getX()); tt.setToY(end.getY() - start.getY());</span>
+<span class="nc" id="L800">        TranslateTransition tt = new TranslateTransition(Duration.millis(700), fly);</span>
+<span class="nc" id="L801">        tt.setToX(end.getX() - start.getX()); tt.setToY(end.getY() - start.getY());</span>
 
-<span class="nc" id="L752">        ScaleTransition st1 = new ScaleTransition(Duration.millis(350), fly); st1.setToX(0);</span>
-<span class="nc" id="L753">        st1.setOnFinished(e -&gt; {</span>
-<span class="nc bnc" id="L754" title="All 4 branches missed.">            String sub = id.startsWith(&quot;C_&quot;) ? &quot;characters/&quot; : id.startsWith(&quot;B_&quot;) ? &quot;buildings/&quot; : &quot;events/&quot;;</span>
-<span class="nc" id="L755">            fly.setImage(ImageLoader.getImage(&quot;/images/cards/&quot; + sub + id + &quot;.png&quot;));</span>
-<span class="nc" id="L756">            ScaleTransition st2 = new ScaleTransition(Duration.millis(350), fly);</span>
-<span class="nc" id="L757">            st2.setToX(1.0); st2.play();</span>
-<span class="nc" id="L758">        });</span>
+<span class="nc" id="L803">        ScaleTransition st1 = new ScaleTransition(Duration.millis(350), fly); st1.setToX(0);</span>
+<span class="nc" id="L804">        st1.setOnFinished(e -&gt; {</span>
+<span class="nc bnc" id="L805" title="All 4 branches missed.">            String sub = id.startsWith(&quot;C_&quot;) ? &quot;characters/&quot; : id.startsWith(&quot;B_&quot;) ? &quot;buildings/&quot; : &quot;events/&quot;;</span>
+<span class="nc" id="L806">            fly.setImage(ImageLoader.getImage(&quot;/images/cards/&quot; + sub + id + &quot;.png&quot;));</span>
+<span class="nc" id="L807">            ScaleTransition st2 = new ScaleTransition(Duration.millis(350), fly);</span>
+<span class="nc" id="L808">            st2.setToX(1.0); st2.play();</span>
+<span class="nc" id="L809">        });</span>
 
-<span class="nc" id="L760">        ParallelTransition pt = new ParallelTransition(tt, st1);</span>
-<span class="nc" id="L761">        pt.setOnFinished(e -&gt; baseStack.getChildren().remove(fly));</span>
-<span class="nc" id="L762">        return pt;</span>
+<span class="nc" id="L811">        ParallelTransition pt = new ParallelTransition(tt, st1);</span>
+<span class="nc" id="L812">        pt.setOnFinished(e -&gt; baseStack.getChildren().remove(fly));</span>
+<span class="nc" id="L813">        return pt;</span>
     }
 
     /**
@@ -771,11 +822,14 @@ import java.util.stream.Collectors;
      * @param source   The row position from which the card was taken.
      */
     public void animateCardTaken(String nickname, String cardID, CardType type, RowPosition source) {
-<span class="nc" id="L774">        Platform.runLater(() -&gt; {</span>
-<span class="nc" id="L775">            animationQueue.add(() -&gt; executeCardTakenAnimation(nickname, cardID, source));</span>
-<span class="nc bnc" id="L776" title="All 2 branches missed.">            if (!isAnimating) playNextAnimation();</span>
-<span class="nc" id="L777">        });</span>
-<span class="nc" id="L778">    }</span>
+        // Called on the FX thread (via GuiView.withGameScene), so enqueue directly:
+        // an extra Platform.runLater here would push this animation one FX pulse
+        // behind the single-deferred board renders, so during a fast replay every
+        // card-taken would slip past the renders and the whole batch would bunch up
+        // at the end instead of flying in event order, frame by frame.
+<span class="nc" id="L830">        animationQueue.add(() -&gt; executeCardTakenAnimation(nickname, cardID, source));</span>
+<span class="nc bnc" id="L831" title="All 2 branches missed.">        if (!isAnimating) playNextAnimation();</span>
+<span class="nc" id="L832">    }</span>
 
     /**
      * Executes the card taken animation.
@@ -785,26 +839,26 @@ import java.util.stream.Collectors;
      * @param source   The row position.
      */
     private void executeCardTakenAnimation(String nickname, String cardID, RowPosition source) {
-<span class="nc bnc" id="L788" title="All 4 branches missed.">        String sub = cardID.startsWith(&quot;C_&quot;) ? &quot;characters/&quot; : cardID.startsWith(&quot;B_&quot;) ? &quot;buildings/&quot; : &quot;events/&quot;;</span>
-<span class="nc" id="L789">        ImageView fly = new ImageView(ImageLoader.getImage(&quot;/images/cards/&quot; + sub + cardID + &quot;.png&quot;));</span>
-<span class="nc bnc" id="L790" title="All 2 branches missed.">        fly.setFitHeight(170); fly.setPreserveRatio(true); fly.setTranslateY(source == RowPosition.UPPER ? -150 : 150);</span>
-<span class="nc" id="L791">        applyRoundedCorners(fly, 10);</span>
-<span class="nc" id="L792">        baseStack.getChildren().add(fly);</span>
+<span class="nc bnc" id="L842" title="All 4 branches missed.">        String sub = cardID.startsWith(&quot;C_&quot;) ? &quot;characters/&quot; : cardID.startsWith(&quot;B_&quot;) ? &quot;buildings/&quot; : &quot;events/&quot;;</span>
+<span class="nc" id="L843">        ImageView fly = new ImageView(ImageLoader.getImage(&quot;/images/cards/&quot; + sub + cardID + &quot;.png&quot;));</span>
+<span class="nc bnc" id="L844" title="All 2 branches missed.">        fly.setFitHeight(170); fly.setPreserveRatio(true); fly.setTranslateY(source == RowPosition.UPPER ? -150 : 150);</span>
+<span class="nc" id="L845">        applyRoundedCorners(fly, 10);</span>
+<span class="nc" id="L846">        baseStack.getChildren().add(fly);</span>
 
-<span class="nc" id="L794">        TranslateTransition tt = new TranslateTransition(Duration.seconds(1), fly);</span>
-<span class="nc bnc" id="L795" title="All 2 branches missed.">        if (nickname.equals(model.getMyNickname())) { tt.setToY(350); tt.setToX(-200); }</span>
-<span class="nc" id="L796">        else { tt.setToY(-250); tt.setToX(500); }</span>
+<span class="nc" id="L848">        TranslateTransition tt = new TranslateTransition(Duration.seconds(1), fly);</span>
+<span class="nc bnc" id="L849" title="All 2 branches missed.">        if (nickname.equals(model.getMyNickname())) { tt.setToY(350); tt.setToX(-200); }</span>
+<span class="nc" id="L850">        else { tt.setToY(-250); tt.setToX(500); }</span>
 
-<span class="nc" id="L798">        ScaleTransition st = new ScaleTransition(Duration.seconds(1), fly); st.setToX(0.1); st.setToY(0.1);</span>
-<span class="nc" id="L799">        FadeTransition ft = new FadeTransition(Duration.seconds(1), fly); ft.setToValue(0);</span>
+<span class="nc" id="L852">        ScaleTransition st = new ScaleTransition(Duration.seconds(1), fly); st.setToX(0.1); st.setToY(0.1);</span>
+<span class="nc" id="L853">        FadeTransition ft = new FadeTransition(Duration.seconds(1), fly); ft.setToValue(0);</span>
 
-<span class="nc" id="L801">        ParallelTransition pt = new ParallelTransition(tt, st, ft);</span>
-<span class="nc" id="L802">        pt.setOnFinished(e -&gt; {</span>
-<span class="nc" id="L803">            baseStack.getChildren().remove(fly); knownCardsOnBoard.remove(cardID);</span>
-<span class="nc" id="L804">            playNextAnimation();</span>
-<span class="nc" id="L805">        });</span>
-<span class="nc" id="L806">        pt.play();</span>
-<span class="nc" id="L807">    }</span>
+<span class="nc" id="L855">        ParallelTransition pt = new ParallelTransition(tt, st, ft);</span>
+<span class="nc" id="L856">        pt.setOnFinished(e -&gt; {</span>
+<span class="nc" id="L857">            baseStack.getChildren().remove(fly); knownCardsOnBoard.remove(cardID);</span>
+<span class="nc" id="L858">            playNextAnimation();</span>
+<span class="nc" id="L859">        });</span>
+<span class="nc" id="L860">        pt.play();</span>
+<span class="nc" id="L861">    }</span>
 
     /**
      * Animates the placement of a totem on an offer tile.
@@ -813,12 +867,11 @@ import java.util.stream.Collectors;
      * @param tileID   The ID of the offer tile.
      */
     public void animateTotemPlacement(String nickname, char tileID) {
-<span class="nc" id="L816">        Totem totem = model.getTotem(nickname);</span>
-<span class="nc" id="L817">        Platform.runLater(() -&gt; {</span>
-<span class="nc" id="L818">            animationQueue.add(() -&gt; executeTotemAnimation(nickname, tileID, false, totem));</span>
-<span class="nc bnc" id="L819" title="All 2 branches missed.">            if (!isAnimating) playNextAnimation();</span>
-<span class="nc" id="L820">        });</span>
-<span class="nc" id="L821">    }</span>
+        // FX-thread only; enqueue directly to stay in event order (see animateCardTaken).
+<span class="nc" id="L871">        Totem totem = model.getTotem(nickname);</span>
+<span class="nc" id="L872">        animationQueue.add(() -&gt; executeTotemAnimation(nickname, tileID, false, totem));</span>
+<span class="nc bnc" id="L873" title="All 2 branches missed.">        if (!isAnimating) playNextAnimation();</span>
+<span class="nc" id="L874">    }</span>
 
     /**
      * Animates the return of a totem to the turn order cave.
@@ -827,12 +880,11 @@ import java.util.stream.Collectors;
      * @param position The position index.
      */
     public void animateTotemReturn(String nickname, int position) {
-<span class="nc" id="L830">        Totem totem = model.getTotem(nickname);</span>
-<span class="nc" id="L831">        Platform.runLater(() -&gt; {</span>
-<span class="nc" id="L832">            animationQueue.add(() -&gt; executeTotemAnimation(nickname, 'T', true, totem));</span>
-<span class="nc bnc" id="L833" title="All 2 branches missed.">            if (!isAnimating) playNextAnimation();</span>
-<span class="nc" id="L834">        });</span>
-<span class="nc" id="L835">    }</span>
+        // FX-thread only; enqueue directly to stay in event order (see animateCardTaken).
+<span class="nc" id="L884">        Totem totem = model.getTotem(nickname);</span>
+<span class="nc" id="L885">        animationQueue.add(() -&gt; executeTotemAnimation(nickname, 'T', true, totem));</span>
+<span class="nc bnc" id="L886" title="All 2 branches missed.">        if (!isAnimating) playNextAnimation();</span>
+<span class="nc" id="L887">    }</span>
 
     /**
      * Executes the totem move animation.
@@ -843,34 +895,34 @@ import java.util.stream.Collectors;
      * @param totem       The totem color.
      */
     private void executeTotemAnimation(String nickname, char tileID, boolean isReturning, Totem totem) {
-<span class="nc bnc" id="L846" title="All 2 branches missed.">        if (totem == null) { playNextAnimation(); return; }</span>
+<span class="nc bnc" id="L898" title="All 2 branches missed.">        if (totem == null) { playNextAnimation(); return; }</span>
 
-<span class="nc" id="L848">        String path = &quot;/images/totems/totem_&quot; + totem.name().toLowerCase() + &quot;.png&quot;;</span>
-<span class="nc" id="L849">        ImageView fly = new ImageView(ImageLoader.getImage(path));</span>
-<span class="nc" id="L850">        fly.setFitHeight(120); fly.setPreserveRatio(true); fly.setStyle(&quot;-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 15, 0, 0, 5);&quot;);</span>
+<span class="nc" id="L900">        String path = &quot;/images/totems/totem_&quot; + totem.name().toLowerCase() + &quot;.png&quot;;</span>
+<span class="nc" id="L901">        ImageView fly = new ImageView(ImageLoader.getImage(path));</span>
+<span class="nc" id="L902">        fly.setFitHeight(120); fly.setPreserveRatio(true); fly.setStyle(&quot;-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 15, 0, 0, 5);&quot;);</span>
 
-<span class="nc" id="L852">        Label actionLabel = new Label(); actionLabel.setTextFill(Color.GOLD);</span>
-<span class="nc bnc" id="L853" title="All 2 branches missed.">        if (tribalFont != null) actionLabel.setFont(Font.font(tribalFont.getFamily(), 20));</span>
-<span class="nc" id="L854">        actionLabel.setStyle(&quot;-fx-background-color: rgba(0,0,0,0.8); -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: gold; -fx-border-radius: 10;&quot;);</span>
+<span class="nc" id="L904">        Label actionLabel = new Label(); actionLabel.setTextFill(Color.GOLD);</span>
+<span class="nc bnc" id="L905" title="All 2 branches missed.">        if (tribalFont != null) actionLabel.setFont(Font.font(tribalFont.getFamily(), 20));</span>
+<span class="nc" id="L906">        actionLabel.setStyle(&quot;-fx-background-color: rgba(0,0,0,0.8); -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: gold; -fx-border-radius: 10;&quot;);</span>
 
-<span class="nc bnc" id="L856" title="All 2 branches missed.">        if (isReturning) {</span>
-<span class="nc" id="L857">            actionLabel.setText(nickname + &quot; RETURNS TO CAVE&quot;); fly.setTranslateY(-300);</span>
+<span class="nc bnc" id="L908" title="All 2 branches missed.">        if (isReturning) {</span>
+<span class="nc" id="L909">            actionLabel.setText(nickname + &quot; RETURNS TO CAVE&quot;); fly.setTranslateY(-300);</span>
         } else {
-<span class="nc" id="L859">            actionLabel.setText(nickname + &quot; PLACES ON TILE &quot; + tileID); fly.setTranslateY(300);</span>
+<span class="nc" id="L911">            actionLabel.setText(nickname + &quot; PLACES ON TILE &quot; + tileID); fly.setTranslateY(300);</span>
         }
 
-<span class="nc" id="L862">        VBox animBox = new VBox(20, fly, actionLabel); animBox.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L863">        baseStack.getChildren().add(animBox);</span>
+<span class="nc" id="L914">        VBox animBox = new VBox(20, fly, actionLabel); animBox.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L915">        baseStack.getChildren().add(animBox);</span>
 
-<span class="nc" id="L865">        TranslateTransition tt = new TranslateTransition(Duration.millis(400), fly); tt.setToY(0);</span>
-<span class="nc" id="L866">        ScaleTransition st = new ScaleTransition(Duration.millis(300), fly); st.setByX(0.3); st.setByY(0.3); st.setAutoReverse(true); st.setCycleCount(2);</span>
-<span class="nc" id="L867">        PauseTransition pause = new PauseTransition(Duration.millis(600));</span>
-<span class="nc" id="L868">        FadeTransition ft = new FadeTransition(Duration.millis(300), animBox); ft.setToValue(0);</span>
+<span class="nc" id="L917">        TranslateTransition tt = new TranslateTransition(Duration.millis(400), fly); tt.setToY(0);</span>
+<span class="nc" id="L918">        ScaleTransition st = new ScaleTransition(Duration.millis(300), fly); st.setByX(0.3); st.setByY(0.3); st.setAutoReverse(true); st.setCycleCount(2);</span>
+<span class="nc" id="L919">        PauseTransition pause = new PauseTransition(Duration.millis(600));</span>
+<span class="nc" id="L920">        FadeTransition ft = new FadeTransition(Duration.millis(300), animBox); ft.setToValue(0);</span>
 
-<span class="nc" id="L870">        SequentialTransition seq = new SequentialTransition(tt, st, pause, ft);</span>
-<span class="nc" id="L871">        seq.setOnFinished(e -&gt; { baseStack.getChildren().remove(animBox); playNextAnimation(); });</span>
-<span class="nc" id="L872">        seq.play();</span>
-<span class="nc" id="L873">    }</span>
+<span class="nc" id="L922">        SequentialTransition seq = new SequentialTransition(tt, st, pause, ft);</span>
+<span class="nc" id="L923">        seq.setOnFinished(e -&gt; { baseStack.getChildren().remove(animBox); playNextAnimation(); });</span>
+<span class="nc" id="L924">        seq.play();</span>
+<span class="nc" id="L925">    }</span>
 
     /**
      * Toggles the selection of a card on the board.
@@ -878,10 +930,46 @@ import java.util.stream.Collectors;
      * @param id The card ID.
      */
     private void toggleCardSelection(String id) {
-<span class="nc bnc" id="L881" title="All 4 branches missed.">        if (isAnimating || !actionsAllowed()) return;</span>
-<span class="nc bnc" id="L882" title="All 2 branches missed.">        if (selected.contains(id)) selected.remove(id); else selected.add(id);</span>
-<span class="nc" id="L883">        refreshAllInternal(lastState);</span>
-<span class="nc" id="L884">    }</span>
+<span class="nc bnc" id="L933" title="All 4 branches missed.">        if (isAnimating || !cardActionsAllowed()) return;</span>
+        // Deselecting an already-picked card is always allowed; only adding a new
+        // selection is gated by the row's remaining pick limit.
+<span class="nc bnc" id="L936" title="All 2 branches missed.">        if (selected.contains(id)) {</span>
+<span class="nc" id="L937">            selected.remove(id);</span>
+<span class="nc" id="L938">            refreshAllInternal(lastState);</span>
+<span class="nc" id="L939">            return;</span>
+        }
+        // Event cards (E_*) can never be taken by a player, so they stay unselectable.
+<span class="nc bnc" id="L942" title="All 2 branches missed.">        if (CardCatalog.getInstance().isEvent(id)) return;</span>
+<span class="nc bnc" id="L943" title="All 2 branches missed.">        if (!isRowSelectable(id)) return;</span>
+<span class="nc" id="L944">        selected.add(id);</span>
+<span class="nc" id="L945">        refreshAllInternal(lastState);</span>
+<span class="nc" id="L946">    }</span>
+
+    /**
+     * Determines whether the card identified by {@code id} may be picked from the
+     * board given the local player's remaining pick limits for the row it sits in.
+     *
+     * &lt;p&gt;Mirrors the rule the player sees on their sidebar: a card in the upper row
+     * (characters/events &lt;em&gt;or&lt;/em&gt; buildings) is pickable only while the player
+     * still has upper-row picks left, and likewise for the lower row. When a row's
+     * limit is exhausted its cards become unclickable; when both rows have picks the
+     * whole board is free. This is purely a click gate — the card's appearance is
+     * left untouched.
+     *
+     * @param id the board card identifier
+     * @return {@code true} if the card may currently be selected
+     */
+    private boolean isRowSelectable(String id) {
+<span class="nc bnc" id="L963" title="All 2 branches missed.">        if (lastState == null) return true;</span>
+<span class="nc" id="L964">        String me = lastState.myNickname;</span>
+<span class="nc bnc" id="L965" title="All 4 branches missed.">        if (lastState.upperRow.contains(id) || lastState.upperRowBuildings.contains(id)) {</span>
+<span class="nc bnc" id="L966" title="All 2 branches missed.">            return lastState.remainingUpper.getOrDefault(me, 0) &gt; 0;</span>
+        }
+<span class="nc bnc" id="L968" title="All 4 branches missed.">        if (lastState.lowerRow.contains(id) || lastState.lowerRowBuildings.contains(id)) {</span>
+<span class="nc bnc" id="L969" title="All 2 branches missed.">            return lastState.remainingLower.getOrDefault(me, 0) &gt; 0;</span>
+        }
+<span class="nc" id="L971">        return true;</span>
+    }
 
     /**
      * Displays a zoomed-in view of a card.
@@ -889,17 +977,17 @@ import java.util.stream.Collectors;
      * @param cardId The card ID.
      */
     private void showZoomedCard(String cardId) {
-<span class="nc" id="L892">        StackPane overlay = new StackPane(); overlay.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.85);&quot;);</span>
-<span class="nc bnc" id="L893" title="All 4 branches missed.">        String sub = cardId.startsWith(&quot;C_&quot;) ? &quot;characters/&quot; : cardId.startsWith(&quot;B_&quot;) ? &quot;buildings/&quot; : &quot;events/&quot;;</span>
-<span class="nc" id="L894">        String path = &quot;/images/cards/&quot; + sub + cardId + &quot;.png&quot;;</span>
-<span class="nc" id="L895">        ImageView bigCard = new ImageView(ImageLoader.getImage(path)); bigCard.setFitHeight(550); bigCard.setPreserveRatio(true);</span>
-<span class="nc" id="L896">        applyRoundedCorners(bigCard, 25);</span>
-<span class="nc" id="L897">        bigCard.setStyle(&quot;-fx-effect: dropshadow(three-pass-box, gold, 40, 0.4, 0, 0);&quot;);</span>
-<span class="nc" id="L898">        bigCard.setScaleX(0.5); bigCard.setScaleY(0.5);</span>
-<span class="nc" id="L899">        ScaleTransition st = new ScaleTransition(Duration.millis(200), bigCard); st.setToX(1.0); st.setToY(1.0); st.play();</span>
-<span class="nc" id="L900">        overlay.setOnMouseClicked(e -&gt; baseStack.getChildren().remove(overlay));</span>
-<span class="nc" id="L901">        overlay.getChildren().add(bigCard); baseStack.getChildren().add(overlay);</span>
-<span class="nc" id="L902">    }</span>
+<span class="nc" id="L980">        StackPane overlay = new StackPane(); overlay.setStyle(&quot;-fx-background-color: rgba(0, 0, 0, 0.85);&quot;);</span>
+<span class="nc bnc" id="L981" title="All 4 branches missed.">        String sub = cardId.startsWith(&quot;C_&quot;) ? &quot;characters/&quot; : cardId.startsWith(&quot;B_&quot;) ? &quot;buildings/&quot; : &quot;events/&quot;;</span>
+<span class="nc" id="L982">        String path = &quot;/images/cards/&quot; + sub + cardId + &quot;.png&quot;;</span>
+<span class="nc" id="L983">        ImageView bigCard = new ImageView(ImageLoader.getImage(path)); bigCard.setFitHeight(550); bigCard.setPreserveRatio(true);</span>
+<span class="nc" id="L984">        applyRoundedCorners(bigCard, 25);</span>
+<span class="nc" id="L985">        bigCard.setStyle(&quot;-fx-effect: dropshadow(three-pass-box, gold, 40, 0.4, 0, 0);&quot;);</span>
+<span class="nc" id="L986">        bigCard.setScaleX(0.5); bigCard.setScaleY(0.5);</span>
+<span class="nc" id="L987">        ScaleTransition st = new ScaleTransition(Duration.millis(200), bigCard); st.setToX(1.0); st.setToY(1.0); st.play();</span>
+<span class="nc" id="L988">        overlay.setOnMouseClicked(e -&gt; baseStack.getChildren().remove(overlay));</span>
+<span class="nc" id="L989">        overlay.getChildren().add(bigCard); baseStack.getChildren().add(overlay);</span>
+<span class="nc" id="L990">    }</span>
 
     /**
      * Extracts the category of a card from its ID.
@@ -908,104 +996,143 @@ import java.util.stream.Collectors;
      * @return The category string.
      */
     private String extractCategoryFromId(String cardId) {
-<span class="nc bnc" id="L911" title="All 2 branches missed.">        if (cardId.startsWith(&quot;B_&quot;)) return &quot;BUILDING&quot;;</span>
-<span class="nc" id="L912">        String cardInfo = CardCatalog.getInstance().format(cardId).toUpperCase();</span>
-<span class="nc bnc" id="L913" title="All 4 branches missed.">        if (cardInfo.contains(&quot;INVENTOR&quot;)) return &quot;INVENTOR&quot;; if (cardInfo.contains(&quot;BUILDER&quot;)) return &quot;BUILDER&quot;;</span>
-<span class="nc bnc" id="L914" title="All 4 branches missed.">        if (cardInfo.contains(&quot;GATHERER&quot;)) return &quot;GATHERER&quot;; if (cardInfo.contains(&quot;ARTIST&quot;)) return &quot;ARTIST&quot;;</span>
-<span class="nc bnc" id="L915" title="All 4 branches missed.">        if (cardInfo.contains(&quot;SHAMAN&quot;)) return &quot;SHAMAN&quot;; if (cardInfo.contains(&quot;HUNTER&quot;)) return &quot;HUNTER&quot;;</span>
-<span class="nc" id="L916">        return &quot;UNKNOWN&quot;;</span>
+<span class="nc bnc" id="L999" title="All 2 branches missed.">        if (cardId.startsWith(&quot;B_&quot;)) return &quot;BUILDING&quot;;</span>
+<span class="nc" id="L1000">        String cardInfo = CardCatalog.getInstance().format(cardId).toUpperCase();</span>
+<span class="nc bnc" id="L1001" title="All 4 branches missed.">        if (cardInfo.contains(&quot;INVENTOR&quot;)) return &quot;INVENTOR&quot;; if (cardInfo.contains(&quot;BUILDER&quot;)) return &quot;BUILDER&quot;;</span>
+<span class="nc bnc" id="L1002" title="All 4 branches missed.">        if (cardInfo.contains(&quot;GATHERER&quot;)) return &quot;GATHERER&quot;; if (cardInfo.contains(&quot;ARTIST&quot;)) return &quot;ARTIST&quot;;</span>
+<span class="nc bnc" id="L1003" title="All 4 branches missed.">        if (cardInfo.contains(&quot;SHAMAN&quot;)) return &quot;SHAMAN&quot;; if (cardInfo.contains(&quot;HUNTER&quot;)) return &quot;HUNTER&quot;;</span>
+<span class="nc" id="L1004">        return &quot;UNKNOWN&quot;;</span>
     }
 
     /**
      * Extracts prestige points from a card description.
      */
-<span class="nc bnc" id="L922" title="All 4 branches missed.">    private int extractPrestigePoints(String cardId) { String desc = CardCatalog.getInstance().format(cardId); int index = desc.indexOf(&quot;PP:&quot;); if (index != -1) { int end = desc.indexOf(&quot; &quot;, index + 3); if (end == -1) end = desc.length(); try { return Integer.parseInt(desc.substring(index + 3, end).trim()); } catch (Exception ignored) {} } return 0; }</span>
+<span class="nc bnc" id="L1010" title="All 4 branches missed.">    private int extractPrestigePoints(String cardId) { String desc = CardCatalog.getInstance().format(cardId); int index = desc.indexOf(&quot;PP:&quot;); if (index != -1) { int end = desc.indexOf(&quot; &quot;, index + 3); if (end == -1) end = desc.length(); try { return Integer.parseInt(desc.substring(index + 3, end).trim()); } catch (Exception ignored) {} } return 0; }</span>
     
     /**
      * Extracts inventor symbol from a card description.
      */
-<span class="nc bnc" id="L927" title="All 4 branches missed.">    private String extractInventorSymbol(String cardId) { String desc = CardCatalog.getInstance().format(cardId); int start = desc.indexOf(&quot; (&quot;); if (start != -1) { int end = desc.indexOf(&quot;)&quot;, start); if (end != -1) return desc.substring(start + 2, end).trim(); } return &quot;&quot;; }</span>
+<span class="nc bnc" id="L1015" title="All 4 branches missed.">    private String extractInventorSymbol(String cardId) { String desc = CardCatalog.getInstance().format(cardId); int start = desc.indexOf(&quot; (&quot;); if (start != -1) { int end = desc.indexOf(&quot;)&quot;, start); if (end != -1) return desc.substring(start + 2, end).trim(); } return &quot;&quot;; }</span>
     
     /**
      * Extracts shaman stars from a full card description.
      */
-<span class="nc bnc" id="L932" title="All 4 branches missed.">    private int extractShamanStars(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf(&quot;Shaman Stars: &quot;); if (index != -1) { int end = desc.indexOf(&quot;\n&quot;, index + 14); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 14, end).trim()); } catch (Exception ignored) {} } } return 0; }</span>
+<span class="nc bnc" id="L1020" title="All 4 branches missed.">    private int extractShamanStars(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf(&quot;Shaman Stars: &quot;); if (index != -1) { int end = desc.indexOf(&quot;\n&quot;, index + 14); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 14, end).trim()); } catch (Exception ignored) {} } } return 0; }</span>
     
     /**
      * Extracts builder discount from a full card description.
      */
-<span class="nc bnc" id="L937" title="All 4 branches missed.">    private int extractBuilderDiscount(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf(&quot;Building Discount: -&quot;); if (index != -1) { int end = desc.indexOf(&quot; Food&quot;, index + 20); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 20, end).trim()); } catch (Exception ignored) {} } } return 0; }</span>
+<span class="nc bnc" id="L1025" title="All 4 branches missed.">    private int extractBuilderDiscount(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf(&quot;Building Discount: -&quot;); if (index != -1) { int end = desc.indexOf(&quot; Food&quot;, index + 20); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 20, end).trim()); } catch (Exception ignored) {} } } return 0; }</span>
     
     /**
      * Extracts gatherer discount from a full card description.
      */
-<span class="nc bnc" id="L942" title="All 4 branches missed.">    private int extractGathererDiscount(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf(&quot;Food Discount: -&quot;); if (index != -1) { int end = desc.indexOf(&quot; Food&quot;, index + 16); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 16, end).trim()); } catch (Exception ignored) {} } } return 0; }</span>
+<span class="nc bnc" id="L1030" title="All 4 branches missed.">    private int extractGathererDiscount(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf(&quot;Food Discount: -&quot;); if (index != -1) { int end = desc.indexOf(&quot; Food&quot;, index + 16); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 16, end).trim()); } catch (Exception ignored) {} } } return 0; }</span>
 
     /**
      * Displays an animation for the beginning of a new era.
      *
+     * &lt;p&gt;&lt;b&gt;Must be called on the JavaFX application thread.&lt;/b&gt; The board is
+     * refreshed from the supplied (event-ordered) snapshot and the era overlay is
+     * appended right after it in the same animation queue, so the &quot;ERA n&quot; banner
+     * plays in lockstep with the board frame that introduced the new era — even
+     * while a reconnection history is being replayed.
+     *
+     * @param snapshot the frozen state captured when the era-change event arrived.
      * @param newEra               The new era.
      * @param u                    New upper row buildings.
      * @param l                    New lower row buildings.
      */
-    public void showNewEraAnimation(Era newEra, List&lt;String&gt; u, List&lt;String&gt; l) {
-<span class="nc" id="L952">        refreshAll(model);</span>
+    public void showNewEraAnimation(SceneState snapshot, Era newEra, List&lt;String&gt; u, List&lt;String&gt; l) {
+<span class="nc" id="L1047">        render(snapshot);</span>
 
-<span class="nc" id="L954">        Platform.runLater(() -&gt; {</span>
-<span class="nc" id="L955">            animationQueue.add(() -&gt; {</span>
-<span class="nc" id="L956">                root.setEffect(new GaussianBlur(12));</span>
+<span class="nc" id="L1049">        animationQueue.add(() -&gt; {</span>
+<span class="nc" id="L1050">            root.setEffect(new GaussianBlur(12));</span>
 
-<span class="nc" id="L958">                NewEraOverlay overlay = new NewEraOverlay();</span>
-<span class="nc" id="L959">                StackPane node = overlay.buildNode(newEra, () -&gt; {</span>
-<span class="nc" id="L960">                    root.setEffect(null);</span>
-<span class="nc" id="L961">                    modalLayer.setVisible(false);</span>
-<span class="nc" id="L962">                    modalLayer.getChildren().clear();</span>
-<span class="nc" id="L963">                    playNextAnimation();</span>
-<span class="nc" id="L964">                });</span>
-<span class="nc" id="L965">                modalLayer.getChildren().setAll(node);</span>
-<span class="nc" id="L966">                modalLayer.setVisible(true);</span>
-<span class="nc" id="L967">            });</span>
-<span class="nc bnc" id="L968" title="All 2 branches missed.">            if (!isAnimating) playNextAnimation();</span>
-<span class="nc" id="L969">        });</span>
-<span class="nc" id="L970">    }</span>
+<span class="nc" id="L1052">            NewEraOverlay overlay = new NewEraOverlay();</span>
+<span class="nc" id="L1053">            StackPane node = overlay.buildNode(newEra, () -&gt; {</span>
+<span class="nc" id="L1054">                root.setEffect(null);</span>
+<span class="nc" id="L1055">                modalLayer.setVisible(false);</span>
+<span class="nc" id="L1056">                modalLayer.getChildren().clear();</span>
+<span class="nc" id="L1057">                playNextAnimation();</span>
+<span class="nc" id="L1058">            });</span>
+<span class="nc" id="L1059">            modalLayer.getChildren().setAll(node);</span>
+<span class="nc" id="L1060">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L1061">        });</span>
+<span class="nc bnc" id="L1062" title="All 2 branches missed.">        if (!isAnimating) playNextAnimation();</span>
+<span class="nc" id="L1063">    }</span>
 
     /**
      * Marks a player as offline and refreshes the scene.
      *
      * @param n The player nickname.
      */
-<span class="nc bnc" id="L977" title="All 2 branches missed.">    public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }</span>
+<span class="nc bnc" id="L1070" title="All 2 branches missed.">    public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }</span>
     
     /**
      * Marks a player as online and refreshes the scene.
      *
      * @param n The player nickname.
      */
-<span class="nc" id="L984">    public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }</span>
+<span class="nc" id="L1077">    public void setPlayerOnline(String n) { offlinePlayers.remove(n); refreshAll(model); }</span>
+
+    /**
+     * Queues the forfeit banner into the animation FIFO. Must be called on the FX
+     * thread.
+     *
+     * &lt;p&gt;The banner is intentionally routed through the same {@link #animationQueue}
+     * as every other on-screen step rather than shown immediately: the server fires
+     * the global-timer notification at the &lt;em&gt;end&lt;/em&gt; of a reconnection replay, so
+     * if the banner were raised on its own {@code Platform.runLater} it would jump
+     * the fast FX-pulse queue and appear &lt;em&gt;before&lt;/em&gt; the still-draining visual
+     * replay (the infamous &quot;120s shown first&quot;). Enqueuing it guarantees it surfaces
+     * only after everything queued ahead of it has played out.
+     *
+     * @param seconds the forfeit countdown value supplied by the server
+     */
+    public void enqueueForfeitBanner(long seconds) {
+<span class="nc" id="L1094">        animationQueue.add(() -&gt; { showForfeitBannerNow(seconds); playNextAnimation(); });</span>
+<span class="nc bnc" id="L1095" title="All 2 branches missed.">        if (!isAnimating) playNextAnimation();</span>
+<span class="nc" id="L1096">    }</span>
+
+    /**
+     * Queues the dismissal of the forfeit banner into the animation FIFO. Must be
+     * called on the FX thread. Routed through the queue for the same reason as
+     * {@link #enqueueForfeitBanner(long)} and, crucially, so the dismissal can never
+     * overtake a still-queued show (which would leave the banner stuck on screen).
+     */
+    public void enqueueDismissForfeitBanner() {
+<span class="nc" id="L1105">        animationQueue.add(() -&gt; { dismissForfeitBannerNow(); playNextAnimation(); });</span>
+<span class="nc bnc" id="L1106" title="All 2 branches missed.">        if (!isAnimating) playNextAnimation();</span>
+<span class="nc" id="L1107">    }</span>
 
     public void showForfeitBanner(long seconds) {
-<span class="nc" id="L987">        Platform.runLater(() -&gt; {</span>
-<span class="nc bnc" id="L988" title="All 2 branches missed.">            if (forfeitBanner != null) baseStack.getChildren().remove(forfeitBanner);</span>
+<span class="nc" id="L1110">        Platform.runLater(() -&gt; showForfeitBannerNow(seconds));</span>
+<span class="nc" id="L1111">    }</span>
 
-<span class="nc" id="L990">            Label icon = new Label(&quot;⚠&quot;);</span>
-<span class="nc" id="L991">            icon.setStyle(&quot;-fx-font-size: 32; -fx-text-fill: #FFD700;&quot;);</span>
+    private void showForfeitBannerNow(long seconds) {
+        {
+<span class="nc bnc" id="L1115" title="All 2 branches missed.">            if (forfeitBanner != null) baseStack.getChildren().remove(forfeitBanner);</span>
 
-<span class="nc" id="L993">            Label titleLabel = new Label(&quot;YOU ARE THE ONLY ACTIVE PLAYER&quot;);</span>
-<span class="nc" id="L994">            titleLabel.setStyle(&quot;-fx-text-fill: #FFD700; -fx-font-weight: bold; -fx-font-size: 15;&quot;);</span>
-<span class="nc bnc" id="L995" title="All 2 branches missed.">            if (tribalFont != null) titleLabel.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));</span>
+<span class="nc" id="L1117">            Label icon = new Label(&quot;⚠&quot;);</span>
+<span class="nc" id="L1118">            icon.setStyle(&quot;-fx-font-size: 32; -fx-text-fill: #FFD700;&quot;);</span>
+
+<span class="nc" id="L1120">            Label titleLabel = new Label(&quot;YOU ARE THE ONLY ACTIVE PLAYER&quot;);</span>
+<span class="nc" id="L1121">            titleLabel.setStyle(&quot;-fx-text-fill: #FFD700; -fx-font-weight: bold; -fx-font-size: 15;&quot;);</span>
+<span class="nc bnc" id="L1122" title="All 2 branches missed.">            if (tribalFont != null) titleLabel.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));</span>
 
             // Deliberately &quot;about Ns&quot;, not a live countdown: the server fires the
             // notification at the END of the catch-up replay and the FX queue may be
             // backed up, so a precise client-side counter would drift behind the
             // server's authoritative deadline. The approximate value uses the
             // server-supplied {@code seconds} so it tracks any future timeout change.
-<span class="nc" id="L1002">            Label countdownLabel = new Label(&quot;Win by forfeit in about &quot; + seconds + &quot;s if no one reconnects.&quot;);</span>
-<span class="nc" id="L1003">            countdownLabel.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13;&quot;);</span>
-<span class="nc bnc" id="L1004" title="All 2 branches missed.">            if (tribalFont != null) countdownLabel.setFont(Font.font(tribalFont.getFamily(), 13));</span>
+<span class="nc" id="L1129">            Label countdownLabel = new Label(&quot;Win by forfeit in about &quot; + seconds + &quot;s if no one reconnects.&quot;);</span>
+<span class="nc" id="L1130">            countdownLabel.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13;&quot;);</span>
+<span class="nc bnc" id="L1131" title="All 2 branches missed.">            if (tribalFont != null) countdownLabel.setFont(Font.font(tribalFont.getFamily(), 13));</span>
 
-<span class="nc" id="L1006">            forfeitBanner = new VBox(8, icon, titleLabel, countdownLabel);</span>
-<span class="nc" id="L1007">            forfeitBanner.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L1008">            forfeitBanner.setStyle(</span>
+<span class="nc" id="L1133">            forfeitBanner = new VBox(8, icon, titleLabel, countdownLabel);</span>
+<span class="nc" id="L1134">            forfeitBanner.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L1135">            forfeitBanner.setStyle(</span>
                     &quot;-fx-background-color: rgba(163, 29, 29, 0.92);&quot; +
                             &quot;-fx-border-color: #FFD700;&quot; +
                             &quot;-fx-border-width: 2;&quot; +
@@ -1013,47 +1140,49 @@ import java.util.stream.Collectors;
                             &quot;-fx-background-radius: 10;&quot; +
                             &quot;-fx-padding: 20 35 20 35;&quot;
             );
-<span class="nc" id="L1016">            forfeitBanner.setMaxSize(420, Region.USE_PREF_SIZE);</span>
-<span class="nc" id="L1017">            StackPane.setAlignment(forfeitBanner, Pos.CENTER);</span>
+<span class="nc" id="L1143">            forfeitBanner.setMaxSize(420, Region.USE_PREF_SIZE);</span>
+<span class="nc" id="L1144">            StackPane.setAlignment(forfeitBanner, Pos.CENTER);</span>
 
-<span class="nc" id="L1019">            baseStack.getChildren().add(forfeitBanner);</span>
-<span class="nc" id="L1020">            forfeitBanner.setOpacity(0);</span>
-<span class="nc" id="L1021">            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), forfeitBanner);</span>
-<span class="nc" id="L1022">            fadeIn.setToValue(1.0);</span>
-<span class="nc" id="L1023">            fadeIn.play();</span>
+<span class="nc" id="L1146">            baseStack.getChildren().add(forfeitBanner);</span>
+<span class="nc" id="L1147">            forfeitBanner.setOpacity(0);</span>
+<span class="nc" id="L1148">            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), forfeitBanner);</span>
+<span class="nc" id="L1149">            fadeIn.setToValue(1.0);</span>
+<span class="nc" id="L1150">            fadeIn.play();</span>
 
-<span class="nc" id="L1025">            addLogEntry(&quot;[!] &quot;, &quot;You are alone — forfeit win in about &quot; + seconds + &quot;s if no one reconnects.&quot;, Color.web(&quot;#FF4444&quot;));</span>
-<span class="nc" id="L1026">        });</span>
-<span class="nc" id="L1027">    }</span>
+<span class="nc" id="L1152">            addLogEntry(&quot;[!] &quot;, &quot;You are alone — forfeit win in about &quot; + seconds + &quot;s if no one reconnects.&quot;, Color.web(&quot;#FF4444&quot;));</span>
+        }
+<span class="nc" id="L1154">    }</span>
 
     public void dismissForfeitBanner() {
-<span class="nc" id="L1030">        Platform.runLater(() -&gt; {</span>
-<span class="nc bnc" id="L1031" title="All 2 branches missed.">            if (forfeitBanner != null) {</span>
-<span class="nc" id="L1032">                VBox bannerRef = forfeitBanner;</span>
-<span class="nc" id="L1033">                forfeitBanner = null;</span>
-<span class="nc" id="L1034">                FadeTransition fadeOut = new FadeTransition(Duration.millis(400), bannerRef);</span>
-<span class="nc" id="L1035">                fadeOut.setToValue(0);</span>
-<span class="nc" id="L1036">                fadeOut.setOnFinished(e -&gt; baseStack.getChildren().remove(bannerRef));</span>
-<span class="nc" id="L1037">                fadeOut.play();</span>
-<span class="nc" id="L1038">                addLogEntry(&quot;[!] &quot;, &quot;A player reconnected — forfeit countdown cancelled.&quot;, Color.web(&quot;#4CAF50&quot;));</span>
-            }
-<span class="nc" id="L1040">        });</span>
-<span class="nc" id="L1041">    }</span>
+<span class="nc" id="L1157">        Platform.runLater(this::dismissForfeitBannerNow);</span>
+<span class="nc" id="L1158">    }</span>
+
+    private void dismissForfeitBannerNow() {
+<span class="nc bnc" id="L1161" title="All 2 branches missed.">        if (forfeitBanner != null) {</span>
+<span class="nc" id="L1162">            VBox bannerRef = forfeitBanner;</span>
+<span class="nc" id="L1163">            forfeitBanner = null;</span>
+<span class="nc" id="L1164">            FadeTransition fadeOut = new FadeTransition(Duration.millis(400), bannerRef);</span>
+<span class="nc" id="L1165">            fadeOut.setToValue(0);</span>
+<span class="nc" id="L1166">            fadeOut.setOnFinished(e -&gt; baseStack.getChildren().remove(bannerRef));</span>
+<span class="nc" id="L1167">            fadeOut.play();</span>
+<span class="nc" id="L1168">            addLogEntry(&quot;[!] &quot;, &quot;A player reconnected — forfeit countdown cancelled.&quot;, Color.web(&quot;#4CAF50&quot;));</span>
+        }
+<span class="nc" id="L1170">    }</span>
 
     public void logPlayerReconnected(String nickname) {
-<span class="nc" id="L1044">        Platform.runLater(() -&gt; {</span>
-<span class="nc" id="L1045">            addLogEntry(&quot;[✓] &quot;, nickname + &quot; has reconnected!&quot;, Color.web(&quot;#4CAF50&quot;));</span>
+<span class="nc" id="L1173">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L1174">            addLogEntry(&quot;[✓] &quot;, nickname + &quot; has reconnected!&quot;, Color.web(&quot;#4CAF50&quot;));</span>
 
-<span class="nc" id="L1047">            Label icon = new Label(&quot;✓&quot;);</span>
-<span class="nc" id="L1048">            icon.setStyle(&quot;-fx-font-size: 28; -fx-text-fill: #4CAF50;&quot;);</span>
+<span class="nc" id="L1176">            Label icon = new Label(&quot;✓&quot;);</span>
+<span class="nc" id="L1177">            icon.setStyle(&quot;-fx-font-size: 28; -fx-text-fill: #4CAF50;&quot;);</span>
 
-<span class="nc" id="L1050">            Label msg = new Label(nickname + &quot; HAS RECONNECTED!&quot;);</span>
-<span class="nc" id="L1051">            msg.setStyle(&quot;-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;&quot;);</span>
-<span class="nc bnc" id="L1052" title="All 2 branches missed.">            if (tribalFont != null) msg.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 14));</span>
+<span class="nc" id="L1179">            Label msg = new Label(nickname + &quot; HAS RECONNECTED!&quot;);</span>
+<span class="nc" id="L1180">            msg.setStyle(&quot;-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;&quot;);</span>
+<span class="nc bnc" id="L1181" title="All 2 branches missed.">            if (tribalFont != null) msg.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 14));</span>
 
-<span class="nc" id="L1054">            VBox banner = new VBox(6, icon, msg);</span>
-<span class="nc" id="L1055">            banner.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L1056">            banner.setStyle(</span>
+<span class="nc" id="L1183">            VBox banner = new VBox(6, icon, msg);</span>
+<span class="nc" id="L1184">            banner.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L1185">            banner.setStyle(</span>
                     &quot;-fx-background-color: rgba(30, 100, 30, 0.95);&quot; +
                             &quot;-fx-border-color: #4CAF50;&quot; +
                             &quot;-fx-border-width: 2;&quot; +
@@ -1061,21 +1190,21 @@ import java.util.stream.Collectors;
                             &quot;-fx-background-radius: 10;&quot; +
                             &quot;-fx-padding: 18 35 18 35;&quot;
             );
-<span class="nc" id="L1064">            banner.setMaxSize(380, Region.USE_PREF_SIZE);</span>
-<span class="nc" id="L1065">            StackPane.setAlignment(banner, Pos.CENTER);</span>
-<span class="nc" id="L1066">            banner.setOpacity(0);</span>
-<span class="nc" id="L1067">            baseStack.getChildren().add(banner);</span>
+<span class="nc" id="L1193">            banner.setMaxSize(380, Region.USE_PREF_SIZE);</span>
+<span class="nc" id="L1194">            StackPane.setAlignment(banner, Pos.CENTER);</span>
+<span class="nc" id="L1195">            banner.setOpacity(0);</span>
+<span class="nc" id="L1196">            baseStack.getChildren().add(banner);</span>
 
-<span class="nc" id="L1069">            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), banner);</span>
-<span class="nc" id="L1070">            fadeIn.setToValue(1.0);</span>
-<span class="nc" id="L1071">            PauseTransition hold = new PauseTransition(Duration.seconds(3));</span>
-<span class="nc" id="L1072">            FadeTransition fadeOut = new FadeTransition(Duration.millis(500), banner);</span>
-<span class="nc" id="L1073">            fadeOut.setToValue(0);</span>
-<span class="nc" id="L1074">            fadeOut.setOnFinished(e -&gt; baseStack.getChildren().remove(banner));</span>
+<span class="nc" id="L1198">            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), banner);</span>
+<span class="nc" id="L1199">            fadeIn.setToValue(1.0);</span>
+<span class="nc" id="L1200">            PauseTransition hold = new PauseTransition(Duration.seconds(3));</span>
+<span class="nc" id="L1201">            FadeTransition fadeOut = new FadeTransition(Duration.millis(500), banner);</span>
+<span class="nc" id="L1202">            fadeOut.setToValue(0);</span>
+<span class="nc" id="L1203">            fadeOut.setOnFinished(e -&gt; baseStack.getChildren().remove(banner));</span>
 
-<span class="nc" id="L1076">            new SequentialTransition(fadeIn, hold, fadeOut).play();</span>
-<span class="nc" id="L1077">        });</span>
-<span class="nc" id="L1078">    }</span>
+<span class="nc" id="L1205">            new SequentialTransition(fadeIn, hold, fadeOut).play();</span>
+<span class="nc" id="L1206">        });</span>
+<span class="nc" id="L1207">    }</span>
 
     /**
      * Creates a group of card views with specific sizing and spacing.
@@ -1087,35 +1216,35 @@ import java.util.stream.Collectors;
      * @return The constructed HBox.
      */
     private HBox createCardGroup(List&lt;String&gt; ids, List&lt;DealTask&gt; localDeals, int cardHeight, int spacing) {
-<span class="nc" id="L1090">        HBox hb = new HBox(spacing); hb.setAlignment(Pos.CENTER);</span>
-<span class="nc bnc" id="L1091" title="All 2 branches missed.">        if (ids != null) {</span>
-<span class="nc bnc" id="L1092" title="All 2 branches missed.">            for (String id : ids) {</span>
-<span class="nc bnc" id="L1093" title="All 2 branches missed.">                boolean isNew = !knownCardsOnBoard.contains(id);</span>
-<span class="nc bnc" id="L1094" title="All 2 branches missed.">                if (isNew) knownCardsOnBoard.add(id);</span>
+<span class="nc" id="L1219">        HBox hb = new HBox(spacing); hb.setAlignment(Pos.CENTER);</span>
+<span class="nc bnc" id="L1220" title="All 2 branches missed.">        if (ids != null) {</span>
+<span class="nc bnc" id="L1221" title="All 2 branches missed.">            for (String id : ids) {</span>
+<span class="nc bnc" id="L1222" title="All 2 branches missed.">                boolean isNew = !knownCardsOnBoard.contains(id);</span>
+<span class="nc bnc" id="L1223" title="All 2 branches missed.">                if (isNew) knownCardsOnBoard.add(id);</span>
 
-<span class="nc" id="L1096">                GameCardView cardView = new GameCardView(id, selected.contains(id), cardHeight, () -&gt; toggleCardSelection(id));</span>
+<span class="nc" id="L1225">                GameCardView cardView = new GameCardView(id, selected.contains(id), cardHeight, () -&gt; toggleCardSelection(id));</span>
 
-<span class="nc bnc" id="L1098" title="All 2 branches missed.">                if (isNew) {</span>
-<span class="nc" id="L1099">                    cardView.getCardImageView().setOpacity(0.0);</span>
-<span class="nc" id="L1100">                    localDeals.add(new DealTask(id, cardView.getCardImageView()));</span>
+<span class="nc bnc" id="L1227" title="All 2 branches missed.">                if (isNew) {</span>
+<span class="nc" id="L1228">                    cardView.getCardImageView().setOpacity(0.0);</span>
+<span class="nc" id="L1229">                    localDeals.add(new DealTask(id, cardView.getCardImageView()));</span>
                 }
-<span class="nc" id="L1102">                hb.getChildren().add(cardView);</span>
-<span class="nc" id="L1103">            }</span>
+<span class="nc" id="L1231">                hb.getChildren().add(cardView);</span>
+<span class="nc" id="L1232">            }</span>
         }
-<span class="nc" id="L1105">        return hb;</span>
+<span class="nc" id="L1234">        return hb;</span>
     }
 
     /**
      * Prepares the scene for replaying events (e.g., during reconnection).
      */
     public void prepareForReplay() {
-<span class="nc" id="L1112">        this.knownCardsOnBoard.clear();</span>
-<span class="nc" id="L1113">        this.selected.clear();</span>
-<span class="nc" id="L1114">        this.animationQueue.clear();</span>
-<span class="nc" id="L1115">        this.isAnimating = false;</span>
-<span class="nc" id="L1116">        this.isReplaying = true;</span>
-<span class="nc" id="L1117">        Platform.runLater(this::enterReplayUiState);</span>
-<span class="nc" id="L1118">    }</span>
+<span class="nc" id="L1241">        this.knownCardsOnBoard.clear();</span>
+<span class="nc" id="L1242">        this.selected.clear();</span>
+<span class="nc" id="L1243">        this.animationQueue.clear();</span>
+<span class="nc" id="L1244">        this.isAnimating = false;</span>
+<span class="nc" id="L1245">        this.isReplaying = true;</span>
+<span class="nc" id="L1246">        Platform.runLater(this::enterReplayUiState);</span>
+<span class="nc" id="L1247">    }</span>
 
     /**
      * Locks the interactive controls (board cards and action buttons) for the
@@ -1131,10 +1260,10 @@ import java.util.stream.Collectors;
         // guarantees the clear happens before any replayed log line is appended.
         // No marker line is added: this path also runs on a normal game start,
         // where a &quot;recovered/replaying&quot; note would be misleading.
-<span class="nc bnc" id="L1134" title="All 2 branches missed.">        if (logContainer != null) logContainer.getChildren().clear();</span>
-<span class="nc" id="L1135">        updateActionButtonsState();</span>
-<span class="nc" id="L1136">        armReplayWatchdog();</span>
-<span class="nc" id="L1137">    }</span>
+<span class="nc bnc" id="L1263" title="All 2 branches missed.">        if (logContainer != null) logContainer.getChildren().clear();</span>
+<span class="nc" id="L1264">        updateActionButtonsState();</span>
+<span class="nc" id="L1265">        armReplayWatchdog();</span>
+<span class="nc" id="L1266">    }</span>
 
     /**
      * (Re)starts the quiet-period timer. Each replayed event resets it; once no
@@ -1144,30 +1273,43 @@ import java.util.stream.Collectors;
      * too early would let the player act against a stale frame of the replay.
      */
     private void armReplayWatchdog() {
-<span class="nc bnc" id="L1147" title="All 2 branches missed.">        if (replayWatchdog == null) {</span>
-<span class="nc" id="L1148">            replayWatchdog = new PauseTransition(Duration.seconds(3));</span>
-<span class="nc" id="L1149">            replayWatchdog.setOnFinished(e -&gt; finishReplay());</span>
+<span class="nc bnc" id="L1276" title="All 2 branches missed.">        if (replayWatchdog == null) {</span>
+<span class="nc" id="L1277">            replayWatchdog = new PauseTransition(Duration.seconds(3));</span>
+<span class="nc" id="L1278">            replayWatchdog.setOnFinished(e -&gt; finishReplay());</span>
         }
-<span class="nc" id="L1151">        replayWatchdog.playFromStart();</span>
-<span class="nc" id="L1152">    }</span>
+<span class="nc" id="L1280">        replayWatchdog.playFromStart();</span>
+<span class="nc" id="L1281">    }</span>
 
     /** Unlocks the controls once the catch-up replay has finished. */
     private void finishReplay() {
-<span class="nc" id="L1156">        isReplaying = false;</span>
-<span class="nc" id="L1157">        updateActionButtonsState();</span>
-<span class="nc" id="L1158">    }</span>
+<span class="nc" id="L1285">        isReplaying = false;</span>
+<span class="nc" id="L1286">        updateActionButtonsState();</span>
+<span class="nc" id="L1287">    }</span>
 
     /**
      * @return {@code true} if the local player may currently issue an action,
      *         i.e. the catch-up replay is over and it is their turn.
      */
     private boolean actionsAllowed() {
-<span class="nc bnc" id="L1165" title="All 4 branches missed.">        return !isReplaying &amp;&amp; isMyTurn(lastState);</span>
+<span class="nc bnc" id="L1294" title="All 4 branches missed.">        return !isReplaying &amp;&amp; isMyTurn(lastState);</span>
+    }
+
+    /**
+     * @return {@code true} if the local player may currently select board cards
+     *         and confirm a pick. Card actions belong exclusively to the
+     *         {@link PhaseType#ACTION_RESOLUTION} phase; during
+     *         {@link PhaseType#TOTEM_PLACEMENT} (and any other phase) the player
+     *         places their totem on an offer tile instead, so cards must not be
+     *         selectable and CONFIRM PICK must stay disabled.
+     */
+    private boolean cardActionsAllowed() {
+<span class="nc bnc" id="L1306" title="All 6 branches missed.">        return actionsAllowed() &amp;&amp; lastState != null</span>
+                &amp;&amp; lastState.currentPhase == PhaseType.ACTION_RESOLUTION;
     }
 
     /** @return {@code true} if it is the local player's turn in the given state. */
     private boolean isMyTurn(SceneState s) {
-<span class="nc bnc" id="L1170" title="All 6 branches missed.">        return s != null &amp;&amp; s.myNickname != null &amp;&amp; s.myNickname.equals(s.currentPlayer);</span>
+<span class="nc bnc" id="L1312" title="All 6 branches missed.">        return s != null &amp;&amp; s.myNickname != null &amp;&amp; s.myNickname.equals(s.currentPlayer);</span>
     }
 
     /**
@@ -1178,10 +1320,12 @@ import java.util.stream.Collectors;
      * turn it is.
      */
     private void updateActionButtonsState() {
-<span class="nc" id="L1181">        boolean allowed = actionsAllowed();</span>
-<span class="nc bnc" id="L1182" title="All 4 branches missed.">        if (confirmBtn != null) confirmBtn.setDisable(!allowed);</span>
-<span class="nc bnc" id="L1183" title="All 4 branches missed.">        if (endTurnBtn != null) endTurnBtn.setDisable(!allowed);</span>
-<span class="nc" id="L1184">    }</span>
+<span class="nc" id="L1323">        boolean allowed = actionsAllowed();</span>
+        // CONFIRM PICK belongs to ACTION_RESOLUTION only: during TOTEM_PLACEMENT
+        // (or any other phase) it must stay disabled even on the player's turn.
+<span class="nc bnc" id="L1326" title="All 4 branches missed.">        if (confirmBtn != null) confirmBtn.setDisable(!cardActionsAllowed());</span>
+<span class="nc bnc" id="L1327" title="All 4 branches missed.">        if (endTurnBtn != null) endTurnBtn.setDisable(!allowed);</span>
+<span class="nc" id="L1328">    }</span>
 
     /**
      * Applies rounded corners to an ImageView.
@@ -1190,16 +1334,16 @@ import java.util.stream.Collectors;
      * @param radius    The corner radius.
      */
     private void applyRoundedCorners(ImageView imageView, double radius) {
-<span class="nc" id="L1193">        Rectangle clip = new Rectangle();</span>
-<span class="nc" id="L1194">        clip.setArcWidth(radius);</span>
-<span class="nc" id="L1195">        clip.setArcHeight(radius);</span>
-<span class="nc" id="L1196">        clip.setWidth(imageView.getBoundsInLocal().getWidth());</span>
-<span class="nc" id="L1197">        clip.setHeight(imageView.getBoundsInLocal().getHeight());</span>
-<span class="nc" id="L1198">        imageView.boundsInLocalProperty().addListener((obs, oldVal, newVal) -&gt; {</span>
-<span class="nc" id="L1199">            clip.setWidth(newVal.getWidth());</span>
-<span class="nc" id="L1200">            clip.setHeight(newVal.getHeight());</span>
-<span class="nc" id="L1201">        });</span>
-<span class="nc" id="L1202">        imageView.setClip(clip);</span>
-<span class="nc" id="L1203">    }</span>
+<span class="nc" id="L1337">        Rectangle clip = new Rectangle();</span>
+<span class="nc" id="L1338">        clip.setArcWidth(radius);</span>
+<span class="nc" id="L1339">        clip.setArcHeight(radius);</span>
+<span class="nc" id="L1340">        clip.setWidth(imageView.getBoundsInLocal().getWidth());</span>
+<span class="nc" id="L1341">        clip.setHeight(imageView.getBoundsInLocal().getHeight());</span>
+<span class="nc" id="L1342">        imageView.boundsInLocalProperty().addListener((obs, oldVal, newVal) -&gt; {</span>
+<span class="nc" id="L1343">            clip.setWidth(newVal.getWidth());</span>
+<span class="nc" id="L1344">            clip.setHeight(newVal.getHeight());</span>
+<span class="nc" id="L1345">        });</span>
+<span class="nc" id="L1346">        imageView.setClip(clip);</span>
+<span class="nc" id="L1347">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -59,6 +59,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
 <li><a href="#getInstance()" tabindex="0">getInstance()</a></li>
+<li><a href="#isEvent(java.lang.String)" tabindex="0">isEvent(String)</a></li>
 <li><a href="#format(java.lang.String)" tabindex="0">format(String)</a></li>
 <li><a href="#getSummaryCardText()" tabindex="0">getSummaryCardText()</a></li>
 <li><a href="#getFullDescription(java.lang.String)" tabindex="0">getFullDescription(String)</a></li>
@@ -126,6 +127,11 @@ detail tooltip in the GUI or the TUI <code>info</code> command.</div>
 <div class="block">Returns the text content of the Summary Card — a fixed reference panel
 summarizing round events and end-game scoring rules.</div>
 </div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isEvent(java.lang.String)" class="member-name-link">isEvent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;cardId)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Reports whether the given card is an Event card.</div>
+</div>
 </div>
 </div>
 </div>
@@ -151,6 +157,26 @@ summarizing round events and end-game scoring rules.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>the singleton instance</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="isEvent(java.lang.String)">
+<h3>isEvent</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isEvent</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;cardId)</span></div>
+<div class="block">Reports whether the given card is an Event card.
+
+<p>Event IDs use the <code>E_</code> prefix — the same discriminator this class
+relies on internally (see <a href="#format(java.lang.String)"><code>format(String)</code></a>) to route a card to its
+event formatter. Events can never be picked from the board by a player, so
+the GUI uses this to keep them unselectable.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>cardId</code> - the card identifier (e.g. <code>"E_005"</code>), may be <code>null</code></dd>
+<dt>Returns:</dt>
+<dd><code>true</code> if the ID denotes an Event card</dd>
 </dl>
 </div>
 </section>

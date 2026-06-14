@@ -242,11 +242,11 @@ public class GameScene {
 
         confirmBtn = new Button("CONFIRM PICK"); confirmBtn.setStyle(idleStyle);
         confirmBtn.setOnMouseEntered(e -> confirmBtn.setStyle(hoverStyle)); confirmBtn.setOnMouseExited(e -> confirmBtn.setStyle(idleStyle));
-        confirmBtn.setOnAction(e -> { if (isReplaying) return; controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
+        confirmBtn.setOnAction(e -> { if (!actionsAllowed()) return; controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
 
         endTurnBtn = new Button("END TURN"); endTurnBtn.setStyle(idleStyle);
         endTurnBtn.setOnMouseEntered(e -> endTurnBtn.setStyle(hoverStyle)); endTurnBtn.setOnMouseExited(e -> endTurnBtn.setStyle(idleStyle));
-        endTurnBtn.setOnAction(e -> { if (isReplaying) return; controller.moveTotem('T'); });
+        endTurnBtn.setOnAction(e -> { if (!actionsAllowed()) return; controller.moveTotem('T'); });
 
         Button summaryBtn = new Button("SUMMARY"); summaryBtn.setStyle(idleStyle);
         summaryBtn.setOnMouseEntered(e -> summaryBtn.setStyle(hoverStyle)); summaryBtn.setOnMouseExited(e -> summaryBtn.setStyle(idleStyle));
@@ -446,6 +446,7 @@ public class GameScene {
         List<DealTask> localDeals = new ArrayList<>();
         updateMainBoard(state, localDeals);
         updateHandDisplay(state);
+        updateActionButtonsState();
 
         root.applyCss();
         root.layout();
@@ -816,9 +817,7 @@ public class GameScene {
      * @param id The card ID.
      */
     private void toggleCardSelection(String id) {
-        if (isReplaying) return;
-        if (isAnimating) return;
-        if (lastState != null && !lastState.myNickname.equals(lastState.currentPlayer)) return;
+        if (isAnimating || !actionsAllowed()) return;
         if (selected.contains(id)) selected.remove(id); else selected.add(id);
         refreshAllInternal(lastState);
     }
@@ -1068,19 +1067,20 @@ public class GameScene {
      * the fast-forward event stream has gone quiet.
      */
     private void enterReplayUiState() {
-        if (confirmBtn != null) confirmBtn.setDisable(true);
-        if (endTurnBtn != null) endTurnBtn.setDisable(true);
+        updateActionButtonsState();
         armReplayWatchdog();
     }
 
     /**
-     * (Re)starts the 700 ms quiet-period timer. Each replayed event resets it;
-     * once no further event arrives within the window the replay is considered
-     * complete and controls are unlocked.
+     * (Re)starts the quiet-period timer. Each replayed event resets it; once no
+     * further event arrives within the window the replay is considered complete
+     * and the controls are unlocked. The window is generous on purpose: a long
+     * catch-up can have multi-second gaps between bursts of events, and unlocking
+     * too early would let the player act against a stale frame of the replay.
      */
     private void armReplayWatchdog() {
         if (replayWatchdog == null) {
-            replayWatchdog = new PauseTransition(Duration.millis(700));
+            replayWatchdog = new PauseTransition(Duration.seconds(3));
             replayWatchdog.setOnFinished(e -> finishReplay());
         }
         replayWatchdog.playFromStart();
@@ -1089,8 +1089,33 @@ public class GameScene {
     /** Unlocks the controls once the catch-up replay has finished. */
     private void finishReplay() {
         isReplaying = false;
-        if (confirmBtn != null) confirmBtn.setDisable(false);
-        if (endTurnBtn != null) endTurnBtn.setDisable(false);
+        updateActionButtonsState();
+    }
+
+    /**
+     * @return {@code true} if the local player may currently issue an action,
+     *         i.e. the catch-up replay is over and it is their turn.
+     */
+    private boolean actionsAllowed() {
+        return !isReplaying && isMyTurn(lastState);
+    }
+
+    /** @return {@code true} if it is the local player's turn in the given state. */
+    private boolean isMyTurn(SceneState s) {
+        return s != null && s.myNickname != null && s.myNickname.equals(s.currentPlayer);
+    }
+
+    /**
+     * Enables CONFIRM PICK / END TURN only when an action is actually allowed
+     * (not replaying and it is the local player's turn); disables them otherwise.
+     * The button state is thus a pure function of the current scene state and is
+     * refreshed on every render — during normal play this simply tracks whose
+     * turn it is.
+     */
+    private void updateActionButtonsState() {
+        boolean allowed = actionsAllowed();
+        if (confirmBtn != null) confirmBtn.setDisable(!allowed);
+        if (endTurnBtn != null) endTurnBtn.setDisable(!allowed);
     }
 
     /**

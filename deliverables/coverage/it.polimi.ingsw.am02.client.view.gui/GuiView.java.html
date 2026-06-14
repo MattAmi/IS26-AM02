@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuiView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui</a> &gt; <span class="el_source">GuiView.java</span></div><h1>GuiView.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuiView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Mesos</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui</a> &gt; <span class="el_source">GuiView.java</span></div><h1>GuiView.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui;
 
 import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.model.LobbyModel;
@@ -188,7 +188,11 @@ public class GuiView extends AbstractClientView {
      * @param tileID   The ID of the tile where the totem was placed.
      */
     @Override
-<span class="nc" id="L191">    public void onTotemPlaced(String nickname, char tileID) { refreshGameIfActive(); }</span>
+    public void onTotemPlaced(String nickname, char tileID) {
+<span class="nc" id="L192">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        if (gs != null) gs.logTotemPlaced(nickname, tileID);</span>
+<span class="nc" id="L194">        refreshGameIfActive();</span>
+<span class="nc" id="L195">    }</span>
 
     /**
      * Handles the return of a totem to the turn order track.
@@ -197,7 +201,11 @@ public class GuiView extends AbstractClientView {
      * @param turnOrderPosition The position in the turn order track.
      */
     @Override
-<span class="nc" id="L200">    public void onTotemReturned(String nickname, int turnOrderPosition) { refreshGameIfActive(); }</span>
+    public void onTotemReturned(String nickname, int turnOrderPosition) {
+<span class="nc" id="L205">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (gs != null) gs.logTotemReturned(nickname, turnOrderPosition);</span>
+<span class="nc" id="L207">        refreshGameIfActive();</span>
+<span class="nc" id="L208">    }</span>
 
     /**
      * Handles the update of the offer tiles on the board.
@@ -205,7 +213,7 @@ public class GuiView extends AbstractClientView {
      * @param offerTiles The list of updated offer tiles.
      */
     @Override
-<span class="nc" id="L208">    public void onOfferTilesUpdated(List&lt;OfferTileInfo&gt; offerTiles) { refreshGameIfActive(); }</span>
+<span class="nc" id="L216">    public void onOfferTilesUpdated(List&lt;OfferTileInfo&gt; offerTiles) { refreshGameIfActive(); }</span>
 
     /**
      * Handles the update of the game board.
@@ -215,7 +223,7 @@ public class GuiView extends AbstractClientView {
      * @param deckRemainingCount The number of cards remaining in the deck.
      */
     @Override
-<span class="nc" id="L218">    public void onBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow, int deckRemainingCount) { refreshGameIfActive(); }</span>
+<span class="nc" id="L226">    public void onBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow, int deckRemainingCount) { refreshGameIfActive(); }</span>
 
     /**
      * Handles a change in the game era.
@@ -226,13 +234,13 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onEraChanged(Era newEra, List&lt;String&gt; newUpperRowBuildings, List&lt;String&gt; newLowerRowBuildings) {
-<span class="nc" id="L229">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L230" title="All 2 branches missed.">        if (gs != null) {</span>
-<span class="nc" id="L231">            gs.showNewEraAnimation(newEra, newUpperRowBuildings, newLowerRowBuildings);</span>
+<span class="nc" id="L237">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">        if (gs != null) {</span>
+<span class="nc" id="L239">            gs.showNewEraAnimation(newEra, newUpperRowBuildings, newLowerRowBuildings);</span>
         } else {
-<span class="nc" id="L233">            refreshGameIfActive();</span>
+<span class="nc" id="L241">            refreshGameIfActive();</span>
         }
-<span class="nc" id="L235">    }</span>
+<span class="nc" id="L243">    }</span>
 
     /**
      * Handles the initialization of pick limits for a player.
@@ -242,7 +250,7 @@ public class GuiView extends AbstractClientView {
      * @param remainingLower The remaining picks from the lower row.
      */
     @Override
-<span class="nc" id="L245">    public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }</span>
+<span class="nc" id="L253">    public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }</span>
 
     /**
      * Handles the update of pick limits for a player.
@@ -252,7 +260,7 @@ public class GuiView extends AbstractClientView {
      * @param remainingLower The remaining picks from the lower row.
      */
     @Override
-<span class="nc" id="L255">    public void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }</span>
+<span class="nc" id="L263">    public void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }</span>
 
     /**
      * Handles the acquisition of a card by a player.
@@ -264,9 +272,12 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
-<span class="nc" id="L267">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L268" title="All 2 branches missed.">        if (gs != null) gs.animateCardTaken(nickname, cardID, cardType, sourceRow);</span>
-<span class="nc" id="L269">    }</span>
+<span class="nc" id="L275">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        if (gs != null) {</span>
+<span class="nc" id="L277">            gs.logCardTaken(nickname, cardID);</span>
+<span class="nc" id="L278">            gs.animateCardTaken(nickname, cardID, cardType, sourceRow);</span>
+        }
+<span class="nc" id="L280">    }</span>
 
     /**
      * Handles the start of an extra turn for a player.
@@ -276,7 +287,11 @@ public class GuiView extends AbstractClientView {
      * @param remainingLower The remaining picks from the lower row.
      */
     @Override
-<span class="nc" id="L279">    public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }</span>
+    public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+<span class="nc" id="L291">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        if (gs != null) gs.logExtraTurnStarted(nickname, remainingUpper, remainingLower);</span>
+<span class="nc" id="L293">        refreshGameIfActive();</span>
+<span class="nc" id="L294">    }</span>
 
     /**
      * Handles the end of an extra turn for a player.
@@ -284,7 +299,11 @@ public class GuiView extends AbstractClientView {
      * @param nickname The nickname of the player.
      */
     @Override
-<span class="nc" id="L287">    public void onExtraTurnEnded(String nickname) { refreshGameIfActive(); }</span>
+    public void onExtraTurnEnded(String nickname) {
+<span class="nc" id="L303">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L304" title="All 2 branches missed.">        if (gs != null) gs.logExtraTurnEnded(nickname);</span>
+<span class="nc" id="L305">        refreshGameIfActive();</span>
+<span class="nc" id="L306">    }</span>
 
     /**
      * Handles the normal end of the game.
@@ -294,8 +313,8 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameEnded(List&lt;String&gt; winners, List&lt;PlayerFinalScore&gt; finalRankings) {
-<span class="nc" id="L297">        sceneRouter.showGameOverPopup(&quot;Game Over&quot;, &quot;Winners: &quot; + String.join(&quot;, &quot;, winners));</span>
-<span class="nc" id="L298">    }</span>
+<span class="nc" id="L316">        sceneRouter.showGameOverPopup(&quot;Game Over&quot;, &quot;Winners: &quot; + String.join(&quot;, &quot;, winners));</span>
+<span class="nc" id="L317">    }</span>
 
     /**
      * Handles the disconnection of a player.
@@ -304,10 +323,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerDisconnected(String nickname) {
-<span class="nc" id="L307">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L308" title="All 2 branches missed.">        if (gs != null) gs.setPlayerOffline(nickname);</span>
-<span class="nc" id="L309">        sceneRouter.showPlayerDisconnectedPopup(nickname);</span>
-<span class="nc" id="L310">    }</span>
+<span class="nc" id="L326">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">        if (gs != null) gs.setPlayerOffline(nickname);</span>
+<span class="nc" id="L328">        sceneRouter.showPlayerDisconnectedPopup(nickname);</span>
+<span class="nc" id="L329">    }</span>
 
     /**
      * Handles the aborting of the game.
@@ -316,16 +335,16 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameAborted(String lastManStanding) {
-<span class="nc" id="L319">        sceneRouter.showGameOverPopup(&quot;Game Aborted&quot;, &quot;Game ended. Last standing: &quot; + lastManStanding);</span>
-<span class="nc" id="L320">    }</span>
+<span class="nc" id="L338">        sceneRouter.showGameOverPopup(&quot;Game Aborted&quot;, &quot;Game ended. Last standing: &quot; + lastManStanding);</span>
+<span class="nc" id="L339">    }</span>
 
     /**
      * Handles a failure to recover the game state.
      */
     @Override
     public void onGameRecoveryFailed() {
-<span class="nc" id="L327">        sceneRouter.showGameOverPopup(&quot;Error&quot;, &quot;Recovery failed. Not all players reconnected in time.&quot;);</span>
-<span class="nc" id="L328">    }</span>
+<span class="nc" id="L346">        sceneRouter.showGameOverPopup(&quot;Error&quot;, &quot;Recovery failed. Not all players reconnected in time.&quot;);</span>
+<span class="nc" id="L347">    }</span>
 
     /**
      * Handles the reconnection of a player.
@@ -334,12 +353,12 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerReconnected(String nickname) {
-<span class="nc" id="L337">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L338" title="All 2 branches missed.">        if (gs != null) {</span>
-<span class="nc" id="L339">            gs.setPlayerOnline(nickname);</span>
-<span class="nc" id="L340">            gs.logPlayerReconnected(nickname);</span>
+<span class="nc" id="L356">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (gs != null) {</span>
+<span class="nc" id="L358">            gs.setPlayerOnline(nickname);</span>
+<span class="nc" id="L359">            gs.logPlayerReconnected(nickname);</span>
         }
-<span class="nc" id="L342">    }</span>
+<span class="nc" id="L361">    }</span>
 
     /**
      * Handles an error message from the server.
@@ -348,10 +367,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onError(String message) {
-<span class="nc" id="L351">        sceneRouter.showToast(&quot;Error&quot;, message, Alert.AlertType.WARNING);</span>
-<span class="nc" id="L352">        LobbyScene ls = sceneRouter.getLobbyScene();</span>
-<span class="nc bnc" id="L353" title="All 2 branches missed.">        if (ls != null) ls.onNicknameRejected();</span>
-<span class="nc" id="L354">    }</span>
+<span class="nc" id="L370">        sceneRouter.showToast(&quot;Error&quot;, message, Alert.AlertType.WARNING);</span>
+<span class="nc" id="L371">        LobbyScene ls = sceneRouter.getLobbyScene();</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">        if (ls != null) ls.onNicknameRejected();</span>
+<span class="nc" id="L373">    }</span>
 
     /**
      * Handles a change in a player's resource value.
@@ -362,10 +381,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-<span class="nc" id="L365">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L366" title="All 2 branches missed.">        if (gs != null) gs.logResourceChanged(nickname, resource, newValue);</span>
-<span class="nc" id="L367">        refreshGameIfActive();</span>
-<span class="nc" id="L368">    }</span>
+<span class="nc" id="L384">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L385" title="All 2 branches missed.">        if (gs != null) gs.logResourceChanged(nickname, resource, newValue);</span>
+<span class="nc" id="L386">        refreshGameIfActive();</span>
+<span class="nc" id="L387">    }</span>
 
     /**
      * Handles the resolution of an event.
@@ -375,10 +394,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onEventResolved(String eventID, String eventName) {
-<span class="nc" id="L378">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L379" title="All 2 branches missed.">        if (gs != null) gs.logEventResolved(eventName);</span>
-<span class="nc" id="L380">        refreshGameIfActive();</span>
-<span class="nc" id="L381">    }</span>
+<span class="nc" id="L397">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">        if (gs != null) gs.logEventResolved(eventName);</span>
+<span class="nc" id="L399">        refreshGameIfActive();</span>
+<span class="nc" id="L400">    }</span>
 
     /**
      * Handles the start of the auto-player timer for a player.
@@ -387,9 +406,9 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onAutoPlayerTimerStarted(String nickname, long seconds) {
-<span class="nc" id="L390">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L391" title="All 2 branches missed.">        if (gs != null) gs.logAutoPlayerTimerStarted(nickname, seconds);</span>
-<span class="nc" id="L392">    }</span>
+<span class="nc" id="L409">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">        if (gs != null) gs.logAutoPlayerTimerStarted(nickname, seconds);</span>
+<span class="nc" id="L411">    }</span>
 
     /**
      * Handles the invocation of the auto-player for a player.
@@ -398,41 +417,41 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onAutoPlayerInvoked(String nickname) {
-<span class="nc" id="L401">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L402" title="All 2 branches missed.">        if (gs != null) gs.logAutoPlayerInvoked(nickname);</span>
-<span class="nc" id="L403">    }</span>
+<span class="nc" id="L420">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L421" title="All 2 branches missed.">        if (gs != null) gs.logAutoPlayerInvoked(nickname);</span>
+<span class="nc" id="L422">    }</span>
 
     /**
      * Handles the loss of connection to the server.
      */
     @Override
     public void onGlobalTimerStarted(long seconds) {
-<span class="nc" id="L410">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L411" title="All 2 branches missed.">        if (gs != null) gs.showForfeitBanner(seconds);</span>
-<span class="nc" id="L412">    }</span>
+<span class="nc" id="L429">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">        if (gs != null) gs.showForfeitBanner(seconds);</span>
+<span class="nc" id="L431">    }</span>
 
     @Override
     public void onGlobalTimerCancelled() {
-<span class="nc" id="L416">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L417" title="All 2 branches missed.">        if (gs != null) gs.dismissForfeitBanner();</span>
-<span class="nc" id="L418">    }</span>
+<span class="nc" id="L435">        GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L436" title="All 2 branches missed.">        if (gs != null) gs.dismissForfeitBanner();</span>
+<span class="nc" id="L437">    }</span>
 
     @Override
-<span class="nc" id="L421">    public void onConnectionLost() { sceneRouter.showConnectionLost(); }</span>
+<span class="nc" id="L440">    public void onConnectionLost() { sceneRouter.showConnectionLost(); }</span>
 
     /**
      * Handles the restoration of connection to the server.
      */
     @Override
     public void onConnectionRestored() {
-<span class="nc" id="L428">        sceneRouter.hideModal();</span>
-<span class="nc" id="L429">        sceneRouter.showToast(&quot;Connected&quot;, &quot;You're back online!&quot;, Alert.AlertType.INFORMATION);</span>
-<span class="nc" id="L430">    }</span>
+<span class="nc" id="L447">        sceneRouter.hideModal();</span>
+<span class="nc" id="L448">        sceneRouter.showToast(&quot;Connected&quot;, &quot;You're back online!&quot;, Alert.AlertType.INFORMATION);</span>
+<span class="nc" id="L449">    }</span>
 
     /**
      * Handles the return to the lobby screen.
      */
     @Override
-<span class="nc" id="L436">    public void onReturnToLobby() { sceneRouter.showGameMenuScene(); }</span>
+<span class="nc" id="L455">    public void onReturnToLobby() { sceneRouter.showGameMenuScene(); }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SceneRouter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui</a> &gt; <span class="el_source">SceneRouter.java</span></div><h1>SceneRouter.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SceneRouter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Mesos</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui</a> &gt; <span class="el_source">SceneRouter.java</span></div><h1>SceneRouter.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui;
 
 import it.polimi.ingsw.am02.client.model.GameModel;
 import it.polimi.ingsw.am02.client.network.ServerProxy;
@@ -106,8 +106,17 @@ public class SceneRouter {
      * Shows the primary stage.
      */
     public void show() {
-<span class="nc" id="L109">        runOnUi(primaryStage::show);</span>
-<span class="nc" id="L110">    }</span>
+<span class="nc" id="L109">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L110">            primaryStage.show();</span>
+            // Bring the window (and thus the connection popup) to the foreground so
+            // the user doesn't have to hunt for it behind other windows at launch.
+<span class="nc" id="L113">            primaryStage.setIconified(false);</span>
+<span class="nc" id="L114">            primaryStage.setAlwaysOnTop(true);</span>
+<span class="nc" id="L115">            primaryStage.toFront();</span>
+<span class="nc" id="L116">            primaryStage.requestFocus();</span>
+<span class="nc" id="L117">            primaryStage.setAlwaysOnTop(false);</span>
+<span class="nc" id="L118">        });</span>
+<span class="nc" id="L119">    }</span>
 
     /**
      * Switches the base view to a new node.
@@ -115,8 +124,8 @@ public class SceneRouter {
      * @param newView The new Region to display.
      */
     private void switchView(Region newView) {
-<span class="nc" id="L118">        runOnUi(() -&gt; baseLayer.getChildren().setAll(newView));</span>
-<span class="nc" id="L119">    }</span>
+<span class="nc" id="L127">        runOnUi(() -&gt; baseLayer.getChildren().setAll(newView));</span>
+<span class="nc" id="L128">    }</span>
 
     /**
      * Displays the project information scene.
@@ -124,42 +133,42 @@ public class SceneRouter {
      * @param onExit Callback to execute when exiting the scene.
      */
     public void showProjectInfoScene(Runnable onExit) {
-<span class="nc" id="L127">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L128">            this.gameScene = null;</span>
-<span class="nc" id="L129">            this.lobbyScene = null;</span>
-<span class="nc" id="L130">            this.lobbyListScene = null;</span>
-<span class="nc" id="L131">            ProjectInfoScene infoScene = new ProjectInfoScene();</span>
-<span class="nc" id="L132">            switchView(infoScene.buildNode(onExit));</span>
-<span class="nc" id="L133">        });</span>
-<span class="nc" id="L134">    }</span>
+<span class="nc" id="L136">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L137">            this.gameScene = null;</span>
+<span class="nc" id="L138">            this.lobbyScene = null;</span>
+<span class="nc" id="L139">            this.lobbyListScene = null;</span>
+<span class="nc" id="L140">            ProjectInfoScene infoScene = new ProjectInfoScene();</span>
+<span class="nc" id="L141">            switchView(infoScene.buildNode(onExit));</span>
+<span class="nc" id="L142">        });</span>
+<span class="nc" id="L143">    }</span>
 
     /**
      * Displays the introduction scene.
      */
     public void showIntroScene() {
-<span class="nc" id="L140">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L141">            primaryStage.setResizable(true);</span>
-<span class="nc" id="L142">            primaryStage.setFullScreen(true);</span>
-<span class="nc" id="L143">            primaryStage.centerOnScreen();</span>
-<span class="nc" id="L144">            switchView(new IntroScene().buildNode(this::showGameMenuScene));</span>
-<span class="nc" id="L145">        });</span>
-<span class="nc" id="L146">    }</span>
+<span class="nc" id="L149">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L150">            primaryStage.setResizable(true);</span>
+<span class="nc" id="L151">            primaryStage.setFullScreen(true);</span>
+<span class="nc" id="L152">            primaryStage.centerOnScreen();</span>
+<span class="nc" id="L153">            switchView(new IntroScene().buildNode(this::showGameMenuScene));</span>
+<span class="nc" id="L154">        });</span>
+<span class="nc" id="L155">    }</span>
 
     /**
      * Displays the game menu scene.
      */
     public void showGameMenuScene() {
-<span class="nc" id="L152">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L153">            this.gameScene = null;</span>
-<span class="nc" id="L154">            this.lobbyScene = null;</span>
-<span class="nc" id="L155">            this.lobbyListScene = null;</span>
-<span class="nc" id="L156">            switchView(new GameMenuScene().buildNode(</span>
+<span class="nc" id="L161">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L162">            this.gameScene = null;</span>
+<span class="nc" id="L163">            this.lobbyScene = null;</span>
+<span class="nc" id="L164">            this.lobbyListScene = null;</span>
+<span class="nc" id="L165">            switchView(new GameMenuScene().buildNode(</span>
                     guiController,
-<span class="nc" id="L158">                    () -&gt; showLobbyListScene(guiController.getAvailableLobbies()),</span>
-<span class="nc" id="L159">                    msg -&gt; showToast(&quot;Error&quot;, msg, Alert.AlertType.WARNING)</span>
+<span class="nc" id="L167">                    () -&gt; showLobbyListScene(guiController.getAvailableLobbies()),</span>
+<span class="nc" id="L168">                    msg -&gt; showToast(&quot;Error&quot;, msg, Alert.AlertType.WARNING)</span>
             ));
-<span class="nc" id="L161">        });</span>
-<span class="nc" id="L162">    }</span>
+<span class="nc" id="L170">        });</span>
+<span class="nc" id="L171">    }</span>
 
     /**
      * Displays the lobby list scene.
@@ -167,14 +176,14 @@ public class SceneRouter {
      * @param lobbies The list of initial lobbies to display.
      */
     public void showLobbyListScene(List&lt;LobbyInfo&gt; lobbies) {
-<span class="nc" id="L170">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L171">            this.gameScene = null;</span>
-<span class="nc" id="L172">            this.lobbyScene = null;</span>
-<span class="nc" id="L173">            this.lobbyListScene = new LobbyListScene();</span>
-<span class="nc" id="L174">            switchView(lobbyListScene.buildNode(guiController, this::showGameMenuScene));</span>
-<span class="nc bnc" id="L175" title="All 2 branches missed.">            if (lobbies != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies);</span>
-<span class="nc" id="L176">        });</span>
-<span class="nc" id="L177">    }</span>
+<span class="nc" id="L179">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L180">            this.gameScene = null;</span>
+<span class="nc" id="L181">            this.lobbyScene = null;</span>
+<span class="nc" id="L182">            this.lobbyListScene = new LobbyListScene();</span>
+<span class="nc" id="L183">            switchView(lobbyListScene.buildNode(guiController, this::showGameMenuScene));</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">            if (lobbies != null) lobbyListScene.onAvailableLobbiesUpdated(lobbies);</span>
+<span class="nc" id="L185">        });</span>
+<span class="nc" id="L186">    }</span>
 
     /**
      * Displays the current lobby scene.
@@ -182,14 +191,14 @@ public class SceneRouter {
      * @param currentLobby The information of the lobby to display.
      */
     public void showLobbyScene(LobbyInfo currentLobby) {
-<span class="nc" id="L185">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L186">            this.gameScene = null;</span>
-<span class="nc" id="L187">            this.lobbyListScene = null;</span>
-<span class="nc" id="L188">            this.lobbyScene = new LobbyScene();</span>
-<span class="nc" id="L189">            switchView(lobbyScene.buildNode(guiController));</span>
-<span class="nc bnc" id="L190" title="All 2 branches missed.">            if (currentLobby != null) lobbyScene.updateLobbyState(currentLobby);</span>
-<span class="nc" id="L191">        });</span>
-<span class="nc" id="L192">    }</span>
+<span class="nc" id="L194">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L195">            this.gameScene = null;</span>
+<span class="nc" id="L196">            this.lobbyListScene = null;</span>
+<span class="nc" id="L197">            this.lobbyScene = new LobbyScene();</span>
+<span class="nc" id="L198">            switchView(lobbyScene.buildNode(guiController));</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            if (currentLobby != null) lobbyScene.updateLobbyState(currentLobby);</span>
+<span class="nc" id="L200">        });</span>
+<span class="nc" id="L201">    }</span>
 
     /**
      * Switches to the game scene.
@@ -197,37 +206,37 @@ public class SceneRouter {
      * @param gameModel The game model to use for the scene.
      */
     public void switchToGameScene(GameModel gameModel) {
-<span class="nc" id="L200">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L201">            this.lobbyScene = null;</span>
-<span class="nc" id="L202">            this.lobbyListScene = null;</span>
-<span class="nc" id="L203">            this.gameScene = new GameScene();</span>
-<span class="nc" id="L204">            primaryStage.setResizable(true);</span>
-<span class="nc" id="L205">            primaryStage.centerOnScreen();</span>
-<span class="nc" id="L206">            switchView(this.gameScene.buildNode(guiController, this::showInGameMenu, this::showSummaryCard));</span>
-<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (gameModel != null) this.gameScene.refreshAll(gameModel);</span>
-<span class="nc" id="L208">        });</span>
-<span class="nc" id="L209">    }</span>
+<span class="nc" id="L209">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L210">            this.lobbyScene = null;</span>
+<span class="nc" id="L211">            this.lobbyListScene = null;</span>
+<span class="nc" id="L212">            this.gameScene = new GameScene();</span>
+<span class="nc" id="L213">            primaryStage.setResizable(true);</span>
+<span class="nc" id="L214">            primaryStage.centerOnScreen();</span>
+<span class="nc" id="L215">            switchView(this.gameScene.buildNode(guiController, this::showInGameMenu, this::showSummaryCard));</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">            if (gameModel != null) this.gameScene.refreshAll(gameModel);</span>
+<span class="nc" id="L217">        });</span>
+<span class="nc" id="L218">    }</span>
 
     /**
      * Returns the current LobbyListScene instance.
      *
      * @return The LobbyListScene or null if not active.
      */
-<span class="nc" id="L216">    public LobbyListScene getLobbyListScene() { return lobbyListScene; }</span>
+<span class="nc" id="L225">    public LobbyListScene getLobbyListScene() { return lobbyListScene; }</span>
 
     /**
      * Returns the current LobbyScene instance.
      *
      * @return The LobbyScene or null if not active.
      */
-<span class="nc" id="L223">    public LobbyScene getLobbyScene() { return lobbyScene; }</span>
+<span class="nc" id="L232">    public LobbyScene getLobbyScene() { return lobbyScene; }</span>
 
     /**
      * Returns the current GameScene instance.
      *
      * @return The GameScene or null if not active.
      */
-<span class="nc" id="L230">    public GameScene getGameScene() { return gameScene; }</span>
+<span class="nc" id="L239">    public GameScene getGameScene() { return gameScene; }</span>
 
     /**
      * Shows a toast notification.
@@ -237,19 +246,19 @@ public class SceneRouter {
      * @param type    The type of alert for styling purposes.
      */
     public void showToast(String title, String content, Alert.AlertType type) {
-<span class="nc" id="L240">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L241">            VBox toast = new VBox(5);</span>
-<span class="nc bnc" id="L242" title="All 4 branches missed.">            String borderColor = type == Alert.AlertType.ERROR ? &quot;#ff4444&quot; : (type == Alert.AlertType.WARNING ? &quot;#ffbb33&quot; : &quot;#00C851&quot;);</span>
-<span class="nc" id="L243">            toast.setStyle(&quot;-fx-background-color: #2b2b2b; -fx-border-color: &quot; + borderColor + &quot;; -fx-border-width: 0 0 0 4; -fx-padding: 15;&quot;);</span>
-<span class="nc" id="L244">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-weight: bold; -fx-text-fill: white;&quot;);</span>
-<span class="nc" id="L245">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: lightgray;&quot;); cL.setWrapText(true);</span>
-<span class="nc" id="L246">            toast.getChildren().addAll(tL, cL);</span>
-<span class="nc" id="L247">            toastLayer.getChildren().add(toast);</span>
-<span class="nc" id="L248">            PauseTransition delay = new PauseTransition(Duration.seconds(3));</span>
-<span class="nc" id="L249">            delay.setOnFinished(e -&gt; toastLayer.getChildren().remove(toast));</span>
-<span class="nc" id="L250">            delay.play();</span>
-<span class="nc" id="L251">        });</span>
-<span class="nc" id="L252">    }</span>
+<span class="nc" id="L249">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L250">            VBox toast = new VBox(5);</span>
+<span class="nc bnc" id="L251" title="All 4 branches missed.">            String borderColor = type == Alert.AlertType.ERROR ? &quot;#ff4444&quot; : (type == Alert.AlertType.WARNING ? &quot;#ffbb33&quot; : &quot;#00C851&quot;);</span>
+<span class="nc" id="L252">            toast.setStyle(&quot;-fx-background-color: #2b2b2b; -fx-border-color: &quot; + borderColor + &quot;; -fx-border-width: 0 0 0 4; -fx-padding: 15;&quot;);</span>
+<span class="nc" id="L253">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-weight: bold; -fx-text-fill: white;&quot;);</span>
+<span class="nc" id="L254">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: lightgray;&quot;); cL.setWrapText(true);</span>
+<span class="nc" id="L255">            toast.getChildren().addAll(tL, cL);</span>
+<span class="nc" id="L256">            toastLayer.getChildren().add(toast);</span>
+<span class="nc" id="L257">            PauseTransition delay = new PauseTransition(Duration.seconds(3));</span>
+<span class="nc" id="L258">            delay.setOnFinished(e -&gt; toastLayer.getChildren().remove(toast));</span>
+<span class="nc" id="L259">            delay.play();</span>
+<span class="nc" id="L260">        });</span>
+<span class="nc" id="L261">    }</span>
 
     /**
      * Displays a blocking alert modal.
@@ -259,19 +268,19 @@ public class SceneRouter {
      * @param type    The alert type.
      */
     public void showBlockingAlert(String title, String content, Alert.AlertType type) {
-<span class="nc" id="L262">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L263">            VBox alertBox = new VBox(20);</span>
-<span class="nc" id="L264">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(400, 200);</span>
-<span class="nc" id="L265">            alertBox.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;&quot;);</span>
-<span class="nc" id="L266">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
-<span class="nc" id="L267">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: white;&quot;); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L268">            Button okBtn = new Button(&quot;OK&quot;); okBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white;&quot;);</span>
-<span class="nc" id="L269">            okBtn.setOnAction(e -&gt; hideModal());</span>
-<span class="nc" id="L270">            alertBox.getChildren().addAll(tL, cL, okBtn);</span>
-<span class="nc" id="L271">            modalLayer.getChildren().setAll(alertBox);</span>
-<span class="nc" id="L272">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L273">        });</span>
-<span class="nc" id="L274">    }</span>
+<span class="nc" id="L271">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L272">            VBox alertBox = new VBox(20);</span>
+<span class="nc" id="L273">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(400, 200);</span>
+<span class="nc" id="L274">            alertBox.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;&quot;);</span>
+<span class="nc" id="L275">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
+<span class="nc" id="L276">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: white;&quot;); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L277">            Button okBtn = new Button(&quot;OK&quot;); okBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white;&quot;);</span>
+<span class="nc" id="L278">            okBtn.setOnAction(e -&gt; hideModal());</span>
+<span class="nc" id="L279">            alertBox.getChildren().addAll(tL, cL, okBtn);</span>
+<span class="nc" id="L280">            modalLayer.getChildren().setAll(alertBox);</span>
+<span class="nc" id="L281">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L282">        });</span>
+<span class="nc" id="L283">    }</span>
 
     /**
      * Displays a game over popup with options to return to menu or exit.
@@ -280,71 +289,71 @@ public class SceneRouter {
      * @param content The message content.
      */
     public void showGameOverPopup(String title, String content) {
-<span class="nc" id="L283">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L284">            VBox alertBox = new VBox(20);</span>
-<span class="nc" id="L285">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(450, 250);</span>
-<span class="nc" id="L286">            alertBox.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
+<span class="nc" id="L292">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L293">            VBox alertBox = new VBox(20);</span>
+<span class="nc" id="L294">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(450, 250);</span>
+<span class="nc" id="L295">            alertBox.setStyle(&quot;-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
 
-<span class="nc" id="L288">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
-<span class="nc" id="L289">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 14px;&quot;); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L297">            Label tL = new Label(title); tL.setStyle(&quot;-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;&quot;);</span>
+<span class="nc" id="L298">            Label cL = new Label(content); cL.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 14px;&quot;); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);</span>
 
-<span class="nc" id="L291">            HBox buttons = new HBox(20);</span>
-<span class="nc" id="L292">            buttons.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L300">            HBox buttons = new HBox(20);</span>
+<span class="nc" id="L301">            buttons.setAlignment(Pos.CENTER);</span>
 
-<span class="nc" id="L294">            Button menuBtn = new Button(&quot;RETURN TO MENU&quot;);</span>
-<span class="nc" id="L295">            menuBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
-<span class="nc" id="L296">            menuBtn.setPrefHeight(40);</span>
-<span class="nc" id="L297">            menuBtn.setOnAction(e -&gt; {</span>
-<span class="nc" id="L298">                hideModal();</span>
-<span class="nc" id="L299">                guiController.requestReturnToLobby();</span>
-<span class="nc" id="L300">            });</span>
+<span class="nc" id="L303">            Button menuBtn = new Button(&quot;RETURN TO MENU&quot;);</span>
+<span class="nc" id="L304">            menuBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L305">            menuBtn.setPrefHeight(40);</span>
+<span class="nc" id="L306">            menuBtn.setOnAction(e -&gt; {</span>
+<span class="nc" id="L307">                hideModal();</span>
+<span class="nc" id="L308">                guiController.requestReturnToLobby();</span>
+<span class="nc" id="L309">            });</span>
 
-<span class="nc" id="L302">            Button exitBtn = new Button(&quot;EXIT GAME&quot;);</span>
-<span class="nc" id="L303">            exitBtn.setStyle(&quot;-fx-base: #8B0000; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
-<span class="nc" id="L304">            exitBtn.setPrefHeight(40);</span>
-<span class="nc" id="L305">            exitBtn.setOnAction(e -&gt; System.exit(0));</span>
+<span class="nc" id="L311">            Button exitBtn = new Button(&quot;EXIT GAME&quot;);</span>
+<span class="nc" id="L312">            exitBtn.setStyle(&quot;-fx-base: #8B0000; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L313">            exitBtn.setPrefHeight(40);</span>
+<span class="nc" id="L314">            exitBtn.setOnAction(e -&gt; System.exit(0));</span>
 
-<span class="nc" id="L307">            buttons.getChildren().addAll(menuBtn, exitBtn);</span>
-<span class="nc" id="L308">            alertBox.getChildren().addAll(tL, cL, buttons);</span>
+<span class="nc" id="L316">            buttons.getChildren().addAll(menuBtn, exitBtn);</span>
+<span class="nc" id="L317">            alertBox.getChildren().addAll(tL, cL, buttons);</span>
 
-<span class="nc" id="L310">            modalLayer.getChildren().setAll(alertBox);</span>
-<span class="nc" id="L311">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L312">        });</span>
-<span class="nc" id="L313">    }</span>
+<span class="nc" id="L319">            modalLayer.getChildren().setAll(alertBox);</span>
+<span class="nc" id="L320">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L321">        });</span>
+<span class="nc" id="L322">    }</span>
 
     /**
      * Displays the in-game menu overlay.
      */
     public void showInGameMenu() {
-<span class="nc" id="L319">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L320">            InGameMenuOverlay overlay = new InGameMenuOverlay();</span>
-<span class="nc" id="L321">            VBox node = overlay.buildNode(guiController, this::hideModal, modalLayer);</span>
-<span class="nc" id="L322">            modalLayer.getChildren().setAll(node);</span>
-<span class="nc" id="L323">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L324">        });</span>
-<span class="nc" id="L325">    }</span>
+<span class="nc" id="L328">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L329">            InGameMenuOverlay overlay = new InGameMenuOverlay();</span>
+<span class="nc" id="L330">            VBox node = overlay.buildNode(guiController, this::hideModal, modalLayer);</span>
+<span class="nc" id="L331">            modalLayer.getChildren().setAll(node);</span>
+<span class="nc" id="L332">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L333">        });</span>
+<span class="nc" id="L334">    }</span>
 
     /**
      * Displays the summary card overlay.
      */
     public void showSummaryCard() {
-<span class="nc" id="L331">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L332">            SummaryCardOverlay overlay = new SummaryCardOverlay();</span>
-<span class="nc" id="L333">            VBox node = overlay.buildNode(this::hideModal);</span>
-<span class="nc" id="L334">            modalLayer.getChildren().setAll(node);</span>
-<span class="nc" id="L335">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L336">        });</span>
-<span class="nc" id="L337">    }</span>
+<span class="nc" id="L340">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L341">            SummaryCardOverlay overlay = new SummaryCardOverlay();</span>
+<span class="nc" id="L342">            VBox node = overlay.buildNode(this::hideModal);</span>
+<span class="nc" id="L343">            modalLayer.getChildren().setAll(node);</span>
+<span class="nc" id="L344">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L345">        });</span>
+<span class="nc" id="L346">    }</span>
 
     /**
      * Hides any visible modal overlay.
      */
     public void hideModal() {
-<span class="nc" id="L343">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L344">            modalLayer.setVisible(false);</span>
-<span class="nc" id="L345">            modalLayer.getChildren().clear();</span>
-<span class="nc" id="L346">        });</span>
-<span class="nc" id="L347">    }</span>
+<span class="nc" id="L352">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L353">            modalLayer.setVisible(false);</span>
+<span class="nc" id="L354">            modalLayer.getChildren().clear();</span>
+<span class="nc" id="L355">        });</span>
+<span class="nc" id="L356">    }</span>
 
     /**
      * Displays a popup when a player disconnects.
@@ -352,39 +361,39 @@ public class SceneRouter {
      * @param n The nickname of the disconnected player.
      */
     public void showPlayerDisconnectedPopup(String n) {
-<span class="nc" id="L355">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L356">            VBox alertBox = new VBox(20);</span>
-<span class="nc" id="L357">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(420, 220);</span>
-<span class="nc" id="L358">            alertBox.setStyle(&quot;-fx-background-color: #1C1C1C; -fx-border-color: #E67E22; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
-<span class="nc" id="L359">            Label icon = new Label(&quot;📡&quot;); icon.setStyle(&quot;-fx-font-size: 32;&quot;);</span>
-<span class="nc" id="L360">            Label title = new Label(&quot;Player Disconnected&quot;); title.setStyle(&quot;-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #E67E22;&quot;);</span>
-<span class="nc" id="L361">            Label body = new Label(&quot;\&quot;&quot; + n + &quot;\&quot; has disconnected from the game.\nThe game will continue with an auto-player.&quot;);</span>
-<span class="nc" id="L362">            body.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13;&quot;); body.setWrapText(true); body.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L363">            Button okBtn = new Button(&quot;OK&quot;); okBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
-<span class="nc" id="L364">            okBtn.setPrefSize(100, 36); okBtn.setOnAction(e -&gt; hideModal());</span>
-<span class="nc" id="L365">            alertBox.getChildren().addAll(icon, title, body, okBtn);</span>
-<span class="nc" id="L366">            modalLayer.getChildren().setAll(alertBox);</span>
-<span class="nc" id="L367">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L368">        });</span>
-<span class="nc" id="L369">    }</span>
+<span class="nc" id="L364">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L365">            VBox alertBox = new VBox(20);</span>
+<span class="nc" id="L366">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(420, 220);</span>
+<span class="nc" id="L367">            alertBox.setStyle(&quot;-fx-background-color: #1C1C1C; -fx-border-color: #E67E22; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
+<span class="nc" id="L368">            Label icon = new Label(&quot;📡&quot;); icon.setStyle(&quot;-fx-font-size: 32;&quot;);</span>
+<span class="nc" id="L369">            Label title = new Label(&quot;Player Disconnected&quot;); title.setStyle(&quot;-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #E67E22;&quot;);</span>
+<span class="nc" id="L370">            Label body = new Label(&quot;\&quot;&quot; + n + &quot;\&quot; has disconnected from the game.\nThe game will continue with an auto-player.&quot;);</span>
+<span class="nc" id="L371">            body.setStyle(&quot;-fx-text-fill: white; -fx-font-size: 13;&quot;); body.setWrapText(true); body.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L372">            Button okBtn = new Button(&quot;OK&quot;); okBtn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L373">            okBtn.setPrefSize(100, 36); okBtn.setOnAction(e -&gt; hideModal());</span>
+<span class="nc" id="L374">            alertBox.getChildren().addAll(icon, title, body, okBtn);</span>
+<span class="nc" id="L375">            modalLayer.getChildren().setAll(alertBox);</span>
+<span class="nc" id="L376">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L377">        });</span>
+<span class="nc" id="L378">    }</span>
 
     /**
      * Displays an overlay indicating that connection to the server was lost.
      */
     public void showConnectionLost() {
-<span class="nc" id="L375">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L376">            VBox alertBox = new VBox(16);</span>
-<span class="nc" id="L377">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(32)); alertBox.setMaxSize(400, 250);</span>
-<span class="nc" id="L378">            alertBox.setStyle(&quot;-fx-background-color: #1C1C1C; -fx-border-color: #C0392B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
-<span class="nc" id="L379">            Label icon = new Label(&quot;⚠&quot;); icon.setStyle(&quot;-fx-font-size: 36; -fx-text-fill: #C0392B;&quot;);</span>
-<span class="nc" id="L380">            Label title = new Label(&quot;Connection to the server has been lost&quot;); title.setStyle(&quot;-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;&quot;);</span>
-<span class="nc" id="L381">            Label subtitle = new Label(&quot;Attempting to automatically reconnect...&quot;); subtitle.setStyle(&quot;-fx-font-size: 12; -fx-text-fill: #AAAAAA;&quot;); subtitle.setWrapText(true);</span>
-<span class="nc" id="L382">            ProgressIndicator spinner = new ProgressIndicator(); spinner.setMaxSize(40, 40); spinner.setStyle(&quot;-fx-accent: #E67E22;&quot;);</span>
-<span class="nc" id="L383">            alertBox.getChildren().addAll(icon, title, subtitle, spinner);</span>
-<span class="nc" id="L384">            modalLayer.getChildren().setAll(alertBox);</span>
-<span class="nc" id="L385">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L386">        });</span>
-<span class="nc" id="L387">    }</span>
+<span class="nc" id="L384">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L385">            VBox alertBox = new VBox(16);</span>
+<span class="nc" id="L386">            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(32)); alertBox.setMaxSize(400, 250);</span>
+<span class="nc" id="L387">            alertBox.setStyle(&quot;-fx-background-color: #1C1C1C; -fx-border-color: #C0392B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;&quot;);</span>
+<span class="nc" id="L388">            Label icon = new Label(&quot;⚠&quot;); icon.setStyle(&quot;-fx-font-size: 36; -fx-text-fill: #C0392B;&quot;);</span>
+<span class="nc" id="L389">            Label title = new Label(&quot;Connection to the server has been lost&quot;); title.setStyle(&quot;-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;&quot;);</span>
+<span class="nc" id="L390">            Label subtitle = new Label(&quot;Attempting to automatically reconnect...&quot;); subtitle.setStyle(&quot;-fx-font-size: 12; -fx-text-fill: #AAAAAA;&quot;); subtitle.setWrapText(true);</span>
+<span class="nc" id="L391">            ProgressIndicator spinner = new ProgressIndicator(); spinner.setMaxSize(40, 40); spinner.setStyle(&quot;-fx-accent: #E67E22;&quot;);</span>
+<span class="nc" id="L392">            alertBox.getChildren().addAll(icon, title, subtitle, spinner);</span>
+<span class="nc" id="L393">            modalLayer.getChildren().setAll(alertBox);</span>
+<span class="nc" id="L394">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L395">        });</span>
+<span class="nc" id="L396">    }</span>
 
     /**
      * Prompts the user for connection details and attempts to connect.
@@ -393,30 +402,39 @@ public class SceneRouter {
      * @param clientView The client view to associate with the connection.
      */
     public void promptConnectionAndRetry(it.polimi.ingsw.am02.client.model.LobbyModel lobbyModel, it.polimi.ingsw.am02.client.view.ClientView clientView) {
-<span class="nc" id="L396">        runOnUi(() -&gt; {</span>
-<span class="nc" id="L397">            StackPane connectionForm = NetworkPopup.buildNode((config, onError) -&gt; {</span>
-<span class="nc" id="L398">                Thread connectionThread = new Thread(() -&gt; {</span>
+<span class="nc" id="L405">        runOnUi(() -&gt; {</span>
+<span class="nc" id="L406">            StackPane connectionForm = NetworkPopup.buildNode((config, onError) -&gt; {</span>
+<span class="nc" id="L407">                Thread connectionThread = new Thread(() -&gt; {</span>
                     try {
-<span class="nc" id="L400">                        ServerProxy newProxy = ServerProxyFactory.create(</span>
-<span class="nc" id="L401">                                config.type(), config.host(), config.port(), lobbyModel, clientView);</span>
-<span class="nc" id="L402">                        guiController.setServerProxy(newProxy);</span>
-<span class="nc" id="L403">                        newProxy.setClientController(guiController);</span>
-<span class="nc" id="L404">                        newProxy.connect();</span>
-<span class="nc" id="L405">                        guiController.setConnectionConfig(config.type(), config.host(), config.port());</span>
-<span class="nc" id="L406">                        showToast(&quot;Connected&quot;, &quot;Successfully connected via &quot; + config.type(), Alert.AlertType.INFORMATION);</span>
+<span class="nc" id="L409">                        ServerProxy newProxy = ServerProxyFactory.create(</span>
+<span class="nc" id="L410">                                config.type(), config.host(), config.port(), lobbyModel, clientView);</span>
+<span class="nc" id="L411">                        guiController.setServerProxy(newProxy);</span>
+<span class="nc" id="L412">                        newProxy.setClientController(guiController);</span>
+<span class="nc" id="L413">                        newProxy.connect();</span>
+<span class="nc" id="L414">                        guiController.setConnectionConfig(config.type(), config.host(), config.port());</span>
+<span class="nc" id="L415">                        showToast(&quot;Connected&quot;, &quot;Successfully connected via &quot; + config.type(), Alert.AlertType.INFORMATION);</span>
 
-<span class="nc" id="L408">                        hideModal();</span>
+<span class="nc" id="L417">                        hideModal();</span>
 
-<span class="nc" id="L410">                        showProjectInfoScene(this::showIntroScene);</span>
+                        // Once IP/port are set and we're connected, switch the window
+                        // to full screen right away so the whole experience (starting
+                        // with the project-info scene) is shown maximised.
+<span class="nc" id="L422">                        runOnUi(() -&gt; {</span>
+<span class="nc" id="L423">                            primaryStage.setResizable(true);</span>
+<span class="nc" id="L424">                            primaryStage.setFullScreen(true);</span>
+<span class="nc" id="L425">                            primaryStage.centerOnScreen();</span>
+<span class="nc" id="L426">                        });</span>
 
-<span class="nc" id="L412">                    } catch (Exception ex) { onError.accept(ex.getMessage()); }</span>
-<span class="nc" id="L413">                });</span>
-<span class="nc" id="L414">                connectionThread.setDaemon(true);</span>
-<span class="nc" id="L415">                connectionThread.start();</span>
-<span class="nc" id="L416">            });</span>
-<span class="nc" id="L417">            modalLayer.getChildren().setAll(connectionForm);</span>
-<span class="nc" id="L418">            modalLayer.setVisible(true);</span>
-<span class="nc" id="L419">        });</span>
-<span class="nc" id="L420">    }</span>
+<span class="nc" id="L428">                        showProjectInfoScene(this::showIntroScene);</span>
+
+<span class="nc" id="L430">                    } catch (Exception ex) { onError.accept(ex.getMessage()); }</span>
+<span class="nc" id="L431">                });</span>
+<span class="nc" id="L432">                connectionThread.setDaemon(true);</span>
+<span class="nc" id="L433">                connectionThread.start();</span>
+<span class="nc" id="L434">            });</span>
+<span class="nc" id="L435">            modalLayer.getChildren().setAll(connectionForm);</span>
+<span class="nc" id="L436">            modalLayer.setVisible(true);</span>
+<span class="nc" id="L437">        });</span>
+<span class="nc" id="L438">    }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

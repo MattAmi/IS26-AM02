@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TuiView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.tui</a> &gt; <span class="el_source">TuiView.java</span></div><h1>TuiView.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.tui;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TuiView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Mesos</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.tui</a> &gt; <span class="el_source">TuiView.java</span></div><h1>TuiView.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.tui;
 
 import it.polimi.ingsw.am02.client.view.CardCatalog;
 import it.polimi.ingsw.am02.client.model.GameModel;
@@ -819,20 +819,22 @@ public class TuiView extends AbstractClientView {
 <span class="nc" id="L819">        System.out.println();</span>
 <span class="nc" id="L820">        renderCards();</span>
 <span class="nc" id="L821">        System.out.println();</span>
-<span class="nc" id="L822">        renderPlayers();</span>
+<span class="nc" id="L822">        renderReserve();</span>
 <span class="nc" id="L823">        System.out.println();</span>
-<span class="nc" id="L824">        renderNotifications();</span>
+<span class="nc" id="L824">        renderPlayers();</span>
 <span class="nc" id="L825">        System.out.println();</span>
-<span class="nc" id="L826">        renderCommands(phase);</span>
+<span class="nc" id="L826">        renderNotifications();</span>
+<span class="nc" id="L827">        System.out.println();</span>
+<span class="nc" id="L828">        renderCommands(phase);</span>
 
-<span class="nc bnc" id="L828" title="All 4 branches missed.">        if (currentP != null &amp;&amp; currentP.equals(gameModel.getMyNickname())) {</span>
-<span class="nc" id="L829">            System.out.print(&quot;\n&quot; + GREEN + BOLD + &quot;[YOUR TURN] &gt; &quot; + RESET);</span>
-<span class="nc bnc" id="L830" title="All 2 branches missed.">        } else if (currentP != null) {</span>
-<span class="nc" id="L831">            System.out.print(&quot;\n&quot; + YELLOW + &quot;[Waiting for &quot; + currentP + &quot;...] &gt; &quot; + RESET);</span>
+<span class="nc bnc" id="L830" title="All 4 branches missed.">        if (currentP != null &amp;&amp; currentP.equals(gameModel.getMyNickname())) {</span>
+<span class="nc" id="L831">            System.out.print(&quot;\n&quot; + GREEN + BOLD + &quot;[YOUR TURN] &gt; &quot; + RESET);</span>
+<span class="nc bnc" id="L832" title="All 2 branches missed.">        } else if (currentP != null) {</span>
+<span class="nc" id="L833">            System.out.print(&quot;\n&quot; + YELLOW + &quot;[Waiting for &quot; + currentP + &quot;...] &gt; &quot; + RESET);</span>
         } else {
-<span class="nc" id="L833">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
+<span class="nc" id="L835">            System.out.print(&quot;\n&quot; + CYAN + &quot;&gt; &quot; + RESET);</span>
         }
-<span class="nc" id="L835">    }</span>
+<span class="nc" id="L837">    }</span>
 
     // -----------------------------------------------------------------------
     // Section renderers
@@ -846,79 +848,93 @@ public class TuiView extends AbstractClientView {
      * (fills slot).
      */
     private void renderTurnOrder() {
-<span class="nc" id="L849">        System.out.println(YELLOW + BOLD + &quot;=== TURN ORDER TILE ===&quot; + RESET);</span>
-<span class="nc" id="L850">        List&lt;TurnOrderSlotInfo&gt; slots = gameModel.getTurnOrderSlots();</span>
-<span class="nc bnc" id="L851" title="All 2 branches missed.">        if (slots.isEmpty()) {</span>
-<span class="nc" id="L852">            System.out.println(&quot;  (awaiting turn-order data...)&quot;);</span>
-<span class="nc" id="L853">            return;</span>
+<span class="nc" id="L851">        System.out.println(YELLOW + BOLD + &quot;=== TURN ORDER TILE ===&quot; + RESET);</span>
+<span class="nc" id="L852">        List&lt;TurnOrderSlotInfo&gt; slots = gameModel.getTurnOrderSlots();</span>
+<span class="nc bnc" id="L853" title="All 2 branches missed.">        if (slots.isEmpty()) {</span>
+<span class="nc" id="L854">            System.out.println(&quot;  (awaiting turn-order data...)&quot;);</span>
+<span class="nc" id="L855">            return;</span>
         }
-<span class="nc bnc" id="L855" title="All 2 branches missed.">        for (int i = 0; i &lt; slots.size(); i++) {</span>
-<span class="nc" id="L856">            TurnOrderSlotInfo slot = slots.get(i);</span>
-<span class="nc" id="L857">            String occupant = slot.occupantNickname();</span>
+<span class="nc bnc" id="L857" title="All 2 branches missed.">        for (int i = 0; i &lt; slots.size(); i++) {</span>
+<span class="nc" id="L858">            TurnOrderSlotInfo slot = slots.get(i);</span>
+<span class="nc" id="L859">            String occupant = slot.occupantNickname();</span>
             String bonusStr = GREEN + &quot; (food: &quot;
-<span class="nc bnc" id="L859" title="All 2 branches missed.">                    + (slot.foodBonus() &gt;= 0 ? &quot;+&quot; : &quot;&quot;) + slot.foodBonus() + &quot;)&quot; + RESET;</span>
-<span class="nc bnc" id="L860" title="All 2 branches missed.">            String malusStr = slot.prestigePointsMalus() != 0</span>
-<span class="nc" id="L861">                    ? RED + &quot; (PP: &quot; + slot.prestigePointsMalus() + &quot;)&quot; + RESET : &quot;&quot;;</span>
-<span class="nc bnc" id="L862" title="All 2 branches missed.">            if (occupant == null) {</span>
-<span class="nc" id="L863">                System.out.printf(&quot;  Slot %d  [ empty ]%s%s%n&quot;, i + 1, bonusStr, malusStr);</span>
+<span class="nc bnc" id="L861" title="All 2 branches missed.">                    + (slot.foodBonus() &gt;= 0 ? &quot;+&quot; : &quot;&quot;) + slot.foodBonus() + &quot;)&quot; + RESET;</span>
+<span class="nc bnc" id="L862" title="All 2 branches missed.">            String malusStr = slot.prestigePointsMalus() != 0</span>
+<span class="nc" id="L863">                    ? RED + &quot; (PP: &quot; + slot.prestigePointsMalus() + &quot;)&quot; + RESET : &quot;&quot;;</span>
+<span class="nc bnc" id="L864" title="All 2 branches missed.">            if (occupant == null) {</span>
+<span class="nc" id="L865">                System.out.printf(&quot;  Slot %d  [ empty ]%s%s%n&quot;, i + 1, bonusStr, malusStr);</span>
             } else {
-<span class="nc" id="L865">                boolean isMe = occupant.equals(gameModel.getMyNickname());</span>
-<span class="nc bnc" id="L866" title="All 2 branches missed.">                String tag   = isMe ? YELLOW + BOLD + &quot; ★ YOU&quot; + RESET : &quot;&quot;;</span>
-<span class="nc" id="L867">                System.out.printf(&quot;  Slot %d  %s%s%s%s%n&quot;,</span>
-<span class="nc" id="L868">                        i + 1, BOLD + formatOccupant(occupant) + RESET, tag, bonusStr, malusStr);</span>
+<span class="nc" id="L867">                boolean isMe = occupant.equals(gameModel.getMyNickname());</span>
+<span class="nc bnc" id="L868" title="All 2 branches missed.">                String tag   = isMe ? YELLOW + BOLD + &quot; ★ YOU&quot; + RESET : &quot;&quot;;</span>
+<span class="nc" id="L869">                System.out.printf(&quot;  Slot %d  %s%s%s%s%n&quot;,</span>
+<span class="nc" id="L870">                        i + 1, BOLD + formatOccupant(occupant) + RESET, tag, bonusStr, malusStr);</span>
             }
         }
-<span class="nc" id="L871">    }</span>
+<span class="nc" id="L873">    }</span>
 
     /**
      * Renders the offer track tiles, showing each tile's ID, food bonus,
      * pick limits, and current occupant (if any).
      */
     private void renderOfferTrack() {
-<span class="nc" id="L878">        System.out.println(PURPLE + BOLD + &quot;=== OFFER TRACK ===&quot; + RESET);</span>
-<span class="nc bnc" id="L879" title="All 2 branches missed.">        for (OfferTileInfo tile : gameModel.getOfferTiles()) {</span>
-<span class="nc bnc" id="L880" title="All 2 branches missed.">            String occupant = tile.occupantNickname() != null</span>
-<span class="nc" id="L881">                    ? YELLOW + &quot;  &lt;-- &quot; + formatOccupant(tile.occupantNickname()) + RESET</span>
-<span class="nc" id="L882">                    : &quot;&quot;;</span>
-<span class="nc" id="L883">            System.out.printf(&quot;  [%c]  Food: %+d  |  Upper: %d  |  Lower: %d%s%n&quot;,</span>
-<span class="nc" id="L884">                    tile.tileID(), tile.foodBonus(),</span>
-<span class="nc" id="L885">                    tile.upperChoosable(), tile.lowerChoosable(), occupant);</span>
-<span class="nc" id="L886">        }</span>
-<span class="nc" id="L887">    }</span>
+<span class="nc" id="L880">        System.out.println(PURPLE + BOLD + &quot;=== OFFER TRACK ===&quot; + RESET);</span>
+<span class="nc bnc" id="L881" title="All 2 branches missed.">        for (OfferTileInfo tile : gameModel.getOfferTiles()) {</span>
+<span class="nc bnc" id="L882" title="All 2 branches missed.">            String occupant = tile.occupantNickname() != null</span>
+<span class="nc" id="L883">                    ? YELLOW + &quot;  &lt;-- &quot; + formatOccupant(tile.occupantNickname()) + RESET</span>
+<span class="nc" id="L884">                    : &quot;&quot;;</span>
+<span class="nc" id="L885">            System.out.printf(&quot;  [%c]  Food: %+d  |  Upper: %d  |  Lower: %d%s%n&quot;,</span>
+<span class="nc" id="L886">                    tile.tileID(), tile.foodBonus(),</span>
+<span class="nc" id="L887">                    tile.upperChoosable(), tile.lowerChoosable(), occupant);</span>
+<span class="nc" id="L888">        }</span>
+<span class="nc" id="L889">    }</span>
 
     /**
      * Renders the card rows (upper and lower) and the building market rows,
      * including the remaining deck count.
      */
     private void renderCards() {
-<span class="nc" id="L894">        System.out.println(BLUE + BOLD + &quot;--- CARDS IN PLAY ---&quot; + RESET);</span>
+<span class="nc" id="L896">        System.out.println(BLUE + BOLD + &quot;--- CARDS IN PLAY ---&quot; + RESET);</span>
 
-<span class="nc" id="L896">        System.out.println(WHITE + BOLD + &quot;Upper Row:&quot; + RESET);</span>
-<span class="nc" id="L897">        List&lt;String&gt; upper = gameModel.getUpperRow();</span>
-<span class="nc bnc" id="L898" title="All 2 branches missed.">        if (upper.isEmpty()) {</span>
-<span class="nc" id="L899">            System.out.println(&quot;  (empty)&quot;);</span>
+<span class="nc" id="L898">        System.out.println(WHITE + BOLD + &quot;Upper Row:&quot; + RESET);</span>
+<span class="nc" id="L899">        List&lt;String&gt; upper = gameModel.getUpperRow();</span>
+<span class="nc bnc" id="L900" title="All 2 branches missed.">        if (upper.isEmpty()) {</span>
+<span class="nc" id="L901">            System.out.println(&quot;  (empty)&quot;);</span>
         } else {
-<span class="nc" id="L901">            upper.forEach(id -&gt; System.out.println(&quot;  &quot; + CardCatalog.getInstance().format(id)));</span>
+<span class="nc" id="L903">            upper.forEach(id -&gt; System.out.println(&quot;  &quot; + CardCatalog.getInstance().format(id)));</span>
         }
 
-<span class="nc" id="L904">        System.out.println(WHITE + BOLD + &quot;\nLower Row:&quot; + RESET);</span>
-<span class="nc" id="L905">        List&lt;String&gt; lower = gameModel.getLowerRow();</span>
-<span class="nc bnc" id="L906" title="All 2 branches missed.">        if (lower.isEmpty()) {</span>
-<span class="nc" id="L907">            System.out.println(&quot;  (empty)&quot;);</span>
+<span class="nc" id="L906">        System.out.println(WHITE + BOLD + &quot;\nLower Row:&quot; + RESET);</span>
+<span class="nc" id="L907">        List&lt;String&gt; lower = gameModel.getLowerRow();</span>
+<span class="nc bnc" id="L908" title="All 2 branches missed.">        if (lower.isEmpty()) {</span>
+<span class="nc" id="L909">            System.out.println(&quot;  (empty)&quot;);</span>
         } else {
-<span class="nc" id="L909">            lower.forEach(id -&gt; System.out.println(&quot;  &quot; + CardCatalog.getInstance().format(id)));</span>
+<span class="nc" id="L911">            lower.forEach(id -&gt; System.out.println(&quot;  &quot; + CardCatalog.getInstance().format(id)));</span>
         }
 
-<span class="nc" id="L912">        List&lt;String&gt; upperB = gameModel.getUpperRowBuildings();</span>
-<span class="nc" id="L913">        List&lt;String&gt; lowerB = gameModel.getLowerRowBuildings();</span>
-<span class="nc bnc" id="L914" title="All 4 branches missed.">        if (!upperB.isEmpty() || !lowerB.isEmpty()) {</span>
-<span class="nc" id="L915">            System.out.println(CYAN + BOLD + &quot;\nBuildings:&quot; + RESET);</span>
-<span class="nc" id="L916">            upperB.forEach(id -&gt; System.out.println(&quot;  [Up]  &quot; + CardCatalog.getInstance().format(id)));</span>
-<span class="nc" id="L917">            lowerB.forEach(id -&gt; System.out.println(&quot;  [Low] &quot; + CardCatalog.getInstance().format(id)));</span>
+<span class="nc" id="L914">        List&lt;String&gt; upperB = gameModel.getUpperRowBuildings();</span>
+<span class="nc" id="L915">        List&lt;String&gt; lowerB = gameModel.getLowerRowBuildings();</span>
+<span class="nc bnc" id="L916" title="All 4 branches missed.">        if (!upperB.isEmpty() || !lowerB.isEmpty()) {</span>
+<span class="nc" id="L917">            System.out.println(CYAN + BOLD + &quot;\nBuildings:&quot; + RESET);</span>
+<span class="nc" id="L918">            upperB.forEach(id -&gt; System.out.println(&quot;  [Up]  &quot; + CardCatalog.getInstance().format(id)));</span>
+<span class="nc" id="L919">            lowerB.forEach(id -&gt; System.out.println(&quot;  [Low] &quot; + CardCatalog.getInstance().format(id)));</span>
         }
 
-<span class="nc" id="L920">        System.out.println(&quot;\nDeck remaining: &quot; + YELLOW + gameModel.getDeckRemainingCount() + RESET);</span>
-<span class="nc" id="L921">    }</span>
+<span class="nc" id="L922">        System.out.println(&quot;\nDeck remaining: &quot; + YELLOW + gameModel.getDeckRemainingCount() + RESET);</span>
+<span class="nc" id="L923">    }</span>
+
+    /**
+     * Renders the common reserve. Mirrors the physical game's shared supply of
+     * food and prestige tokens, which is &lt;em&gt;unlimited&lt;/em&gt;: there is no
+     * server-side count to display, so each pile is shown as a fixed mound of
+     * glyphs annotated with an infinity symbol.
+     */
+    private void renderReserve() {
+<span class="nc" id="L932">        System.out.println(CYAN + BOLD + &quot;=== COMMON RESERVE ===&quot; + RESET);</span>
+<span class="nc" id="L933">        System.out.println(&quot;  Food     &quot; + GREEN + &quot;●●●●●&quot; + RESET</span>
+                + &quot;  (&quot; + GREEN + &quot;∞&quot; + RESET + &quot; unlimited supply)&quot;);
+<span class="nc" id="L935">        System.out.println(&quot;  Prestige &quot; + YELLOW + &quot;◆◆◆◆◆&quot; + RESET</span>
+                + &quot;  (&quot; + YELLOW + &quot;∞&quot; + RESET + &quot; unlimited supply)&quot;);
+<span class="nc" id="L937">    }</span>
 
     /**
      * Renders every player's status: food, PP, pick limits, characters, and
@@ -926,45 +942,45 @@ public class TuiView extends AbstractClientView {
      * can immediately see the full table state without any extra server round-trip.
      */
     private void renderPlayers() {
-<span class="nc" id="L929">        System.out.println(PURPLE + BOLD + &quot;=== PLAYERS STATUS ===&quot; + RESET);</span>
+<span class="nc" id="L945">        System.out.println(PURPLE + BOLD + &quot;=== PLAYERS STATUS ===&quot; + RESET);</span>
 
-<span class="nc bnc" id="L931" title="All 2 branches missed.">        for (String nickname : gameModel.getTurnOrder()) {</span>
-<span class="nc" id="L932">            int food   = gameModel.getFoodByPlayer().getOrDefault(nickname, 0);</span>
-<span class="nc" id="L933">            int pp     = gameModel.getPpByPlayer().getOrDefault(nickname, 0);</span>
+<span class="nc bnc" id="L947" title="All 2 branches missed.">        for (String nickname : gameModel.getTurnOrder()) {</span>
+<span class="nc" id="L948">            int food   = gameModel.getFoodByPlayer().getOrDefault(nickname, 0);</span>
+<span class="nc" id="L949">            int pp     = gameModel.getPpByPlayer().getOrDefault(nickname, 0);</span>
 
-<span class="nc" id="L935">            int picksUp = gameModel.getRemainingUpper().getOrDefault(nickname, 0);</span>
-<span class="nc" id="L936">            int picksLow = gameModel.getRemainingLower().getOrDefault(nickname, 0);</span>
+<span class="nc" id="L951">            int picksUp = gameModel.getRemainingUpper().getOrDefault(nickname, 0);</span>
+<span class="nc" id="L952">            int picksLow = gameModel.getRemainingLower().getOrDefault(nickname, 0);</span>
 
-<span class="nc" id="L938">            boolean isMe = nickname.equals(gameModel.getMyNickname());</span>
-<span class="nc bnc" id="L939" title="All 2 branches missed.">            String prefix = isMe ? GREEN + BOLD + &quot;=&gt; &quot; + RESET : &quot;   &quot;;</span>
-<span class="nc bnc" id="L940" title="All 2 branches missed.">            String marker = isMe ? YELLOW + BOLD + &quot; (YOU)&quot; + RESET : RESET;</span>
+<span class="nc" id="L954">            boolean isMe = nickname.equals(gameModel.getMyNickname());</span>
+<span class="nc bnc" id="L955" title="All 2 branches missed.">            String prefix = isMe ? GREEN + BOLD + &quot;=&gt; &quot; + RESET : &quot;   &quot;;</span>
+<span class="nc bnc" id="L956" title="All 2 branches missed.">            String marker = isMe ? YELLOW + BOLD + &quot; (YOU)&quot; + RESET : RESET;</span>
 
-<span class="nc" id="L942">            Totem t = gameModel.getTotem(nickname);</span>
-<span class="nc bnc" id="L943" title="All 2 branches missed.">            String totemTag = t != null ? totemColor(t) + &quot;[&quot; + t + &quot;]&quot; + RESET + &quot; &quot; : &quot;&quot;;</span>
-<span class="nc" id="L944">            System.out.printf(&quot;%s%s%-15s | Food: &quot; + GREEN + &quot;%2d&quot; + RESET</span>
+<span class="nc" id="L958">            Totem t = gameModel.getTotem(nickname);</span>
+<span class="nc bnc" id="L959" title="All 2 branches missed.">            String totemTag = t != null ? totemColor(t) + &quot;[&quot; + t + &quot;]&quot; + RESET + &quot; &quot; : &quot;&quot;;</span>
+<span class="nc" id="L960">            System.out.printf(&quot;%s%s%-15s | Food: &quot; + GREEN + &quot;%2d&quot; + RESET</span>
                             + &quot;  | PP: &quot; + YELLOW + &quot;%3d&quot; + RESET
                             + &quot;  | Picks (Up/Low): &quot; + CYAN + &quot;%d/%d&quot; + RESET + &quot;%s%n&quot;,
-<span class="nc" id="L947">                    prefix, totemTag, nickname, food, pp, picksUp, picksLow, marker);</span>
+<span class="nc" id="L963">                    prefix, totemTag, nickname, food, pp, picksUp, picksLow, marker);</span>
 
-<span class="nc" id="L949">            List&lt;String&gt; chars = gameModel.getCharactersByPlayer()</span>
-<span class="nc" id="L950">                    .getOrDefault(nickname, List.of());</span>
-<span class="nc bnc" id="L951" title="All 2 branches missed.">            if (!chars.isEmpty()) {</span>
-<span class="nc" id="L952">                System.out.println(&quot;    Characters:&quot;);</span>
-<span class="nc" id="L953">                chars.forEach(id -&gt; System.out.println(</span>
-<span class="nc" id="L954">                        &quot;      - &quot; + CardCatalog.getInstance().format(id)));</span>
+<span class="nc" id="L965">            List&lt;String&gt; chars = gameModel.getCharactersByPlayer()</span>
+<span class="nc" id="L966">                    .getOrDefault(nickname, List.of());</span>
+<span class="nc bnc" id="L967" title="All 2 branches missed.">            if (!chars.isEmpty()) {</span>
+<span class="nc" id="L968">                System.out.println(&quot;    Characters:&quot;);</span>
+<span class="nc" id="L969">                chars.forEach(id -&gt; System.out.println(</span>
+<span class="nc" id="L970">                        &quot;      - &quot; + CardCatalog.getInstance().format(id)));</span>
             }
 
-<span class="nc" id="L957">            List&lt;String&gt; buildings = gameModel.getBuildingsByPlayer()</span>
-<span class="nc" id="L958">                    .getOrDefault(nickname, List.of());</span>
-<span class="nc bnc" id="L959" title="All 2 branches missed.">            if (!buildings.isEmpty()) {</span>
-<span class="nc" id="L960">                System.out.println(&quot;    Buildings:&quot;);</span>
-<span class="nc" id="L961">                buildings.forEach(id -&gt; System.out.println(</span>
-<span class="nc" id="L962">                        &quot;      - &quot; + CardCatalog.getInstance().format(id)));</span>
+<span class="nc" id="L973">            List&lt;String&gt; buildings = gameModel.getBuildingsByPlayer()</span>
+<span class="nc" id="L974">                    .getOrDefault(nickname, List.of());</span>
+<span class="nc bnc" id="L975" title="All 2 branches missed.">            if (!buildings.isEmpty()) {</span>
+<span class="nc" id="L976">                System.out.println(&quot;    Buildings:&quot;);</span>
+<span class="nc" id="L977">                buildings.forEach(id -&gt; System.out.println(</span>
+<span class="nc" id="L978">                        &quot;      - &quot; + CardCatalog.getInstance().format(id)));</span>
             }
 
-<span class="nc" id="L965">            System.out.println();</span>
-<span class="nc" id="L966">        }</span>
-<span class="nc" id="L967">    }</span>
+<span class="nc" id="L981">            System.out.println();</span>
+<span class="nc" id="L982">        }</span>
+<span class="nc" id="L983">    }</span>
 
     /**
      * Formats a player's totem color tag and nickname for terminal display.
@@ -974,9 +990,9 @@ public class TuiView extends AbstractClientView {
      *         nickname if the totem is unknown
      */
     private String formatOccupant(String nickname) {
-<span class="nc" id="L977">        Totem totem = gameModel.getTotem(nickname);</span>
-<span class="nc bnc" id="L978" title="All 2 branches missed.">        String totemStr = totem != null ? totemColor(totem) + &quot;[&quot; + totem + &quot;]&quot; + RESET + &quot; &quot; : &quot;&quot;;</span>
-<span class="nc" id="L979">        return totemStr + nickname;</span>
+<span class="nc" id="L993">        Totem totem = gameModel.getTotem(nickname);</span>
+<span class="nc bnc" id="L994" title="All 2 branches missed.">        String totemStr = totem != null ? totemColor(totem) + &quot;[&quot; + totem + &quot;]&quot; + RESET + &quot; &quot; : &quot;&quot;;</span>
+<span class="nc" id="L995">        return totemStr + nickname;</span>
     }
 
     /**
@@ -986,12 +1002,12 @@ public class TuiView extends AbstractClientView {
      * @return ANSI escape sequence for the totem's color
      */
     private String totemColor(Totem totem) {
-<span class="nc bnc" id="L989" title="All 5 branches missed.">        return switch (totem) {</span>
-<span class="nc" id="L990">            case WHITE  -&gt; WHITE;</span>
-<span class="nc" id="L991">            case PURPLE -&gt; PURPLE;</span>
-<span class="nc" id="L992">            case BLUE   -&gt; BLUE;</span>
-<span class="nc" id="L993">            case RED    -&gt; RED;</span>
-<span class="nc" id="L994">            case YELLOW -&gt; YELLOW;</span>
+<span class="nc bnc" id="L1005" title="All 5 branches missed.">        return switch (totem) {</span>
+<span class="nc" id="L1006">            case WHITE  -&gt; WHITE;</span>
+<span class="nc" id="L1007">            case PURPLE -&gt; PURPLE;</span>
+<span class="nc" id="L1008">            case BLUE   -&gt; BLUE;</span>
+<span class="nc" id="L1009">            case RED    -&gt; RED;</span>
+<span class="nc" id="L1010">            case YELLOW -&gt; YELLOW;</span>
         };
     }
 
@@ -1000,19 +1016,19 @@ public class TuiView extends AbstractClientView {
      * summary-card overlay is pending — displays that instead for one cycle.
      */
     private void renderNotifications() {
-<span class="nc bnc" id="L1003" title="All 2 branches missed.">        if (pendingSummary != null) {</span>
-<span class="nc" id="L1004">            System.out.println(WHITE + BOLD + &quot;--- SUMMARY CARD ---&quot; + RESET);</span>
-<span class="nc" id="L1005">            System.out.println(CYAN + pendingSummary + RESET);</span>
-<span class="nc" id="L1006">            pendingSummary = null;</span>
+<span class="nc bnc" id="L1019" title="All 2 branches missed.">        if (pendingSummary != null) {</span>
+<span class="nc" id="L1020">            System.out.println(WHITE + BOLD + &quot;--- SUMMARY CARD ---&quot; + RESET);</span>
+<span class="nc" id="L1021">            System.out.println(CYAN + pendingSummary + RESET);</span>
+<span class="nc" id="L1022">            pendingSummary = null;</span>
         } else {
-<span class="nc" id="L1008">            System.out.println(WHITE + BOLD + &quot;--- RECENT LOGS ---&quot; + RESET);</span>
-<span class="nc bnc" id="L1009" title="All 2 branches missed.">            if (notifications.isEmpty()) {</span>
-<span class="nc" id="L1010">                System.out.println(&quot;  No recent activity.&quot;);</span>
+<span class="nc" id="L1024">            System.out.println(WHITE + BOLD + &quot;--- RECENT LOGS ---&quot; + RESET);</span>
+<span class="nc bnc" id="L1025" title="All 2 branches missed.">            if (notifications.isEmpty()) {</span>
+<span class="nc" id="L1026">                System.out.println(&quot;  No recent activity.&quot;);</span>
             } else {
-<span class="nc" id="L1012">                notifications.forEach(n -&gt; System.out.println(&quot;  &quot; + n));</span>
+<span class="nc" id="L1028">                notifications.forEach(n -&gt; System.out.println(&quot;  &quot; + n));</span>
             }
         }
-<span class="nc" id="L1015">    }</span>
+<span class="nc" id="L1031">    }</span>
 
     /**
      * Renders the context-sensitive command list, adapting it to the current FSM
@@ -1021,39 +1037,39 @@ public class TuiView extends AbstractClientView {
      * @param phase the current FSM phase; the section is skipped if {@code null}
      */
     private void renderCommands(PhaseType phase) {
-<span class="nc bnc" id="L1024" title="All 2 branches missed.">        if (phase == null) return;</span>
+<span class="nc bnc" id="L1040" title="All 2 branches missed.">        if (phase == null) return;</span>
 
-<span class="nc" id="L1026">        String myNick   = gameModel.getMyNickname();</span>
-<span class="nc" id="L1027">        String currentP = gameModel.getCurrentPlayer();</span>
+<span class="nc" id="L1042">        String myNick   = gameModel.getMyNickname();</span>
+<span class="nc" id="L1043">        String currentP = gameModel.getCurrentPlayer();</span>
 
-<span class="nc bnc" id="L1029" title="All 4 branches missed.">        if (myNick == null || currentP == null) {</span>
-<span class="nc" id="L1030">            System.out.println(&quot;  (Loading player data...)&quot;);</span>
-<span class="nc" id="L1031">            return;</span>
+<span class="nc bnc" id="L1045" title="All 4 branches missed.">        if (myNick == null || currentP == null) {</span>
+<span class="nc" id="L1046">            System.out.println(&quot;  (Loading player data...)&quot;);</span>
+<span class="nc" id="L1047">            return;</span>
         }
 
-<span class="nc" id="L1034">        System.out.println(GREEN + BOLD + &quot;--- AVAILABLE COMMANDS ---&quot; + RESET);</span>
+<span class="nc" id="L1050">        System.out.println(GREEN + BOLD + &quot;--- AVAILABLE COMMANDS ---&quot; + RESET);</span>
 
-<span class="nc bnc" id="L1036" title="All 2 branches missed.">        if (!myNick.equals(currentP)) {</span>
-<span class="nc" id="L1037">            System.out.println(&quot;  Waiting for &quot; + BOLD + currentP + RESET + &quot; to finish their turn...&quot;);</span>
+<span class="nc bnc" id="L1052" title="All 2 branches missed.">        if (!myNick.equals(currentP)) {</span>
+<span class="nc" id="L1053">            System.out.println(&quot;  Waiting for &quot; + BOLD + currentP + RESET + &quot; to finish their turn...&quot;);</span>
         } else {
-<span class="nc bnc" id="L1039" title="All 3 branches missed.">            switch (phase) {</span>
-<span class="nc" id="L1040">                case TOTEM_PLACEMENT -&gt; System.out.println(&quot;  move &lt;tileID&gt;     — Place your totem on a free offer tile  (e.g., move B)&quot;);</span>
+<span class="nc bnc" id="L1055" title="All 3 branches missed.">            switch (phase) {</span>
+<span class="nc" id="L1056">                case TOTEM_PLACEMENT -&gt; System.out.println(&quot;  move &lt;tileID&gt;     — Place your totem on a free offer tile  (e.g., move B)&quot;);</span>
 
                 case ACTION_RESOLUTION -&gt; {
-<span class="nc" id="L1043">                    System.out.println(&quot;  resolve &lt;id...&gt;   — Pick card IDs from the board  (e.g., resolve C_001 E_002)&quot;);</span>
-<span class="nc" id="L1044">                    System.out.println(&quot;  move T            — Return your totem and END YOUR TURN&quot;);</span>
-<span class="nc" id="L1045">                    System.out.println(YELLOW + &quot;  (You MUST type 'move T' after resolving actions.)&quot; + RESET);</span>
-<span class="nc" id="L1046">                }</span>
+<span class="nc" id="L1059">                    System.out.println(&quot;  resolve &lt;id...&gt;   — Pick card IDs from the board  (e.g., resolve C_001 E_002)&quot;);</span>
+<span class="nc" id="L1060">                    System.out.println(&quot;  move T            — Return your totem and END YOUR TURN&quot;);</span>
+<span class="nc" id="L1061">                    System.out.println(YELLOW + &quot;  (You MUST type 'move T' after resolving actions.)&quot; + RESET);</span>
+<span class="nc" id="L1062">                }</span>
 
-<span class="nc" id="L1048">                default -&gt; System.out.println(&quot;  (Waiting for the current phase to complete...)&quot;);</span>
+<span class="nc" id="L1064">                default -&gt; System.out.println(&quot;  (Waiting for the current phase to complete...)&quot;);</span>
             }
         }
 
-<span class="nc" id="L1052">        System.out.println(&quot;  info &lt;cardID&gt;     — View full details of a specific card   (e.g., info C_012)&quot;);</span>
-<span class="nc" id="L1053">        System.out.println(&quot;  summary           — Show the summary card (quick-reference rules)&quot;);</span>
-<span class="nc" id="L1054">        System.out.println(&quot;  lobby             — Leave the game and return to lobby&quot;);</span>
-<span class="nc" id="L1055">        System.out.println(&quot;  quit              — Close the application&quot;);</span>
-<span class="nc" id="L1056">    }</span>
+<span class="nc" id="L1068">        System.out.println(&quot;  info &lt;cardID&gt;     — View full details of a specific card   (e.g., info C_012)&quot;);</span>
+<span class="nc" id="L1069">        System.out.println(&quot;  summary           — Show the summary card (quick-reference rules)&quot;);</span>
+<span class="nc" id="L1070">        System.out.println(&quot;  lobby             — Leave the game and return to lobby&quot;);</span>
+<span class="nc" id="L1071">        System.out.println(&quot;  quit              — Close the application&quot;);</span>
+<span class="nc" id="L1072">    }</span>
 
     // -----------------------------------------------------------------------
     // Utilities
@@ -1061,49 +1077,49 @@ public class TuiView extends AbstractClientView {
 
     /** Prints the full startup banner with team info, only shown once per session. */
     private void printBanner() {
-<span class="nc" id="L1064">        System.out.println(GREEN + BOLD</span>
+<span class="nc" id="L1080">        System.out.println(GREEN + BOLD</span>
                 + &quot;  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\\n&quot;
                 + &quot;  \\                                                /\n&quot;
                 + &quot;  /    M  E  S  O  S  —  P R E H I S T O R I C   \\\n&quot;
                 + &quot;  \\                                                /\n&quot;
                 + &quot;  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\&quot;
                 + RESET);
-<span class="nc" id="L1071">        System.out.println(YELLOW</span>
+<span class="nc" id="L1087">        System.out.println(YELLOW</span>
                 + &quot;\n  &quot; + ProjectInfo.GROUP
                 + &quot;  │  &quot; + ProjectInfo.YEAR
                 + &quot;  │  &quot; + ProjectInfo.UNIVERSITY
                 + RESET);
-<span class="nc" id="L1076">        System.out.println(WHITE</span>
+<span class="nc" id="L1092">        System.out.println(WHITE</span>
                 + &quot;  ──────────────────────────────────────────────────────&quot;
                 + RESET);
-<span class="nc" id="L1079">        System.out.println(PURPLE + &quot;  Members:&quot; + RESET);</span>
-<span class="nc" id="L1080">        ProjectInfo.MEMBERS.forEach((name, code) -&gt;</span>
-<span class="nc" id="L1081">                System.out.println(&quot;  &quot; + YELLOW + &quot;◆&quot; + RESET</span>
-<span class="nc" id="L1082">                        + &quot;  &quot; + String.format(&quot;%-20s&quot;, name)</span>
+<span class="nc" id="L1095">        System.out.println(PURPLE + &quot;  Members:&quot; + RESET);</span>
+<span class="nc" id="L1096">        ProjectInfo.MEMBERS.forEach((name, code) -&gt;</span>
+<span class="nc" id="L1097">                System.out.println(&quot;  &quot; + YELLOW + &quot;◆&quot; + RESET</span>
+<span class="nc" id="L1098">                        + &quot;  &quot; + String.format(&quot;%-20s&quot;, name)</span>
                         + &quot; [&quot; + code + &quot;]&quot;));
-<span class="nc" id="L1084">        System.out.println(WHITE</span>
+<span class="nc" id="L1100">        System.out.println(WHITE</span>
                 + &quot;  ──────────────────────────────────────────────────────&quot;
                 + RESET);
-<span class="nc" id="L1087">        System.out.println(WHITE</span>
+<span class="nc" id="L1103">        System.out.println(WHITE</span>
                 + &quot;  &quot; + ProjectInfo.COURSE
                 + &quot;  │  &quot; + ProjectInfo.PROFESSOR
                 + &quot;\n&quot;
                 + RESET);
-<span class="nc" id="L1092">    }</span>
+<span class="nc" id="L1108">    }</span>
 
     /** Prints the compact game-title header shown at the top of every screen. */
     private void printHeader() {
-<span class="nc" id="L1096">        System.out.println(GREEN + BOLD</span>
+<span class="nc" id="L1112">        System.out.println(GREEN + BOLD</span>
                 + &quot;  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n&quot;
                 + &quot;      M  E  S  O  S   —   P  R  E  H  I  S  T  O  R  I  C\n&quot;
                 + &quot;  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~&quot;
                 + RESET);
-<span class="nc" id="L1101">    }</span>
+<span class="nc" id="L1117">    }</span>
 
     /** Clears the terminal using ANSI escape codes. */
     private void clearScreen() {
-<span class="nc" id="L1105">        System.out.print(&quot;\n\033[H\033[2J&quot;);</span>
-<span class="nc" id="L1106">        System.out.flush();</span>
-<span class="nc" id="L1107">    }</span>
+<span class="nc" id="L1121">        System.out.print(&quot;\n\033[H\033[2J&quot;);</span>
+<span class="nc" id="L1122">        System.out.flush();</span>
+<span class="nc" id="L1123">    }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

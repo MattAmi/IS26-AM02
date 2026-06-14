@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameMenuScene.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">GameMenuScene.java</span></div><h1>GameMenuScene.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameMenuScene.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Mesos</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">GameMenuScene.java</span></div><h1>GameMenuScene.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
 
 import it.polimi.ingsw.am02.client.view.gui.GuiController;
 import it.polimi.ingsw.am02.client.view.gui.ImageLoader;
@@ -224,24 +224,27 @@ import java.util.function.Consumer;
 
 <span class="nc" id="L225">        Label lbl = new Label(&quot;Select Lobby Size (2-5):&quot;);</span>
 <span class="nc" id="L226">        lbl.setTextFill(Color.WHITE);</span>
-<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (tribalSmall != null) lbl.setFont(tribalSmall);</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (introFont != null) lbl.setFont(introFont);</span>
 
 <span class="nc" id="L229">        TextField sizeField = new TextField(&quot;2&quot;);</span>
 <span class="nc" id="L230">        sizeField.setMaxWidth(100); sizeField.setAlignment(Pos.CENTER);</span>
 <span class="nc" id="L231">        sizeField.setStyle(&quot;-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;&quot;);</span>
-<span class="nc bnc" id="L232" title="All 2 branches missed.">        if (tribalSmall != null) sizeField.setFont(tribalSmall);</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">        if (introFont != null) sizeField.setFont(introFont);</span>
 
-<span class="nc" id="L234">        createLobbyBox.getChildren().addAll(lbl, sizeField,</span>
-<span class="nc" id="L235">                createMenuButton(&quot;CONFIRM&quot;, e -&gt; {</span>
-                    try {
-<span class="nc" id="L237">                        int size = Integer.parseInt(sizeField.getText());</span>
-<span class="nc bnc" id="L238" title="All 4 branches missed.">                        if (size &gt;= 2 &amp;&amp; size &lt;= 5) controller.requestCreateLobby(size);</span>
-<span class="nc" id="L239">                        else onError.accept(&quot;Size must be between 2 and 5.&quot;);</span>
-<span class="nc" id="L240">                    } catch (Exception ex) { onError.accept(&quot;Invalid format.&quot;); }</span>
-<span class="nc" id="L241">                }),</span>
-<span class="nc" id="L242">                createMenuButton(&quot;BACK&quot;, e -&gt; switchInternalMenu(mainButtonsBox))</span>
+<span class="nc" id="L234">        javafx.event.EventHandler&lt;javafx.event.ActionEvent&gt; confirmAction = e -&gt; {</span>
+            try {
+<span class="nc" id="L236">                int size = Integer.parseInt(sizeField.getText());</span>
+<span class="nc bnc" id="L237" title="All 4 branches missed.">                if (size &gt;= 2 &amp;&amp; size &lt;= 5) controller.requestCreateLobby(size);</span>
+<span class="nc" id="L238">                else onError.accept(&quot;Size must be between 2 and 5.&quot;);</span>
+<span class="nc" id="L239">            } catch (Exception ex) { onError.accept(&quot;Invalid format.&quot;); }</span>
+<span class="nc" id="L240">        };</span>
+<span class="nc" id="L241">        sizeField.setOnAction(confirmAction);</span>
+
+<span class="nc" id="L243">        createLobbyBox.getChildren().addAll(lbl, sizeField,</span>
+<span class="nc" id="L244">                createMenuButton(&quot;CONFIRM&quot;, confirmAction),</span>
+<span class="nc" id="L245">                createMenuButton(&quot;BACK&quot;, e -&gt; switchInternalMenu(mainButtonsBox))</span>
         );
-<span class="nc" id="L244">    }</span>
+<span class="nc" id="L247">    }</span>
 
     /**
      * Builds the form for reconnecting to an ongoing game.
@@ -249,37 +252,41 @@ import java.util.function.Consumer;
      * @param onError Callback to handle errors.
      */
     private void buildReconnectForm(Consumer&lt;String&gt; onError) {
-<span class="nc" id="L252">        reconnectBox = new VBox(15);</span>
-<span class="nc" id="L253">        reconnectBox.setAlignment(Pos.CENTER);</span>
-<span class="nc" id="L254">        reconnectBox.setStyle(&quot;-fx-background-color: rgba(43, 29, 20, 0.95); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 15; -fx-padding: 30;&quot;);</span>
+<span class="nc" id="L255">        reconnectBox = new VBox(15);</span>
+<span class="nc" id="L256">        reconnectBox.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L257">        reconnectBox.setStyle(&quot;-fx-background-color: rgba(43, 29, 20, 0.95); -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 15; -fx-padding: 30;&quot;);</span>
 
-<span class="nc" id="L256">        Label lblNick = new Label(&quot;Nickname:&quot;);</span>
-<span class="nc" id="L257">        lblNick.setTextFill(Color.WHITE);</span>
-<span class="nc bnc" id="L258" title="All 2 branches missed.">        if (introFont != null) lblNick.setFont(introFont);</span>
+<span class="nc" id="L259">        Label lblNick = new Label(&quot;Nickname:&quot;);</span>
+<span class="nc" id="L260">        lblNick.setTextFill(Color.WHITE);</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">        if (introFont != null) lblNick.setFont(introFont);</span>
 
-<span class="nc" id="L260">        TextField nickField = new TextField();</span>
-<span class="nc" id="L261">        nickField.setPromptText(&quot;Enter Nickname&quot;); nickField.setMaxWidth(220);</span>
-<span class="nc" id="L262">        nickField.setStyle(&quot;-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;&quot;);</span>
-<span class="nc bnc" id="L263" title="All 2 branches missed.">        if (introFont != null) nickField.setFont(introFont);</span>
+<span class="nc" id="L263">        TextField nickField = new TextField();</span>
+<span class="nc" id="L264">        nickField.setPromptText(&quot;Enter Nickname&quot;); nickField.setMaxWidth(220);</span>
+<span class="nc" id="L265">        nickField.setStyle(&quot;-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;&quot;);</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        if (introFont != null) nickField.setFont(introFont);</span>
 
-<span class="nc" id="L265">        Label lblId = new Label(&quot;Game ID:&quot;);</span>
-<span class="nc" id="L266">        lblId.setTextFill(Color.WHITE);</span>
-<span class="nc bnc" id="L267" title="All 2 branches missed.">        if (introFont != null) lblId.setFont(introFont);</span>
+<span class="nc" id="L268">        Label lblId = new Label(&quot;Game ID:&quot;);</span>
+<span class="nc" id="L269">        lblId.setTextFill(Color.WHITE);</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">        if (introFont != null) lblId.setFont(introFont);</span>
 
-<span class="nc" id="L269">        TextField gameIdField = new TextField();</span>
-<span class="nc" id="L270">        gameIdField.setPromptText(&quot;Enter Game ID&quot;); gameIdField.setMaxWidth(220);</span>
-<span class="nc" id="L271">        gameIdField.setStyle(&quot;-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;&quot;);</span>
-<span class="nc bnc" id="L272" title="All 2 branches missed.">        if (introFont != null) gameIdField.setFont(introFont);</span>
+<span class="nc" id="L272">        TextField gameIdField = new TextField();</span>
+<span class="nc" id="L273">        gameIdField.setPromptText(&quot;Enter Game ID&quot;); gameIdField.setMaxWidth(220);</span>
+<span class="nc" id="L274">        gameIdField.setStyle(&quot;-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;&quot;);</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">        if (introFont != null) gameIdField.setFont(introFont);</span>
 
-<span class="nc" id="L274">        reconnectBox.getChildren().addAll(lblNick, nickField, lblId, gameIdField,</span>
-<span class="nc" id="L275">                createMenuButton(&quot;RECONNECT&quot;, e -&gt; {</span>
-<span class="nc bnc" id="L276" title="All 4 branches missed.">                    if (!nickField.getText().isBlank() &amp;&amp; !gameIdField.getText().isBlank())</span>
-<span class="nc" id="L277">                        controller.requestReconnect(nickField.getText(), gameIdField.getText());</span>
-<span class="nc" id="L278">                    else onError.accept(&quot;Fill both fields.&quot;);</span>
-<span class="nc" id="L279">                }),</span>
-<span class="nc" id="L280">                createMenuButton(&quot;BACK&quot;, e -&gt; switchInternalMenu(mainButtonsBox))</span>
+<span class="nc" id="L277">        javafx.event.EventHandler&lt;javafx.event.ActionEvent&gt; reconnectAction = e -&gt; {</span>
+<span class="nc bnc" id="L278" title="All 4 branches missed.">            if (!nickField.getText().isBlank() &amp;&amp; !gameIdField.getText().isBlank())</span>
+<span class="nc" id="L279">                controller.requestReconnect(nickField.getText(), gameIdField.getText());</span>
+<span class="nc" id="L280">            else onError.accept(&quot;Fill both fields.&quot;);</span>
+<span class="nc" id="L281">        };</span>
+<span class="nc" id="L282">        nickField.setOnAction(reconnectAction);</span>
+<span class="nc" id="L283">        gameIdField.setOnAction(reconnectAction);</span>
+
+<span class="nc" id="L285">        reconnectBox.getChildren().addAll(lblNick, nickField, lblId, gameIdField,</span>
+<span class="nc" id="L286">                createMenuButton(&quot;RECONNECT&quot;, reconnectAction),</span>
+<span class="nc" id="L287">                createMenuButton(&quot;BACK&quot;, e -&gt; switchInternalMenu(mainButtonsBox))</span>
         );
-<span class="nc" id="L282">    }</span>
+<span class="nc" id="L289">    }</span>
 
     /**
      * Creates a menu button with the specified text and event handler.
@@ -289,12 +296,12 @@ import java.util.function.Consumer;
      * @return The constructed Button.
      */
     private Button createMenuButton(String text, javafx.event.EventHandler&lt;javafx.event.ActionEvent&gt; event) {
-<span class="nc" id="L292">        Button btn = new Button(text);</span>
-<span class="nc" id="L293">        btn.setPrefSize(280, 55);</span>
-<span class="nc" id="L294">        btn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3; -fx-border-width: 1; -fx-border-radius: 5;&quot;);</span>
-<span class="nc bnc" id="L295" title="All 2 branches missed.">        if (tribalSmall != null) btn.setFont(tribalSmall);</span>
-<span class="nc" id="L296">        btn.setOnAction(event);</span>
-<span class="nc" id="L297">        return btn;</span>
+<span class="nc" id="L299">        Button btn = new Button(text);</span>
+<span class="nc" id="L300">        btn.setPrefSize(280, 55);</span>
+<span class="nc" id="L301">        btn.setStyle(&quot;-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3; -fx-border-width: 1; -fx-border-radius: 5;&quot;);</span>
+<span class="nc bnc" id="L302" title="All 2 branches missed.">        if (tribalSmall != null) btn.setFont(tribalSmall);</span>
+<span class="nc" id="L303">        btn.setOnAction(event);</span>
+<span class="nc" id="L304">        return btn;</span>
     }
 
     /**
@@ -303,12 +310,12 @@ import java.util.function.Consumer;
      * @return The constructed Button.
      */
     private Button createQuitButton() {
-<span class="nc" id="L306">        Button quitBtn = new Button(&quot;QUIT GAME&quot;);</span>
-<span class="nc" id="L307">        quitBtn.setPrefSize(280, 55);</span>
-<span class="nc" id="L308">        quitBtn.setStyle(&quot;-fx-base: #8B0000; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: white; -fx-border-width: 1; -fx-border-radius: 5;&quot;);</span>
-<span class="nc bnc" id="L309" title="All 2 branches missed.">        if (tribalSmall != null) quitBtn.setFont(tribalSmall);</span>
-<span class="nc" id="L310">        quitBtn.setOnAction(e -&gt; System.exit(0));</span>
-<span class="nc" id="L311">        return quitBtn;</span>
+<span class="nc" id="L313">        Button quitBtn = new Button(&quot;QUIT GAME&quot;);</span>
+<span class="nc" id="L314">        quitBtn.setPrefSize(280, 55);</span>
+<span class="nc" id="L315">        quitBtn.setStyle(&quot;-fx-base: #8B0000; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: white; -fx-border-width: 1; -fx-border-radius: 5;&quot;);</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        if (tribalSmall != null) quitBtn.setFont(tribalSmall);</span>
+<span class="nc" id="L317">        quitBtn.setOnAction(e -&gt; System.exit(0));</span>
+<span class="nc" id="L318">        return quitBtn;</span>
     }
 
     /**
@@ -317,8 +324,8 @@ import java.util.function.Consumer;
      * @param menuToShow The VBox to display.
      */
     private void switchInternalMenu(VBox menuToShow) {
-<span class="nc" id="L320">        mainButtonsBox.setVisible(false); createLobbyBox.setVisible(false);</span>
-<span class="nc" id="L321">        reconnectBox.setVisible(false); menuToShow.setVisible(true);</span>
-<span class="nc" id="L322">    }</span>
+<span class="nc" id="L327">        mainButtonsBox.setVisible(false); createLobbyBox.setVisible(false);</span>
+<span class="nc" id="L328">        reconnectBox.setVisible(false); menuToShow.setVisible(true);</span>
+<span class="nc" id="L329">    }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

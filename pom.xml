@@ -80,6 +80,7 @@
                 <version>3.2.5</version>
                 <configuration>
                     <argLine>
+                        @{jacocoArgLine}
                         --enable-native-access=javafx.graphics
                         --add-reads it.polimi.ingsw.am02=ALL-UNNAMED
                         --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.server.model=ALL-UNNAMED
@@ -87,6 +88,32 @@
                         --add-opens it.polimi.ingsw.am02/it.polimi.ingsw.am02.server.model.buildingeffects=ALL-UNNAMED
                     </argLine>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.13</version>
+                <configuration>
+                    <!-- Surefire already defines a static argLine; expose the agent
+                         as a separate property and splice it in via @{jacocoArgLine}
+                         so the existing add-opens / enable-native-access flags survive. -->
+                    <propertyName>jacocoArgLine</propertyName>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals><goal>report</goal></goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/deliverables/coverage</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>

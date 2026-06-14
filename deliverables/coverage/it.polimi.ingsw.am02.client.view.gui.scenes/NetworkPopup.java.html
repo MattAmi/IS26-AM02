@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetworkPopup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">am02 in am02 Coverage Results</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">NetworkPopup.java</span></div><h1>NetworkPopup.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetworkPopup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Mesos</a> &gt; <a href="index.source.html" class="el_package">it.polimi.ingsw.am02.client.view.gui.scenes</a> &gt; <span class="el_source">NetworkPopup.java</span></div><h1>NetworkPopup.java</h1><pre class="source lang-java linenums">package it.polimi.ingsw.am02.client.view.gui.scenes;
 
 import it.polimi.ingsw.am02.common.NetworkDefaults;
 import it.polimi.ingsw.am02.common.enumerations.NetworkType;
@@ -117,7 +117,7 @@ import java.util.function.Consumer;
 <span class="nc" id="L117">        Label statusLbl = new Label(&quot;&quot;);</span>
 <span class="nc" id="L118">        statusLbl.setTextFill(Color.YELLOW); statusLbl.setFont(introFontSmall);</span>
 
-<span class="nc" id="L120">        connectBtn.setOnAction(e -&gt; {</span>
+<span class="nc" id="L120">        javafx.event.EventHandler&lt;javafx.event.ActionEvent&gt; connectAction = e -&gt; {</span>
             try {
 <span class="nc bnc" id="L122" title="All 2 branches missed.">                NetworkType type = rmiBtn.isSelected() ? NetworkType.RMI : NetworkType.SOCKET;</span>
 <span class="nc" id="L123">                onConnect.accept(new ConnectionConfig(type, ipField.getText().trim(), Integer.parseInt(portField.getText().trim())), (msg) -&gt; {</span>
@@ -128,13 +128,16 @@ import java.util.function.Consumer;
 <span class="nc" id="L128">                    });</span>
 <span class="nc" id="L129">                });</span>
 <span class="nc" id="L130">            } catch (Exception ex) { statusLbl.setText(&quot;INVALID PORT&quot;); }</span>
-<span class="nc" id="L131">        });</span>
+<span class="nc" id="L131">        };</span>
+<span class="nc" id="L132">        connectBtn.setOnAction(connectAction);</span>
+<span class="nc" id="L133">        ipField.setOnAction(connectAction);</span>
+<span class="nc" id="L134">        portField.setOnAction(connectAction);</span>
 
-<span class="nc" id="L133">        content.getChildren().addAll(title, typeBox, ipField, portField, connectBtn, statusLbl);</span>
+<span class="nc" id="L136">        content.getChildren().addAll(title, typeBox, ipField, portField, connectBtn, statusLbl);</span>
 
-<span class="nc" id="L135">        root.getChildren().addAll(background, content);</span>
+<span class="nc" id="L138">        root.getChildren().addAll(background, content);</span>
 
-<span class="nc" id="L137">        return root;</span>
+<span class="nc" id="L140">        return root;</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

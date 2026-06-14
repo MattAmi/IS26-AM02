@@ -182,6 +182,7 @@ public class Lobby {
             controllerManager.removeLobby(lobbyId);
         } else {
             broadcastCurrentLobbyUpdated();
+            controllerManager.notifyLobbyListChanged();
         }
     }
 

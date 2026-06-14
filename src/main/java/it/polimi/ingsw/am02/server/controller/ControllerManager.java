@@ -362,6 +362,15 @@ public class ControllerManager implements VirtualControllerManager {
     }
 
     /**
+     * Called by {@link Lobby} when a client leaves but the lobby is not empty.
+     * Re-broadcasts the available-lobby list to all pre-lobby clients so their
+     * displayed player count (e.g. {@code 2/n}) stays in sync.
+     */
+    public synchronized void notifyLobbyListChanged() {
+        broadcastToPreLobbyClients();
+    }
+
+    /**
      * Moves a client from a lobby back to the pre-lobby state.
      * Sends the current lobby list to the returning client.
      *

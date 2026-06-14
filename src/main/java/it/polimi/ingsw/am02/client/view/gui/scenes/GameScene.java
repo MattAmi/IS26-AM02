@@ -250,7 +250,7 @@ public class GameScene {
 
         confirmBtn = new Button("CONFIRM PICK"); confirmBtn.setStyle(idleStyle);
         confirmBtn.setOnMouseEntered(e -> confirmBtn.setStyle(hoverStyle)); confirmBtn.setOnMouseExited(e -> confirmBtn.setStyle(idleStyle));
-        confirmBtn.setOnAction(e -> { if (!actionsAllowed()) return; controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
+        confirmBtn.setOnAction(e -> { if (!cardActionsAllowed()) return; controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
 
         endTurnBtn = new Button("END TURN"); endTurnBtn.setStyle(idleStyle);
         endTurnBtn.setOnMouseEntered(e -> endTurnBtn.setStyle(hoverStyle)); endTurnBtn.setOnMouseExited(e -> endTurnBtn.setStyle(idleStyle));
@@ -878,7 +878,7 @@ public class GameScene {
      * @param id The card ID.
      */
     private void toggleCardSelection(String id) {
-        if (isAnimating || !actionsAllowed()) return;
+        if (isAnimating || !cardActionsAllowed()) return;
         if (selected.contains(id)) selected.remove(id); else selected.add(id);
         refreshAllInternal(lastState);
     }
@@ -1165,6 +1165,19 @@ public class GameScene {
         return !isReplaying && isMyTurn(lastState);
     }
 
+    /**
+     * @return {@code true} if the local player may currently select board cards
+     *         and confirm a pick. Card actions belong exclusively to the
+     *         {@link PhaseType#ACTION_RESOLUTION} phase; during
+     *         {@link PhaseType#TOTEM_PLACEMENT} (and any other phase) the player
+     *         places their totem on an offer tile instead, so cards must not be
+     *         selectable and CONFIRM PICK must stay disabled.
+     */
+    private boolean cardActionsAllowed() {
+        return actionsAllowed() && lastState != null
+                && lastState.currentPhase == PhaseType.ACTION_RESOLUTION;
+    }
+
     /** @return {@code true} if it is the local player's turn in the given state. */
     private boolean isMyTurn(SceneState s) {
         return s != null && s.myNickname != null && s.myNickname.equals(s.currentPlayer);
@@ -1179,7 +1192,9 @@ public class GameScene {
      */
     private void updateActionButtonsState() {
         boolean allowed = actionsAllowed();
-        if (confirmBtn != null) confirmBtn.setDisable(!allowed);
+        // CONFIRM PICK belongs to ACTION_RESOLUTION only: during TOTEM_PLACEMENT
+        // (or any other phase) it must stay disabled even on the player's turn.
+        if (confirmBtn != null) confirmBtn.setDisable(!cardActionsAllowed());
         if (endTurnBtn != null) endTurnBtn.setDisable(!allowed);
     }
 

@@ -117,7 +117,7 @@ public class LobbyListScene {
 
         Label title = new Label("AVAILABLE LOBBIES");
         title.setTextFill(Color.web("#F2D5A3"));
-        if (tribalLarge != null) title.setFont(tribalLarge);
+        if (introFont != null) title.setFont(Font.font(introFont.getFamily(), 36));
         StackPane.setAlignment(title, Pos.CENTER);
 
         topBar.getChildren().addAll(title, backBtn);
@@ -149,7 +149,7 @@ public class LobbyListScene {
             if (lobbies == null || lobbies.isEmpty()) {
                 Label emptyLbl = new Label("No active lobbies found. Go back and create one!");
                 emptyLbl.setTextFill(Color.WHITE);
-                if (tribalMedium != null) emptyLbl.setFont(tribalMedium);
+                if (introFont != null) emptyLbl.setFont(Font.font(introFont.getFamily(), 20));
                 listContainer.getChildren().add(emptyLbl);
                 return;
             }

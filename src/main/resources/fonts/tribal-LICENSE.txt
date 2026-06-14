@@ -1,0 +1,11 @@
+Font file:  tribal.ttf
+Font name:  Tribal
+Designer:   Des — Apostrophic Laboratories (apostrophiclab.com)
+Source:     https://fonts2u.com/tribal.font
+License:    Freeware (as classified on the Fonts2u distribution page;
+            "Embedding rights: Embedding for permanent installation").
+
+Embedded metadata in the file lists: Copyright "Des", Family "Tribal".
+No formal end-user license text is embedded in the .ttf itself; the
+"Freeware" classification comes from the Fonts2u source page above.
+Verify the terms at the source before any commercial redistribution.

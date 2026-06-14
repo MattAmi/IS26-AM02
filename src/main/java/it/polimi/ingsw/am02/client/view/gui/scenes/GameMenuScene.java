@@ -224,12 +224,12 @@ public class GameMenuScene {
 
         Label lbl = new Label("Select Lobby Size (2-5):");
         lbl.setTextFill(Color.WHITE);
-        if (tribalSmall != null) lbl.setFont(tribalSmall);
+        if (introFont != null) lbl.setFont(introFont);
 
         TextField sizeField = new TextField("2");
         sizeField.setMaxWidth(100); sizeField.setAlignment(Pos.CENTER);
         sizeField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;");
-        if (tribalSmall != null) sizeField.setFont(tribalSmall);
+        if (introFont != null) sizeField.setFont(introFont);
 
         createLobbyBox.getChildren().addAll(lbl, sizeField,
                 createMenuButton("CONFIRM", e -> {

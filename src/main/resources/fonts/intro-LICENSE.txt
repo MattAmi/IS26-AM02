@@ -1,0 +1,15 @@
+Font file:  intro.ttf
+Font name:  c Caves
+Designer:   Wahyu Eka Prasetya ("wep") — https://wepfont.com
+Copyright:  Copyright (c) 2021, wep
+Source:     https://www.dafont.com/c-caves.font
+License:    Donationware — free for PERSONAL use.
+
+IMPORTANT: This font is donationware. Commercial use is NOT granted by
+default; it requires the author's permission / a donation. Contact the
+author at https://wepfont.com for commercial licensing.
+
+This project uses the font only for a non-commercial, academic purpose.
+The font was identified from the file's embedded metadata, which lists the
+full name "CAVES" by designer "Wahyu Eka Prasetya" (the file is named
+intro.ttf in this project).

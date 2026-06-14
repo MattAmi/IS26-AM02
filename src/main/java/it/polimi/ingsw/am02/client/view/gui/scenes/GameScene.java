@@ -222,21 +222,27 @@ public class GameScene {
         centerLayout.setStyle("-fx-background-image: url('" + bgPath + "'); -fx-background-size: 130%; -fx-background-position: center;");
         Region darkOverlay = new Region(); darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.55);");
 
-        mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 250, 20)); mainBoardArea.setAlignment(Pos.CENTER);
+        // Fixed bottom reservation for the overlaid hand/TRIBE strip. The strip is
+        // height-bounded below (fixed tribe-card size + capped cascade spread + tight
+        // paddings), so it never grows past this reservation as a tribe accumulates
+        // cards. A fixed value (rather than one bound to the strip height) keeps the
+        // board from scrolling, while still guaranteeing the lower row is never
+        // covered, for any tribe size and 2-5 players.
+        mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 255, 20)); mainBoardArea.setAlignment(Pos.CENTER);
         ScrollPane scrollPane = new ScrollPane(mainBoardArea); scrollPane.setFitToWidth(true); scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
         VBox bottomLayout = new VBox(0); bottomLayout.setMaxHeight(Region.USE_PREF_SIZE); bottomLayout.setAlignment(Pos.BOTTOM_CENTER);
 
-        VBox handArea = new VBox(5); handArea.setPadding(new Insets(10, 10, 30, 10));
+        VBox handArea = new VBox(5); handArea.setPadding(new Insets(10, 10, 12, 10));
         handArea.setStyle("-fx-background-color: rgba(26, 15, 7, 0.90); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;");
         handTitle = new Label("TRIBE"); handTitle.setTextFill(Color.web("#F2D5A3")); handTitle.setFont(Font.font(tribalFont.getFamily(), 14));
 
-        handCardsBox = new HBox(15); handCardsBox.setAlignment(Pos.TOP_CENTER); handCardsBox.setMinHeight(220);
+        handCardsBox = new HBox(15); handCardsBox.setAlignment(Pos.TOP_CENTER); handCardsBox.setMinHeight(155);
         ScrollPane handScroll = new ScrollPane(handCardsBox); handScroll.setFitToHeight(true); handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         handScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         handArea.getChildren().addAll(handTitle, handScroll);
 
-        HBox bottomButtons = new HBox(25); bottomButtons.setPadding(new Insets(15)); bottomButtons.setAlignment(Pos.CENTER);
+        HBox bottomButtons = new HBox(25); bottomButtons.setPadding(new Insets(10)); bottomButtons.setAlignment(Pos.CENTER);
         bottomButtons.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
 
         String idleStyle = "-fx-background-color: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + fName + "\"; -fx-border-color: #4A3B32; -fx-border-radius: 3; -fx-border-width: 1;";
@@ -683,13 +689,15 @@ public class GameScene {
         // Cascade cards downward, but cap the total spread to a fixed budget so large stacks
         // (e.g. dozens of cards of the same type) stay within the hand area instead of overflowing
         // past the clipped, non-scrolling viewport. With few cards the offset stays at the full 25px.
-        int spreadBudget = 80;
+        // The budget plus the card height below must fit the fixed strip height (see the
+        // handCardsBox minHeight / mainBoardArea bottom reservation) so the strip never grows.
+        int spreadBudget = 30;
         int offsetPerCard = cardIds.size() <= 1 ? 0 : Math.min(25, spreadBudget / (cardIds.size() - 1));
         stack.setPadding(new Insets(20, 0, Math.max(0, cardIds.size() - 1) * offsetPerCard, 0));
 
         for (int i = 0; i < cardIds.size(); i++) {
             String id = cardIds.get(i);
-            GameCardView cardView = new GameCardView(id, false, 130, () -> showZoomedCard(id));
+            GameCardView cardView = new GameCardView(id, false, 105, () -> showZoomedCard(id));
             cardView.setTranslateY(i * offsetPerCard); stack.getChildren().add(cardView);
         }
 

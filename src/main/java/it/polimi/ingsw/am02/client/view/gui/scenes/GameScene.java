@@ -303,6 +303,63 @@ public class GameScene {
     }
 
     /**
+     * Logs that a player placed their totem on an offer tile.
+     * Mirrors the TUI {@code [BOARD]} notification.
+     *
+     * @param nickname The nickname of the player.
+     * @param tileID   The tile the totem was placed on.
+     */
+    public void logTotemPlaced(String nickname, char tileID) {
+        Platform.runLater(() -> addLogEntry("[BOARD] ", nickname + " placed their totem on tile " + tileID, Color.WHITE));
+    }
+
+    /**
+     * Logs that a player's totem returned to the turn-order tile.
+     * Mirrors the TUI {@code [BOARD]} notification.
+     *
+     * @param nickname The nickname of the player.
+     * @param position The zero-based turn-order slot index.
+     */
+    public void logTotemReturned(String nickname, int position) {
+        Platform.runLater(() -> addLogEntry("[BOARD] ", nickname + " returned to turn-order slot " + (position + 1), Color.WHITE));
+    }
+
+    /**
+     * Logs that a player took a card from the board.
+     * Mirrors the TUI {@code [ACTION]} notification.
+     *
+     * @param nickname The nickname of the player.
+     * @param cardID   The ID of the card taken.
+     */
+    public void logCardTaken(String nickname, String cardID) {
+        Platform.runLater(() -> addLogEntry("[ACTION] ", nickname + " took " + CardCatalog.getInstance().format(cardID), Color.web("#4DD0E1")));
+    }
+
+    /**
+     * Logs that a player gained an extra turn.
+     * Mirrors the TUI {@code [EXTRA]} notification.
+     *
+     * @param nickname       The nickname of the player.
+     * @param remainingUpper Remaining upper-row picks.
+     * @param remainingLower Remaining lower-row picks.
+     */
+    public void logExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+        Platform.runLater(() -> addLogEntry("[EXTRA] ",
+                nickname + " gained an extra turn! (Up:" + remainingUpper + " Lw:" + remainingLower + ")",
+                Color.web("#4CAF50")));
+    }
+
+    /**
+     * Logs that a player's extra turn ended.
+     * Mirrors the TUI {@code [EXTRA]} notification.
+     *
+     * @param nickname The nickname of the player.
+     */
+    public void logExtraTurnEnded(String nickname) {
+        Platform.runLater(() -> addLogEntry("[EXTRA] ", nickname + "'s extra turn ended.", Color.GOLD));
+    }
+
+    /**
      * Logs the start of the auto-player timer.
      *
      * @param nickname The nickname of the disconnected player.

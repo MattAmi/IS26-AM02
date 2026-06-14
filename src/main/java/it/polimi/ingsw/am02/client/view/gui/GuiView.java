@@ -188,7 +188,11 @@ public class GuiView extends AbstractClientView {
      * @param tileID   The ID of the tile where the totem was placed.
      */
     @Override
-    public void onTotemPlaced(String nickname, char tileID) { refreshGameIfActive(); }
+    public void onTotemPlaced(String nickname, char tileID) {
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.logTotemPlaced(nickname, tileID);
+        refreshGameIfActive();
+    }
 
     /**
      * Handles the return of a totem to the turn order track.
@@ -197,7 +201,11 @@ public class GuiView extends AbstractClientView {
      * @param turnOrderPosition The position in the turn order track.
      */
     @Override
-    public void onTotemReturned(String nickname, int turnOrderPosition) { refreshGameIfActive(); }
+    public void onTotemReturned(String nickname, int turnOrderPosition) {
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.logTotemReturned(nickname, turnOrderPosition);
+        refreshGameIfActive();
+    }
 
     /**
      * Handles the update of the offer tiles on the board.
@@ -265,7 +273,10 @@ public class GuiView extends AbstractClientView {
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
         GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.animateCardTaken(nickname, cardID, cardType, sourceRow);
+        if (gs != null) {
+            gs.logCardTaken(nickname, cardID);
+            gs.animateCardTaken(nickname, cardID, cardType, sourceRow);
+        }
     }
 
     /**
@@ -276,7 +287,11 @@ public class GuiView extends AbstractClientView {
      * @param remainingLower The remaining picks from the lower row.
      */
     @Override
-    public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }
+    public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.logExtraTurnStarted(nickname, remainingUpper, remainingLower);
+        refreshGameIfActive();
+    }
 
     /**
      * Handles the end of an extra turn for a player.
@@ -284,7 +299,11 @@ public class GuiView extends AbstractClientView {
      * @param nickname The nickname of the player.
      */
     @Override
-    public void onExtraTurnEnded(String nickname) { refreshGameIfActive(); }
+    public void onExtraTurnEnded(String nickname) {
+        GameScene gs = sceneRouter.getGameScene();
+        if (gs != null) gs.logExtraTurnEnded(nickname);
+        refreshGameIfActive();
+    }
 
     /**
      * Handles the normal end of the game.

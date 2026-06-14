@@ -5,6 +5,7 @@ import it.polimi.ingsw.am02.client.network.ServerProxy;
 import it.polimi.ingsw.am02.client.network.ServerProxyFactory;
 import it.polimi.ingsw.am02.client.view.gui.scenes.*;
 import it.polimi.ingsw.am02.common.dto.LobbyInfo;
+import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -14,6 +15,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -297,28 +300,98 @@ public class SceneRouter {
             Label tL = new Label(title); tL.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
             Label cL = new Label(content); cL.setStyle("-fx-text-fill: white; -fx-font-size: 14px;"); cL.setWrapText(true); cL.setAlignment(Pos.CENTER);
 
-            HBox buttons = new HBox(20);
-            buttons.setAlignment(Pos.CENTER);
-
-            Button menuBtn = new Button("RETURN TO MENU");
-            menuBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;");
-            menuBtn.setPrefHeight(40);
-            menuBtn.setOnAction(e -> {
-                hideModal();
-                guiController.requestReturnToLobby();
-            });
-
-            Button exitBtn = new Button("EXIT GAME");
-            exitBtn.setStyle("-fx-base: #8B0000; -fx-text-fill: white; -fx-font-weight: bold;");
-            exitBtn.setPrefHeight(40);
-            exitBtn.setOnAction(e -> System.exit(0));
-
-            buttons.getChildren().addAll(menuBtn, exitBtn);
-            alertBox.getChildren().addAll(tL, cL, buttons);
+            alertBox.getChildren().addAll(tL, cL, buildGameOverButtons());
 
             modalLayer.getChildren().setAll(alertBox);
             modalLayer.setVisible(true);
         });
+    }
+
+    /**
+     * Displays the end-of-game popup with the winners and the full final
+     * rankings, mirroring the TUI's game-over screen. Each ranking row shows the
+     * position, the player's nickname and their total prestige points next to the
+     * prestige-point icon.
+     *
+     * @param title         The title of the popup.
+     * @param winners       The nicknames of the winning players.
+     * @param finalRankings The final score rankings, in ranking order.
+     */
+    public void showGameOverPopup(String title, List<String> winners, List<PlayerFinalScore> finalRankings) {
+        runOnUi(() -> {
+            VBox alertBox = new VBox(16);
+            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(480, 480);
+            alertBox.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+
+            Label tL = new Label(title); tL.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
+            Label wL = new Label("Winners: " + String.join(", ", winners));
+            wL.setStyle("-fx-text-fill: white; -fx-font-size: 14px;"); wL.setWrapText(true); wL.setAlignment(Pos.CENTER);
+
+            Label rankHeader = new Label("FINAL RANKINGS");
+            rankHeader.setStyle("-fx-text-fill: #C9A0DC; -fx-font-size: 13px; -fx-font-weight: bold;");
+
+            VBox rankingsBox = new VBox(8);
+            rankingsBox.setAlignment(Pos.CENTER_LEFT);
+            for (int i = 0; i < finalRankings.size(); i++) {
+                PlayerFinalScore s = finalRankings.get(i);
+
+                Label pos = new Label((i + 1) + ".");
+                pos.setStyle("-fx-text-fill: #F2D5A3; -fx-font-weight: bold; -fx-font-size: 13px;");
+                pos.setMinWidth(22);
+
+                Label name = new Label(s.nickname());
+                name.setStyle("-fx-text-fill: white; -fx-font-size: 13px;");
+                HBox.setHgrow(name, javafx.scene.layout.Priority.ALWAYS);
+                name.setMaxWidth(Double.MAX_VALUE);
+
+                ImageView ppIcon = new ImageView(ImageLoader.getImage("/images/icons/prestige_point.png"));
+                ppIcon.setFitHeight(16); ppIcon.setPreserveRatio(true);
+
+                Label ppLabel = new Label(String.valueOf(s.totalPrestigePoints()));
+                ppLabel.setStyle("-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;");
+
+                HBox row = new HBox(8, pos, name, ppIcon, ppLabel);
+                row.setAlignment(Pos.CENTER_LEFT);
+                rankingsBox.getChildren().add(row);
+            }
+
+            ScrollPane scroll = new ScrollPane(rankingsBox);
+            scroll.setFitToWidth(true);
+            scroll.setMaxHeight(220);
+            scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+
+            alertBox.getChildren().addAll(tL, wL, rankHeader, scroll, buildGameOverButtons());
+
+            modalLayer.getChildren().setAll(alertBox);
+            modalLayer.setVisible(true);
+        });
+    }
+
+    /**
+     * Builds the shared "return to menu / exit" button row used by the
+     * game-over popups.
+     *
+     * @return the configured button bar.
+     */
+    private HBox buildGameOverButtons() {
+        HBox buttons = new HBox(20);
+        buttons.setAlignment(Pos.CENTER);
+
+        Button menuBtn = new Button("RETURN TO MENU");
+        menuBtn.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-font-weight: bold;");
+        menuBtn.setPrefHeight(40);
+        menuBtn.setOnAction(e -> {
+            hideModal();
+            guiController.requestReturnToLobby();
+        });
+
+        Button exitBtn = new Button("EXIT GAME");
+        exitBtn.setStyle("-fx-base: #8B0000; -fx-text-fill: white; -fx-font-weight: bold;");
+        exitBtn.setPrefHeight(40);
+        exitBtn.setOnAction(e -> System.exit(0));
+
+        buttons.getChildren().addAll(menuBtn, exitBtn);
+        return buttons;
     }
 
     /**

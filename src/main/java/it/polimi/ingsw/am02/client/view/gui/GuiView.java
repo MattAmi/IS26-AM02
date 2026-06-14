@@ -367,7 +367,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameEnded(List<String> winners, List<PlayerFinalScore> finalRankings) {
-        sceneRouter.showGameOverPopup("Game Over", "Winners: " + String.join(", ", winners));
+        sceneRouter.showGameOverPopup("=== GAME OVER ===", winners, finalRankings);
     }
 
     /**

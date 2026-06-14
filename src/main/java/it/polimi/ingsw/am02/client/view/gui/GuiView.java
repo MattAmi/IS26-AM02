@@ -451,6 +451,11 @@ public class GuiView extends AbstractClientView {
     @Override
     public void onGlobalTimerStarted(long seconds) {
         javafx.application.Platform.runLater(() -> {
+            // Reset first so the direct-show path and the pending fallback are
+            // mutually exclusive: the banner can be raised by exactly one of them,
+            // never by both (which would otherwise restart the countdown on the
+            // next render).
+            pendingForfeitSeconds = null;
             GameScene gs = sceneRouter.getGameScene();
             if (gs != null) gs.showForfeitBanner(seconds);
             else pendingForfeitSeconds = seconds;

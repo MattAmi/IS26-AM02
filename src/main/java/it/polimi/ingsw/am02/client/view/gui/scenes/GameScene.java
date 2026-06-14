@@ -64,6 +64,14 @@ public class GameScene {
 
     private final Queue<Runnable> animationQueue = new LinkedList<>();
     private boolean isAnimating = false;
+
+    // Catch-up guard: while the reconnection event history is
+    // being fast-forwarded, all interactive controls are locked so the player cannot
+    // fire a command against a stale frame of the replay.
+    private boolean isReplaying = false;
+    private PauseTransition replayWatchdog;
+    private Button confirmBtn;
+    private Button endTurnBtn;
     private SceneState lastState;
 
     /**
@@ -232,13 +240,13 @@ public class GameScene {
         String idleStyle = "-fx-background-color: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + fName + "\"; -fx-border-color: #4A3B32; -fx-border-radius: 3; -fx-border-width: 1;";
         String hoverStyle = "-fx-background-color: #4e3219; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-font-family: \"" + fName + "\"; -fx-border-color: #F2D5A3; -fx-border-radius: 3; -fx-border-width: 1;";
 
-        Button confirmBtn = new Button("CONFIRM PICK"); confirmBtn.setStyle(idleStyle);
+        confirmBtn = new Button("CONFIRM PICK"); confirmBtn.setStyle(idleStyle);
         confirmBtn.setOnMouseEntered(e -> confirmBtn.setStyle(hoverStyle)); confirmBtn.setOnMouseExited(e -> confirmBtn.setStyle(idleStyle));
-        confirmBtn.setOnAction(e -> { controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
+        confirmBtn.setOnAction(e -> { if (isReplaying) return; controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
 
-        Button endTurnBtn = new Button("END TURN"); endTurnBtn.setStyle(idleStyle);
+        endTurnBtn = new Button("END TURN"); endTurnBtn.setStyle(idleStyle);
         endTurnBtn.setOnMouseEntered(e -> endTurnBtn.setStyle(hoverStyle)); endTurnBtn.setOnMouseExited(e -> endTurnBtn.setStyle(idleStyle));
-        endTurnBtn.setOnAction(e -> controller.moveTotem('T'));
+        endTurnBtn.setOnAction(e -> { if (isReplaying) return; controller.moveTotem('T'); });
 
         Button summaryBtn = new Button("SUMMARY"); summaryBtn.setStyle(idleStyle);
         summaryBtn.setOnMouseEntered(e -> summaryBtn.setStyle(hoverStyle)); summaryBtn.setOnMouseExited(e -> summaryBtn.setStyle(idleStyle));
@@ -419,6 +427,7 @@ public class GameScene {
         this.lastState = snapshot;
 
         Platform.runLater(() -> {
+            if (isReplaying) armReplayWatchdog();
             animationQueue.add(() -> refreshAllInternal(snapshot));
             if (!isAnimating) playNextAnimation();
         });
@@ -807,6 +816,7 @@ public class GameScene {
      * @param id The card ID.
      */
     private void toggleCardSelection(String id) {
+        if (isReplaying) return;
         if (isAnimating) return;
         if (lastState != null && !lastState.myNickname.equals(lastState.currentPlayer)) return;
         if (selected.contains(id)) selected.remove(id); else selected.add(id);
@@ -1048,6 +1058,39 @@ public class GameScene {
         this.selected.clear();
         this.animationQueue.clear();
         this.isAnimating = false;
+        this.isReplaying = true;
+        Platform.runLater(this::enterReplayUiState);
+    }
+
+    /**
+     * Locks the interactive controls (board cards and action buttons) for the
+     * duration of the catch-up replay and arms the watchdog that detects when
+     * the fast-forward event stream has gone quiet.
+     */
+    private void enterReplayUiState() {
+        if (confirmBtn != null) confirmBtn.setDisable(true);
+        if (endTurnBtn != null) endTurnBtn.setDisable(true);
+        armReplayWatchdog();
+    }
+
+    /**
+     * (Re)starts the 700 ms quiet-period timer. Each replayed event resets it;
+     * once no further event arrives within the window the replay is considered
+     * complete and controls are unlocked.
+     */
+    private void armReplayWatchdog() {
+        if (replayWatchdog == null) {
+            replayWatchdog = new PauseTransition(Duration.millis(700));
+            replayWatchdog.setOnFinished(e -> finishReplay());
+        }
+        replayWatchdog.playFromStart();
+    }
+
+    /** Unlocks the controls once the catch-up replay has finished. */
+    private void finishReplay() {
+        isReplaying = false;
+        if (confirmBtn != null) confirmBtn.setDisable(false);
+        if (endTurnBtn != null) endTurnBtn.setDisable(false);
     }
 
     /**

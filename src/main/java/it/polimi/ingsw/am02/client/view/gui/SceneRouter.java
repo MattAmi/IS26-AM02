@@ -10,6 +10,7 @@ import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -21,6 +22,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -320,8 +322,7 @@ public class SceneRouter {
     public void showGameOverPopup(String title, List<String> winners, List<PlayerFinalScore> finalRankings) {
         runOnUi(() -> {
             VBox alertBox = new VBox(16);
-            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(480, 480);
-            alertBox.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+            alertBox.setAlignment(Pos.CENTER); alertBox.setPadding(new Insets(30)); alertBox.setMaxSize(440, 500);
 
             Label tL = new Label(title); tL.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #F2D5A3;");
             Label wL = new Label((winners.size() == 1 ? "Winner: " : "Winners: ") + String.join(", ", winners));
@@ -362,7 +363,33 @@ public class SceneRouter {
 
             alertBox.getChildren().addAll(tL, wL, rankHeader, scroll, buildGameOverButtons());
 
-            modalLayer.getChildren().setAll(alertBox);
+            // Background: the box art (mesos_box.png) zoomed onto the central
+            // bonfire-and-dancers scene via a viewport crop, dimmed by a dark
+            // scrim so the white/gold text stays legible.
+            ImageView bg = new ImageView(ImageLoader.getImage("/images/mesos_box.png"));
+            bg.setPreserveRatio(false);
+            // Crop region (in source-image pixels) around the fire and figures.
+            bg.setViewport(new Rectangle2D(95, 175, 410, 400));
+
+            Region scrim = new Region();
+            scrim.setStyle("-fx-background-color: rgba(20, 10, 6, 0.72);");
+
+            StackPane backdrop = new StackPane(bg, scrim);
+            bg.fitWidthProperty().bind(backdrop.widthProperty());
+            bg.fitHeightProperty().bind(backdrop.heightProperty());
+
+            Rectangle clip = new Rectangle();
+            clip.setArcWidth(22); clip.setArcHeight(22);
+            clip.widthProperty().bind(backdrop.widthProperty());
+            clip.heightProperty().bind(backdrop.heightProperty());
+            backdrop.setClip(clip);
+
+            StackPane card = new StackPane(backdrop, alertBox);
+            card.setMaxSize(440, 500);
+            card.setStyle("-fx-background-color: #2b1d14; -fx-border-color: #F2D5A3; "
+                    + "-fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+
+            modalLayer.getChildren().setAll(card);
             modalLayer.setVisible(true);
         });
     }

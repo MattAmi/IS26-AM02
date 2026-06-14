@@ -501,7 +501,7 @@ public class GameScene {
             OfferTileView tileView = new OfferTileView(t, occupantTotem, controller);
             offerTiles.getChildren().add(tileView);
         }
-        track.getChildren().addAll(currentDeckView, turnOrderCave, offerTiles);
+        track.getChildren().addAll(currentDeckView, turnOrderCave, offerTiles, new ReservePileView(tribalFont));
         return track;
     }
 

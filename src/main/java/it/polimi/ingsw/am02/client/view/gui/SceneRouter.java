@@ -18,6 +18,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -87,6 +89,18 @@ public class SceneRouter {
 
         rootContainer = new StackPane(baseLayer, modalLayer, toastLayer);
         Scene mainScene = new Scene(rootContainer, 400, 450);
+
+        // Global full-screen toggle: the scene outlives every view swap (only
+        // baseLayer's content changes), so a single filter here makes F11 work at
+        // any moment of the application — crucially letting the user re-enter full
+        // screen after leaving it, which ESC alone never allowed.
+        mainScene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            if (e.getCode() == KeyCode.F11) {
+                primaryStage.setResizable(true);
+                primaryStage.setFullScreen(!primaryStage.isFullScreen());
+                e.consume();
+            }
+        });
 
         primaryStage.setTitle("Mesos - Board Game");
         primaryStage.setScene(mainScene);

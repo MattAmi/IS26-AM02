@@ -91,6 +91,7 @@ public class GameScene {
         Map<String, Totem> totems; List<String> upperRow; List<String> upperRowBuildings;
         List<String> lowerRow; List<String> lowerRowBuildings; List<OfferTileInfo> offerTiles;
         List<TurnOrderSlotInfo> turnOrderSlots;
+        Map<String, Integer> remainingUpper; Map<String, Integer> remainingLower;
         Map<String, List<String>> charactersByPlayer; Map<String, List<String>> buildingsByPlayer;
 
         public SceneState(GameModel m) {
@@ -114,6 +115,8 @@ public class GameScene {
             this.lowerRowBuildings = m.getLowerRowBuildings() != null ? new ArrayList<>(m.getLowerRowBuildings()) : new ArrayList<>();
             this.offerTiles = m.getOfferTiles() != null ? new ArrayList<>(m.getOfferTiles()) : new ArrayList<>();
             this.turnOrderSlots = m.getTurnOrderSlots() != null ? new ArrayList<>(m.getTurnOrderSlots()) : new ArrayList<>();
+            this.remainingUpper = m.getRemainingUpper() != null ? new HashMap<>(m.getRemainingUpper()) : new HashMap<>();
+            this.remainingLower = m.getRemainingLower() != null ? new HashMap<>(m.getRemainingLower()) : new HashMap<>();
             this.charactersByPlayer = new HashMap<>();
             if (m.getCharactersByPlayer() != null) m.getCharactersByPlayer().forEach((k, v) -> this.charactersByPlayer.put(k, new ArrayList<>(v)));
             this.buildingsByPlayer = new HashMap<>();
@@ -497,16 +500,23 @@ public class GameScene {
         List<String> players = state.turnOrder;
         if (players.isEmpty() || players.get(0).matches("\\d+")) players = new ArrayList<>(state.foodByPlayer.keySet());
 
+        // Remaining picks are only meaningful during ACTION_RESOLUTION; the model
+        // keeps the last values around between turns, so outside that phase we
+        // force them to 0 to match the TUI's per-phase semantics.
+        boolean inActionResolution = state.currentPhase == PhaseType.ACTION_RESOLUTION;
+
         for (String nick : players) {
             boolean isActive = nick.equals(state.currentPlayer);
             boolean isOffline = offlinePlayers.contains(nick);
             boolean isViewed = nick.equals(viewedPlayerHand);
             int food = state.foodByPlayer.getOrDefault(nick, 0);
             int pp = state.ppByPlayer.getOrDefault(nick, 0);
+            int picksUp = inActionResolution ? state.remainingUpper.getOrDefault(nick, 0) : 0;
+            int picksLow = inActionResolution ? state.remainingLower.getOrDefault(nick, 0) : 0;
 
             PlayerSidebarItem pBox = new PlayerSidebarItem(
                     nick, nick.equals(state.myNickname), isActive, isOffline, isViewed,
-                    food, pp, state.totems.get(nick), tribalFont,
+                    food, pp, picksUp, picksLow, state.totems.get(nick), tribalFont,
                     () -> { viewedPlayerHand = nick; refreshAllInternal(lastState); }
             );
             rightSidebar.getChildren().add(pBox);
@@ -530,16 +540,31 @@ public class GameScene {
 
         int spacing = numPlayers >= 4 ? 6 : 12;
 
-        HBox upperBand = new HBox(40); upperBand.setAlignment(Pos.CENTER);
+        // Covered building decks for future eras (rulebook 6b) float ABOVE and
+        // centred over the revealed buildings (6a) of the upper row, emulating the
+        // physical layout where the face-down Era II/III decks sit on top of the
+        // Tribu/Edificio rows. They are stacked in a VBox over the building group;
+        // the deck strip is empty (and collapses) once the final era is reached.
+        HBox coveredDecks = createCoveredBuildingDecks(state, (int) (boardCardHeight * 0.7));
+        VBox upperBuildingsColumn = new VBox(8); upperBuildingsColumn.setAlignment(Pos.BOTTOM_CENTER);
+        if (!coveredDecks.getChildren().isEmpty()) upperBuildingsColumn.getChildren().add(coveredDecks);
+        upperBuildingsColumn.getChildren().add(createCardGroup(state.upperRowBuildings, localDeals, boardCardHeight, spacing));
+
+        // fillHeight=false keeps the character group at its natural height so it
+        // bottom-aligns with the revealed buildings (same row); otherwise the HBox
+        // stretches it to the taller buildings-column height and centres it, leaving
+        // the characters floating above the buildings. The covered decks then sit on
+        // their own row directly above the revealed buildings.
+        HBox upperBand = new HBox(40); upperBand.setAlignment(Pos.BOTTOM_CENTER); upperBand.setFillHeight(false);
         upperBand.getChildren().addAll(
-                createCardGroup(state.upperRowBuildings, localDeals, boardCardHeight, spacing),
-                createCardGroup(state.upperRow, localDeals, boardCardHeight, spacing)
+                createCardGroup(state.upperRow, localDeals, boardCardHeight, spacing),
+                upperBuildingsColumn
         );
 
         HBox lowerBand = new HBox(40); lowerBand.setAlignment(Pos.CENTER);
         lowerBand.getChildren().addAll(
-                createCardGroup(state.lowerRowBuildings, localDeals, boardCardHeight, spacing),
-                createCardGroup(state.lowerRow, localDeals, boardCardHeight, spacing)
+                createCardGroup(state.lowerRow, localDeals, boardCardHeight, spacing),
+                createCardGroup(state.lowerRowBuildings, localDeals, boardCardHeight, spacing)
         );
 
         mainBoardArea.getChildren().addAll(upperBand, createTrackArea(state), lowerBand);
@@ -554,10 +579,12 @@ public class GameScene {
     private HBox createTrackArea(SceneState state) {
         HBox track = new HBox(25); track.setAlignment(Pos.CENTER);
         int displayEra = state.era.ordinal() + 1;
-        String eraPath = "/images/cards/eras/back_main_era_" + displayEra + ".png";
+        // The draw pile is rendered as a "mazzetto" (stacked-deck) graphic so the
+        // pile reads as a stack rather than a single card. The stack image already
+        // bakes in its own rounded corners and shadow, so no extra clipping here.
+        String eraPath = "/images/cards/eras/deck_main_era_" + displayEra + ".png";
         currentDeckView = new ImageView(ImageLoader.getImage(eraPath));
-        currentDeckView.setFitHeight(150); currentDeckView.setPreserveRatio(true);
-        applyRoundedCorners(currentDeckView, 10);
+        currentDeckView.setFitHeight(165); currentDeckView.setPreserveRatio(true);
 
         int numPlayers = Math.max(2, state.turnOrder.size());
         TurnOrderCaveView turnOrderCave = new TurnOrderCaveView(numPlayers, state.turnOrderSlots, model);
@@ -570,6 +597,33 @@ public class GameScene {
         }
         track.getChildren().addAll(currentDeckView, turnOrderCave, offerTiles, new ReservePileView(tribalFont));
         return track;
+    }
+
+    /**
+     * Builds the face-down building decks for the eras that have not yet entered
+     * play (rulebook step 6b). At setup both the Era II and Era III building decks
+     * sit covered beside the board; each is shown as a "mazzetto" stack graphic.
+     * Once an era begins its buildings are revealed in the rows, so its covered
+     * deck is no longer rendered — the deck for an era {@code n} appears only while
+     * the current era is strictly earlier than {@code n}. The result is therefore a
+     * pure function of the current era and works identically for 2–5 players.
+     *
+     * @param state      the current state snapshot
+     * @param cardHeight the board card height, so the decks match the row scale
+     * @return an HBox of covered deck views (possibly empty in the final era)
+     */
+    private HBox createCoveredBuildingDecks(SceneState state, int cardHeight) {
+        HBox decks = new HBox(10); decks.setAlignment(Pos.CENTER);
+        int displayEra = state.era.ordinal() + 1;
+        for (int era = 2; era <= 3; era++) {
+            if (displayEra < era) {
+                ImageView deckView = new ImageView(
+                        ImageLoader.getImage("/images/cards/buildings_retro/deck_build_era_" + era + ".png"));
+                deckView.setFitHeight(cardHeight); deckView.setPreserveRatio(true);
+                decks.getChildren().add(deckView);
+            }
+        }
+        return decks;
     }
 
     /**
@@ -1067,6 +1121,15 @@ public class GameScene {
      * the fast-forward event stream has gone quiet.
      */
     private void enterReplayUiState() {
+        // Wipe the log drawer so the fast-forward repopulates it from scratch,
+        // mirroring the TUI which re-prints the history on catch-up. Without this
+        // the pre-disconnect entries linger at the top while the replayed entries
+        // get pushed out by the 10-line cap, leaving the drawer "stuck on the old
+        // logs". Running here (on the FX thread, queued at the first replay event)
+        // guarantees the clear happens before any replayed log line is appended.
+        // No marker line is added: this path also runs on a normal game start,
+        // where a "recovered/replaying" note would be misleading.
+        if (logContainer != null) logContainer.getChildren().clear();
         updateActionButtonsState();
         armReplayWatchdog();
     }

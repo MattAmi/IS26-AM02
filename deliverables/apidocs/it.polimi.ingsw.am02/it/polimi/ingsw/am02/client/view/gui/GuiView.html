@@ -100,7 +100,6 @@ loadScripts(document, 'script');</script>
 <li><a href="#onConnectionLost()" tabindex="0">onConnectionLost()</a></li>
 <li><a href="#onConnectionRestored()" tabindex="0">onConnectionRestored()</a></li>
 <li><a href="#onReturnToLobby()" tabindex="0">onReturnToLobby()</a></li>
-<li><a href="#onShowAvailableTotems()" tabindex="0">onShowAvailableTotems()</a></li>
 </ol>
 </li>
 </ol>
@@ -111,13 +110,19 @@ loadScripts(document, 'script');</script>
 <h1 title="Class GuiView" class="title">Class GuiView</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
+<div class="inheritance"><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">it.polimi.ingsw.am02.client.view.AbstractClientView</a>
 <div class="inheritance">it.polimi.ingsw.am02.client.view.gui.GuiView</div>
 </div>
+</div>
 <section class="class-description" id="class-description">
+<dl class="notes">
+<dt>All Implemented Interfaces:</dt>
+<dd><code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+</dl>
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public class </span><span class="element-name type-name-label">GuiView</span>
-<span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
+<span class="extends-implements">extends <a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></span></div>
 <div class="block">Graphical User Interface (GUI) implementation of the client view.
 This class handles the rendering and update of the GUI scenes based on
 notifications from the lobby and game models.</div>
@@ -133,7 +138,7 @@ notifications from the lobby and game models.</div>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
-<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(it.polimi.ingsw.am02.client.model.LobbyModel)" class="member-name-link">GuiView</a><wbr>(it.polimi.ingsw.am02.client.model.LobbyModel&nbsp;lobbyModel)</code></div>
+<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(it.polimi.ingsw.am02.client.model.LobbyModel)" class="member-name-link">GuiView</a><wbr>(<a href="../../model/LobbyModel.html" title="class in it.polimi.ingsw.am02.client.model">LobbyModel</a>&nbsp;lobbyModel)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Constructs a new GuiView.</div>
 </div>
@@ -184,7 +189,9 @@ notifications from the lobby and game models.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onConnectionLost()" class="member-name-link">onConnectionLost</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Called when the transport connection to the server is lost.</div>
+</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onConnectionRestored()" class="member-name-link">onConnectionRestored</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
@@ -260,7 +267,9 @@ notifications from the lobby and game models.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onGlobalTimerCancelled()" class="member-name-link">onGlobalTimerCancelled</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Called when the global forfeit timer has been cancelled.</div>
+</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onGlobalTimerStarted(long)" class="member-name-link">onGlobalTimerStarted</a><wbr>(long&nbsp;seconds)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
@@ -320,45 +329,45 @@ notifications from the lobby and game models.</div>
 <div class="block">Handles the return to the lobby screen.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onShowAvailableTotems()" class="member-name-link">onShowAvailableTotems</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onTotemPlaced(java.lang.String,char)" class="member-name-link">onTotemPlaced</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onTotemPlaced(java.lang.String,char)" class="member-name-link">onTotemPlaced</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
  char&nbsp;tileID)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Handles the placement of a totem by a player.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onTotemReturned(java.lang.String,int)" class="member-name-link">onTotemReturned</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onTotemReturned(java.lang.String,int)" class="member-name-link">onTotemReturned</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
  int&nbsp;turnOrderPosition)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Handles the return of a totem to the turn order track.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onTurnOrderEstablished(java.util.List)" class="member-name-link">onTurnOrderEstablished</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onTurnOrderEstablished(java.util.List)" class="member-name-link">onTurnOrderEstablished</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Handles the establishment of the turn order for the round.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onUsernameResult(java.lang.String,boolean,java.lang.String)" class="member-name-link">onUsernameResult</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;username,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onUsernameResult(java.lang.String,boolean,java.lang.String)" class="member-name-link">onUsernameResult</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;username,
  boolean&nbsp;accepted,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;reason)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Handles the result of a nickname request.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setGameModel(it.polimi.ingsw.am02.client.model.GameModel)" class="member-name-link">setGameModel</a><wbr>(it.polimi.ingsw.am02.client.model.GameModel&nbsp;gameModel)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setGameModel(it.polimi.ingsw.am02.client.model.GameModel)" class="member-name-link">setGameModel</a><wbr>(<a href="../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model">GameModel</a>&nbsp;gameModel)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Injects the game model into the view and starts observing it.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setSceneRouter(it.polimi.ingsw.am02.client.view.gui.SceneRouter)" class="member-name-link">setSceneRouter</a><wbr>(<a href="SceneRouter.html" title="class in it.polimi.ingsw.am02.client.view.gui">SceneRouter</a>&nbsp;sceneRouter)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setSceneRouter(it.polimi.ingsw.am02.client.view.gui.SceneRouter)" class="member-name-link">setSceneRouter</a><wbr>(<a href="SceneRouter.html" title="class in it.polimi.ingsw.am02.client.view.gui">SceneRouter</a>&nbsp;sceneRouter)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the scene router for navigating between different GUI scenes.</div>
 </div>
 </div>
 </div>
 </div>
+<div class="inherited-list">
+<h3 id="methods-inherited-from-class-it.polimi.ingsw.am02.client.view.AbstractClientView">Methods inherited from class&nbsp;<a href="../AbstractClientView.html#method-summary" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></h3>
+<code><a href="../AbstractClientView.html#onShowAvailableTotems()" title="onShowAvailableTotems()">onShowAvailableTotems</a></code></div>
 <div class="inherited-list">
 <h3 id="methods-inherited-from-class-java.lang.Object">Methods inherited from class&nbsp;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#method-summary" title="class or interface in java.lang" class="external-link">Object</a></h3>
 <code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#clone()" title="class or interface in java.lang" class="external-link">clone</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link">equals</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#finalize()" title="class or interface in java.lang" class="external-link">finalize</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#getClass()" title="class or interface in java.lang" class="external-link">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#hashCode()" title="class or interface in java.lang" class="external-link">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#notify()" title="class or interface in java.lang" class="external-link">notify</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#notifyAll()" title="class or interface in java.lang" class="external-link">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#toString()" title="class or interface in java.lang" class="external-link">toString</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait()" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait(long)" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait(long,int)" title="class or interface in java.lang" class="external-link">wait</a></code></div>
@@ -377,7 +386,7 @@ notifications from the lobby and game models.</div>
 <section class="detail" id="&lt;init&gt;(it.polimi.ingsw.am02.client.model.LobbyModel)">
 <h3>GuiView</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">GuiView</span><wbr><span class="parameters">(it.polimi.ingsw.am02.client.model.LobbyModel&nbsp;lobbyModel)</span></div>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">GuiView</span><wbr><span class="parameters">(<a href="../../model/LobbyModel.html" title="class in it.polimi.ingsw.am02.client.model">LobbyModel</a>&nbsp;lobbyModel)</span></div>
 <div class="block">Constructs a new GuiView.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -411,9 +420,13 @@ notifications from the lobby and game models.</div>
 <section class="detail" id="setGameModel(it.polimi.ingsw.am02.client.model.GameModel)">
 <h3>setGameModel</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setGameModel</span><wbr><span class="parameters">(it.polimi.ingsw.am02.client.model.GameModel&nbsp;gameModel)</span></div>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setGameModel</span><wbr><span class="parameters">(<a href="../../model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model">GameModel</a>&nbsp;gameModel)</span></div>
 <div class="block">Injects the game model into the view and starts observing it.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#setGameModel(it.polimi.ingsw.am02.client.model.GameModel)">setGameModel</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#setGameModel(it.polimi.ingsw.am02.client.model.GameModel)">setGameModel</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>gameModel</code> - The GameModel instance.</dd>
 </dl>
@@ -429,6 +442,10 @@ notifications from the lobby and game models.</div>
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;reason)</span></div>
 <div class="block">Handles the result of a nickname request.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onUsernameResult(java.lang.String,boolean,java.lang.String)">onUsernameResult</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onUsernameResult(java.lang.String,boolean,java.lang.String)">onUsernameResult</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>username</code> - The requested username.</dd>
 <dd><code>accepted</code> - True if the nickname was accepted, false otherwise.</dd>
@@ -444,6 +461,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onAvailableLobbiesUpdated</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="../../../common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a>&gt;&nbsp;lobbies)</span></div>
 <div class="block">Handles the update of the list of available lobbies.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onAvailableLobbiesUpdated(java.util.List)">onAvailableLobbiesUpdated</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onAvailableLobbiesUpdated(java.util.List)">onAvailableLobbiesUpdated</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>lobbies</code> - The list of available lobbies.</dd>
 </dl>
@@ -457,6 +478,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onCurrentLobbyUpdated</span><wbr><span class="parameters">(<a href="../../../common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a>&nbsp;lobby)</span></div>
 <div class="block">Handles the update of the current lobby state.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onCurrentLobbyUpdated(it.polimi.ingsw.am02.common.dto.LobbyInfo)">onCurrentLobbyUpdated</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onCurrentLobbyUpdated(it.polimi.ingsw.am02.common.dto.LobbyInfo)">onCurrentLobbyUpdated</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>lobby</code> - The updated lobby information.</dd>
 </dl>
@@ -469,6 +494,12 @@ notifications from the lobby and game models.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onLobbyDissolved</span>()</div>
 <div class="block">Handles the dissolution of the current lobby.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onLobbyDissolved()">onLobbyDissolved</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onLobbyDissolved()">onLobbyDissolved</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -479,6 +510,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onGameStarted</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;gameId)</span></div>
 <div class="block">Handles the start of a game.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onGameStarted(java.lang.String)">onGameStarted</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onGameStarted(java.lang.String)">onGameStarted</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>gameId</code> - The unique identifier of the game.</dd>
 </dl>
@@ -494,6 +529,10 @@ notifications from the lobby and game models.</div>
  <a href="../../../common/dto/BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;board)</span></div>
 <div class="block">Handles the completion of the game setup phase.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onGameSetupCompleted(java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)">onGameSetupCompleted</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onGameSetupCompleted(java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)">onGameSetupCompleted</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>turnOrder</code> - The initial turn order of players.</dd>
 <dd><code>initialFood</code> - The initial food distribution.</dd>
@@ -511,6 +550,10 @@ notifications from the lobby and game models.</div>
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;resolutionOrder)</span></div>
 <div class="block">Handles a change in the current game phase.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onPhaseChanged(it.polimi.ingsw.am02.common.enumerations.PhaseType,java.lang.String,java.util.List)">onPhaseChanged</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onPhaseChanged(it.polimi.ingsw.am02.common.enumerations.PhaseType,java.lang.String,java.util.List)">onPhaseChanged</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>phase</code> - The new phase.</dd>
 <dd><code>currentPlayer</code> - The nickname of the current player.</dd>
@@ -526,6 +569,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onCurrentPlayerChanged</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nextPlayer)</span></div>
 <div class="block">Handles a change in the current active player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onCurrentPlayerChanged(java.lang.String)">onCurrentPlayerChanged</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onCurrentPlayerChanged(java.lang.String)">onCurrentPlayerChanged</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nextPlayer</code> - The nickname of the next player.</dd>
 </dl>
@@ -539,6 +586,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onTurnOrderEstablished</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder)</span></div>
 <div class="block">Handles the establishment of the turn order for the round.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onTurnOrderEstablished(java.util.List)">onTurnOrderEstablished</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onTurnOrderEstablished(java.util.List)">onTurnOrderEstablished</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>turnOrder</code> - The established turn order.</dd>
 </dl>
@@ -553,6 +604,10 @@ notifications from the lobby and game models.</div>
  char&nbsp;tileID)</span></div>
 <div class="block">Handles the placement of a totem by a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onTotemPlaced(java.lang.String,char)">onTotemPlaced</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onTotemPlaced(java.lang.String,char)">onTotemPlaced</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
 <dd><code>tileID</code> - The ID of the tile where the totem was placed.</dd>
@@ -568,6 +623,10 @@ notifications from the lobby and game models.</div>
  int&nbsp;turnOrderPosition)</span></div>
 <div class="block">Handles the return of a totem to the turn order track.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onTotemReturned(java.lang.String,int)">onTotemReturned</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onTotemReturned(java.lang.String,int)">onTotemReturned</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
 <dd><code>turnOrderPosition</code> - The position in the turn order track.</dd>
@@ -582,6 +641,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onOfferTilesUpdated</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="../../../common/dto/OfferTileInfo.html" title="class in it.polimi.ingsw.am02.common.dto">OfferTileInfo</a>&gt;&nbsp;offerTiles)</span></div>
 <div class="block">Handles the update of the offer tiles on the board.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onOfferTilesUpdated(java.util.List)">onOfferTilesUpdated</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onOfferTilesUpdated(java.util.List)">onOfferTilesUpdated</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>offerTiles</code> - The list of updated offer tiles.</dd>
 </dl>
@@ -597,6 +660,10 @@ notifications from the lobby and game models.</div>
  int&nbsp;deckRemainingCount)</span></div>
 <div class="block">Handles the update of the game board.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onBoardUpdated(java.util.List,java.util.List,int)">onBoardUpdated</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onBoardUpdated(java.util.List,java.util.List,int)">onBoardUpdated</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>newUpperRow</code> - The new IDs for the upper row.</dd>
 <dd><code>newLowerRow</code> - The new IDs for the lower row.</dd>
@@ -614,6 +681,10 @@ notifications from the lobby and game models.</div>
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;newLowerRowBuildings)</span></div>
 <div class="block">Handles a change in the game era.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onEraChanged(it.polimi.ingsw.am02.common.enumerations.Era,java.util.List,java.util.List)">onEraChanged</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onEraChanged(it.polimi.ingsw.am02.common.enumerations.Era,java.util.List,java.util.List)">onEraChanged</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>newEra</code> - The new era.</dd>
 <dd><code>newUpperRowBuildings</code> - The new buildings for the upper row.</dd>
@@ -631,6 +702,10 @@ notifications from the lobby and game models.</div>
  int&nbsp;remainingLower)</span></div>
 <div class="block">Handles the initialization of pick limits for a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onPlayerLimitsInitialized(java.lang.String,int,int)">onPlayerLimitsInitialized</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onPlayerLimitsInitialized(java.lang.String,int,int)">onPlayerLimitsInitialized</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
 <dd><code>remainingUpper</code> - The remaining picks from the upper row.</dd>
@@ -648,6 +723,10 @@ notifications from the lobby and game models.</div>
  int&nbsp;remainingLower)</span></div>
 <div class="block">Handles the update of pick limits for a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onPlayerLimitsUpdated(java.lang.String,int,int)">onPlayerLimitsUpdated</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onPlayerLimitsUpdated(java.lang.String,int,int)">onPlayerLimitsUpdated</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
 <dd><code>remainingUpper</code> - The remaining picks from the upper row.</dd>
@@ -666,6 +745,10 @@ notifications from the lobby and game models.</div>
  <a href="../../../common/enumerations/RowPosition.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">RowPosition</a>&nbsp;sourceRow)</span></div>
 <div class="block">Handles the acquisition of a card by a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onCardTaken(java.lang.String,java.lang.String,it.polimi.ingsw.am02.common.enumerations.CardType,it.polimi.ingsw.am02.common.enumerations.RowPosition)">onCardTaken</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onCardTaken(java.lang.String,java.lang.String,it.polimi.ingsw.am02.common.enumerations.CardType,it.polimi.ingsw.am02.common.enumerations.RowPosition)">onCardTaken</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
 <dd><code>cardID</code> - The ID of the acquired card.</dd>
@@ -684,6 +767,10 @@ notifications from the lobby and game models.</div>
  int&nbsp;remainingLower)</span></div>
 <div class="block">Handles the start of an extra turn for a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onExtraTurnStarted(java.lang.String,int,int)">onExtraTurnStarted</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onExtraTurnStarted(java.lang.String,int,int)">onExtraTurnStarted</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
 <dd><code>remainingUpper</code> - The remaining picks from the upper row.</dd>
@@ -699,6 +786,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onExtraTurnEnded</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</span></div>
 <div class="block">Handles the end of an extra turn for a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onExtraTurnEnded(java.lang.String)">onExtraTurnEnded</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onExtraTurnEnded(java.lang.String)">onExtraTurnEnded</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
 </dl>
@@ -713,6 +804,10 @@ notifications from the lobby and game models.</div>
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="../../../common/dto/PlayerFinalScore.html" title="class in it.polimi.ingsw.am02.common.dto">PlayerFinalScore</a>&gt;&nbsp;finalRankings)</span></div>
 <div class="block">Handles the normal end of the game.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onGameEnded(java.util.List,java.util.List)">onGameEnded</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onGameEnded(java.util.List,java.util.List)">onGameEnded</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>winners</code> - The list of winning players' nicknames.</dd>
 <dd><code>finalRankings</code> - The final score rankings.</dd>
@@ -727,6 +822,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onPlayerDisconnected</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</span></div>
 <div class="block">Handles the disconnection of a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onPlayerDisconnected(java.lang.String)">onPlayerDisconnected</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onPlayerDisconnected(java.lang.String)">onPlayerDisconnected</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the disconnected player.</dd>
 </dl>
@@ -740,6 +839,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onGameAborted</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;lastManStanding)</span></div>
 <div class="block">Handles the aborting of the game.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onGameAborted(java.lang.String)">onGameAborted</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onGameAborted(java.lang.String)">onGameAborted</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>lastManStanding</code> - The nickname of the last remaining player.</dd>
 </dl>
@@ -752,6 +855,12 @@ notifications from the lobby and game models.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onGameRecoveryFailed</span>()</div>
 <div class="block">Handles a failure to recover the game state.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onGameRecoveryFailed()">onGameRecoveryFailed</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onGameRecoveryFailed()">onGameRecoveryFailed</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -762,6 +871,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onPlayerReconnected</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</span></div>
 <div class="block">Handles the reconnection of a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onPlayerReconnected(java.lang.String)">onPlayerReconnected</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onPlayerReconnected(java.lang.String)">onPlayerReconnected</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the reconnected player.</dd>
 </dl>
@@ -775,6 +888,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onError</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;message)</span></div>
 <div class="block">Handles an error message from the server.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onError(java.lang.String)">onError</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onError(java.lang.String)">onError</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>message</code> - The error message.</dd>
 </dl>
@@ -790,6 +907,10 @@ notifications from the lobby and game models.</div>
  int&nbsp;newValue)</span></div>
 <div class="block">Handles a change in a player's resource value.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onPlayerResourceChanged(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int)">onPlayerResourceChanged</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onPlayerResourceChanged(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int)">onPlayerResourceChanged</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
 <dd><code>resource</code> - The type of resource.</dd>
@@ -806,6 +927,10 @@ notifications from the lobby and game models.</div>
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;eventName)</span></div>
 <div class="block">Handles the resolution of an event.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onEventResolved(java.lang.String,java.lang.String)">onEventResolved</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onEventResolved(java.lang.String,java.lang.String)">onEventResolved</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>eventID</code> - The ID of the event card.</dd>
 <dd><code>eventName</code> - The name of the event.</dd>
@@ -821,8 +946,13 @@ notifications from the lobby and game models.</div>
  long&nbsp;seconds)</span></div>
 <div class="block">Handles the start of the auto-player timer for a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onAutoPlayerTimerStarted(java.lang.String,long)">onAutoPlayerTimerStarted</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onAutoPlayerTimerStarted(java.lang.String,long)">onAutoPlayerTimerStarted</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
+<dd><code>seconds</code> - the duration of the grace period in seconds</dd>
 </dl>
 </div>
 </section>
@@ -834,6 +964,10 @@ notifications from the lobby and game models.</div>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onAutoPlayerInvoked</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</span></div>
 <div class="block">Handles the invocation of the auto-player for a player.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onAutoPlayerInvoked(java.lang.String)">onAutoPlayerInvoked</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onAutoPlayerInvoked(java.lang.String)">onAutoPlayerInvoked</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
 <dt>Parameters:</dt>
 <dd><code>nickname</code> - The nickname of the player.</dd>
 </dl>
@@ -846,6 +980,14 @@ notifications from the lobby and game models.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onGlobalTimerStarted</span><wbr><span class="parameters">(long&nbsp;seconds)</span></div>
 <div class="block">Handles the loss of connection to the server.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onGlobalTimerStarted(long)">onGlobalTimerStarted</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onGlobalTimerStarted(long)">onGlobalTimerStarted</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
+<dt>Parameters:</dt>
+<dd><code>seconds</code> - the duration of the forfeit countdown, in seconds</dd>
+</dl>
 </div>
 </section>
 </li>
@@ -854,6 +996,14 @@ notifications from the lobby and game models.</div>
 <h3>onGlobalTimerCancelled</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onGlobalTimerCancelled</span>()</div>
+<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="../ClientView.html#onGlobalTimerCancelled()">ClientView</a></code></span></div>
+<div class="block">Called when the global forfeit timer has been cancelled.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onGlobalTimerCancelled()">onGlobalTimerCancelled</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onGlobalTimerCancelled()">onGlobalTimerCancelled</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -862,6 +1012,15 @@ notifications from the lobby and game models.</div>
 <h3>onConnectionLost</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onConnectionLost</span>()</div>
+<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="../ClientView.html#onConnectionLost()">ClientView</a></code></span></div>
+<div class="block">Called when the transport connection to the server is lost.
+The view should inform the user and disable game controls.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onConnectionLost()">onConnectionLost</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onConnectionLost()">onConnectionLost</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -871,6 +1030,12 @@ notifications from the lobby and game models.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onConnectionRestored</span>()</div>
 <div class="block">Handles the restoration of connection to the server.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onConnectionRestored()">onConnectionRestored</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onConnectionRestored()">onConnectionRestored</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -880,14 +1045,12 @@ notifications from the lobby and game models.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onReturnToLobby</span>()</div>
 <div class="block">Handles the return to the lobby screen.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="onShowAvailableTotems()">
-<h3>onShowAvailableTotems</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onShowAvailableTotems</span>()</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ClientView.html#onReturnToLobby()">onReturnToLobby</a></code>&nbsp;in interface&nbsp;<code><a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></code></dd>
+<dt>Overrides:</dt>
+<dd><code><a href="../AbstractClientView.html#onReturnToLobby()">onReturnToLobby</a></code>&nbsp;in class&nbsp;<code><a href="../AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></code></dd>
+</dl>
 </div>
 </section>
 </li>

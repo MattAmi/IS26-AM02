@@ -65,7 +65,15 @@ loadScripts(document, 'script');</script>
 <div class="col-last odd-row-color">&nbsp;</div>
 <div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.common.messages.events">it.polimi.ingsw.am02.common.messages.events</a></div>
 <div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.common.messages.events.error">it.polimi.ingsw.am02.common.messages.events.error</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game</a></div>
+<div class="col-last even-row-color">&nbsp;</div>
 <div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.common.messages.events.heartbeat">it.polimi.ingsw.am02.common.messages.events.heartbeat</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.common.messages.events.lobby">it.polimi.ingsw.am02.common.messages.events.lobby</a></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.common.serialization">it.polimi.ingsw.am02.common.serialization</a></div>
 <div class="col-last odd-row-color">&nbsp;</div>
 </div>
 <section class="class-uses">
@@ -194,6 +202,167 @@ over the Socket transport layer.</div>
 </section>
 </li>
 <li>
+<section class="detail" id="it.polimi.ingsw.am02.common.messages.events.error">
+<h2>Uses of <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a> in <a href="../events/error/package-summary.html">it.polimi.ingsw.am02.common.messages.events.error</a></h2>
+<div class="caption"><span>Classes in <a href="../events/error/package-summary.html">it.polimi.ingsw.am02.common.messages.events.error</a> that implement <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Class</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/error/ErrorEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.error">ErrorEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Delivers an error message to the recipient client only.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.common.messages.events.game">
+<h2>Uses of <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a> in <a href="../events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a></h2>
+<div class="caption"><span>Subinterfaces of <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a> in <a href="../events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Interface</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>interface&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/GameEvent.html" class="type-name-link" title="interface in it.polimi.ingsw.am02.common.messages.events.game">GameEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Marker interface for events related to an active game session.</div>
+</div>
+</div>
+<div class="caption"><span>Classes in <a href="../events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a> that implement <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Class</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/AutoPlayerInvokedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">AutoPlayerInvokedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Broadcast to all players (except the disconnected one) immediately
+before AutoPlayer executes each individual command on behalf of a
+disconnected player.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/AutoPlayerTimerStartedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">AutoPlayerTimerStartedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Broadcast to all players (except the disconnected one) when the
+per-player AutoPlayer grace timer is armed.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/BoardUpdatedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">BoardUpdatedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players of the card-row diff at the start of a new round.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/CardTakenEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">CardTakenEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players that a player acquired a card from the board.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/CurrentPlayerChangedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">CurrentPlayerChangedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players that the active player has changed during totem placement.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/EraChangedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">EraChangedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players that the game has entered a new era and the building market changed.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/EventResolvedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">EventResolvedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players that an event card has been resolved.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/ExtraTurnEndedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">ExtraTurnEndedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players that a player's extra turn has ended.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/ExtraTurnStartedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">ExtraTurnStartedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players that a player's extra turn has started.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/GameAbortedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">GameAbortedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players that the game was aborted by forfeit and declares the winner.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/GameEndedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">GameEndedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players that the game has ended and supplies the final scores.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/GameRecoveryFailedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">GameRecoveryFailedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players that server-side game recovery failed.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/GameSetupCompletedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">GameSetupCompletedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players of the initial board and player setup at game start.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/GlobalTimerCancelledEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">GlobalTimerCancelledEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies connected players that the global forfeit timer has been cancelled.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/GlobalTimerStartedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">GlobalTimerStartedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies connected players that the global forfeit timer has been armed.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/PhaseChangedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">PhaseChangedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players of a phase transition.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/PlayerDisconnectedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerDisconnectedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players that a specific player has disconnected.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/PlayerLimitsInitializedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerLimitsInitializedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players of the active player's initial pick limits for their turn.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/PlayerLimitsUpdatedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerLimitsUpdatedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players of the active player's updated remaining pick counts.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/PlayerReconnectedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerReconnectedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players that a specific player has reconnected.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/PlayerResourceChangedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerResourceChangedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players that a player's resource value has changed.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/TotemPlacedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">TotemPlacedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players that a player placed their totem on an offer tile.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/game/TotemReturnedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">TotemReturnedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies all players that a player returned their totem to the turn-order tile.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/game/TurnOrderEstablishedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.game">TurnOrderEstablishedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies all players of the turn order for the upcoming round.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="it.polimi.ingsw.am02.common.messages.events.heartbeat">
 <h2>Uses of <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a> in <a href="../events/heartbeat/package-summary.html">it.polimi.ingsw.am02.common.messages.events.heartbeat</a></h2>
 <div class="caption"><span>Subinterfaces of <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a> in <a href="../events/heartbeat/package-summary.html">it.polimi.ingsw.am02.common.messages.events.heartbeat</a></span></div>
@@ -223,6 +392,90 @@ over the Socket transport layer.</div>
 <div class="col-last odd-row-color">
 <div class="block">Heartbeat response sent by the server in reply to a client
 <a href="../commands/heartbeat/PingCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands.heartbeat"><code>PingCommand</code></a>.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.common.messages.events.lobby">
+<h2>Uses of <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a> in <a href="../events/lobby/package-summary.html">it.polimi.ingsw.am02.common.messages.events.lobby</a></h2>
+<div class="caption"><span>Subinterfaces of <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a> in <a href="../events/lobby/package-summary.html">it.polimi.ingsw.am02.common.messages.events.lobby</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Interface</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>interface&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/lobby/LobbyEvent.html" class="type-name-link" title="interface in it.polimi.ingsw.am02.common.messages.events.lobby">LobbyEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Marker interface for events related to the pre-game lobby phase.</div>
+</div>
+</div>
+<div class="caption"><span>Classes in <a href="../events/lobby/package-summary.html">it.polimi.ingsw.am02.common.messages.events.lobby</a> that implement <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Class</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/lobby/GameStartedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">GameStartedEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies that the lobby game has started and supplies the game ID.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/lobby/LobbyDissolvedEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">LobbyDissolvedEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Notifies the client that their current lobby has been dissolved.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/lobby/UpdatedLobbiesEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">UpdatedLobbiesEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Pushes an updated list of available lobbies to pre-lobby clients.</div>
+</div>
+<div class="col-first odd-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="../events/lobby/UpdatedLobbyEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">UpdatedLobbyEvent</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Pushes an update for the lobby the client is currently in.</div>
+</div>
+<div class="col-first even-row-color"><code>final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../events/lobby/UsernameResultEvent.html" class="type-name-link" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">UsernameResultEvent</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies that a username request was accepted or rejected.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.common.serialization">
+<h2>Uses of <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a> in <a href="../../serialization/package-summary.html">it.polimi.ingsw.am02.common.serialization</a></h2>
+<div class="caption"><span>Methods in <a href="../../serialization/package-summary.html">it.polimi.ingsw.am02.common.serialization</a> that return <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code><a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">JsonMessageCodecImpl.</span><code><a href="../../serialization/JsonMessageCodecImpl.html#decode(java.lang.String)" class="member-name-link">decode</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;json)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Deserializes a JSON string into the appropriate <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages"><code>Message</code></a> subtype.</div>
+</div>
+<div class="col-first odd-row-color"><code><a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">MessageCodec.</span><code><a href="../../serialization/MessageCodec.html#decode(java.lang.String)" class="member-name-link">decode</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;string)</code></div>
+<div class="col-last odd-row-color">
+<div class="block">Deserializes a string into the appropriate <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages"><code>Message</code></a> subtype.</div>
+</div>
+</div>
+<div class="caption"><span>Methods in <a href="../../serialization/package-summary.html">it.polimi.ingsw.am02.common.serialization</a> with parameters of type <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">JsonMessageCodecImpl.</span><code><a href="../../serialization/JsonMessageCodecImpl.html#encode(it.polimi.ingsw.am02.common.messages.Message)" class="member-name-link">encode</a><wbr>(<a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a>&nbsp;message)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Serializes <code>message</code> to a JSON string.</div>
+</div>
+<div class="col-first odd-row-color"><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">MessageCodec.</span><code><a href="../../serialization/MessageCodec.html#encode(it.polimi.ingsw.am02.common.messages.Message)" class="member-name-link">encode</a><wbr>(<a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a>&nbsp;message)</code></div>
+<div class="col-last odd-row-color">
+<div class="block">Serializes a <a href="../Message.html" title="interface in it.polimi.ingsw.am02.common.messages"><code>Message</code></a> to its string representation.</div>
 </div>
 </div>
 </section>

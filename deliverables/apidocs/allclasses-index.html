@@ -50,14 +50,33 @@ loadScripts(document, 'script');</script>
 <h1 title="All Classes and Interfaces" class="title">All Classes and Interfaces</h1>
 </div>
 <div id="all-classes-table">
-<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="all-classes-table-tab0" role="tab" aria-selected="true" aria-controls="all-classes-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table', 2)" class="active-table-tab">All Classes and Interfaces</button><button id="all-classes-table-tab1" role="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table-tab1', 2)" class="table-tab">Interfaces</button><button id="all-classes-table-tab2" role="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-tab">Classes</button><button id="all-classes-table-tab3" role="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table-tab3', 2)" class="table-tab">Enum Classes</button><button id="all-classes-table-tab4" role="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table-tab4', 2)" class="table-tab">Record Classes</button></div>
+<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="all-classes-table-tab0" role="tab" aria-selected="true" aria-controls="all-classes-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table', 2)" class="active-table-tab">All Classes and Interfaces</button><button id="all-classes-table-tab1" role="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table-tab1', 2)" class="table-tab">Interfaces</button><button id="all-classes-table-tab2" role="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-tab">Classes</button><button id="all-classes-table-tab3" role="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table-tab3', 2)" class="table-tab">Enum Classes</button><button id="all-classes-table-tab4" role="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table-tab4', 2)" class="table-tab">Record Classes</button><button id="all-classes-table-tab5" role="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('all-classes-table', 'all-classes-table-tab5', 2)" class="table-tab">Exception Classes</button></div>
 <div id="all-classes-table.tabpanel" role="tabpanel" aria-labelledby="all-classes-table-tab0">
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Class</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/AbstractClientView.html" title="class in it.polimi.ingsw.am02.client.view">AbstractClientView</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Default no-op implementation of <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/ClientView.html" title="interface in it.polimi.ingsw.am02.client.view"><code>ClientView</code></a>.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/AutoPlayerInvokedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">AutoPlayerInvokedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Broadcast to all players (except the disconnected one) immediately
+before AutoPlayer executes each individual command on behalf of a
+disconnected player.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/AutoPlayerTimerStartedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">AutoPlayerTimerStartedEvent</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Broadcast to all players (except the disconnected one) when the
+per-player AutoPlayer grace timer is armed.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Immutable snapshot of the full board state at a given point in time.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/BoardUpdatedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">BoardUpdatedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players of the card-row diff at the start of a new round.</div>
 </div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/BuilderEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">BuilderEffect</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
@@ -84,35 +103,54 @@ loadScripts(document, 'script');</script>
 <div class="block">Static factory that instantiates the correct <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/BuildingEffect.html" title="interface in it.polimi.ingsw.am02.server.model.effect"><code>BuildingEffect</code></a> implementation
 for a given effect type string and its JSON parameters.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/CardType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">CardType</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab3">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/CardCatalog.html" title="class in it.polimi.ingsw.am02.client.view">CardCatalog</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Client-side singleton that loads all card definitions from the JSON resource files
+and provides formatted string representations for use in both the TUI and the GUI.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/CardNotFoundException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">CardNotFoundException</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a card ID cannot be resolved — either on the board rows
+or inside <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/GameRegistry.html" title="class in it.polimi.ingsw.am02.server.model"><code>GameRegistry</code></a>.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/CardTakenEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">CardTakenEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that a player acquired a card from the board.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/CardType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">CardType</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab3">
 <div class="block">Distinguishes between the two types of cards that players can acquire from the board.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/CavePaintingsEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">CavePaintingsEffect</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/CavePaintingsEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">CavePaintingsEffect</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Event effect for the Cave Paintings event.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/card/CharacterCard.html" title="class in it.polimi.ingsw.am02.server.model.card">CharacterCard</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/card/CharacterCard.html" title="class in it.polimi.ingsw.am02.server.model.card">CharacterCard</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Represents an immutable character card.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/CharacterEffect.html" title="interface in it.polimi.ingsw.am02.server.model.effect">CharacterEffect</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/CharacterEffect.html" title="interface in it.polimi.ingsw.am02.server.model.effect">CharacterEffect</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Strategy interface for the immediate effect applied to a player's tribe
 when a character card is drawn.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/card/CharacterFactory.html" title="class in it.polimi.ingsw.am02.server.model.card">CharacterFactory</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/card/CharacterFactory.html" title="class in it.polimi.ingsw.am02.server.model.card">CharacterFactory</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Factory that deserializes a <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/card/CharacterCard.html" title="class in it.polimi.ingsw.am02.server.model.card"><code>CharacterCard</code></a> (with the appropriate <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/CharacterEffect.html" title="interface in it.polimi.ingsw.am02.server.model.effect"><code>CharacterEffect</code></a>)
 from a Jackson <code>JsonNode</code>.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/enumerations/CharacterType.html" title="enum class in it.polimi.ingsw.am02.server.model.enumerations">CharacterType</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab3">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/enumerations/CharacterType.html" title="enum class in it.polimi.ingsw.am02.server.model.enumerations">CharacterType</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab3">
 <div class="block">Enumerates the six character archetypes available in the game.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/ClientApp.html" title="class in it.polimi.ingsw.am02">ClientApp</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/ClientApp.html" title="class in it.polimi.ingsw.am02">ClientApp</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Main entrance for the client application.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller">ClientController</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Abstract base controller that wires the network proxy, the domain models,
+and the view together for the client side.</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/ClientHandler.html" title="interface in it.polimi.ingsw.am02.server.network">ClientHandler</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab1">
@@ -121,6 +159,14 @@ from a Jackson <code>JsonNode</code>.</div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/ClientLauncher.html" title="class in it.polimi.ingsw.am02">ClientLauncher</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Launcher entry point for the fat JAR.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/ClientNetworkDispatcher.html" title="class in it.polimi.ingsw.am02.client.network">ClientNetworkDispatcher</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Unified entry point for all inbound server notifications on the client side.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="block">Observer interface implemented by all client view implementations (TUI, GUI).</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/Command.html" title="interface in it.polimi.ingsw.am02.common.messages.commands">Command</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab1">
@@ -154,6 +200,14 @@ lobbies and game sessions on the server.</div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Command requesting creation of a new lobby with the specified player capacity.</div>
 </div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/CurrentPlayerChangedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">CurrentPlayerChangedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that the active player has changed during totem placement.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/DuplicateCardSelectionException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">DuplicateCardSelectionException</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a card selection contains the same card ID more than once.</div>
+</div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/EffectOutcome.html" title="class in it.polimi.ingsw.am02.common.dto">EffectOutcome</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Aggregates the resource changes produced by a single card effect,
@@ -178,6 +232,14 @@ of all character types owned by the tribe.</div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab3">
 <div class="block">Represents the three eras of the game.</div>
 </div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/EraChangedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">EraChangedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that the game has entered a new era and the building market changed.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/error/ErrorEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.error">ErrorEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Delivers an error message to the recipient client only.</div>
+</div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/Event.html" title="interface in it.polimi.ingsw.am02.common.messages.events">Event</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Sealed interface for all server-to-client events.</div>
@@ -186,24 +248,32 @@ of all character types owned by the tribe.</div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Represents an event card that applies a game-wide effect when resolved.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/EventCharacterBonusEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">EventCharacterBonusEffect</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/EventCardNotTakeableException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">EventCardNotTakeableException</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a player's selection includes an event card.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/EventCharacterBonusEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">EventCharacterBonusEffect</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Building effect that grants food, prestige points, and/or a temporary food discount
 at the start of a specific event, scaled by the number of a target character type
 in the owner's tribe.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/EventEffect.html" title="interface in it.polimi.ingsw.am02.server.model.effect">EventEffect</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/EventEffect.html" title="interface in it.polimi.ingsw.am02.server.model.effect">EventEffect</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Strategy interface for the game-wide effect applied when an event card is resolved.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/card/EventFactory.html" title="class in it.polimi.ingsw.am02.server.model.card">EventFactory</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/card/EventFactory.html" title="class in it.polimi.ingsw.am02.server.model.card">EventFactory</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Factory that deserializes an <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/card/EventCard.html" title="class in it.polimi.ingsw.am02.server.model.card"><code>EventCard</code></a> (with the appropriate <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/EventEffect.html" title="interface in it.polimi.ingsw.am02.server.model.effect"><code>EventEffect</code></a>)
 from a Jackson <code>JsonNode</code>.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/listeners/EventObserver.html" title="interface in it.polimi.ingsw.am02.server.model.listeners">EventObserver</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/listeners/EventObserver.html" title="interface in it.polimi.ingsw.am02.server.model.listeners">EventObserver</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Observer notified at each stage of an event card's resolution lifecycle.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/EventResolvedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">EventResolvedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that an event card has been resolved.</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/enumerations/EventType.html" title="enum class in it.polimi.ingsw.am02.server.model.enumerations">EventType</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab3">
@@ -212,6 +282,14 @@ from a Jackson <code>JsonNode</code>.</div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/ExtraTurnEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">ExtraTurnEffect</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Building effect that grants the owner an extra turn at the end of each round.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/ExtraTurnEndedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">ExtraTurnEndedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that a player's extra turn has ended.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/ExtraTurnStartedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">ExtraTurnStartedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that a player's extra turn has started.</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/FlatPrestigeBonusEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">FlatPrestigeBonusEffect</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab2">
@@ -226,10 +304,18 @@ of all character types (i.e. gains at least one character of every <a href="it.p
 <div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Central domain object representing a single game session.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/GameBoard.html" title="class in it.polimi.ingsw.am02.server.model">GameBoard</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GameAbortedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">GameAbortedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that the game was aborted by forfeit and declares the winner.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/GameBoard.html" title="class in it.polimi.ingsw.am02.server.model">GameBoard</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Manages the shared physical state of the game board: the two card rows (upper / lower),
 the building market rows, the offer track, the turn-order tile, and the two decks.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/components/GameCardView.html" title="class in it.polimi.ingsw.am02.client.view.gui.components">GameCardView</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Graphical representation of a game card in the GUI.</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/GameCommand.html" title="interface in it.polimi.ingsw.am02.common.messages.commands">GameCommand</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab1">
@@ -239,6 +325,14 @@ the building market rows, the offer track, the turn-order tile, and the two deck
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Per-game server-side controller that bridges the network layer and the
 domain model for a single game session.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GameEndedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">GameEndedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that the game has ended and supplies the final scores.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GameEvent.html" title="interface in it.polimi.ingsw.am02.common.messages.events.game">GameEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="block">Marker interface for events related to an active game session.</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/listeners/GameEventEmitter.html" title="interface in it.polimi.ingsw.am02.server.model.listeners">GameEventEmitter</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab1">
@@ -255,6 +349,14 @@ from scratch during crash recovery.</div>
 <div class="block">Strategy interface for persisting the sequence of game commands
 to a durable log.</div>
 </div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/GameMenuScene.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">GameMenuScene</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Represents the main menu scene of the game.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/model/GameModel.html" title="class in it.polimi.ingsw.am02.client.model">GameModel</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Holds the complete client-side projection of an ongoing game session.</div>
+</div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/listeners/GameNotifier.html" title="class in it.polimi.ingsw.am02.server.model.listeners">GameNotifier</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Concrete implementation of both <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/listeners/GameObserverRegistry.html" title="interface in it.polimi.ingsw.am02.server.model.listeners"><code>GameObserverRegistry</code></a> and <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/listeners/GameEventEmitter.html" title="interface in it.polimi.ingsw.am02.server.model.listeners"><code>GameEventEmitter</code></a>.</div>
@@ -267,92 +369,186 @@ to a durable log.</div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Subscription interface for managing <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/listeners/GameObserver.html" title="interface in it.polimi.ingsw.am02.server.model.listeners"><code>GameObserver</code></a> registrations.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/GameRegistry.html" title="class in it.polimi.ingsw.am02.server.model">GameRegistry</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GameRecoveryFailedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">GameRecoveryFailedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that server-side game recovery failed.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/GameRegistry.html" title="class in it.polimi.ingsw.am02.server.model">GameRegistry</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Singleton registry that loads and provides access to all static game data:
 character cards, event cards, building cards, offer tiles, and turn-order tiles.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/GathererEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">GathererEffect</a></div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Abstract base class for all domain-level rule violations.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/GameScene.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">GameScene</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">The main game scene of the GUI.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GameSetupCompletedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">GameSetupCompletedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players of the initial board and player setup at game start.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/GameStartedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">GameStartedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies that the lobby game has started and supplies the game ID.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/GathererEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">GathererEffect</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Character effect for the Gatherer archetype.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/GuiController.html" title="class in it.polimi.ingsw.am02.client.view.gui">GuiController</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GlobalTimerCancelledEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">GlobalTimerCancelledEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies connected players that the global forfeit timer has been cancelled.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GlobalTimerStartedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">GlobalTimerStartedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies connected players that the global forfeit timer has been armed.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/GuiController.html" title="class in it.polimi.ingsw.am02.client.view.gui">GuiController</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Controller for the Graphical User Interface (GUI).</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/GuiView.html" title="class in it.polimi.ingsw.am02.client.view.gui">GuiView</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/GuiView.html" title="class in it.polimi.ingsw.am02.client.view.gui">GuiView</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Graphical User Interface (GUI) implementation of the client view.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/heartbeat/HeartbeatCommand.html" title="interface in it.polimi.ingsw.am02.common.messages.commands.heartbeat">HeartbeatCommand</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/heartbeat/HeartbeatCommand.html" title="interface in it.polimi.ingsw.am02.common.messages.commands.heartbeat">HeartbeatCommand</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Marker interface for heartbeat commands exchanged between client and server
 over the Socket transport layer.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/heartbeat/HeartbeatEvent.html" title="interface in it.polimi.ingsw.am02.common.messages.events.heartbeat">HeartbeatEvent</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/heartbeat/HeartbeatEvent.html" title="interface in it.polimi.ingsw.am02.common.messages.events.heartbeat">HeartbeatEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Marker interface for heartbeat events exchanged between server and client
 over the Socket transport layer.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/HuntEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">HuntEffect</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/HuntEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">HuntEffect</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Event effect for the Hunt event.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/HunterWithGigotEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">HunterWithGigotEffect</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/HunterWithGigotEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">HunterWithGigotEffect</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Character effect for a Hunter character carrying a gigot.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/ImageLoader.html" title="class in it.polimi.ingsw.am02.client.view.gui">ImageLoader</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/ImageLoader.html" title="class in it.polimi.ingsw.am02.client.view.gui">ImageLoader</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Utility class for loading and caching images used in the GUI.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/enumerations/InventionType.html" title="enum class in it.polimi.ingsw.am02.server.model.enumerations">InventionType</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab3">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/InGameMenuOverlay.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">InGameMenuOverlay</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Represents the overlay for the in-game menu.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/InsufficientFoodException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">InsufficientFoodException</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a player attempts to purchase one or more buildings but
+does not have enough food points to cover the total cost after
+applying building discounts.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/IntroScene.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">IntroScene</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Represents the introduction scene of the game.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/InvalidMoveException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">InvalidMoveException</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a move is structurally valid but not permitted in the current
+game state — e.g. calling <code>moveTotem()</code> or <code>resolveActions()</code>
+during a phase that does not support it, or specifying an illegal
+destination tile.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/enumerations/InventionType.html" title="enum class in it.polimi.ingsw.am02.server.model.enumerations">InventionType</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab3">
 <div class="block">Enumerates the ten invention types that Inventor characters can contribute.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/InventorEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">InventorEffect</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/InventorEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">InventorEffect</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Character effect for the Inventor archetype.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/InventorPairRewardEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">InventorPairRewardEffect</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/InventorPairRewardEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">InventorPairRewardEffect</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Building effect that rewards food whenever the owner's tribe accumulates a new pair
 of Inventors sharing the same <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/enumerations/InventionType.html" title="enum class in it.polimi.ingsw.am02.server.model.enumerations"><code>InventionType</code></a>.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/JoinLobbyCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">JoinLobbyCommand</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/JoinLobbyCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">JoinLobbyCommand</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Command requesting that the client join an existing lobby.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/LeaveLobbyCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">LeaveLobbyCommand</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/serialization/JsonMessageCodec.html" title="interface in it.polimi.ingsw.am02.common.serialization">JsonMessageCodec</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
+<div class="block">JSON-specific specialization of <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/serialization/MessageCodec.html" title="interface in it.polimi.ingsw.am02.common.serialization"><code>MessageCodec</code></a>.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/serialization/JsonMessageCodecImpl.html" title="class in it.polimi.ingsw.am02.common.serialization">JsonMessageCodecImpl</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Jackson-based implementation of <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/serialization/JsonMessageCodec.html" title="interface in it.polimi.ingsw.am02.common.serialization"><code>JsonMessageCodec</code></a>.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/LeaveLobbyCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">LeaveLobbyCommand</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Command requesting that the client leave their current lobby.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/controller/Lobby.html" title="class in it.polimi.ingsw.am02.server.controller">Lobby</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/controller/Lobby.html" title="class in it.polimi.ingsw.am02.server.controller">Lobby</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Represents a pre-game lobby in which players gather before the match starts.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/LobbyCommand.html" title="interface in it.polimi.ingsw.am02.common.messages.commands">LobbyCommand</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/LobbyCommand.html" title="interface in it.polimi.ingsw.am02.common.messages.commands">LobbyCommand</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Marker interface for commands sent during the pre-game (lobby) phase.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/LobbyDissolvedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">LobbyDissolvedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies the client that their current lobby has been dissolved.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/LobbyEvent.html" title="interface in it.polimi.ingsw.am02.common.messages.events.lobby">LobbyEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
+<div class="block">Marker interface for events related to the pre-game lobby phase.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Immutable snapshot of a lobby's current state, broadcast to all
 pre-lobby clients whenever the lobby list changes.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/LobbyListScene.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">LobbyListScene</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Represents the lobby list scene of the game.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/model/LobbyModel.html" title="class in it.polimi.ingsw.am02.client.model">LobbyModel</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Holds the client-side state of the pre-game lobby phase.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/LobbyScene.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">LobbyScene</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Represents the lobby scene of the game.</div>
 </div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/Message.html" title="interface in it.polimi.ingsw.am02.common.messages">Message</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Root sealed interface for all network messages exchanged between
 client and server.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/controller/ModelInterface.html" title="interface in it.polimi.ingsw.am02.server.controller">ModelInterface</a></div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/serialization/MessageCodec.html" title="interface in it.polimi.ingsw.am02.common.serialization">MessageCodec</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab1">
+<div class="block">Codec for serializing and deserializing <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/Message.html" title="interface in it.polimi.ingsw.am02.common.messages"><code>Message</code></a> objects to and from
+a string representation.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/controller/ModelInterface.html" title="interface in it.polimi.ingsw.am02.server.controller">ModelInterface</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Minimal abstraction of the game model exposed to the controller layer.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/MoveTotemCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">MoveTotemCommand</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/MoveTotemCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">MoveTotemCommand</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
 <div class="block">In-game command requesting that the current player move their totem
 to an offer tile or return it to the turn-order tile.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/NetworkDefaults.html" title="class in it.polimi.ingsw.am02.common">NetworkDefaults</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Default network endpoints shared by client and server.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/NetworkPopup.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">NetworkPopup</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Utility class for building a network connection popup.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/NetworkPopup.ConnectionConfig.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">NetworkPopup.ConnectionConfig</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Record representing the connection configuration.</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/NetworkServer.html" title="interface in it.polimi.ingsw.am02.server.network">NetworkServer</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab1">
@@ -369,14 +565,22 @@ network technology.</div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab3">
 <div class="block">Enumerates the two supported network transport protocols.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/NoEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">NoEffect</a></div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/NewEraOverlay.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">NewEraOverlay</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Represents an animated overlay displayed when a new era begins.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/NoEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">NoEffect</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">A no-op <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/CharacterEffect.html" title="interface in it.polimi.ingsw.am02.server.model.effect"><code>CharacterEffect</code></a> used for character types that produce no immediate
 resource change when drawn (e.g.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/controller/persistence/NoOpCommandLogger.html" title="class in it.polimi.ingsw.am02.server.controller.persistence">NoOpCommandLogger</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/controller/persistence/NoOpCommandLogger.html" title="class in it.polimi.ingsw.am02.server.controller.persistence">NoOpCommandLogger</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">No-operation <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/controller/persistence/GameLogger.html" title="interface in it.polimi.ingsw.am02.server.controller.persistence"><code>GameLogger</code></a> that silently discards all calls.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/NotYourTurnException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">NotYourTurnException</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a player attempts to act outside their designated turn.</div>
 </div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/OfferTile.html" title="class in it.polimi.ingsw.am02.server.model.tile">OfferTile</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
@@ -390,10 +594,18 @@ resource change when drawn (e.g.</div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Factory that deserializes an <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/OfferTile.html" title="class in it.polimi.ingsw.am02.server.model.tile"><code>OfferTile</code></a> from a Jackson <code>JsonNode</code>.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/OfferTrack.html" title="class in it.polimi.ingsw.am02.server.model.tile">OfferTrack</a></div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/components/OfferTileView.html" title="class in it.polimi.ingsw.am02.client.view.gui.components">OfferTileView</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Graphical representation of an offer tile in the GUI.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/OfferTrack.html" title="class in it.polimi.ingsw.am02.server.model.tile">OfferTrack</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">The offer track: the ordered collection of <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/OfferTile.html" title="class in it.polimi.ingsw.am02.server.model.tile"><code>OfferTile</code></a>s on which players
 place their totems during the totem-placement phase.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PhaseChangedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">PhaseChangedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players of a phase transition.</div>
 </div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/listeners/PhaseObserver.html" title="interface in it.polimi.ingsw.am02.server.model.listeners">PhaseObserver</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
@@ -402,6 +614,19 @@ place their totems during the totem-placement phase.</div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/PhaseType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">PhaseType</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab3">
 <div class="block">Enumerates every distinct phase in the game FSM.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/PickLimitExceededException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">PickLimitExceededException</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a card selection exceeds the remaining pick allowance
+for the upper row, lower row, or extra-turn limits on the player's
+current <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/OfferTile.html" title="class in it.polimi.ingsw.am02.server.model.tile"><code>OfferTile</code></a>.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/PickObligationNotFulfilledException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">PickObligationNotFulfilledException</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a player attempts to return their totem to the
+<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/TurnOrderTile.html" title="class in it.polimi.ingsw.am02.server.model.tile"><code>TurnOrderTile</code></a> before satisfying
+all mandatory pick obligations (i.e. remaining upper or lower picks are
+still non-zero and eligible cards are available).</div>
 </div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/heartbeat/PingCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands.heartbeat">PingCommand</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
@@ -415,9 +640,44 @@ place their totems during the totem-placement phase.</div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Represents a player in the game, identified by a unique nickname and a totem color.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/PlayerFinalScore.html" title="class in it.polimi.ingsw.am02.common.dto">PlayerFinalScore</a></div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerDisconnectedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerDisconnectedEvent</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that a specific player has disconnected.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/PlayerFinalScore.html" title="class in it.polimi.ingsw.am02.common.dto">PlayerFinalScore</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Immutable breakdown of a player's final prestige-point score.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerLimitsInitializedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerLimitsInitializedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players of the active player's initial pick limits for their turn.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerLimitsUpdatedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerLimitsUpdatedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players of the active player's updated remaining pick counts.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/PlayerNotFoundException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">PlayerNotFoundException</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a nickname cannot be resolved to a known
+<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/player/Player.html" title="class in it.polimi.ingsw.am02.server.model.player"><code>Player</code></a> instance.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/PlayerNotOnTileException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">PlayerNotOnTileException</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when the system expects a player to be occupying an
+<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/OfferTile.html" title="class in it.polimi.ingsw.am02.server.model.tile"><code>OfferTile</code></a> but no tile holds
+that player.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerReconnectedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerReconnectedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that a specific player has reconnected.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerResourceChangedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">PlayerResourceChangedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that a player's resource value has changed.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/components/PlayerSidebarItem.html" title="class in it.polimi.ingsw.am02.client.view.gui.components">PlayerSidebarItem</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Represents an item in the player sidebar of the GUI.</div>
 </div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/heartbeat/PongCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands.heartbeat">PongCommand</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
@@ -434,6 +694,12 @@ place their totems during the totem-placement phase.</div>
 <div class="block">Building effect that multiplies the prestige points earned by Builder characters
 at the end of the game.</div>
 </div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/ProjectInfo.html" title="class in it.polimi.ingsw.am02.common">ProjectInfo</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">&nbsp;</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/ProjectInfoScene.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">ProjectInfoScene</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Represents the project information scene.</div>
+</div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/ReconnectCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">ReconnectCommand</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Command requesting reconnection to an ongoing game.</div>
@@ -443,91 +709,141 @@ at the end of the game.</div>
 <div class="block">Concrete <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/EffectVisitor.html" title="interface in it.polimi.ingsw.am02.server.model.effect"><code>EffectVisitor</code></a> that registers building effects with the
 appropriate observer lists in the current <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/Game.html" title="class in it.polimi.ingsw.am02.server.model"><code>Game</code></a> and <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/player/Tribu.html" title="class in it.polimi.ingsw.am02.server.model.player"><code>Tribu</code></a>.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/ResolveActionsCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">ResolveActionsCommand</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/components/ReservePileView.html" title="class in it.polimi.ingsw.am02.client.view.gui.components">ReservePileView</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Graphical representation of the common reserve in the GUI.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/ResolveActionsCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">ResolveActionsCommand</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
 <div class="block">In-game command requesting card acquisition for the current player.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/ResourceDelta.html" title="class in it.polimi.ingsw.am02.common.dto">ResourceDelta</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/ResourceDelta.html" title="class in it.polimi.ingsw.am02.common.dto">ResourceDelta</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Represents a single resource change for one player.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/ResourcePaths.html" title="class in it.polimi.ingsw.am02.common">ResourcePaths</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Classpath locations of bundled JSON data files.</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab3">
 <div class="block">Enumerates every resource tracked per player and reported in
 <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/ResourceDelta.html" title="class in it.polimi.ingsw.am02.common.dto"><code>ResourceDelta</code></a> notifications.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/network/rmi/RmiClientRemote.html" title="interface in it.polimi.ingsw.am02.common.network.rmi">RmiClientRemote</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/rmi/RmiClientHandler.html" title="class in it.polimi.ingsw.am02.server.network.rmi">RmiClientHandler</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Server-side handler for a single RMI-connected client.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/network/rmi/RmiClientRemote.html" title="interface in it.polimi.ingsw.am02.common.network.rmi">RmiClientRemote</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">RMI remote interface exposed by the client to the server.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/rmi/RmiServer.html" title="class in it.polimi.ingsw.am02.server.network.rmi">RmiServer</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/NetworkServer.html" title="interface in it.polimi.ingsw.am02.server.network"><code>NetworkServer</code></a> implementation for the RMI transport.</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/network/rmi/RmiServerFactory.html" title="interface in it.polimi.ingsw.am02.common.network.rmi">RmiServerFactory</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">RMI remote interface acting as the server-side entry point for new client connections.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/network/rmi/RmiServerRemote.html" title="interface in it.polimi.ingsw.am02.common.network.rmi">RmiServerRemote</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/rmi/RmiServerProxy.html" title="class in it.polimi.ingsw.am02.client.network.rmi">RmiServerProxy</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">RMI proxy on the client side.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/network/rmi/RmiServerRemote.html" title="interface in it.polimi.ingsw.am02.common.network.rmi">RmiServerRemote</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">RMI remote interface exposing client-to-server game and lobby operations.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/RowPosition.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">RowPosition</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab3">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/RowPosition.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">RowPosition</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab3">
 <div class="block">Identifies which card row a card was drawn from or belongs to.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/SceneRouter.html" title="class in it.polimi.ingsw.am02.client.view.gui">SceneRouter</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/SceneRouter.html" title="class in it.polimi.ingsw.am02.client.view.gui">SceneRouter</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Router class for managing GUI scenes and navigation.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/SelectTotemCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">SelectTotemCommand</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/SelectTotemCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">SelectTotemCommand</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Command requesting totem selection within the current lobby.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/ServerApp.html" title="class in it.polimi.ingsw.am02">ServerApp</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">&nbsp;</div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/SetUsernameCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">SetUsernameCommand</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/ServerApp.html" title="class in it.polimi.ingsw.am02">ServerApp</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">&nbsp;</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="block">Client-side abstraction for the connection to the game server.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/ServerProxyFactory.html" title="class in it.polimi.ingsw.am02.client.network">ServerProxyFactory</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Factory for creating <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network"><code>ServerProxy</code></a> instances.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/commands/SetUsernameCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands">SetUsernameCommand</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
 <div class="block">Command requesting that the server assign the given nickname to this client.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/ShamanEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">ShamanEffect</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/ShamanEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">ShamanEffect</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Character effect for the Shaman archetype.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/ShamanicExtraIconsEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">ShamanicExtraIconsEffect</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/ShamanicExtraIconsEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">ShamanicExtraIconsEffect</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Building effect that temporarily adds bonus shaman stars to the owner's tribe
 for the duration of the Shamanic Ritual event.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/ShamanicImmunityEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">ShamanicImmunityEffect</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/ShamanicImmunityEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">ShamanicImmunityEffect</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Building effect that makes the owner's tribe immune to the minority penalty
 during the Shamanic Ritual event.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/ShamanicRitualEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">ShamanicRitualEffect</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/ShamanicRitualEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">ShamanicRitualEffect</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Event effect for the Shamanic Ritual event.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/ShamanicWinMultiplierEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">ShamanicWinMultiplierEffect</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/ShamanicWinMultiplierEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">ShamanicWinMultiplierEffect</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Building effect that multiplies the prestige bonus the owner received for winning
 the Shamanic Ritual event.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/socket/SocketClientHandler.html" title="class in it.polimi.ingsw.am02.server.network.socket">SocketClientHandler</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/socket/SocketClientHandler.html" title="class in it.polimi.ingsw.am02.server.network.socket">SocketClientHandler</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Server-side handler for a single Socket-connected client.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/socket/SocketServer.html" title="class in it.polimi.ingsw.am02.server.network.socket">SocketServer</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/socket/SocketServer.html" title="class in it.polimi.ingsw.am02.server.network.socket">SocketServer</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/network/NetworkServer.html" title="interface in it.polimi.ingsw.am02.server.network"><code>NetworkServer</code></a> implementation for the Socket transport.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/socket/SocketServerProxy.html" title="class in it.polimi.ingsw.am02.client.network.socket">SocketServerProxy</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/socket/SocketServerProxy.html" title="class in it.polimi.ingsw.am02.client.network.socket">SocketServerProxy</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Socket-based proxy on the client side.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/scenes/SummaryCardOverlay.html" title="class in it.polimi.ingsw.am02.client.view.gui.scenes">SummaryCardOverlay</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Represents the overlay for the summary card.</div>
 </div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/effect/SustenanceEffect.html" title="class in it.polimi.ingsw.am02.server.model.effect">SustenanceEffect</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Event effect for the Sustenance event.</div>
 </div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/TileNotFoundException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">TileNotFoundException</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a tile ID does not correspond to any tile on the board.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab5"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/TileOccupiedException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">TileOccupiedException</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab5">
+<div class="block">Thrown when a player tries to place their totem on an
+<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/OfferTile.html" title="class in it.polimi.ingsw.am02.server.model.tile"><code>OfferTile</code></a> that is already
+occupied by another player's totem.</div>
+</div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab3"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab3">
 <div class="block">Enumerates the five totem colors, one per player slot.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/TotemPlacedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">TotemPlacedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that a player placed their totem on an offer tile.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/TotemReturnedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">TotemReturnedEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players that a player returned their totem to the turn-order tile.</div>
 </div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/player/Tribu.html" title="class in it.polimi.ingsw.am02.server.model.player">Tribu</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
@@ -542,6 +858,23 @@ stacked in era order (Era I on top, final events at the bottom).</div>
 <div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/listeners/TribuObserver.html" title="interface in it.polimi.ingsw.am02.server.model.listeners">TribuObserver</a></div>
 <div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Observer notified whenever a character card is inserted into a tribe.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/tui/TuiController.html" title="class in it.polimi.ingsw.am02.client.view.tui">TuiController</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">TUI-specific input handler that reads commands from standard input and
+dispatches them to the appropriate <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller"><code>ClientController</code></a> actions.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/tui/TuiView.html" title="class in it.polimi.ingsw.am02.client.view.tui">TuiView</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Text-based user interface for the MESOS game client.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/gui/components/TurnOrderCaveView.html" title="class in it.polimi.ingsw.am02.client.view.gui.components">TurnOrderCaveView</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="block">Graphical representation of the turn order cave in the GUI.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/TurnOrderEstablishedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">TurnOrderEstablishedEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies all players of the turn order for the upcoming round.</div>
 </div>
 <div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/buildingeffects/TurnOrderFoodBonusEffect.html" title="class in it.polimi.ingsw.am02.server.model.buildingeffects">TurnOrderFoodBonusEffect</a></div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab2">
@@ -563,20 +896,32 @@ the order in which players place their totems in the next round.</div>
 <div class="col-last even-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Factory that deserializes a <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/tile/TurnOrderTile.html" title="class in it.polimi.ingsw.am02.server.model.tile"><code>TurnOrderTile</code></a> from a Jackson <code>JsonNode</code>.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/interfaces/VirtualControllerManager.html" title="interface in it.polimi.ingsw.am02.common.interfaces">VirtualControllerManager</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/UpdatedLobbiesEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">UpdatedLobbiesEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Pushes an updated list of available lobbies to pre-lobby clients.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/UpdatedLobbyEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">UpdatedLobbyEvent</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Pushes an update for the lobby the client is currently in.</div>
+</div>
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab4"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/UsernameResultEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">UsernameResultEvent</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab4">
+<div class="block">Notifies that a username request was accepted or rejected.</div>
+</div>
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/interfaces/VirtualControllerManager.html" title="interface in it.polimi.ingsw.am02.common.interfaces">VirtualControllerManager</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Granular interface through which network handlers communicate with the server controller layer.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/interfaces/VirtualServer.html" title="interface in it.polimi.ingsw.am02.common.interfaces">VirtualServer</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/interfaces/VirtualServer.html" title="interface in it.polimi.ingsw.am02.common.interfaces">VirtualServer</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Client-side abstraction of the server.</div>
 </div>
-<div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/interfaces/VirtualView.html" title="interface in it.polimi.ingsw.am02.common.interfaces">VirtualView</a></div>
-<div class="col-last odd-row-color all-classes-table all-classes-table-tab1">
+<div class="col-first even-row-color all-classes-table all-classes-table-tab1"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/interfaces/VirtualView.html" title="interface in it.polimi.ingsw.am02.common.interfaces">VirtualView</a></div>
+<div class="col-last even-row-color all-classes-table all-classes-table-tab1">
 <div class="block">Server-side abstraction of a connected client.</div>
 </div>
-<div class="col-first even-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/interfaces/VirtualView.NoOp.html" title="class in it.polimi.ingsw.am02.common.interfaces">VirtualView.NoOp</a></div>
-<div class="col-last even-row-color all-classes-table all-classes-table-tab2">
+<div class="col-first odd-row-color all-classes-table all-classes-table-tab2"><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/interfaces/VirtualView.NoOp.html" title="class in it.polimi.ingsw.am02.common.interfaces">VirtualView.NoOp</a></div>
+<div class="col-last odd-row-color all-classes-table all-classes-table-tab2">
 <div class="block">Silent no-operation implementation used during server-side replay.</div>
 </div>
 </div>

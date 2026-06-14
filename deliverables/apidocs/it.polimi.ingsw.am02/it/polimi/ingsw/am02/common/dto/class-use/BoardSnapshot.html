@@ -59,9 +59,21 @@ loadScripts(document, 'script');</script>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Package</div>
 <div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.client.model">it.polimi.ingsw.am02.client.model</a></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.client.network">it.polimi.ingsw.am02.client.network</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.client.network.rmi">it.polimi.ingsw.am02.client.network.rmi</a></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.client.view">it.polimi.ingsw.am02.client.view</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
 <div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.client.view.gui">it.polimi.ingsw.am02.client.view.gui</a></div>
 <div class="col-last even-row-color">&nbsp;</div>
-<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.common.interfaces">it.polimi.ingsw.am02.common.interfaces</a></div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.client.view.tui">it.polimi.ingsw.am02.client.view.tui</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.common.interfaces">it.polimi.ingsw.am02.common.interfaces</a></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game</a></div>
 <div class="col-last odd-row-color">&nbsp;</div>
 <div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.common.network.rmi">it.polimi.ingsw.am02.common.network.rmi</a></div>
 <div class="col-last even-row-color">&nbsp;</div>
@@ -71,11 +83,92 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color">&nbsp;</div>
 <div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.server.model.listeners">it.polimi.ingsw.am02.server.model.listeners</a></div>
 <div class="col-last odd-row-color">&nbsp;</div>
-<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.server.network.socket">it.polimi.ingsw.am02.server.network.socket</a></div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.server.network.rmi">it.polimi.ingsw.am02.server.network.rmi</a></div>
 <div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.server.network.socket">it.polimi.ingsw.am02.server.network.socket</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
 </div>
 <section class="class-uses">
 <ul class="block-list">
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.model">
+<h2>Uses of <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a> in <a href="../../../client/model/package-summary.html">it.polimi.ingsw.am02.client.model</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/model/package-summary.html">it.polimi.ingsw.am02.client.model</a> with parameters of type <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">GameModel.</span><code><a href="../../../client/model/GameModel.html#updateGameSetupCompleted(java.util.Map,java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">updateGameSetupCompleted</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="../../enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&gt;&nbsp;totemByPlayer,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;&nbsp;initialFood,
+ <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;boardSnapshot)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Applies the initial game-setup snapshot: populates all board and player
+collections from the server snapshot and notifies all views.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.network">
+<h2>Uses of <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a> in <a href="../../../client/network/package-summary.html">it.polimi.ingsw.am02.client.network</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/network/package-summary.html">it.polimi.ingsw.am02.client.network</a> with parameters of type <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">ClientNetworkDispatcher.</span><code><a href="../../../client/network/ClientNetworkDispatcher.html#notifyGameSetupCompleted(java.util.Map,java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">notifyGameSetupCompleted</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="../../enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&gt;&nbsp;totemByPlayer,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;&nbsp;initialFood,
+ <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;boardSnapshot)</code></div>
+<div class="col-last even-row-color"></div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.network.rmi">
+<h2>Uses of <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a> in <a href="../../../client/network/rmi/package-summary.html">it.polimi.ingsw.am02.client.network.rmi</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/network/rmi/package-summary.html">it.polimi.ingsw.am02.client.network.rmi</a> with parameters of type <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">RmiServerProxy.</span><code><a href="../../../client/network/rmi/RmiServerProxy.html#notifyGameSetupCompleted(java.util.Map,java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">notifyGameSetupCompleted</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="../../enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&gt;&nbsp;totemByPlayer,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;t,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;&nbsp;f,
+ <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;b)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies the client that game setup is complete and provides the initial game state.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.view">
+<h2>Uses of <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a> in <a href="../../../client/view/package-summary.html">it.polimi.ingsw.am02.client.view</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/view/package-summary.html">it.polimi.ingsw.am02.client.view</a> with parameters of type <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">AbstractClientView.</span><code><a href="../../../client/view/AbstractClientView.html#onGameSetupCompleted(java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">onGameSetupCompleted</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;&nbsp;initialFood,
+ <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;board)</code></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><code>void</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">ClientView.</span><code><a href="../../../client/view/ClientView.html#onGameSetupCompleted(java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">onGameSetupCompleted</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;&nbsp;initialFood,
+ <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;board)</code></div>
+<div class="col-last odd-row-color">
+<div class="block">Called once at the start of the game with the full initial state.</div>
+</div>
+</div>
+</section>
+</li>
 <li>
 <section class="detail" id="it.polimi.ingsw.am02.client.view.gui">
 <h2>Uses of <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a> in <a href="../../../client/view/gui/package-summary.html">it.polimi.ingsw.am02.client.view.gui</a></h2>
@@ -90,6 +183,24 @@ loadScripts(document, 'script');</script>
  <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;board)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Handles the completion of the game setup phase.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.view.tui">
+<h2>Uses of <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a> in <a href="../../../client/view/tui/package-summary.html">it.polimi.ingsw.am02.client.view.tui</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/view/tui/package-summary.html">it.polimi.ingsw.am02.client.view.tui</a> with parameters of type <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">TuiView.</span><code><a href="../../../client/view/tui/TuiView.html#onGameSetupCompleted(java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">onGameSetupCompleted</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;&nbsp;initialFood,
+ <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;board)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Triggers a full repaint once the initial board configuration is available.</div>
 </div>
 </div>
 </section>
@@ -114,6 +225,36 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;&nbsp;initialFood,
  <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;boardSnapshot)</code></div>
 <div class="col-last odd-row-color">&nbsp;</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.common.messages.events.game">
+<h2>Uses of <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a> in <a href="../../messages/events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a></h2>
+<div class="caption"><span>Methods in <a href="../../messages/events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a> that return <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code><a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">GameSetupCompletedEvent.</span><code><a href="../../messages/events/game/GameSetupCompletedEvent.html#boardSnapshot()" class="member-name-link">boardSnapshot</a>()</code></div>
+<div class="col-last even-row-color">
+<div class="block">Returns the value of the <code>boardSnapshot</code> record component.</div>
+</div>
+</div>
+<div class="caption"><span>Constructors in <a href="../../messages/events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a> with parameters of type <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier</div>
+<div class="table-header col-second">Constructor</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../../messages/events/game/GameSetupCompletedEvent.html#%3Cinit%3E(java.util.Map,java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">GameSetupCompletedEvent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="../../enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&gt;&nbsp;totemByPlayer,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;&nbsp;initialFood,
+ <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;boardSnapshot)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Creates an instance of a <code>GameSetupCompletedEvent</code> record class.</div>
+</div>
 </div>
 </section>
 </li>
@@ -200,6 +341,23 @@ suitable for sending to clients as a DTO.</div>
 <div class="col-last even-row-color">
 <div class="block">Fired once at the start of the game, after setup is complete.</div>
 </div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.server.network.rmi">
+<h2>Uses of <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a> in <a href="../../../server/network/rmi/package-summary.html">it.polimi.ingsw.am02.server.network.rmi</a></h2>
+<div class="caption"><span>Methods in <a href="../../../server/network/rmi/package-summary.html">it.polimi.ingsw.am02.server.network.rmi</a> with parameters of type <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">RmiClientHandler.</span><code><a href="../../../server/network/rmi/RmiClientHandler.html#notifyGameSetupCompleted(java.util.Map,java.util.List,java.util.Map,it.polimi.ingsw.am02.common.dto.BoardSnapshot)" class="member-name-link">notifyGameSetupCompleted</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="../../enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&gt;&nbsp;totemByPlayer,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;turnOrder,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;&nbsp;initialFood,
+ <a href="../BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a>&nbsp;boardSnapshot)</code></div>
+<div class="col-last even-row-color">&nbsp;</div>
 </div>
 </section>
 </li>

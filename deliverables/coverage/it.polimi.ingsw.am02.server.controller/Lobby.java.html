@@ -182,50 +182,51 @@ public class Lobby {
 <span class="nc" id="L182">            controllerManager.removeLobby(lobbyId);</span>
         } else {
 <span class="nc" id="L184">            broadcastCurrentLobbyUpdated();</span>
+<span class="nc" id="L185">            controllerManager.notifyLobbyListChanged();</span>
         }
-<span class="nc" id="L186">    }</span>
+<span class="nc" id="L187">    }</span>
 
     // Helper methods
     private void checkAndStart() {
-<span class="nc bnc" id="L190" title="All 4 branches missed.">        if (started || !isReadyToStart()) return;</span>
+<span class="nc bnc" id="L191" title="All 4 branches missed.">        if (started || !isReadyToStart()) return;</span>
 
-<span class="nc" id="L192">        started = true;</span>
+<span class="nc" id="L193">        started = true;</span>
 
-<span class="nc" id="L194">        List&lt;String&gt; orderedClientIds = List.copyOf(clientIds);</span>
-<span class="nc" id="L195">        List&lt;String&gt; orderedNicknames = clientIds.stream()</span>
-<span class="nc" id="L196">                .map(clientToNickname::get)</span>
-<span class="nc" id="L197">                .toList();</span>
+<span class="nc" id="L195">        List&lt;String&gt; orderedClientIds = List.copyOf(clientIds);</span>
+<span class="nc" id="L196">        List&lt;String&gt; orderedNicknames = clientIds.stream()</span>
+<span class="nc" id="L197">                .map(clientToNickname::get)</span>
+<span class="nc" id="L198">                .toList();</span>
 
-<span class="nc" id="L199">        Map&lt;String, Totem&gt; nicknameToTotem = new LinkedHashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L200" title="All 2 branches missed.">        for (String id : clientIds) {</span>
-<span class="nc" id="L201">            nicknameToTotem.put(clientToNickname.get(id), chosenTotems.get(id));</span>
-<span class="nc" id="L202">        }</span>
+<span class="nc" id="L200">        Map&lt;String, Totem&gt; nicknameToTotem = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        for (String id : clientIds) {</span>
+<span class="nc" id="L202">            nicknameToTotem.put(clientToNickname.get(id), chosenTotems.get(id));</span>
+<span class="nc" id="L203">        }</span>
 
-<span class="nc" id="L204">        Map&lt;String, VirtualView&gt; viewsCopy = new LinkedHashMap&lt;&gt;(views);</span>
+<span class="nc" id="L205">        Map&lt;String, VirtualView&gt; viewsCopy = new LinkedHashMap&lt;&gt;(views);</span>
 
-<span class="nc" id="L206">        controllerManager.startGame(</span>
+<span class="nc" id="L207">        controllerManager.startGame(</span>
                 lobbyId,
                 orderedClientIds,
                 orderedNicknames,
                 viewsCopy,
                 nicknameToTotem
         );
-<span class="nc" id="L213">    }</span>
+<span class="nc" id="L214">    }</span>
 
     private boolean isReadyToStart() {
-<span class="nc bnc" id="L216" title="All 2 branches missed.">        return clientIds.size() == expectedPlayers</span>
-<span class="nc bnc" id="L217" title="All 2 branches missed.">                &amp;&amp; clientToNickname.size() == expectedPlayers</span>
-<span class="nc bnc" id="L218" title="All 2 branches missed.">                &amp;&amp; chosenTotems.size() == expectedPlayers;</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">        return clientIds.size() == expectedPlayers</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                &amp;&amp; clientToNickname.size() == expectedPlayers</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">                &amp;&amp; chosenTotems.size() == expectedPlayers;</span>
     }
 
     // --- Metodi di Broadcast granulari ---
 
     private void broadcastCurrentLobbyUpdated() {
-<span class="nc" id="L224">        LobbyInfo info = toLobbyInfo();</span>
-<span class="nc" id="L225">        views.values().forEach(v -&gt; v.notifyCurrentLobbyUpdated(info));</span>
-<span class="nc" id="L226">    }</span>
+<span class="nc" id="L225">        LobbyInfo info = toLobbyInfo();</span>
+<span class="nc" id="L226">        views.values().forEach(v -&gt; v.notifyCurrentLobbyUpdated(info));</span>
+<span class="nc" id="L227">    }</span>
 
     /** @return the current number of clients in this lobby */
-<span class="nc" id="L229">    public int getPlayerCount() { return views.size(); }</span>
+<span class="nc" id="L230">    public int getPlayerCount() { return views.size(); }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

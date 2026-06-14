@@ -362,6 +362,15 @@ public class ControllerManager implements VirtualControllerManager {
 <span class="nc" id="L362">    }</span>
 
     /**
+     * Called by {@link Lobby} when a client leaves but the lobby is not empty.
+     * Re-broadcasts the available-lobby list to all pre-lobby clients so their
+     * displayed player count (e.g. {@code 2/n}) stays in sync.
+     */
+    public synchronized void notifyLobbyListChanged() {
+<span class="nc" id="L370">        broadcastToPreLobbyClients();</span>
+<span class="nc" id="L371">    }</span>
+
+    /**
      * Moves a client from a lobby back to the pre-lobby state.
      * Sends the current lobby list to the returning client.
      *
@@ -369,63 +378,63 @@ public class ControllerManager implements VirtualControllerManager {
      * @param view     the client's {@link VirtualView}
      */
     public synchronized void returnClientToPreLobby(String clientId, VirtualView view) {
-<span class="nc" id="L372">        clientToLobby.remove(clientId);</span>
-<span class="nc" id="L373">        clientToNickname.remove(clientId);</span>
-<span class="nc" id="L374">        connectedClients.put(clientId, view);</span>
-<span class="nc" id="L375">        view.notifyAvailableLobbiesUpdated(getLobbyInfoList());</span>
-<span class="nc" id="L376">    }</span>
+<span class="nc" id="L381">        clientToLobby.remove(clientId);</span>
+<span class="nc" id="L382">        clientToNickname.remove(clientId);</span>
+<span class="nc" id="L383">        connectedClients.put(clientId, view);</span>
+<span class="nc" id="L384">        view.notifyAvailableLobbiesUpdated(getLobbyInfoList());</span>
+<span class="nc" id="L385">    }</span>
 
     // =========================================================
     // Helper methods
     // =========================================================
 
     private void leaveLobbyInternal(String clientId) {
-<span class="nc" id="L383">        String lobbyId = clientToLobby.get(clientId);</span>
-<span class="nc bnc" id="L384" title="All 2 branches missed.">        if (lobbyId == null) return;</span>
-<span class="nc" id="L385">        Lobby lobby = lobbies.get(lobbyId);</span>
-<span class="nc bnc" id="L386" title="All 2 branches missed.">        if (lobby == null) return;</span>
-<span class="nc" id="L387">        lobby.removeClient(clientId);</span>
-<span class="nc" id="L388">    }</span>
+<span class="nc" id="L392">        String lobbyId = clientToLobby.get(clientId);</span>
+<span class="nc bnc" id="L393" title="All 2 branches missed.">        if (lobbyId == null) return;</span>
+<span class="nc" id="L394">        Lobby lobby = lobbies.get(lobbyId);</span>
+<span class="nc bnc" id="L395" title="All 2 branches missed.">        if (lobby == null) return;</span>
+<span class="nc" id="L396">        lobby.removeClient(clientId);</span>
+<span class="nc" id="L397">    }</span>
 
     private synchronized void removeGameController(String gameId) {
-<span class="nc bnc" id="L391" title="All 2 branches missed.">        if (controllers.remove(gameId) == null) return;</span>
-<span class="nc" id="L392">        gameNicknameToClient.remove(gameId);</span>
-<span class="nc" id="L393">        clientToGame.entrySet().removeIf(e -&gt; gameId.equals(e.getValue()));</span>
-<span class="nc" id="L394">        log(&quot;Game removed: &quot; + gameId);</span>
+<span class="nc bnc" id="L400" title="All 2 branches missed.">        if (controllers.remove(gameId) == null) return;</span>
+<span class="nc" id="L401">        gameNicknameToClient.remove(gameId);</span>
+<span class="nc" id="L402">        clientToGame.entrySet().removeIf(e -&gt; gameId.equals(e.getValue()));</span>
+<span class="nc" id="L403">        log(&quot;Game removed: &quot; + gameId);</span>
         try {
-<span class="nc" id="L396">            Path logFilePath = Path.of(&quot;logs&quot;, gameId + &quot;.ndjson&quot;);</span>
+<span class="nc" id="L405">            Path logFilePath = Path.of(&quot;logs&quot;, gameId + &quot;.ndjson&quot;);</span>
 
             // deleteIfExists è perfetto: se per qualche motivo il file non c'è, non fa crashare il server
-<span class="nc" id="L399">            boolean deleted = Files.deleteIfExists(logFilePath);</span>
-<span class="nc bnc" id="L400" title="All 2 branches missed.">            if (deleted) {</span>
-<span class="nc" id="L401">                log(&quot;Log file deleted successfully: &quot; + logFilePath.getFileName());</span>
+<span class="nc" id="L408">            boolean deleted = Files.deleteIfExists(logFilePath);</span>
+<span class="nc bnc" id="L409" title="All 2 branches missed.">            if (deleted) {</span>
+<span class="nc" id="L410">                log(&quot;Log file deleted successfully: &quot; + logFilePath.getFileName());</span>
             }
-<span class="nc" id="L403">        } catch (IOException e) {</span>
-<span class="nc" id="L404">            System.err.println(&quot;[ControllerManager] Could not delete log file for game &quot; + gameId + &quot;: &quot; + e.getMessage());</span>
-<span class="nc" id="L405">        }</span>
-<span class="nc" id="L406">        broadcastToPreLobbyClients();</span>
-<span class="nc" id="L407">    }</span>
+<span class="nc" id="L412">        } catch (IOException e) {</span>
+<span class="nc" id="L413">            System.err.println(&quot;[ControllerManager] Could not delete log file for game &quot; + gameId + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L414">        }</span>
+<span class="nc" id="L415">        broadcastToPreLobbyClients();</span>
+<span class="nc" id="L416">    }</span>
 
     private void broadcastToPreLobbyClients() {
-<span class="nc" id="L410">        List&lt;LobbyInfo&gt; currentLobbies = getLobbyInfoList();</span>
-<span class="nc" id="L411">        connectedClients.values().forEach(v -&gt; v.notifyAvailableLobbiesUpdated(currentLobbies));</span>
-<span class="nc" id="L412">    }</span>
+<span class="nc" id="L419">        List&lt;LobbyInfo&gt; currentLobbies = getLobbyInfoList();</span>
+<span class="nc" id="L420">        connectedClients.values().forEach(v -&gt; v.notifyAvailableLobbiesUpdated(currentLobbies));</span>
+<span class="nc" id="L421">    }</span>
 
     private List&lt;LobbyInfo&gt; getLobbyInfoList() {
-<span class="nc" id="L415">        return lobbies.values().stream()</span>
-<span class="nc bnc" id="L416" title="All 2 branches missed.">                .filter(lobby -&gt; lobby.getPlayerCount() &gt; 0)</span>
-<span class="nc" id="L417">                .map(Lobby::toLobbyInfo)</span>
-<span class="nc" id="L418">                .toList();</span>
+<span class="nc" id="L424">        return lobbies.values().stream()</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">                .filter(lobby -&gt; lobby.getPlayerCount() &gt; 0)</span>
+<span class="nc" id="L426">                .map(Lobby::toLobbyInfo)</span>
+<span class="nc" id="L427">                .toList();</span>
     }
 
     private VirtualView getViewForClient(String clientId) {
-<span class="nc" id="L422">        VirtualView v = connectedClients.get(clientId);</span>
-<span class="nc bnc" id="L423" title="All 2 branches missed.">        if (v != null) return v;</span>
-<span class="nc" id="L424">        String lobbyId = clientToLobby.get(clientId);</span>
-<span class="nc bnc" id="L425" title="All 2 branches missed.">        if (lobbyId == null) return null;</span>
-<span class="nc" id="L426">        Lobby lobby = lobbies.get(lobbyId);</span>
-<span class="nc bnc" id="L427" title="All 2 branches missed.">        if (lobby == null) return null;</span>
-<span class="nc" id="L428">        return lobby.getView(clientId);</span>
+<span class="nc" id="L431">        VirtualView v = connectedClients.get(clientId);</span>
+<span class="nc bnc" id="L432" title="All 2 branches missed.">        if (v != null) return v;</span>
+<span class="nc" id="L433">        String lobbyId = clientToLobby.get(clientId);</span>
+<span class="nc bnc" id="L434" title="All 2 branches missed.">        if (lobbyId == null) return null;</span>
+<span class="nc" id="L435">        Lobby lobby = lobbies.get(lobbyId);</span>
+<span class="nc bnc" id="L436" title="All 2 branches missed.">        if (lobby == null) return null;</span>
+<span class="nc" id="L437">        return lobby.getView(clientId);</span>
     }
 
     // =========================================================
@@ -442,112 +451,112 @@ public class ControllerManager implements VirtualControllerManager {
      * @param logsDirectory the directory containing NDJSON log files (e.g. {@code Path.of(&quot;logs&quot;)})
      */
     public synchronized void recoverGames(Path logsDirectory) {
-<span class="nc bnc" id="L445" title="All 2 branches missed.">        if (!Files.isDirectory(logsDirectory)) {</span>
-<span class="nc" id="L446">            logRecovery(&quot;No logs directory — starting fresh.&quot;);</span>
-<span class="nc" id="L447">            return;</span>
+<span class="nc bnc" id="L454" title="All 2 branches missed.">        if (!Files.isDirectory(logsDirectory)) {</span>
+<span class="nc" id="L455">            logRecovery(&quot;No logs directory — starting fresh.&quot;);</span>
+<span class="nc" id="L456">            return;</span>
         }
 
         List&lt;Path&gt; candidates;
-<span class="nc" id="L451">        try (Stream&lt;Path&gt; stream = Files.list(logsDirectory)) {</span>
-<span class="nc" id="L452">            candidates = stream</span>
-<span class="nc" id="L453">                    .filter(p -&gt; p.toString().endsWith(&quot;.ndjson&quot;))</span>
-<span class="nc" id="L454">                    .filter(this::isInterrupted)</span>
-<span class="nc" id="L455">                    .toList();</span>
-<span class="nc" id="L456">        } catch (IOException e) {</span>
-<span class="nc" id="L457">            System.err.println(&quot;[ControllerManager:Recovery] Cannot list logs: &quot; + e.getMessage());</span>
-<span class="nc" id="L458">            return;</span>
-<span class="nc" id="L459">        }</span>
+<span class="nc" id="L460">        try (Stream&lt;Path&gt; stream = Files.list(logsDirectory)) {</span>
+<span class="nc" id="L461">            candidates = stream</span>
+<span class="nc" id="L462">                    .filter(p -&gt; p.toString().endsWith(&quot;.ndjson&quot;))</span>
+<span class="nc" id="L463">                    .filter(this::isInterrupted)</span>
+<span class="nc" id="L464">                    .toList();</span>
+<span class="nc" id="L465">        } catch (IOException e) {</span>
+<span class="nc" id="L466">            System.err.println(&quot;[ControllerManager:Recovery] Cannot list logs: &quot; + e.getMessage());</span>
+<span class="nc" id="L467">            return;</span>
+<span class="nc" id="L468">        }</span>
 
-<span class="nc" id="L461">        logRecovery(candidates.size() + &quot; game(s) to recover.&quot;);</span>
-<span class="nc bnc" id="L462" title="All 2 branches missed.">        for (Path logFile : candidates) {</span>
+<span class="nc" id="L470">        logRecovery(candidates.size() + &quot; game(s) to recover.&quot;);</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">        for (Path logFile : candidates) {</span>
             try {
-<span class="nc" id="L464">                recoverSingleGame(logFile);</span>
-<span class="nc" id="L465">                logRecovery(&quot;Recovered: &quot; + logFile.getFileName());</span>
-<span class="nc" id="L466">            } catch (Exception e) {</span>
-<span class="nc" id="L467">                System.err.println(&quot;[ControllerManager:Recovery] Failed: &quot; + logFile.getFileName()</span>
-<span class="nc" id="L468">                        + &quot; — &quot; + e.getMessage());</span>
-<span class="nc" id="L469">                quarantine(logFile, logsDirectory);</span>
-<span class="nc" id="L470">            }</span>
-<span class="nc" id="L471">        }</span>
-<span class="nc" id="L472">    }</span>
+<span class="nc" id="L473">                recoverSingleGame(logFile);</span>
+<span class="nc" id="L474">                logRecovery(&quot;Recovered: &quot; + logFile.getFileName());</span>
+<span class="nc" id="L475">            } catch (Exception e) {</span>
+<span class="nc" id="L476">                System.err.println(&quot;[ControllerManager:Recovery] Failed: &quot; + logFile.getFileName()</span>
+<span class="nc" id="L477">                        + &quot; — &quot; + e.getMessage());</span>
+<span class="nc" id="L478">                quarantine(logFile, logsDirectory);</span>
+<span class="nc" id="L479">            }</span>
+<span class="nc" id="L480">        }</span>
+<span class="nc" id="L481">    }</span>
 
     private boolean isInterrupted(Path logFile) {
-<span class="nc" id="L475">        try (Stream&lt;String&gt; lines = Files.lines(logFile)) {</span>
-<span class="nc" id="L476">            return lines</span>
-<span class="nc bnc" id="L477" title="All 2 branches missed.">                    .filter(l -&gt; !l.isBlank())</span>
-<span class="nc" id="L478">                    .reduce((a, b) -&gt; b)</span>
-<span class="nc bnc" id="L479" title="All 2 branches missed.">                    .map(last -&gt; !last.contains(&quot;\&quot;type\&quot;:\&quot;GAME_ENDED\&quot;&quot;))</span>
-<span class="nc" id="L480">                    .orElse(false);</span>
-<span class="nc" id="L481">        } catch (IOException e) {</span>
-<span class="nc" id="L482">            return false;</span>
+<span class="nc" id="L484">        try (Stream&lt;String&gt; lines = Files.lines(logFile)) {</span>
+<span class="nc" id="L485">            return lines</span>
+<span class="nc bnc" id="L486" title="All 2 branches missed.">                    .filter(l -&gt; !l.isBlank())</span>
+<span class="nc" id="L487">                    .reduce((a, b) -&gt; b)</span>
+<span class="nc bnc" id="L488" title="All 2 branches missed.">                    .map(last -&gt; !last.contains(&quot;\&quot;type\&quot;:\&quot;GAME_ENDED\&quot;&quot;))</span>
+<span class="nc" id="L489">                    .orElse(false);</span>
+<span class="nc" id="L490">        } catch (IOException e) {</span>
+<span class="nc" id="L491">            return false;</span>
         }
     }
 
     private void recoverSingleGame(Path logFile) throws IOException {
-<span class="nc" id="L487">        CommandLogReader reader = new CommandLogReader(logFile);</span>
-<span class="nc" id="L488">        GameInitRecord init = reader.readGameInit();</span>
+<span class="nc" id="L496">        CommandLogReader reader = new CommandLogReader(logFile);</span>
+<span class="nc" id="L497">        GameInitRecord init = reader.readGameInit();</span>
 
-<span class="nc" id="L490">        Game model = new Game(init.gameId(), init.nicknames(), init.chosenTotems(), init.seed());</span>
+<span class="nc" id="L499">        Game model = new Game(init.gameId(), init.nicknames(), init.chosenTotems(), init.seed());</span>
 
-<span class="nc" id="L492">        Map&lt;String, VirtualView&gt; noOpViews = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L493">        Map&lt;String, String&gt; nicknameToClient = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L494" title="All 2 branches missed.">        for (String nick : init.nicknames()) {</span>
-<span class="nc" id="L495">            noOpViews.put(nick, VirtualView.noOp());</span>
-<span class="nc" id="L496">            nicknameToClient.put(nick, null);</span>
-<span class="nc" id="L497">        }</span>
+<span class="nc" id="L501">        Map&lt;String, VirtualView&gt; noOpViews = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L502">        Map&lt;String, String&gt; nicknameToClient = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L503" title="All 2 branches missed.">        for (String nick : init.nicknames()) {</span>
+<span class="nc" id="L504">            noOpViews.put(nick, VirtualView.noOp());</span>
+<span class="nc" id="L505">            nicknameToClient.put(nick, null);</span>
+<span class="nc" id="L506">        }</span>
 
-<span class="nc" id="L499">        gameNicknameToClient.put(init.gameId(), nicknameToClient);</span>
+<span class="nc" id="L508">        gameNicknameToClient.put(init.gameId(), nicknameToClient);</span>
 
-<span class="nc" id="L501">        CommandLogger appender = new CommandLogger(init.gameId());</span>
+<span class="nc" id="L510">        CommandLogger appender = new CommandLogger(init.gameId());</span>
 
-<span class="nc" id="L503">        GameController controller = new GameController(init.gameId(), model, noOpViews, appender);</span>
-<span class="nc" id="L504">        controller.setGameEndedCallback(() -&gt; removeGameController(init.gameId()));</span>
-<span class="nc" id="L505">        controllers.put(init.gameId(), controller);</span>
+<span class="nc" id="L512">        GameController controller = new GameController(init.gameId(), model, noOpViews, appender);</span>
+<span class="nc" id="L513">        controller.setGameEndedCallback(() -&gt; removeGameController(init.gameId()));</span>
+<span class="nc" id="L514">        controllers.put(init.gameId(), controller);</span>
 
-<span class="nc" id="L507">        controller.enterReplayMode();</span>
-<span class="nc" id="L508">        model.startFSM();</span>
-<span class="nc bnc" id="L509" title="All 2 branches missed.">        for (CommandRecord rec : reader.readCommands()) {</span>
-<span class="nc" id="L510">            controller.handle(rec.command(), rec.nickname());</span>
-<span class="nc" id="L511">        }</span>
-<span class="nc" id="L512">        controller.exitReplayMode();</span>
+<span class="nc" id="L516">        controller.enterReplayMode();</span>
+<span class="nc" id="L517">        model.startFSM();</span>
+<span class="nc bnc" id="L518" title="All 2 branches missed.">        for (CommandRecord rec : reader.readCommands()) {</span>
+<span class="nc" id="L519">            controller.handle(rec.command(), rec.nickname());</span>
+<span class="nc" id="L520">        }</span>
+<span class="nc" id="L521">        controller.exitReplayMode();</span>
 
-<span class="nc" id="L514">        String gameId = init.gameId();</span>
+<span class="nc" id="L523">        String gameId = init.gameId();</span>
 
-<span class="nc" id="L516">        ScheduledFuture&lt;?&gt; stale = pendingRecoveryTasks.remove(gameId);</span>
-<span class="nc bnc" id="L517" title="All 2 branches missed.">        if (stale != null) stale.cancel(false);</span>
+<span class="nc" id="L525">        ScheduledFuture&lt;?&gt; stale = pendingRecoveryTasks.remove(gameId);</span>
+<span class="nc bnc" id="L526" title="All 2 branches missed.">        if (stale != null) stale.cancel(false);</span>
 
-<span class="nc" id="L519">        ScheduledFuture&lt;?&gt; task = recoveryScheduler.schedule(() -&gt; {</span>
-<span class="nc" id="L520">            synchronized (ControllerManager.this) {</span>
-<span class="nc" id="L521">                pendingRecoveryTasks.remove(gameId);</span>
-<span class="nc" id="L522">                GameController c = controllers.get(gameId);</span>
-<span class="nc bnc" id="L523" title="All 4 branches missed.">                if (c != null &amp;&amp; c.areAllPlayersPendingReconnection()) {</span>
-<span class="nc" id="L524">                    logRecovery(&quot;No players reconnected for game &quot; + gameId + &quot; — removing.&quot;);</span>
-<span class="nc" id="L525">                    removeGameController(gameId);</span>
+<span class="nc" id="L528">        ScheduledFuture&lt;?&gt; task = recoveryScheduler.schedule(() -&gt; {</span>
+<span class="nc" id="L529">            synchronized (ControllerManager.this) {</span>
+<span class="nc" id="L530">                pendingRecoveryTasks.remove(gameId);</span>
+<span class="nc" id="L531">                GameController c = controllers.get(gameId);</span>
+<span class="nc bnc" id="L532" title="All 4 branches missed.">                if (c != null &amp;&amp; c.areAllPlayersPendingReconnection()) {</span>
+<span class="nc" id="L533">                    logRecovery(&quot;No players reconnected for game &quot; + gameId + &quot; — removing.&quot;);</span>
+<span class="nc" id="L534">                    removeGameController(gameId);</span>
                 }
-<span class="nc" id="L527">            }</span>
-<span class="nc" id="L528">        }, RECOVERY_WINDOW_SECONDS, TimeUnit.SECONDS);</span>
+<span class="nc" id="L536">            }</span>
+<span class="nc" id="L537">        }, RECOVERY_WINDOW_SECONDS, TimeUnit.SECONDS);</span>
 
-<span class="nc" id="L530">        pendingRecoveryTasks.put(gameId, task);</span>
-<span class="nc" id="L531">    }</span>
+<span class="nc" id="L539">        pendingRecoveryTasks.put(gameId, task);</span>
+<span class="nc" id="L540">    }</span>
 
     private void quarantine(Path logFile, Path logsDirectory) {
         try {
-<span class="nc" id="L535">            Path dest = logsDirectory.resolve(&quot;corrupted&quot;);</span>
-<span class="nc" id="L536">            Files.createDirectories(dest);</span>
-<span class="nc" id="L537">            Files.move(logFile, dest.resolve(logFile.getFileName()),</span>
+<span class="nc" id="L544">            Path dest = logsDirectory.resolve(&quot;corrupted&quot;);</span>
+<span class="nc" id="L545">            Files.createDirectories(dest);</span>
+<span class="nc" id="L546">            Files.move(logFile, dest.resolve(logFile.getFileName()),</span>
                     StandardCopyOption.REPLACE_EXISTING);
-<span class="nc" id="L539">        } catch (IOException e) {</span>
-<span class="nc" id="L540">            System.err.println(&quot;[ControllerManager:Recovery] Cannot quarantine &quot;</span>
-<span class="nc" id="L541">                    + logFile.getFileName() + &quot;: &quot; + e.getMessage());</span>
-<span class="nc" id="L542">        }</span>
-<span class="nc" id="L543">    }</span>
+<span class="nc" id="L548">        } catch (IOException e) {</span>
+<span class="nc" id="L549">            System.err.println(&quot;[ControllerManager:Recovery] Cannot quarantine &quot;</span>
+<span class="nc" id="L550">                    + logFile.getFileName() + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L551">        }</span>
+<span class="nc" id="L552">    }</span>
 
     private void log(String msg) {
-<span class="nc" id="L546">        System.out.println(&quot;[ControllerManager] &quot; + msg);</span>
-<span class="nc" id="L547">    }</span>
+<span class="nc" id="L555">        System.out.println(&quot;[ControllerManager] &quot; + msg);</span>
+<span class="nc" id="L556">    }</span>
 
     private void logRecovery(String msg) {
-<span class="nc" id="L550">        System.out.println(&quot;[ControllerManager:Recovery] &quot; + msg);</span>
-<span class="nc" id="L551">    }</span>
+<span class="nc" id="L559">        System.out.println(&quot;[ControllerManager:Recovery] &quot; + msg);</span>
+<span class="nc" id="L560">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

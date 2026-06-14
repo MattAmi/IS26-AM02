@@ -91,17 +91,18 @@ loadScripts(document, 'script');</script>
 <section class="class-description" id="class-description">
 <dl class="notes">
 <dt>All Implemented Interfaces:</dt>
-<dd><code><a href="../../../common/interfaces/VirtualServer.html" title="interface in it.polimi.ingsw.am02.common.interfaces">VirtualServer</a></code></dd>
+<dd><code><a href="../ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a>, <a href="../../../common/interfaces/VirtualServer.html" title="interface in it.polimi.ingsw.am02.common.interfaces">VirtualServer</a></code></dd>
 </dl>
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public class </span><span class="element-name type-name-label">SocketServerProxy</span>
-<span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
+<span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>
+implements <a href="../ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a></span></div>
 <div class="block">Socket-based proxy on the client side.
 
 <p><b>Inbound</b> (server → client): a dedicated reader thread listens on
 the TCP stream, decodes each newline-delimited JSON message, and dispatches
-it to the <code>ClientNetworkDispatcher</code> via the IoC
+it to the <a href="../ClientNetworkDispatcher.html" title="class in it.polimi.ingsw.am02.client.network"><code>ClientNetworkDispatcher</code></a> via the IoC
 <a href="../../../common/messages/events/Event.html#apply(it.polimi.ingsw.am02.common.interfaces.VirtualView)"><code>Event.apply(it.polimi.ingsw.am02.common.interfaces.VirtualView)</code></a> pattern.
 <a href="../../../common/messages/events/heartbeat/PingEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.heartbeat"><code>PingEvent</code></a>s are answered immediately with a <a href="../../../common/messages/commands/heartbeat/PongCommand.html" title="class in it.polimi.ingsw.am02.common.messages.commands.heartbeat"><code>PongCommand</code></a>.
 
@@ -128,8 +129,8 @@ pong, not on generic traffic.</div>
 <div class="table-header col-last">Description</div>
 <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(java.lang.String,int,it.polimi.ingsw.am02.client.model.LobbyModel,it.polimi.ingsw.am02.client.view.ClientView)" class="member-name-link">SocketServerProxy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host,
  int&nbsp;port,
- it.polimi.ingsw.am02.client.model.LobbyModel&nbsp;lobbyModel,
- it.polimi.ingsw.am02.client.view.ClientView&nbsp;view)</code></div>
+ <a href="../../model/LobbyModel.html" title="class in it.polimi.ingsw.am02.client.model">LobbyModel</a>&nbsp;lobbyModel,
+ <a href="../../view/ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a>&nbsp;view)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Creates a Socket proxy ready to be wired and connected.</div>
 </div>
@@ -149,13 +150,20 @@ pong, not on generic traffic.</div>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#connect()" class="member-name-link">connect</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Establishes the physical connection to the server.</div>
+</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#disconnect()" class="member-name-link">disconnect</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Closes the connection and releases all associated resources (threads,
+sockets, RMI stubs).</div>
+</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isConnected()" class="member-name-link">isConnected</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns whether the proxy currently has an active connection to the server.</div>
+</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#moveTotem(char)" class="member-name-link">moveTotem</a><wbr>(char&nbsp;tileID)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
@@ -198,8 +206,12 @@ pong, not on generic traffic.</div>
 <div class="block">Sends a card-selection action.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setClientController(it.polimi.ingsw.am02.client.controller.ClientController)" class="member-name-link">setClientController</a><wbr>(it.polimi.ingsw.am02.client.controller.ClientController&nbsp;controller)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setClientController(it.polimi.ingsw.am02.client.controller.ClientController)" class="member-name-link">setClientController</a><wbr>(<a href="../../controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller">ClientController</a>&nbsp;controller)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Wires this proxy to the given <a href="../../controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller"><code>ClientController</code></a> and creates the
+<a href="../ClientNetworkDispatcher.html" title="class in it.polimi.ingsw.am02.client.network"><code>ClientNetworkDispatcher</code></a> that routes inbound server notifications
+to the appropriate client-side model.</div>
+</div>
 </div>
 </div>
 </div>
@@ -223,8 +235,8 @@ pong, not on generic traffic.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">SocketServerProxy</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host,
  int&nbsp;port,
- it.polimi.ingsw.am02.client.model.LobbyModel&nbsp;lobbyModel,
- it.polimi.ingsw.am02.client.view.ClientView&nbsp;view)</span></div>
+ <a href="../../model/LobbyModel.html" title="class in it.polimi.ingsw.am02.client.model">LobbyModel</a>&nbsp;lobbyModel,
+ <a href="../../view/ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a>&nbsp;view)</span></div>
 <div class="block">Creates a Socket proxy ready to be wired and connected.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -248,11 +260,22 @@ pong, not on generic traffic.</div>
 <section class="detail" id="setClientController(it.polimi.ingsw.am02.client.controller.ClientController)">
 <h3>setClientController</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setClientController</span><wbr><span class="parameters">(it.polimi.ingsw.am02.client.controller.ClientController&nbsp;controller)</span></div>
-<div class="block">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setClientController</span><wbr><span class="parameters">(<a href="../../controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller">ClientController</a>&nbsp;controller)</span></div>
+<div class="block">Wires this proxy to the given <a href="../../controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller"><code>ClientController</code></a> and creates the
+<a href="../ClientNetworkDispatcher.html" title="class in it.polimi.ingsw.am02.client.network"><code>ClientNetworkDispatcher</code></a> that routes inbound server notifications
+to the appropriate client-side model.
+
+<p>Must be called before <a href="../ServerProxy.html#connect()"><code>ServerProxy.connect()</code></a> so that inbound events
+are dispatched correctly as soon as the connection is live.
 
 <p>Also registers a callback on the dispatcher so that
 <code>activeGameId</code> is updated whenever a game-started notification arrives.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ServerProxy.html#setClientController(it.polimi.ingsw.am02.client.controller.ClientController)">setClientController</a></code>&nbsp;in interface&nbsp;<code><a href="../ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a></code></dd>
+<dt>Parameters:</dt>
+<dd><code>controller</code> - the client controller that owns the active model</dd>
+</dl>
 </div>
 </section>
 </li>
@@ -262,9 +285,17 @@ pong, not on generic traffic.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">connect</span>()
              throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Exception.html" title="class or interface in java.lang" class="external-link">Exception</a></span></div>
+<div class="block">Establishes the physical connection to the server.
+
+<p>For RMI, performs the registry lookup and exports this object as a
+remote stub. For Socket, opens the TCP connection and starts the reader
+and ping threads. Must be called after <a href="../ServerProxy.html#setClientController(it.polimi.ingsw.am02.client.controller.ClientController)"><code>ServerProxy.setClientController(ClientController)</code></a> and
+before any outbound request is issued.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ServerProxy.html#connect()">connect</a></code>&nbsp;in interface&nbsp;<code><a href="../ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a></code></dd>
 <dt>Throws:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Exception.html" title="class or interface in java.lang" class="external-link">Exception</a></code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Exception.html" title="class or interface in java.lang" class="external-link">Exception</a></code> - if the connection cannot be established</dd>
 </dl>
 </div>
 </section>
@@ -274,6 +305,15 @@ pong, not on generic traffic.</div>
 <h3>disconnect</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">disconnect</span>()</div>
+<div class="block">Closes the connection and releases all associated resources (threads,
+sockets, RMI stubs).
+
+<p>Implementations must set an intentional-disconnect flag so that
+background threads do not trigger an automatic reconnection attempt.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ServerProxy.html#disconnect()">disconnect</a></code>&nbsp;in interface&nbsp;<code><a href="../ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a></code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -282,6 +322,13 @@ pong, not on generic traffic.</div>
 <h3>isConnected</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isConnected</span>()</div>
+<div class="block">Returns whether the proxy currently has an active connection to the server.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../ServerProxy.html#isConnected()">isConnected</a></code>&nbsp;in interface&nbsp;<code><a href="../ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a></code></dd>
+<dt>Returns:</dt>
+<dd><code>true</code> if connected, <code>false</code> otherwise</dd>
+</dl>
 </div>
 </section>
 </li>

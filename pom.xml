@@ -71,6 +71,12 @@
                     <docencoding>UTF-8</docencoding>
                     <notimestamp>true</notimestamp>
                     <quiet>true</quiet>
+                    <!-- Exclude module-info.java so Javadoc runs in classpath (legacy)
+                         mode. Otherwise the named module + unnamed classpath deps mix
+                         triggers "named and unnamed modules" under recent JDKs. -->
+                    <sourceFileExcludes>
+                        <sourceFileExclude>**/module-info.java</sourceFileExclude>
+                    </sourceFileExcludes>
                 </configuration>
             </plugin>
 

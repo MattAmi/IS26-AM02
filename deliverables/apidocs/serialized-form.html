@@ -52,6 +52,104 @@ loadScripts(document, 'script');</script>
 <ul class="block-list">
 <li>
 <section class="serialized-package-container">
+<h2 title="Package">Package&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/rmi/package-summary.html">it.polimi.ingsw.am02.client.network.rmi</a></h2>
+<ul class="block-list">
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy">
+<h3>Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/rmi/RmiServerProxy.html" title="class in it.polimi.ingsw.am02.client.network.rmi">it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy</a></h3>
+<div class="type-signature">class RmiServerProxy extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.rmi/java/rmi/server/UnicastRemoteObject.html" title="class or interface in java.rmi.server" class="external-link">UnicastRemoteObject</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>activeGameId</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> activeGameId</pre>
+<div class="block">Game ID currently joined; used for reconnection.</div>
+</li>
+<li class="block-list">
+<h5>activeNickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> activeNickname</pre>
+<div class="block">Nickname last successfully registered with the server; used for reconnection.</div>
+</li>
+<li class="block-list">
+<h5>attemptingReconnection</h5>
+<pre>boolean attemptingReconnection</pre>
+</li>
+<li class="block-list">
+<h5>clientController</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller">ClientController</a> clientController</pre>
+</li>
+<li class="block-list">
+<h5>clientView</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/view/ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a> clientView</pre>
+</li>
+<li class="block-list">
+<h5>connected</h5>
+<pre>boolean connected</pre>
+</li>
+<li class="block-list">
+<h5>disconnected</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/atomic/AtomicBoolean.html" title="class or interface in java.util.concurrent.atomic" class="external-link">AtomicBoolean</a> disconnected</pre>
+<div class="block">Guards against multiple concurrent calls to <code>RmiServerProxy.handleNetworkFailure(Exception)</code>.</div>
+</li>
+<li class="block-list">
+<h5>dispatcher</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/ClientNetworkDispatcher.html" title="class in it.polimi.ingsw.am02.client.network">ClientNetworkDispatcher</a> dispatcher</pre>
+</li>
+<li class="block-list">
+<h5>host</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> host</pre>
+</li>
+<li class="block-list">
+<h5>intentionalDisconnect</h5>
+<pre>boolean intentionalDisconnect</pre>
+<div class="block">Set to <code>true</code> by <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/rmi/RmiServerProxy.html#disconnect()"><code>RmiServerProxy.disconnect()</code></a> to suppress reconnection attempts.</div>
+</li>
+<li class="block-list">
+<h5>lobbyModel</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/model/LobbyModel.html" title="class in it.polimi.ingsw.am02.client.model">LobbyModel</a> lobbyModel</pre>
+</li>
+<li class="block-list">
+<h5>outboundQueue</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/BlockingQueue.html" title="class or interface in java.util.concurrent" class="external-link">BlockingQueue</a>&lt;it.polimi.ingsw.am02.client.network.rmi.RmiServerProxy.RemoteAction&gt; outboundQueue</pre>
+<div class="block">Unbounded queue of outbound actions waiting to be sent to the server.</div>
+</li>
+<li class="block-list">
+<h5>outboundWorker</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Thread.html" title="class or interface in java.lang" class="external-link">Thread</a> outboundWorker</pre>
+<div class="block">Dedicated thread that drains <code>RmiServerProxy.outboundQueue</code> sequentially.</div>
+</li>
+<li class="block-list">
+<h5>pingThread</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Thread.html" title="class or interface in java.lang" class="external-link">Thread</a> pingThread</pre>
+<div class="block">Dedicated thread that sends periodic pings regardless of outbound traffic.</div>
+</li>
+<li class="block-list">
+<h5>port</h5>
+<pre>int port</pre>
+</li>
+<li class="block-list">
+<h5>running</h5>
+<pre>boolean running</pre>
+<div class="block"><code>false</code> once <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/client/network/rmi/RmiServerProxy.html#disconnect()"><code>RmiServerProxy.disconnect()</code></a> has been called.</div>
+</li>
+<li class="block-list">
+<h5>serverStub</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/network/rmi/RmiServerRemote.html" title="interface in it.polimi.ingsw.am02.common.network.rmi">RmiServerRemote</a> serverStub</pre>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-package-container">
 <h2 title="Package">Package&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/package-summary.html">it.polimi.ingsw.am02.common.dto</a></h2>
 <ul class="block-list">
 <li>
@@ -511,6 +609,637 @@ loadScripts(document, 'script');</script>
 </li>
 <li>
 <section class="serialized-package-container">
+<h2 title="Package">Package&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/error/package-summary.html">it.polimi.ingsw.am02.common.messages.events.error</a></h2>
+<ul class="block-list">
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/error/ErrorEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.error">it.polimi.ingsw.am02.common.messages.events.error.ErrorEvent</a></h3>
+<div class="type-signature">class ErrorEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>errorMessage</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> errorMessage</pre>
+<div class="block">The field for the <code>errorMessage</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-package-container">
+<h2 title="Package">Package&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a></h2>
+<ul class="block-list">
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.AutoPlayerInvokedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/AutoPlayerInvokedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.AutoPlayerInvokedEvent</a></h3>
+<div class="type-signature">class AutoPlayerInvokedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <a href="./it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/AutoPlayerInvokedEvent.html#param-nickname"><code>nickname</code></a> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.AutoPlayerTimerStartedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/AutoPlayerTimerStartedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.AutoPlayerTimerStartedEvent</a></h3>
+<div class="type-signature">class AutoPlayerTimerStartedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <a href="./it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/AutoPlayerTimerStartedEvent.html#param-nickname"><code>nickname</code></a> record component.</div>
+</li>
+<li class="block-list">
+<h5>seconds</h5>
+<pre>long seconds</pre>
+<div class="block">The field for the <a href="./it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/AutoPlayerTimerStartedEvent.html#param-seconds"><code>seconds</code></a> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.BoardUpdatedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/BoardUpdatedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.BoardUpdatedEvent</a></h3>
+<div class="type-signature">class BoardUpdatedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>deckRemainingCount</h5>
+<pre>int deckRemainingCount</pre>
+<div class="block">The field for the <code>deckRemainingCount</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>discardedCards</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; discardedCards</pre>
+<div class="block">The field for the <code>discardedCards</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>movedToLowerRow</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; movedToLowerRow</pre>
+<div class="block">The field for the <code>movedToLowerRow</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>newLowerRow</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; newLowerRow</pre>
+<div class="block">The field for the <code>newLowerRow</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>newUpperRow</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; newUpperRow</pre>
+<div class="block">The field for the <code>newUpperRow</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.CardTakenEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/CardTakenEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.CardTakenEvent</a></h3>
+<div class="type-signature">class CardTakenEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>cardID</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> cardID</pre>
+<div class="block">The field for the <code>cardID</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>cardType</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/CardType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">CardType</a> cardType</pre>
+<div class="block">The field for the <code>cardType</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>sourceRow</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/RowPosition.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">RowPosition</a> sourceRow</pre>
+<div class="block">The field for the <code>sourceRow</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.CurrentPlayerChangedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/CurrentPlayerChangedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.CurrentPlayerChangedEvent</a></h3>
+<div class="type-signature">class CurrentPlayerChangedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nextPlayer</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nextPlayer</pre>
+<div class="block">The field for the <code>nextPlayer</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.EraChangedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/EraChangedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.EraChangedEvent</a></h3>
+<div class="type-signature">class EraChangedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>discardedBuildings</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; discardedBuildings</pre>
+<div class="block">The field for the <code>discardedBuildings</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>newEra</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/Era.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Era</a> newEra</pre>
+<div class="block">The field for the <code>newEra</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>newLowerRowBuildings</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; newLowerRowBuildings</pre>
+<div class="block">The field for the <code>newLowerRowBuildings</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>newUpperRowBuildings</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; newUpperRowBuildings</pre>
+<div class="block">The field for the <code>newUpperRowBuildings</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.EventResolvedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/EventResolvedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.EventResolvedEvent</a></h3>
+<div class="type-signature">class EventResolvedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>eventID</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> eventID</pre>
+<div class="block">The field for the <code>eventID</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>eventName</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> eventName</pre>
+<div class="block">The field for the <code>eventName</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.ExtraTurnEndedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/ExtraTurnEndedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.ExtraTurnEndedEvent</a></h3>
+<div class="type-signature">class ExtraTurnEndedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.ExtraTurnStartedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/ExtraTurnStartedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.ExtraTurnStartedEvent</a></h3>
+<div class="type-signature">class ExtraTurnStartedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>remainingLower</h5>
+<pre>int remainingLower</pre>
+<div class="block">The field for the <code>remainingLower</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>remainingUpper</h5>
+<pre>int remainingUpper</pre>
+<div class="block">The field for the <code>remainingUpper</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.GameAbortedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GameAbortedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.GameAbortedEvent</a></h3>
+<div class="type-signature">class GameAbortedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>winner</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> winner</pre>
+<div class="block">The field for the <code>winner</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.GameEndedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GameEndedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.GameEndedEvent</a></h3>
+<div class="type-signature">class GameEndedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>finalRankings</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/PlayerFinalScore.html" title="class in it.polimi.ingsw.am02.common.dto">PlayerFinalScore</a>&gt; finalRankings</pre>
+<div class="block">The field for the <code>finalRankings</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>winners</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; winners</pre>
+<div class="block">The field for the <code>winners</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.GameRecoveryFailedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GameRecoveryFailedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.GameRecoveryFailedEvent</a></h3>
+<div class="type-signature">class GameRecoveryFailedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.GameSetupCompletedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GameSetupCompletedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.GameSetupCompletedEvent</a></h3>
+<div class="type-signature">class GameSetupCompletedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>boardSnapshot</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/BoardSnapshot.html" title="class in it.polimi.ingsw.am02.common.dto">BoardSnapshot</a> boardSnapshot</pre>
+<div class="block">The field for the <code>boardSnapshot</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>initialFood</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt; initialFood</pre>
+<div class="block">The field for the <code>initialFood</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>totemByPlayer</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&gt; totemByPlayer</pre>
+<div class="block">The field for the <code>totemByPlayer</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>turnOrder</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; turnOrder</pre>
+<div class="block">The field for the <code>turnOrder</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.GlobalTimerCancelledEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GlobalTimerCancelledEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.GlobalTimerCancelledEvent</a></h3>
+<div class="type-signature">class GlobalTimerCancelledEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.GlobalTimerStartedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/GlobalTimerStartedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.GlobalTimerStartedEvent</a></h3>
+<div class="type-signature">class GlobalTimerStartedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>seconds</h5>
+<pre>long seconds</pre>
+<div class="block">The field for the <code>seconds</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.PhaseChangedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PhaseChangedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.PhaseChangedEvent</a></h3>
+<div class="type-signature">class PhaseChangedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>currentPlayer</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> currentPlayer</pre>
+<div class="block">The field for the <code>currentPlayer</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>phase</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/PhaseType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">PhaseType</a> phase</pre>
+<div class="block">The field for the <code>phase</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>resolutionOrder</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; resolutionOrder</pre>
+<div class="block">The field for the <code>resolutionOrder</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.PlayerDisconnectedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerDisconnectedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.PlayerDisconnectedEvent</a></h3>
+<div class="type-signature">class PlayerDisconnectedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.PlayerLimitsInitializedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerLimitsInitializedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.PlayerLimitsInitializedEvent</a></h3>
+<div class="type-signature">class PlayerLimitsInitializedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>remainingLower</h5>
+<pre>int remainingLower</pre>
+<div class="block">The field for the <code>remainingLower</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>remainingUpper</h5>
+<pre>int remainingUpper</pre>
+<div class="block">The field for the <code>remainingUpper</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.PlayerLimitsUpdatedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerLimitsUpdatedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.PlayerLimitsUpdatedEvent</a></h3>
+<div class="type-signature">class PlayerLimitsUpdatedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>remainingLower</h5>
+<pre>int remainingLower</pre>
+<div class="block">The field for the <code>remainingLower</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>remainingUpper</h5>
+<pre>int remainingUpper</pre>
+<div class="block">The field for the <code>remainingUpper</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.PlayerReconnectedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerReconnectedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.PlayerReconnectedEvent</a></h3>
+<div class="type-signature">class PlayerReconnectedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.PlayerResourceChangedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/PlayerResourceChangedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.PlayerResourceChangedEvent</a></h3>
+<div class="type-signature">class PlayerResourceChangedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>delta</h5>
+<pre>int delta</pre>
+<div class="block">The field for the <code>delta</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>newValue</h5>
+<pre>int newValue</pre>
+<div class="block">The field for the <code>newValue</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>resource</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/enumerations/ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> resource</pre>
+<div class="block">The field for the <code>resource</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.TotemPlacedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/TotemPlacedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.TotemPlacedEvent</a></h3>
+<div class="type-signature">class TotemPlacedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>tileID</h5>
+<pre>char tileID</pre>
+<div class="block">The field for the <code>tileID</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.TotemReturnedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/TotemReturnedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.TotemReturnedEvent</a></h3>
+<div class="type-signature">class TotemReturnedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>nickname</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> nickname</pre>
+<div class="block">The field for the <code>nickname</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>turnOrderPosition</h5>
+<pre>int turnOrderPosition</pre>
+<div class="block">The field for the <code>turnOrderPosition</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.game.TurnOrderEstablishedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/game/TurnOrderEstablishedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game.TurnOrderEstablishedEvent</a></h3>
+<div class="type-signature">class TurnOrderEstablishedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>turnOrder</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt; turnOrder</pre>
+<div class="block">The field for the <code>turnOrder</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-package-container">
 <h2 title="Package">Package&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/heartbeat/package-summary.html">it.polimi.ingsw.am02.common.messages.events.heartbeat</a></h2>
 <ul class="block-list">
 <li>
@@ -523,6 +1252,208 @@ loadScripts(document, 'script');</script>
 <section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.heartbeat.PongEvent">
 <h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/heartbeat/PongEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.heartbeat">it.polimi.ingsw.am02.common.messages.events.heartbeat.PongEvent</a></h3>
 <div class="type-signature">class PongEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-package-container">
+<h2 title="Package">Package&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/package-summary.html">it.polimi.ingsw.am02.common.messages.events.lobby</a></h2>
+<ul class="block-list">
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/GameStartedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">it.polimi.ingsw.am02.common.messages.events.lobby.GameStartedEvent</a></h3>
+<div class="type-signature">class GameStartedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>gameID</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> gameID</pre>
+<div class="block">The field for the <code>gameID</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.lobby.LobbyDissolvedEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/LobbyDissolvedEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">it.polimi.ingsw.am02.common.messages.events.lobby.LobbyDissolvedEvent</a></h3>
+<div class="type-signature">class LobbyDissolvedEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>lobbyID</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> lobbyID</pre>
+<div class="block">The field for the <code>lobbyID</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.lobby.UpdatedLobbiesEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/UpdatedLobbiesEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">it.polimi.ingsw.am02.common.messages.events.lobby.UpdatedLobbiesEvent</a></h3>
+<div class="type-signature">class UpdatedLobbiesEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>lobbies</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a>&gt; lobbies</pre>
+<div class="block">The field for the <code>lobbies</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.lobby.UpdatedLobbyEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/UpdatedLobbyEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">it.polimi.ingsw.am02.common.messages.events.lobby.UpdatedLobbyEvent</a></h3>
+<div class="type-signature">class UpdatedLobbyEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>lobby</h5>
+<pre><a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/dto/LobbyInfo.html" title="class in it.polimi.ingsw.am02.common.dto">LobbyInfo</a> lobby</pre>
+<div class="block">The field for the <code>lobby</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent">
+<h3>Record Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/common/messages/events/lobby/UsernameResultEvent.html" title="class in it.polimi.ingsw.am02.common.messages.events.lobby">it.polimi.ingsw.am02.common.messages.events.lobby.UsernameResultEvent</a></h3>
+<div class="type-signature">class UsernameResultEvent extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+<ul class="block-list">
+<li>
+<section class="detail">
+<h4>Serialized Fields</h4>
+<ul class="block-list">
+<li class="block-list">
+<h5>isValid</h5>
+<pre>boolean isValid</pre>
+<div class="block">The field for the <code>isValid</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>reason</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> reason</pre>
+<div class="block">The field for the <code>reason</code> record component.</div>
+</li>
+<li class="block-list">
+<h5>username</h5>
+<pre><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a> username</pre>
+<div class="block">The field for the <code>username</code> record component.</div>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+</ul>
+</section>
+</li>
+<li>
+<section class="serialized-package-container">
+<h2 title="Package">Package&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/package-summary.html">it.polimi.ingsw.am02.server.model.exceptions</a></h2>
+<ul class="block-list">
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/CardNotFoundException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.CardNotFoundException</a></h3>
+<div class="type-signature">class CardNotFoundException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.DuplicateCardSelectionException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/DuplicateCardSelectionException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.DuplicateCardSelectionException</a></h3>
+<div class="type-signature">class DuplicateCardSelectionException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/EventCardNotTakeableException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.EventCardNotTakeableException</a></h3>
+<div class="type-signature">class EventCardNotTakeableException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.GameRuleException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.GameRuleException</a></h3>
+<div class="type-signature">class GameRuleException extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/RuntimeException.html" title="class or interface in java.lang" class="external-link">RuntimeException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.InsufficientFoodException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/InsufficientFoodException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.InsufficientFoodException</a></h3>
+<div class="type-signature">class InsufficientFoodException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.InvalidMoveException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/InvalidMoveException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.InvalidMoveException</a></h3>
+<div class="type-signature">class InvalidMoveException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.NotYourTurnException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/NotYourTurnException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.NotYourTurnException</a></h3>
+<div class="type-signature">class NotYourTurnException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.PickLimitExceededException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/PickLimitExceededException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.PickLimitExceededException</a></h3>
+<div class="type-signature">class PickLimitExceededException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.PickObligationNotFulfilledException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/PickObligationNotFulfilledException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.PickObligationNotFulfilledException</a></h3>
+<div class="type-signature">class PickObligationNotFulfilledException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.PlayerNotFoundException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/PlayerNotFoundException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.PlayerNotFoundException</a></h3>
+<div class="type-signature">class PlayerNotFoundException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.PlayerNotOnTileException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/PlayerNotOnTileException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.PlayerNotOnTileException</a></h3>
+<div class="type-signature">class PlayerNotOnTileException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.TileNotFoundException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/TileNotFoundException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.TileNotFoundException</a></h3>
+<div class="type-signature">class TileNotFoundException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
+</section>
+</li>
+<li>
+<section class="serialized-class-details" id="it.polimi.ingsw.am02.server.model.exceptions.TileOccupiedException">
+<h3>Exception Class&nbsp;<a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/TileOccupiedException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">it.polimi.ingsw.am02.server.model.exceptions.TileOccupiedException</a></h3>
+<div class="type-signature">class TileOccupiedException extends <a href="it.polimi.ingsw.am02/it/polimi/ingsw/am02/server/model/exceptions/GameRuleException.html" title="class in it.polimi.ingsw.am02.server.model.exceptions">GameRuleException</a> implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Serializable.html" title="class or interface in java.io" class="external-link">Serializable</a></div>
 </section>
 </li>
 </ul>

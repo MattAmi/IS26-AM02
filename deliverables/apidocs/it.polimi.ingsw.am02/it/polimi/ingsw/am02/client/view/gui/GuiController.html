@@ -58,14 +58,6 @@ loadScripts(document, 'script');</script>
 <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
 <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
-<li><a href="#field-detail" tabindex="0">Field Details</a>
-<ol class="toc-list">
-<li><a href="#proxy" tabindex="0">proxy</a></li>
-<li><a href="#lobbyModel" tabindex="0">lobbyModel</a></li>
-<li><a href="#view" tabindex="0">view</a></li>
-<li><a href="#gameModel" tabindex="0">gameModel</a></li>
-</ol>
-</li>
 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
 <ol class="toc-list">
 <li><a href="#%3Cinit%3E(it.polimi.ingsw.am02.client.network.ServerProxy,it.polimi.ingsw.am02.client.model.LobbyModel,it.polimi.ingsw.am02.client.view.ClientView)" tabindex="0">GuiController(ServerProxy, LobbyModel, ClientView)</a></li>
@@ -85,18 +77,6 @@ loadScripts(document, 'script');</script>
 <li><a href="#moveTotem(char)" tabindex="0">moveTotem(char)</a></li>
 <li><a href="#resolveActions(java.util.List)" tabindex="0">resolveActions(List)</a></li>
 <li><a href="#requestReturnToLobby()" tabindex="0">requestReturnToLobby()</a></li>
-<li><a href="#setServerProxy(it.polimi.ingsw.am02.client.network.ServerProxy)" tabindex="0">setServerProxy(ServerProxy)</a></li>
-<li><a href="#onGameModelRequired(java.lang.String)" tabindex="0">onGameModelRequired(String)</a></li>
-<li><a href="#performReturnToLobby()" tabindex="0">performReturnToLobby()</a></li>
-<li><a href="#handleSetNickname(java.lang.String)" tabindex="0">handleSetNickname(String)</a></li>
-<li><a href="#handleCreateLobby(int)" tabindex="0">handleCreateLobby(int)</a></li>
-<li><a href="#handleJoinLobby(int)" tabindex="0">handleJoinLobby(int)</a></li>
-<li><a href="#handleSelectTotem(it.polimi.ingsw.am02.common.enumerations.Totem)" tabindex="0">handleSelectTotem(Totem)</a></li>
-<li><a href="#handleMoveTotem(char)" tabindex="0">handleMoveTotem(char)</a></li>
-<li><a href="#handleResolveActions(java.util.List)" tabindex="0">handleResolveActions(List)</a></li>
-<li><a href="#handleReconnect(java.lang.String,java.lang.String)" tabindex="0">handleReconnect(String, String)</a></li>
-<li><a href="#getGameModel()" tabindex="0">getGameModel()</a></li>
-<li><a href="#myNickname()" tabindex="0">myNickname()</a></li>
 </ol>
 </li>
 </ol>
@@ -107,13 +87,15 @@ loadScripts(document, 'script');</script>
 <h1 title="Class GuiController" class="title">Class GuiController</h1>
 </div>
 <div class="inheritance" title="Inheritance Tree"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">java.lang.Object</a>
+<div class="inheritance"><a href="../../controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller">it.polimi.ingsw.am02.client.controller.ClientController</a>
 <div class="inheritance">it.polimi.ingsw.am02.client.view.gui.GuiController</div>
+</div>
 </div>
 <section class="class-description" id="class-description">
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public class </span><span class="element-name type-name-label">GuiController</span>
-<span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
+<span class="extends-implements">extends <a href="../../controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller">ClientController</a></span></div>
 <div class="block">Controller for the Graphical User Interface (GUI).
 This class handles the communication between the GUI views and the server proxy,
 managing the lobby and game phases.</div>
@@ -125,24 +107,9 @@ managing the lobby and game phases.</div>
 <li>
 <section class="field-summary" id="field-summary">
 <h2>Field Summary</h2>
-<div class="caption"><span>Fields</span></div>
-<div class="summary-table three-column-summary">
-<div class="table-header col-first">Modifier and Type</div>
-<div class="table-header col-second">Field</div>
-<div class="table-header col-last">Description</div>
-<div class="col-first even-row-color"><code>protected it.polimi.ingsw.am02.client.model.GameModel</code></div>
-<div class="col-second even-row-color"><code><a href="#gameModel" class="member-name-link">gameModel</a></code></div>
-<div class="col-last even-row-color">&nbsp;</div>
-<div class="col-first odd-row-color"><code>protected final it.polimi.ingsw.am02.client.model.LobbyModel</code></div>
-<div class="col-second odd-row-color"><code><a href="#lobbyModel" class="member-name-link">lobbyModel</a></code></div>
-<div class="col-last odd-row-color">&nbsp;</div>
-<div class="col-first even-row-color"><code>protected it.polimi.ingsw.am02.client.network.ServerProxy</code></div>
-<div class="col-second even-row-color"><code><a href="#proxy" class="member-name-link">proxy</a></code></div>
-<div class="col-last even-row-color">&nbsp;</div>
-<div class="col-first odd-row-color"><code>protected final it.polimi.ingsw.am02.client.view.ClientView</code></div>
-<div class="col-second odd-row-color"><code><a href="#view" class="member-name-link">view</a></code></div>
-<div class="col-last odd-row-color">&nbsp;</div>
-</div>
+<div class="inherited-list">
+<h3 id="fields-inherited-from-class-it.polimi.ingsw.am02.client.controller.ClientController">Fields inherited from class&nbsp;<a href="../../controller/ClientController.html#field-summary" title="class in it.polimi.ingsw.am02.client.controller">ClientController</a></h3>
+<code><a href="../../controller/ClientController.html#gameModel">gameModel</a>, <a href="../../controller/ClientController.html#lobbyModel">lobbyModel</a>, <a href="../../controller/ClientController.html#proxy">proxy</a>, <a href="../../controller/ClientController.html#view">view</a></code></div>
 </section>
 </li>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
@@ -153,9 +120,9 @@ managing the lobby and game phases.</div>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
-<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(it.polimi.ingsw.am02.client.network.ServerProxy,it.polimi.ingsw.am02.client.model.LobbyModel,it.polimi.ingsw.am02.client.view.ClientView)" class="member-name-link">GuiController</a><wbr>(it.polimi.ingsw.am02.client.network.ServerProxy&nbsp;proxy,
- it.polimi.ingsw.am02.client.model.LobbyModel&nbsp;lobbyModel,
- it.polimi.ingsw.am02.client.view.ClientView&nbsp;view)</code></div>
+<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(it.polimi.ingsw.am02.client.network.ServerProxy,it.polimi.ingsw.am02.client.model.LobbyModel,it.polimi.ingsw.am02.client.view.ClientView)" class="member-name-link">GuiController</a><wbr>(<a href="../../network/ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a>&nbsp;proxy,
+ <a href="../../model/LobbyModel.html" title="class in it.polimi.ingsw.am02.client.model">LobbyModel</a>&nbsp;lobbyModel,
+ <a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a>&nbsp;view)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Constructs a new GuiController.</div>
 </div>
@@ -173,7 +140,7 @@ managing the lobby and game phases.</div>
 <div class="table-header col-first">Modifier and Type</div>
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected it.polimi.ingsw.am02.client.network.ServerProxy</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected <a href="../../network/ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#createNewProxy()" class="member-name-link">createNewProxy</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Creates a new server proxy using the stored connection configuration.</div>
@@ -183,129 +150,65 @@ managing the lobby and game phases.</div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Retrieves the list of available lobbies from the lobby model.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>it.polimi.ingsw.am02.client.model.GameModel</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getGameModel()" class="member-name-link">getGameModel</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#handleCreateLobby(int)" class="member-name-link">handleCreateLobby</a><wbr>(int&nbsp;size)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Validates lobby size constraints (2–5 players) locally and forwards to the server.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#handleJoinLobby(int)" class="member-name-link">handleJoinLobby</a><wbr>(int&nbsp;index)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Resolves the target lobby from its display index in the locally cached list
-and forwards the join request to the server.</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#handleMoveTotem(char)" class="member-name-link">handleMoveTotem</a><wbr>(char&nbsp;tileID)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Validates and forwards a totem-move request.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#handleReconnect(java.lang.String,java.lang.String)" class="member-name-link">handleReconnect</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
- <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;gameId)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Validates that nickname and game ID are non-blank, then forwards the
-reconnection request.</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#handleResolveActions(java.util.List)" class="member-name-link">handleResolveActions</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;cardIDs)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Validates and forwards a resolve-actions request.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#handleSelectTotem(it.polimi.ingsw.am02.common.enumerations.Totem)" class="member-name-link">handleSelectTotem</a><wbr>(<a href="../../../common/enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&nbsp;totem)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Validates that the totem is non-null and not already taken according to the
-locally known lobby state, then forwards to the server.</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#handleSetNickname(java.lang.String)" class="member-name-link">handleSetNickname</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Validates the nickname locally (non-blank, not already the current nickname,
-not already taken in the current lobby) and forwards to the server.</div>
-</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#moveTotem(char)" class="member-name-link">moveTotem</a><wbr>(char&nbsp;t)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sends a request to move the totem to a specific tile.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#myNickname()" class="member-name-link">myNickname</a>()</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestCreateLobby(int)" class="member-name-link">requestCreateLobby</a><wbr>(int&nbsp;size)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns the local player's nickname, reading from the game model if a game
-is in progress, or from the lobby model otherwise.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#onGameModelRequired(java.lang.String)" class="member-name-link">onGameModelRequired</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Lazily creates the <code>GameModel</code> the first time it is needed (on
-<code>onGameStarted</code>), switches the view's observer registration from
-the lobby model to the game model, and injects the model into the view.</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#performReturnToLobby()" class="member-name-link">performReturnToLobby</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Tears down the current game session and asynchronously re-establishes a
-connection for the lobby phase.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestCreateLobby(int)" class="member-name-link">requestCreateLobby</a><wbr>(int&nbsp;size)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Requests the creation of a new lobby.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestJoinLobby(java.lang.String)" class="member-name-link">requestJoinLobby</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;lobbyId)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestJoinLobby(java.lang.String)" class="member-name-link">requestJoinLobby</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;lobbyId)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Requests to join a specific lobby by its ID.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestLeaveLobby()" class="member-name-link">requestLeaveLobby</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestLeaveLobby()" class="member-name-link">requestLeaveLobby</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Requests to leave the current lobby.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestReconnect(java.lang.String,java.lang.String)" class="member-name-link">requestReconnect</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nick,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestReconnect(java.lang.String,java.lang.String)" class="member-name-link">requestReconnect</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nick,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;gId)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Requests to reconnect to an ongoing game.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestReturnToLobby()" class="member-name-link">requestReturnToLobby</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestReturnToLobby()" class="member-name-link">requestReturnToLobby</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Requests to return to the lobby screen.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestSelectTotem(it.polimi.ingsw.am02.common.enumerations.Totem)" class="member-name-link">requestSelectTotem</a><wbr>(<a href="../../../common/enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&nbsp;t)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestSelectTotem(it.polimi.ingsw.am02.common.enumerations.Totem)" class="member-name-link">requestSelectTotem</a><wbr>(<a href="../../../common/enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&nbsp;t)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Requests to select a totem.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestSetUsername(java.lang.String)" class="member-name-link">requestSetUsername</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#requestSetUsername(java.lang.String)" class="member-name-link">requestSetUsername</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Requests to set the user's nickname.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#resolveActions(java.util.List)" class="member-name-link">resolveActions</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;ids)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#resolveActions(java.util.List)" class="member-name-link">resolveActions</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;ids)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sends a request to resolve actions with a list of selected cards.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setConnectionConfig(it.polimi.ingsw.am02.common.enumerations.NetworkType,java.lang.String,int)" class="member-name-link">setConnectionConfig</a><wbr>(<a href="../../../common/enumerations/NetworkType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">NetworkType</a>&nbsp;networkType,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setConnectionConfig(it.polimi.ingsw.am02.common.enumerations.NetworkType,java.lang.String,int)" class="member-name-link">setConnectionConfig</a><wbr>(<a href="../../../common/enumerations/NetworkType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">NetworkType</a>&nbsp;networkType,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host,
  int&nbsp;port)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the connection configuration for the server.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setServerProxy(it.polimi.ingsw.am02.client.network.ServerProxy)" class="member-name-link">setServerProxy</a><wbr>(it.polimi.ingsw.am02.client.network.ServerProxy&nbsp;proxy)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Replaces the <code>ServerProxy</code> (e.g. after a reconnection creates a new connection).</div>
 </div>
 </div>
 </div>
-</div>
+<div class="inherited-list">
+<h3 id="methods-inherited-from-class-it.polimi.ingsw.am02.client.controller.ClientController">Methods inherited from class&nbsp;<a href="../../controller/ClientController.html#method-summary" title="class in it.polimi.ingsw.am02.client.controller">ClientController</a></h3>
+<code><a href="../../controller/ClientController.html#getGameModel()" title="getGameModel()">getGameModel</a>, <a href="../../controller/ClientController.html#handleCreateLobby(int)" title="handleCreateLobby(int)">handleCreateLobby</a>, <a href="../../controller/ClientController.html#handleJoinLobby(int)" title="handleJoinLobby(int)">handleJoinLobby</a>, <a href="../../controller/ClientController.html#handleMoveTotem(char)" title="handleMoveTotem(char)">handleMoveTotem</a>, <a href="../../controller/ClientController.html#handleReconnect(java.lang.String,java.lang.String)" title="handleReconnect(String, String)">handleReconnect</a>, <a href="../../controller/ClientController.html#handleResolveActions(java.util.List)" title="handleResolveActions(List)">handleResolveActions</a>, <a href="../../controller/ClientController.html#handleSelectTotem(it.polimi.ingsw.am02.common.enumerations.Totem)" title="handleSelectTotem(Totem)">handleSelectTotem</a>, <a href="../../controller/ClientController.html#handleSetNickname(java.lang.String)" title="handleSetNickname(String)">handleSetNickname</a>, <a href="../../controller/ClientController.html#myNickname()" title="myNickname()">myNickname</a>, <a href="../../controller/ClientController.html#onGameModelRequired(java.lang.String)" title="onGameModelRequired(String)">onGameModelRequired</a>, <a href="../../controller/ClientController.html#performReturnToLobby()" title="performReturnToLobby()">performReturnToLobby</a>, <a href="../../controller/ClientController.html#setServerProxy(it.polimi.ingsw.am02.client.network.ServerProxy)" title="setServerProxy(ServerProxy)">setServerProxy</a></code></div>
 <div class="inherited-list">
 <h3 id="methods-inherited-from-class-java.lang.Object">Methods inherited from class&nbsp;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#method-summary" title="class or interface in java.lang" class="external-link">Object</a></h3>
 <code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#clone()" title="class or interface in java.lang" class="external-link">clone</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link">equals</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#finalize()" title="class or interface in java.lang" class="external-link">finalize</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#getClass()" title="class or interface in java.lang" class="external-link">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#hashCode()" title="class or interface in java.lang" class="external-link">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#notify()" title="class or interface in java.lang" class="external-link">notify</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#notifyAll()" title="class or interface in java.lang" class="external-link">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#toString()" title="class or interface in java.lang" class="external-link">toString</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait()" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait(long)" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait(long,int)" title="class or interface in java.lang" class="external-link">wait</a></code></div>
@@ -315,46 +218,6 @@ connection for the lobby phase.</div>
 </section>
 <section class="details">
 <ul class="details-list">
-<!-- ============ FIELD DETAIL =========== -->
-<li>
-<section class="field-details" id="field-detail">
-<h2>Field Details</h2>
-<ul class="member-list">
-<li>
-<section class="detail" id="proxy">
-<h3>proxy</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type">it.polimi.ingsw.am02.client.network.ServerProxy</span>&nbsp;<span class="element-name">proxy</span></div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="lobbyModel">
-<h3>lobbyModel</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">protected final</span>&nbsp;<span class="return-type">it.polimi.ingsw.am02.client.model.LobbyModel</span>&nbsp;<span class="element-name">lobbyModel</span></div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="view">
-<h3>view</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">protected final</span>&nbsp;<span class="return-type">it.polimi.ingsw.am02.client.view.ClientView</span>&nbsp;<span class="element-name">view</span></div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="gameModel">
-<h3>gameModel</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type">it.polimi.ingsw.am02.client.model.GameModel</span>&nbsp;<span class="element-name">gameModel</span></div>
-</div>
-</section>
-</li>
-</ul>
-</section>
-</li>
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
 <li>
 <section class="constructor-details" id="constructor-detail">
@@ -364,9 +227,9 @@ connection for the lobby phase.</div>
 <section class="detail" id="&lt;init&gt;(it.polimi.ingsw.am02.client.network.ServerProxy,it.polimi.ingsw.am02.client.model.LobbyModel,it.polimi.ingsw.am02.client.view.ClientView)">
 <h3>GuiController</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">GuiController</span><wbr><span class="parameters">(it.polimi.ingsw.am02.client.network.ServerProxy&nbsp;proxy,
- it.polimi.ingsw.am02.client.model.LobbyModel&nbsp;lobbyModel,
- it.polimi.ingsw.am02.client.view.ClientView&nbsp;view)</span></div>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">GuiController</span><wbr><span class="parameters">(<a href="../../network/ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a>&nbsp;proxy,
+ <a href="../../model/LobbyModel.html" title="class in it.polimi.ingsw.am02.client.model">LobbyModel</a>&nbsp;lobbyModel,
+ <a href="../ClientView.html" title="interface in it.polimi.ingsw.am02.client.view">ClientView</a>&nbsp;view)</span></div>
 <div class="block">Constructs a new GuiController.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -406,10 +269,12 @@ connection for the lobby phase.</div>
 <section class="detail" id="createNewProxy()">
 <h3>createNewProxy</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type">it.polimi.ingsw.am02.client.network.ServerProxy</span>&nbsp;<span class="element-name">createNewProxy</span>()
-                                                                  throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Exception.html" title="class or interface in java.lang" class="external-link">Exception</a></span></div>
+<div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type"><a href="../../network/ServerProxy.html" title="interface in it.polimi.ingsw.am02.client.network">ServerProxy</a></span>&nbsp;<span class="element-name">createNewProxy</span>()
+                              throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Exception.html" title="class or interface in java.lang" class="external-link">Exception</a></span></div>
 <div class="block">Creates a new server proxy using the stored connection configuration.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="../../controller/ClientController.html#createNewProxy()">createNewProxy</a></code>&nbsp;in class&nbsp;<code><a href="../../controller/ClientController.html" title="class in it.polimi.ingsw.am02.client.controller">ClientController</a></code></dd>
 <dt>Returns:</dt>
 <dd>A new ServerProxy instance.</dd>
 <dt>Throws:</dt>
@@ -540,214 +405,6 @@ If not in a lobby, performs a return to the lobby screen.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">requestReturnToLobby</span>()</div>
 <div class="block">Requests to return to the lobby screen.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="setServerProxy(it.polimi.ingsw.am02.client.network.ServerProxy)">
-<h3>setServerProxy</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setServerProxy</span><wbr><span class="parameters">(it.polimi.ingsw.am02.client.network.ServerProxy&nbsp;proxy)</span></div>
-<div class="block">Replaces the <code>ServerProxy</code> (e.g. after a reconnection creates a new connection).</div>
-<dl class="notes">
-<dt>Parameters:</dt>
-<dd><code>proxy</code> - the new proxy</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="onGameModelRequired(java.lang.String)">
-<h3>onGameModelRequired</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">onGameModelRequired</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</span></div>
-<div class="block">Lazily creates the <code>GameModel</code> the first time it is needed (on
-<code>onGameStarted</code>), switches the view's observer registration from
-the lobby model to the game model, and injects the model into the view.
-No-op if a game model is already present.</div>
-<dl class="notes">
-<dt>Parameters:</dt>
-<dd><code>nickname</code> - the local player's nickname, used to initialize the game model</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="performReturnToLobby()">
-<h3>performReturnToLobby</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">performReturnToLobby</span>()</div>
-<div class="block">Tears down the current game session and asynchronously re-establishes a
-connection for the lobby phase. Steps performed on a background thread:
-<ol>
-  <li>Removes the view from the game model observer list.</li>
-  <li>Notifies the view via <code>ClientView.onReturnToLobby()</code>.</li>
-  <li>Disconnects the current proxy.</li>
-  <li>Creates and connects a fresh proxy via <a href="#createNewProxy()"><code>createNewProxy()</code></a>.</li>
-  <li>Re-registers the view as a lobby model observer.</li>
-</ol></div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="handleSetNickname(java.lang.String)">
-<h3>handleSetNickname</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">handleSetNickname</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname)</span></div>
-<div class="block">Validates the nickname locally (non-blank, not already the current nickname,
-not already taken in the current lobby) and forwards to the server.
-Global uniqueness across all clients is enforced server-side.</div>
-<dl class="notes">
-<dt>Parameters:</dt>
-<dd><code>nickname</code> - the desired nickname</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="handleCreateLobby(int)">
-<h3>handleCreateLobby</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">handleCreateLobby</span><wbr><span class="parameters">(int&nbsp;size)</span></div>
-<div class="block">Validates lobby size constraints (2–5 players) locally and forwards to the server.</div>
-<dl class="notes">
-<dt>Parameters:</dt>
-<dd><code>size</code> - the desired number of players</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="handleJoinLobby(int)">
-<h3>handleJoinLobby</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">handleJoinLobby</span><wbr><span class="parameters">(int&nbsp;index)</span></div>
-<div class="block">Resolves the target lobby from its display index in the locally cached list
-and forwards the join request to the server.</div>
-<dl class="notes">
-<dt>Parameters:</dt>
-<dd><code>index</code> - 0-based index into the list of available lobbies</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="handleSelectTotem(it.polimi.ingsw.am02.common.enumerations.Totem)">
-<h3>handleSelectTotem</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">handleSelectTotem</span><wbr><span class="parameters">(<a href="../../../common/enumerations/Totem.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">Totem</a>&nbsp;totem)</span></div>
-<div class="block">Validates that the totem is non-null and not already taken according to the
-locally known lobby state, then forwards to the server.
-Totem availability is stable between server notifications.</div>
-<dl class="notes">
-<dt>Parameters:</dt>
-<dd><code>totem</code> - the desired totem color</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="handleMoveTotem(char)">
-<h3>handleMoveTotem</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">handleMoveTotem</span><wbr><span class="parameters">(char&nbsp;tileID)</span></div>
-<div class="block">Validates and forwards a totem-move request.
-
-<p>Client-side checks performed (in order):
-<ol>
-  <li>A game is in progress and has not yet ended.</li>
-  <li>The current phase permits totem movement
-      (<code>TOTEM_PLACEMENT</code> or <code>ACTION_RESOLUTION</code>).</li>
-  <li>It is the caller's turn (<code>currentPlayer</code> matches own nickname).</li>
-  <li>For <code>'T'</code>: the phase is <code>ACTION_RESOLUTION</code>
-      (return is not allowed during placement).</li>
-  <li>For any other tile during <code>ACTION_RESOLUTION</code>: blocked entirely,
-      since the only valid move in that phase is returning via <code>'T'</code>.</li>
-  <li>For any other tile during <code>TOTEM_PLACEMENT</code>: the tile exists,
-      is not already occupied, and the caller has not already placed this round.</li>
-</ol>
-
-<p>All checks rely on state that is stable between server notifications:
-the local <code>GameModel</code> is updated exclusively by server events,
-so reads here are consistent with the last acknowledged server state.
-Turn-order and phase enforcement remain authoritative on the server.</div>
-<dl class="notes">
-<dt>Parameters:</dt>
-<dd><code>tileID</code> - the identifier of the target offer tile,
-              or <code>'T'</code> to return the totem to the turn-order tile</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="handleResolveActions(java.util.List)">
-<h3>handleResolveActions</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">handleResolveActions</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;cardIDs)</span></div>
-<div class="block">Validates and forwards a resolve-actions request.
-
-<p>Client-side checks performed (in order):
-<ol>
-  <li>A game is in progress and has not yet ended.</li>
-  <li>The current phase is <code>ACTION_RESOLUTION</code>.</li>
-  <li>It is the caller's turn (<code>currentPlayer</code> matches own nickname).</li>
-  <li>The selection is non-null and non-empty.</li>
-  <li>No duplicate card IDs are present in the selection.</li>
-  <li>Every selected card is currently present on the board
-      (upper/lower row, characters or buildings).</li>
-  <li>The number of upper-row picks does not exceed the caller's
-      remaining upper-row allowance.</li>
-  <li>The number of lower-row picks does not exceed the caller's
-      remaining lower-row allowance.</li>
-</ol>
-
-<p>Selecting fewer cards than the maximum allowed is always valid:
-the server accepts partial picks. Whether mandatory character picks
-are satisfied is enforced exclusively server-side, as the client has
-no access to card-type metadata (<code>GameRegistry</code> is server-only).
-Pick-limit and phase enforcement remain authoritative on the server.</div>
-<dl class="notes">
-<dt>Parameters:</dt>
-<dd><code>cardIDs</code> - the identifiers of the cards the player wishes to take;
-               must be non-null, non-empty, and free of duplicates</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="handleReconnect(java.lang.String,java.lang.String)">
-<h3>handleReconnect</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">handleReconnect</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
- <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;gameId)</span></div>
-<div class="block">Validates that nickname and game ID are non-blank, then forwards the
-reconnection request.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="getGameModel()">
-<h3>getGameModel</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">it.polimi.ingsw.am02.client.model.GameModel</span>&nbsp;<span class="element-name">getGameModel</span>()</div>
-<dl class="notes">
-<dt>Returns:</dt>
-<dd>the current game model, or <code>null</code> if no game is in progress</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="myNickname()">
-<h3>myNickname</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">myNickname</span>()</div>
-<div class="block">Returns the local player's nickname, reading from the game model if a game
-is in progress, or from the lobby model otherwise.</div>
-<dl class="notes">
-<dt>Returns:</dt>
-<dd>the current nickname, or <code>null</code> if not yet set</dd>
-</dl>
 </div>
 </section>
 </li>

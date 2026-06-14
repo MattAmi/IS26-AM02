@@ -59,7 +59,19 @@ loadScripts(document, 'script');</script>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Package</div>
 <div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.client.model">it.polimi.ingsw.am02.client.model</a></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.client.network">it.polimi.ingsw.am02.client.network</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.client.network.rmi">it.polimi.ingsw.am02.client.network.rmi</a></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.client.view">it.polimi.ingsw.am02.client.view</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
 <div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.client.view.gui">it.polimi.ingsw.am02.client.view.gui</a></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.client.view.gui.scenes">it.polimi.ingsw.am02.client.view.gui.scenes</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.client.view.tui">it.polimi.ingsw.am02.client.view.tui</a></div>
 <div class="col-last even-row-color">&nbsp;</div>
 <div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.common.dto">it.polimi.ingsw.am02.common.dto</a></div>
 <div class="col-last odd-row-color">&nbsp;</div>
@@ -67,17 +79,99 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color">&nbsp;</div>
 <div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.common.interfaces">it.polimi.ingsw.am02.common.interfaces</a></div>
 <div class="col-last odd-row-color">&nbsp;</div>
-<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.common.network.rmi">it.polimi.ingsw.am02.common.network.rmi</a></div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.common.messages.events.game">it.polimi.ingsw.am02.common.messages.events.game</a></div>
 <div class="col-last even-row-color">&nbsp;</div>
-<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.server.controller">it.polimi.ingsw.am02.server.controller</a></div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.common.network.rmi">it.polimi.ingsw.am02.common.network.rmi</a></div>
 <div class="col-last odd-row-color">&nbsp;</div>
-<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.server.model.listeners">it.polimi.ingsw.am02.server.model.listeners</a></div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.server.controller">it.polimi.ingsw.am02.server.controller</a></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.server.model.listeners">it.polimi.ingsw.am02.server.model.listeners</a></div>
+<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-first even-row-color"><a href="#it.polimi.ingsw.am02.server.network.rmi">it.polimi.ingsw.am02.server.network.rmi</a></div>
 <div class="col-last even-row-color">&nbsp;</div>
 <div class="col-first odd-row-color"><a href="#it.polimi.ingsw.am02.server.network.socket">it.polimi.ingsw.am02.server.network.socket</a></div>
 <div class="col-last odd-row-color">&nbsp;</div>
 </div>
 <section class="class-uses">
 <ul class="block-list">
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.model">
+<h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../../client/model/package-summary.html">it.polimi.ingsw.am02.client.model</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/model/package-summary.html">it.polimi.ingsw.am02.client.model</a> with parameters of type <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">GameModel.</span><code><a href="../../../client/model/GameModel.html#updatePlayerResource(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int)" class="member-name-link">updatePlayerResource</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+ <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a>&nbsp;resource,
+ int&nbsp;newValue)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Applies a resource change for a player: updates food or PP maps
+and notifies views.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.network">
+<h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../../client/network/package-summary.html">it.polimi.ingsw.am02.client.network</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/network/package-summary.html">it.polimi.ingsw.am02.client.network</a> with parameters of type <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">ClientNetworkDispatcher.</span><code><a href="../../../client/network/ClientNetworkDispatcher.html#notifyPlayerResourceChanged(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int,int)" class="member-name-link">notifyPlayerResourceChanged</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nick,
+ <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a>&nbsp;r,
+ int&nbsp;v,
+ int&nbsp;d)</code></div>
+<div class="col-last even-row-color"></div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.network.rmi">
+<h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../../client/network/rmi/package-summary.html">it.polimi.ingsw.am02.client.network.rmi</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/network/rmi/package-summary.html">it.polimi.ingsw.am02.client.network.rmi</a> with parameters of type <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">RmiServerProxy.</span><code><a href="../../../client/network/rmi/RmiServerProxy.html#notifyPlayerResourceChanged(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int,int)" class="member-name-link">notifyPlayerResourceChanged</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;n,
+ <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a>&nbsp;r,
+ int&nbsp;v,
+ int&nbsp;d)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Notifies the client that a player's resource amount has changed.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.view">
+<h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../../client/view/package-summary.html">it.polimi.ingsw.am02.client.view</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/view/package-summary.html">it.polimi.ingsw.am02.client.view</a> with parameters of type <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">AbstractClientView.</span><code><a href="../../../client/view/AbstractClientView.html#onPlayerResourceChanged(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int)" class="member-name-link">onPlayerResourceChanged</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+ <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a>&nbsp;resource,
+ int&nbsp;newValue)</code></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><code>void</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">ClientView.</span><code><a href="../../../client/view/ClientView.html#onPlayerResourceChanged(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int)" class="member-name-link">onPlayerResourceChanged</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+ <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a>&nbsp;resource,
+ int&nbsp;newValue)</code></div>
+<div class="col-last odd-row-color">
+<div class="block">Called whenever a player's resource value changes.</div>
+</div>
+</div>
+</section>
+</li>
 <li>
 <section class="detail" id="it.polimi.ingsw.am02.client.view.gui">
 <h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../../client/view/gui/package-summary.html">it.polimi.ingsw.am02.client.view.gui</a></h2>
@@ -92,6 +186,42 @@ loadScripts(document, 'script');</script>
  int&nbsp;newValue)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Handles a change in a player's resource value.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.view.gui.scenes">
+<h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../../client/view/gui/scenes/package-summary.html">it.polimi.ingsw.am02.client.view.gui.scenes</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/view/gui/scenes/package-summary.html">it.polimi.ingsw.am02.client.view.gui.scenes</a> with parameters of type <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">GameScene.</span><code><a href="../../../client/view/gui/scenes/GameScene.html#logResourceChanged(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int)" class="member-name-link">logResourceChanged</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+ <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a>&nbsp;resource,
+ int&nbsp;newValue)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Logs a resource change for a player.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.client.view.tui">
+<h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../../client/view/tui/package-summary.html">it.polimi.ingsw.am02.client.view.tui</a></h2>
+<div class="caption"><span>Methods in <a href="../../../client/view/tui/package-summary.html">it.polimi.ingsw.am02.client.view.tui</a> with parameters of type <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">TuiView.</span><code><a href="../../../client/view/tui/TuiView.html#onPlayerResourceChanged(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int)" class="member-name-link">onPlayerResourceChanged</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+ <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a>&nbsp;resource,
+ int&nbsp;newValue)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Appends a resource-change notification for the given player.</div>
 </div>
 </div>
 </section>
@@ -184,6 +314,36 @@ the order they are declared.</div>
 </section>
 </li>
 <li>
+<section class="detail" id="it.polimi.ingsw.am02.common.messages.events.game">
+<h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../messages/events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a></h2>
+<div class="caption"><span>Methods in <a href="../../messages/events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a> that return <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code><a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">PlayerResourceChangedEvent.</span><code><a href="../../messages/events/game/PlayerResourceChangedEvent.html#resource()" class="member-name-link">resource</a>()</code></div>
+<div class="col-last even-row-color">
+<div class="block">Returns the value of the <code>resource</code> record component.</div>
+</div>
+</div>
+<div class="caption"><span>Constructors in <a href="../../messages/events/game/package-summary.html">it.polimi.ingsw.am02.common.messages.events.game</a> with parameters of type <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier</div>
+<div class="table-header col-second">Constructor</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="../../messages/events/game/PlayerResourceChangedEvent.html#%3Cinit%3E(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int,int)" class="member-name-link">PlayerResourceChangedEvent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+ <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a>&nbsp;resource,
+ int&nbsp;newValue,
+ int&nbsp;delta)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Creates an instance of a <code>PlayerResourceChangedEvent</code> record class.</div>
+</div>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="it.polimi.ingsw.am02.common.network.rmi">
 <h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../network/rmi/package-summary.html">it.polimi.ingsw.am02.common.network.rmi</a></h2>
 <div class="caption"><span>Methods in <a href="../../network/rmi/package-summary.html">it.polimi.ingsw.am02.common.network.rmi</a> with parameters of type <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
@@ -249,6 +409,23 @@ the order they are declared.</div>
 <div class="col-last even-row-color">
 <div class="block">Fired whenever a player's resource value changes (food, prestige, shaman stars, etc.).</div>
 </div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="it.polimi.ingsw.am02.server.network.rmi">
+<h2>Uses of <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a> in <a href="../../../server/network/rmi/package-summary.html">it.polimi.ingsw.am02.server.network.rmi</a></h2>
+<div class="caption"><span>Methods in <a href="../../../server/network/rmi/package-summary.html">it.polimi.ingsw.am02.server.network.rmi</a> with parameters of type <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a></span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Method</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>void</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">RmiClientHandler.</span><code><a href="../../../server/network/rmi/RmiClientHandler.html#notifyPlayerResourceChanged(java.lang.String,it.polimi.ingsw.am02.common.enumerations.ResourceType,int,int)" class="member-name-link">notifyPlayerResourceChanged</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;nickname,
+ <a href="../ResourceType.html" title="enum class in it.polimi.ingsw.am02.common.enumerations">ResourceType</a>&nbsp;resource,
+ int&nbsp;newValue,
+ int&nbsp;delta)</code></div>
+<div class="col-last even-row-color">&nbsp;</div>
 </div>
 </section>
 </li>

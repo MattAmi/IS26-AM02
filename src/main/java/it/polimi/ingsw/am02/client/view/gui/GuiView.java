@@ -91,28 +91,53 @@ public class GuiView extends AbstractClientView {
     }
 
     /**
-     * Pushes the latest model state to the given scene. Must be called on the FX
-     * thread (see {@link #withGameScene(Consumer)}), which keeps all access to
-     * {@code pendingForfeitSeconds} single-threaded and the check-then-clear
-     * atomic.
+     * Flushes a forfeit countdown that arrived before the scene existed. Must run
+     * on the FX thread, which keeps all access to {@code pendingForfeitSeconds}
+     * single-threaded and the check-then-clear atomic.
      *
      * @param gs the active game scene
      */
-    private void renderScene(GameScene gs) {
-        if (gameModel == null) return;
+    private void flushPendingForfeit(GameScene gs) {
         if (pendingForfeitSeconds != null) {
             long s = pendingForfeitSeconds;
             pendingForfeitSeconds = null;
-            gs.showForfeitBanner(s);
+            gs.enqueueForfeitBanner(s);
         }
-        gs.refreshAll(gameModel);
     }
 
     /**
-     * Refreshes the game scene if it is currently active.
+     * Captures the model state <em>now</em> — on the calling (network) thread, in
+     * event order — and renders it on the FX thread once the scene exists.
+     *
+     * <p>This ordering is the whole point: every game callback arrives on the
+     * network thread, and the model is a single mutable object the network thread
+     * fast-forwards through the entire reconnection history. If the snapshot were
+     * taken lazily inside the {@code Platform.runLater} (as a deferred read of the
+     * live model), every queued render would observe the same final state and the
+     * replay would collapse to its end frame. Snapshotting here, before deferring,
+     * freezes the state for this exact event so the FX thread — the only thread
+     * that ever touches the GUI — replays the frames in order.
      */
     private void refreshGameIfActive() {
-        withGameScene(this::renderScene);
+        renderInOrder(gs -> {});
+    }
+
+    /**
+     * Variant of {@link #refreshGameIfActive()} that runs an extra FX-thread step
+     * (e.g. appending a log entry) against the live scene right before the render.
+     *
+     * @param preStep work to run on the FX thread with the active scene, ahead of the render
+     */
+    private void renderInOrder(Consumer<GameScene> preStep) {
+        if (gameModel == null) return;
+        GameScene.SceneState snapshot = GameScene.snapshot(gameModel);
+        Platform.runLater(() -> {
+            GameScene gs = sceneRouter.getGameScene();
+            if (gs == null) return;
+            preStep.accept(gs);
+            flushPendingForfeit(gs);
+            gs.render(snapshot);
+        });
     }
 
     /**
@@ -188,17 +213,26 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameSetupCompleted(List<String> turnOrder, Map<String, Integer> initialFood, BoardSnapshot board) {
-        // Decide create-vs-refresh on the FX thread so the scene field is read on
-        // the same thread it is written, preventing both dropped updates and a
-        // duplicate scene being created if this races a pending scene creation.
+        // Snapshot the (just-reset, virgin) setup state on the network thread so the
+        // replay's first frame is captured in order, before any later event mutates
+        // the model. Then decide create-vs-refresh on the FX thread, so the scene
+        // field is read on the same thread it is written (no dropped updates, no
+        // duplicate scene if this races a pending scene creation).
+        GameScene.SceneState snapshot = gameModel != null ? GameScene.snapshot(gameModel) : null;
         Platform.runLater(() -> {
             GameScene gs = sceneRouter.getGameScene();
-            if (gs != null) {
-                gs.prepareForReplay();
-                renderScene(gs);
-            } else {
+            if (gs == null) {
                 sceneRouter.hideModal();
-                sceneRouter.switchToGameScene(gameModel);
+                // Build the scene only; we render the captured setup snapshot below
+                // rather than letting it auto-refresh from the (possibly already
+                // fast-forwarded) live model.
+                sceneRouter.switchToGameScene(null);
+                gs = sceneRouter.getGameScene();
+                if (gs != null) gs.setModel(gameModel);
+            }
+            if (gs != null && snapshot != null) {
+                gs.prepareForReplay();
+                gs.render(snapshot);
             }
         });
     }
@@ -212,12 +246,19 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPhaseChanged(PhaseType phase, String currentPlayer, List<String> resolutionOrder) {
+        GameScene.SceneState snapshot = gameModel != null ? GameScene.snapshot(gameModel) : null;
         Platform.runLater(() -> {
             GameScene gs = sceneRouter.getGameScene();
             if (gs == null) {
                 sceneRouter.hideModal();
-                sceneRouter.switchToGameScene(gameModel);
-            } else renderScene(gs);
+                sceneRouter.switchToGameScene(null);
+                gs = sceneRouter.getGameScene();
+                if (gs != null) gs.setModel(gameModel);
+            }
+            if (gs != null && snapshot != null) {
+                flushPendingForfeit(gs);
+                gs.render(snapshot);
+            }
         });
     }
 
@@ -245,10 +286,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onTotemPlaced(String nickname, char tileID) {
-        withGameScene(gs -> {
-            gs.logTotemPlaced(nickname, tileID);
-            renderScene(gs);
-        });
+        renderInOrder(gs -> gs.logTotemPlaced(nickname, tileID));
     }
 
     /**
@@ -259,10 +297,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onTotemReturned(String nickname, int turnOrderPosition) {
-        withGameScene(gs -> {
-            gs.logTotemReturned(nickname, turnOrderPosition);
-            renderScene(gs);
-        });
+        renderInOrder(gs -> gs.logTotemReturned(nickname, turnOrderPosition));
     }
 
     /**
@@ -292,7 +327,15 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onEraChanged(Era newEra, List<String> newUpperRowBuildings, List<String> newLowerRowBuildings) {
-        withGameScene(gs -> gs.showNewEraAnimation(newEra, newUpperRowBuildings, newLowerRowBuildings));
+        // Snapshot in event order so the board frame that reveals the new era and
+        // the "ERA n" overlay are queued together, in step with the replay.
+        GameScene.SceneState snapshot = gameModel != null ? GameScene.snapshot(gameModel) : null;
+        Platform.runLater(() -> {
+            GameScene gs = sceneRouter.getGameScene();
+            if (gs != null && snapshot != null) {
+                gs.showNewEraAnimation(snapshot, newEra, newUpperRowBuildings, newLowerRowBuildings);
+            }
+        });
     }
 
     /**
@@ -340,10 +383,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-        withGameScene(gs -> {
-            gs.logExtraTurnStarted(nickname, remainingUpper, remainingLower);
-            renderScene(gs);
-        });
+        renderInOrder(gs -> gs.logExtraTurnStarted(nickname, remainingUpper, remainingLower));
     }
 
     /**
@@ -353,10 +393,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onExtraTurnEnded(String nickname) {
-        withGameScene(gs -> {
-            gs.logExtraTurnEnded(nickname);
-            renderScene(gs);
-        });
+        renderInOrder(gs -> gs.logExtraTurnEnded(nickname));
     }
 
     /**
@@ -432,10 +469,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-        withGameScene(gs -> {
-            gs.logResourceChanged(nickname, resource, newValue);
-            renderScene(gs);
-        });
+        renderInOrder(gs -> gs.logResourceChanged(nickname, resource, newValue));
     }
 
     /**
@@ -446,10 +480,7 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onEventResolved(String eventID, String eventName) {
-        withGameScene(gs -> {
-            gs.logEventResolved(eventName);
-            renderScene(gs);
-        });
+        renderInOrder(gs -> gs.logEventResolved(eventName));
     }
 
     /**
@@ -494,7 +525,10 @@ public class GuiView extends AbstractClientView {
             // next render).
             pendingForfeitSeconds = null;
             GameScene gs = sceneRouter.getGameScene();
-            if (gs != null) gs.showForfeitBanner(seconds);
+            // Enqueue (don't show directly): the server arms this timer at the END of
+            // a reconnection replay, so the banner must wait its turn behind the still
+            // -draining visual replay in the animation FIFO — never jump ahead of it.
+            if (gs != null) gs.enqueueForfeitBanner(seconds);
             else pendingForfeitSeconds = seconds;
         });
     }
@@ -504,7 +538,9 @@ public class GuiView extends AbstractClientView {
         Platform.runLater(() -> {
             pendingForfeitSeconds = null;
             GameScene gs = sceneRouter.getGameScene();
-            if (gs != null) gs.dismissForfeitBanner();
+            // Enqueue so the dismissal stays ordered behind a possibly still-queued
+            // show; otherwise it could overtake it and leave the banner stuck.
+            if (gs != null) gs.enqueueDismissForfeitBanner();
         });
     }
 

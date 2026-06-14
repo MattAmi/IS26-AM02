@@ -110,6 +110,13 @@ public class GameModel {
         this.totemByPlayer = new LinkedHashMap<>(totemByPlayer);
         this.turnOrder = new ArrayList<>(turnOrder);
 
+        // Setup is the first event the server replays on any reconnection, so it
+        // doubles as the canonical "make the client projection virgin again" point:
+        // every per-session collection is wiped here and then rebuilt by the events
+        // that follow. This guarantees a stale projection (e.g. an Era II board left
+        // over from before a crash) cannot bleed through while the history replays —
+        // the views always restart from a clean Era I state. Applies equally to a
+        // fresh game start, where these collections are already empty.
         this.upperRow.clear();
         this.lowerRow.clear();
         this.upperRowBuildings.clear();
@@ -121,6 +128,15 @@ public class GameModel {
         this.remainingUpper.clear();
         this.remainingLower.clear();
         this.turnOrderSlots.clear();
+        this.totemPositions.clear();
+        this.turnOrderPositions.clear();
+        this.winners.clear();
+        this.finalRankings.clear();
+        this.lastErrorMessage = null;
+        this.lastEventResolved = null;
+        this.currentPhase = null;
+        this.currentPlayer = null;
+        this.gameEnded = false;
         this.currentEra = Era.I;
 
         this.foodByPlayer.putAll(initialFood);

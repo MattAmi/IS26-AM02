@@ -69,6 +69,8 @@ The full-resolution diagram is in [`deliverables/class-diagrams/00_Architecture_
 
 Both the **GUI** and the **TUI** implement the complete game. The screenshots below follow a match from browsing the lobbies to in-game play; where the same step exists in both interfaces, they are shown side by side.
 
+> **Note:** the screenshots are for **illustrative purposes only** and do **not** necessarily refer to the same match — they were captured across different games to show each feature.
+
 ### Lobby browser
 
 <table>
@@ -110,6 +112,8 @@ The full **GUI** game board is shown in the banner at the top of this README. Be
 
 When a player drops, the match never stalls: the **AutoPlayer** takes over their turns, and a disconnected client automatically attempts to reconnect using its **Game ID**. Both interfaces surface these states clearly.
 
+**Reconnection — fast-forward resync.** When a player reconnects (whether through a manual rejoin or the automatic reconnection), they are shown a *fast-forwarded replay* of everything that happened from the start of the match, until their state is fully **synchronized** with the current game. This is powered by an **event-sourcing** pattern: the game is reconstructed by replaying the granular notifications emitted since the beginning of the match.
+
 <table>
 <tr><th width="50%">GUI</th><th width="50%">TUI</th></tr>
 <tr>
@@ -122,6 +126,11 @@ When a player drops, the match never stalls: the **AutoPlayer** takes over their
 <td><img src="docs/images/serverConnectionLostInGameTui.png" alt="Server connection lost, auto-reconnecting (TUI)"></td>
 </tr>
 <tr><td colspan="2" align="center"><sub>The server becomes unreachable — the client reports it and <b>auto-reconnects</b> using the Game ID.</sub></td></tr>
+<tr>
+<td><img src="docs/images/lastManStandingGui.png" alt="Last player connected, forfeit timer running (GUI)"></td>
+<td><img src="docs/images/lastManStandingTui.png" alt="Last player connected, forfeit timer running (TUI)"></td>
+</tr>
+<tr><td colspan="2" align="center"><sub>Only one player left connected: a <b>forfeit timer</b> starts — <i>"in 120s, if no one reconnects, you win by forfeit…"</i>. If someone reconnects in time the timer is cancelled; otherwise the lone player wins by forfeit.</sub></td></tr>
 </table>
 
 ---
@@ -160,6 +169,8 @@ It can be regenerated from source with the Maven wrapper (no local Maven needed)
 ```
 
 The docs are written to `deliverables/apidocs/` as configured by the `maven-javadoc-plugin` in the `pom.xml`.
+
+> **Note on the peer review.** The official requirements describe documentation quality as referring to *"the English JavaDoc comments in the code, the additional documentation about the communication protocol, **and the peer review documents.**"* Unlike that spec, **this year the peer review was not required**, so no peer review documents are present in this repository.
 
 ---
 

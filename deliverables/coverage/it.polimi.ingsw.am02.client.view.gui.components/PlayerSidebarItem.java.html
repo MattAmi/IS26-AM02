@@ -29,78 +29,113 @@ public class PlayerSidebarItem extends VBox {
      * @param isViewed    True if this player's hand is currently being viewed.
      * @param food        The player's current food count.
      * @param pp          The player's current prestige points.
+     * @param picksUp     Remaining upper-row picks (shown only in ACTION_RESOLUTION; 0 otherwise).
+     * @param picksLow    Remaining lower-row picks (shown only in ACTION_RESOLUTION; 0 otherwise).
      * @param totem       The totem color assigned to the player.
      * @param tribalFont  The font to use for text display.
      * @param onClick     The action to perform when the item is clicked.
      */
-    public PlayerSidebarItem(String nickname, boolean isMe, boolean isActive, boolean isOffline, boolean isViewed, int food, int pp, Totem totem, Font tribalFont, Runnable onClick) {
-<span class="nc" id="L37">        super(5);</span>
+    public PlayerSidebarItem(String nickname, boolean isMe, boolean isActive, boolean isOffline, boolean isViewed, int food, int pp, int picksUp, int picksLow, Totem totem, Font tribalFont, Runnable onClick) {
+<span class="nc" id="L39">        super(5);</span>
 
-<span class="nc" id="L39">        this.setPadding(new Insets(10));</span>
-<span class="nc" id="L40">        this.setCursor(Cursor.HAND);</span>
+<span class="nc" id="L41">        this.setPadding(new Insets(10));</span>
+<span class="nc" id="L42">        this.setCursor(Cursor.HAND);</span>
 
         // Dynamic styling based on player state
-<span class="nc bnc" id="L43" title="All 2 branches missed.">        String borderColor = isViewed ? &quot;#F2D5A3&quot; : &quot;transparent&quot;;</span>
-<span class="nc bnc" id="L44" title="All 2 branches missed.">        String bgColor = isActive ? &quot;rgba(163, 29, 29, 0.3)&quot; : &quot;rgba(255,255,255,0.05)&quot;;</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        String borderColor = isViewed ? &quot;#F2D5A3&quot; : &quot;transparent&quot;;</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        String bgColor = isActive ? &quot;rgba(163, 29, 29, 0.3)&quot; : &quot;rgba(255,255,255,0.05)&quot;;</span>
 
-<span class="nc" id="L46">        this.setStyle(&quot;-fx-background-color: &quot; + bgColor +</span>
+<span class="nc" id="L48">        this.setStyle(&quot;-fx-background-color: &quot; + bgColor +</span>
                 &quot;; -fx-border-color: &quot; + borderColor +
                 &quot;; -fx-border-radius: 5; -fx-border-width: 2;&quot;);
-<span class="nc bnc" id="L49" title="All 2 branches missed.">        this.setOpacity(isOffline ? 0.5 : 1.0);</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        this.setOpacity(isOffline ? 0.5 : 1.0);</span>
 
-<span class="nc" id="L51">        HBox nameRow = new HBox(8);</span>
-<span class="nc" id="L52">        nameRow.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L53">        HBox nameRow = new HBox(8);</span>
+<span class="nc" id="L54">        nameRow.setAlignment(Pos.CENTER_LEFT);</span>
 
         // Load and add Totem icon if present
-<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (totem != null) {</span>
-<span class="nc" id="L56">            String totemPath = &quot;/images/totems/totem_&quot; + totem.name().toLowerCase() + &quot;.png&quot;;</span>
-<span class="nc" id="L57">            ImageView totemIcon = new ImageView(ImageLoader.getImage(totemPath));</span>
-<span class="nc" id="L58">            totemIcon.setFitHeight(20);</span>
-<span class="nc" id="L59">            totemIcon.setPreserveRatio(true);</span>
-<span class="nc" id="L60">            nameRow.getChildren().add(totemIcon);</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (totem != null) {</span>
+<span class="nc" id="L58">            String totemPath = &quot;/images/totems/totem_&quot; + totem.name().toLowerCase() + &quot;.png&quot;;</span>
+<span class="nc" id="L59">            ImageView totemIcon = new ImageView(ImageLoader.getImage(totemPath));</span>
+<span class="nc" id="L60">            totemIcon.setFitHeight(20);</span>
+<span class="nc" id="L61">            totemIcon.setPreserveRatio(true);</span>
+<span class="nc" id="L62">            nameRow.getChildren().add(totemIcon);</span>
         }
 
         // Setup player name
-<span class="nc bnc" id="L64" title="All 2 branches missed.">        String displayName = nickname + (isMe ? &quot; (YOU)&quot; : &quot;&quot;);</span>
-<span class="nc" id="L65">        Label nameLabel = new Label(displayName);</span>
-<span class="nc bnc" id="L66" title="All 2 branches missed.">        nameLabel.setTextFill(isActive ? Color.GOLD : Color.WHITE);</span>
-<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (tribalFont != null) {</span>
-<span class="nc" id="L68">            nameLabel.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        String displayName = nickname + (isMe ? &quot; (YOU)&quot; : &quot;&quot;);</span>
+<span class="nc" id="L67">        Label nameLabel = new Label(displayName);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        nameLabel.setTextFill(isActive ? Color.GOLD : Color.WHITE);</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (tribalFont != null) {</span>
+<span class="nc" id="L70">            nameLabel.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));</span>
         }
-<span class="nc" id="L70">        nameRow.getChildren().add(nameLabel);</span>
+<span class="nc" id="L72">        nameRow.getChildren().add(nameLabel);</span>
 
         // Setup player stats
-<span class="nc" id="L73">        HBox statsRow = new HBox(10);</span>
-<span class="nc" id="L74">        statsRow.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L75">        HBox statsRow = new HBox(10);</span>
+<span class="nc" id="L76">        statsRow.setAlignment(Pos.CENTER_LEFT);</span>
 
-<span class="nc" id="L76">        HBox foodBox = new HBox(4);</span>
-<span class="nc" id="L77">        foodBox.setAlignment(Pos.CENTER_LEFT);</span>
-<span class="nc" id="L78">        ImageView foodIcon = new ImageView(ImageLoader.getImage(&quot;/images/icons/food_point.png&quot;));</span>
-<span class="nc" id="L79">        foodIcon.setFitHeight(12);</span>
-<span class="nc" id="L80">        foodIcon.setPreserveRatio(true);</span>
-<span class="nc" id="L81">        Label foodLabel = new Label(String.valueOf(food));</span>
-<span class="nc" id="L82">        foodLabel.setTextFill(Color.LIGHTGRAY);</span>
-<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (tribalFont != null) {</span>
-<span class="nc" id="L84">            foodLabel.setFont(Font.font(tribalFont.getFamily(), 12));</span>
+<span class="nc" id="L78">        HBox foodBox = new HBox(4);</span>
+<span class="nc" id="L79">        foodBox.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L80">        ImageView foodIcon = new ImageView(ImageLoader.getImage(&quot;/images/icons/food_point.png&quot;));</span>
+<span class="nc" id="L81">        foodIcon.setFitHeight(12);</span>
+<span class="nc" id="L82">        foodIcon.setPreserveRatio(true);</span>
+<span class="nc" id="L83">        Label foodLabel = new Label(String.valueOf(food));</span>
+<span class="nc" id="L84">        foodLabel.setTextFill(Color.LIGHTGRAY);</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (tribalFont != null) {</span>
+<span class="nc" id="L86">            foodLabel.setFont(Font.font(tribalFont.getFamily(), 12));</span>
         }
-<span class="nc" id="L86">        foodBox.getChildren().addAll(foodIcon, foodLabel);</span>
+<span class="nc" id="L88">        foodBox.getChildren().addAll(foodIcon, foodLabel);</span>
 
-<span class="nc" id="L88">        HBox ppBox = new HBox(4);</span>
-<span class="nc" id="L89">        ppBox.setAlignment(Pos.CENTER_LEFT);</span>
-<span class="nc" id="L90">        ImageView ppIcon = new ImageView(ImageLoader.getImage(&quot;/images/icons/prestige_point.png&quot;));</span>
-<span class="nc" id="L91">        ppIcon.setFitHeight(12);</span>
-<span class="nc" id="L92">        ppIcon.setPreserveRatio(true);</span>
-<span class="nc" id="L93">        Label ppLabel = new Label(String.valueOf(pp));</span>
-<span class="nc" id="L94">        ppLabel.setTextFill(Color.LIGHTGRAY);</span>
-<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (tribalFont != null) {</span>
-<span class="nc" id="L96">            ppLabel.setFont(Font.font(tribalFont.getFamily(), 12));</span>
+<span class="nc" id="L90">        HBox ppBox = new HBox(4);</span>
+<span class="nc" id="L91">        ppBox.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L92">        ImageView ppIcon = new ImageView(ImageLoader.getImage(&quot;/images/icons/prestige_point.png&quot;));</span>
+<span class="nc" id="L93">        ppIcon.setFitHeight(12);</span>
+<span class="nc" id="L94">        ppIcon.setPreserveRatio(true);</span>
+<span class="nc" id="L95">        Label ppLabel = new Label(String.valueOf(pp));</span>
+<span class="nc" id="L96">        ppLabel.setTextFill(Color.LIGHTGRAY);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (tribalFont != null) {</span>
+<span class="nc" id="L98">            ppLabel.setFont(Font.font(tribalFont.getFamily(), 12));</span>
         }
-<span class="nc" id="L98">        ppBox.getChildren().addAll(ppIcon, ppLabel);</span>
+<span class="nc" id="L100">        ppBox.getChildren().addAll(ppIcon, ppLabel);</span>
 
-<span class="nc" id="L100">        statsRow.getChildren().addAll(foodBox, ppBox);</span>
+        // Remaining pickable cards (upper/lower row), mirroring the TUI's
+        // &quot;Picks (Up/Low)&quot;. Drawn as a green up-arrow and a red down-arrow each
+        // followed by their count, placed right after the prestige points.
+<span class="nc" id="L105">        HBox picksBox = new HBox(6);</span>
+<span class="nc" id="L106">        picksBox.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L107">        picksBox.getChildren().addAll(</span>
+<span class="nc" id="L108">                buildPickBadge(&quot;/images/icons/pick_up.png&quot;, picksUp, tribalFont),</span>
+<span class="nc" id="L109">                buildPickBadge(&quot;/images/icons/pick_down.png&quot;, picksLow, tribalFont)</span>
+        );
 
-<span class="nc" id="L102">        this.getChildren().addAll(nameRow, statsRow);</span>
-<span class="nc" id="L103">        this.setOnMouseClicked(e -&gt; onClick.run());</span>
-<span class="nc" id="L104">    }</span>
+<span class="nc" id="L112">        statsRow.getChildren().addAll(foodBox, ppBox, picksBox);</span>
+
+<span class="nc" id="L114">        this.getChildren().addAll(nameRow, statsRow);</span>
+<span class="nc" id="L115">        this.setOnMouseClicked(e -&gt; onClick.run());</span>
+<span class="nc" id="L116">    }</span>
+
+    /**
+     * Builds a small &quot;arrow + count&quot; badge for the remaining pickable cards.
+     *
+     * @param iconPath   resource path of the up/down arrow icon
+     * @param count      remaining picks for that row
+     * @param tribalFont the font to use, or {@code null} for the default
+     * @return an HBox containing the arrow icon and its count
+     */
+    private HBox buildPickBadge(String iconPath, int count, Font tribalFont) {
+<span class="nc" id="L127">        HBox box = new HBox(3);</span>
+<span class="nc" id="L128">        box.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L129">        ImageView icon = new ImageView(ImageLoader.getImage(iconPath));</span>
+<span class="nc" id="L130">        icon.setFitHeight(13);</span>
+<span class="nc" id="L131">        icon.setPreserveRatio(true);</span>
+<span class="nc" id="L132">        Label label = new Label(String.valueOf(count));</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        label.setTextFill(count &gt; 0 ? Color.web(&quot;#F2D5A3&quot;) : Color.GRAY);</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (tribalFont != null) {</span>
+<span class="nc" id="L135">            label.setFont(Font.font(tribalFont.getFamily(), 12));</span>
+        }
+<span class="nc" id="L137">        box.getChildren().addAll(icon, label);</span>
+<span class="nc" id="L138">        return box;</span>
+    }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

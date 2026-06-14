@@ -1,6 +1,6 @@
 GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
 Mesos,it.polimi.ingsw.am02.client.view.gui.components,GameCardView,201,0,12,0,52,0,13,0,7,0
-Mesos,it.polimi.ingsw.am02.client.view.gui.components,PlayerSidebarItem,248,0,18,0,47,0,11,0,2,0
+Mesos,it.polimi.ingsw.am02.client.view.gui.components,PlayerSidebarItem,340,0,22,0,63,0,14,0,3,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.components,ReservePileView.Token,12,0,0,0,1,0,1,0,1,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.components,OfferTileView,111,0,2,0,27,0,4,0,3,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.components,ReservePileView,310,0,6,0,33,0,6,0,3,0
@@ -52,10 +52,10 @@ Mesos,it.polimi.ingsw.am02.common.messages.events.heartbeat,PongEvent,8,0,0,0,2,
 Mesos,it.polimi.ingsw.am02.common.messages.events.heartbeat,PingEvent,8,0,0,0,2,0,2,0,2,0
 Mesos,it.polimi.ingsw.am02.client.network.socket,SocketServerProxy,427,0,50,0,120,0,46,0,21,0
 Mesos,it.polimi.ingsw.am02.common,ProjectInfo,28,0,0,0,7,0,1,0,1,0
-Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,GameScene,3847,0,234,0,537,0,224,0,107,0
+Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,GameScene,3889,0,242,0,543,0,227,0,106,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,NetworkPopup.ConnectionConfig,12,0,0,0,1,0,1,0,1,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,InGameMenuOverlay,422,0,20,0,86,0,24,0,14,0
-Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,GameScene.SceneState,232,0,30,0,25,0,18,0,3,0
+Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,GameScene.SceneState,260,0,34,0,27,0,20,0,3,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,IntroScene,141,0,6,0,35,0,7,0,4,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,NewEraOverlay.new AnimationTimer() {...},29,0,0,0,3,0,2,0,2,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,GameMenuScene,956,0,36,0,167,0,42,0,24,0
@@ -79,7 +79,7 @@ Mesos,it.polimi.ingsw.am02.server.model.listeners,EventObserver,6,0,0,0,3,0,3,0,
 Mesos,it.polimi.ingsw.am02.server.model.listeners,GameNotifier,63,303,8,34,9,59,8,35,2,20
 Mesos,it.polimi.ingsw.am02.server.network.socket,SocketClientHandler,531,0,16,0,124,0,47,0,39,0
 Mesos,it.polimi.ingsw.am02.server.network.socket,SocketServer,77,0,6,0,22,0,6,0,3,0
-Mesos,it.polimi.ingsw.am02.client.view.tui,TuiView,1816,0,132,0,436,0,164,0,96,0
+Mesos,it.polimi.ingsw.am02.client.view.tui,TuiView,1796,0,134,0,426,0,163,0,94,0
 Mesos,it.polimi.ingsw.am02.client.view.tui,TuiController,346,0,63,0,79,0,43,0,5,0
 Mesos,it.polimi.ingsw.am02.common.messages.events.error,ErrorEvent,11,0,0,0,3,0,2,0,2,0
 Mesos,it.polimi.ingsw.am02.server.model,Game.EventResolutionState,0,23,0,0,0,6,0,2,0,2
@@ -119,8 +119,8 @@ Mesos,it.polimi.ingsw.am02.server.model.tile,TurnOrderTile.TurnOrderRewardResult
 Mesos,it.polimi.ingsw.am02.server.model.tile,OfferTrack,0,143,0,18,0,32,0,15,0,6
 Mesos,it.polimi.ingsw.am02.server.model.tile,TurnOrderTile,7,320,5,35,4,64,5,26,0,11
 Mesos,it.polimi.ingsw.am02.server.model.tile,OfferTilesFactory,0,29,0,0,0,7,0,2,0,2
-Mesos,it.polimi.ingsw.am02.client.view.gui,GuiView,426,0,58,0,124,0,67,0,38,0
-Mesos,it.polimi.ingsw.am02.client.view.gui,SceneRouter,1105,0,12,0,216,0,57,0,51,0
+Mesos,it.polimi.ingsw.am02.client.view.gui,GuiView,476,0,32,0,145,0,72,0,56,0
+Mesos,it.polimi.ingsw.am02.client.view.gui,SceneRouter,1427,0,16,0,268,0,62,0,54,0
 Mesos,it.polimi.ingsw.am02.client.view.gui,GuiController,98,0,6,0,25,0,16,0,13,0
 Mesos,it.polimi.ingsw.am02.client.view.gui,ImageLoader,41,0,2,0,10,0,7,0,6,0
 Mesos,it.polimi.ingsw.am02,ClientLauncher,20,0,0,0,5,0,2,0,2,0
@@ -185,5 +185,5 @@ Mesos,it.polimi.ingsw.am02.common.messages.events.game,PlayerReconnectedEvent,11
 Mesos,it.polimi.ingsw.am02.server.controller,ServerGameSnapshot,67,152,4,6,14,38,11,13,9,10
 Mesos,it.polimi.ingsw.am02.server.controller,GameController,1248,372,153,9,296,78,139,31,60,29
 Mesos,it.polimi.ingsw.am02.server.controller,Lobby,437,0,48,0,94,0,40,0,16,0
-Mesos,it.polimi.ingsw.am02.server.controller,ControllerManager,1176,0,102,0,281,0,93,0,42,0
+Mesos,it.polimi.ingsw.am02.server.controller,ControllerManager,1174,0,102,0,280,0,93,0,42,0
 Mesos,it.polimi.ingsw.am02.server.controller,AutoPlayer,165,0,39,0,35,0,25,0,5,0

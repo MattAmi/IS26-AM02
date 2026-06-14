@@ -11,10 +11,12 @@ import it.polimi.ingsw.am02.common.dto.LobbyInfo;
 import it.polimi.ingsw.am02.common.dto.OfferTileInfo;
 import it.polimi.ingsw.am02.common.dto.PlayerFinalScore;
 import it.polimi.ingsw.am02.common.enumerations.*;
+import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Graphical User Interface (GUI) implementation of the client view.
@@ -28,21 +30,28 @@ public class GuiView extends AbstractClientView {
     private GameModel gameModel;
 
     /**
+     * Forfeit countdown received while the game scene did not yet exist. Held here
+     * so a later render can surface the banner that would otherwise have been
+     * dropped. Only touched on the FX thread.
+     */
+    private Long pendingForfeitSeconds;
+
+    /**
      * Constructs a new GuiView.
      *
      * @param lobbyModel The lobby model to observe for updates.
      */
-<span class="nc" id="L35">    public GuiView(LobbyModel lobbyModel) {</span>
-<span class="nc" id="L36">        this.lobbyModel = lobbyModel;</span>
-<span class="nc" id="L37">        this.lobbyModel.addObserver(this);</span>
-<span class="nc" id="L38">    }</span>
+<span class="nc" id="L44">    public GuiView(LobbyModel lobbyModel) {</span>
+<span class="nc" id="L45">        this.lobbyModel = lobbyModel;</span>
+<span class="nc" id="L46">        this.lobbyModel.addObserver(this);</span>
+<span class="nc" id="L47">    }</span>
 
     /**
      * Sets the scene router for navigating between different GUI scenes.
      *
      * @param sceneRouter The SceneRouter instance.
      */
-<span class="nc" id="L45">    public void setSceneRouter(SceneRouter sceneRouter) { this.sceneRouter = sceneRouter; }</span>
+<span class="nc" id="L54">    public void setSceneRouter(SceneRouter sceneRouter) { this.sceneRouter = sceneRouter; }</span>
 
     /**
      * Injects the game model into the view and starts observing it.
@@ -51,21 +60,60 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void setGameModel(GameModel gameModel) {
-<span class="nc" id="L54">        this.gameModel = gameModel;</span>
-<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (this.gameModel != null) {</span>
-<span class="nc" id="L56">            this.gameModel.addObserver(this);</span>
-<span class="nc bnc" id="L57" title="All 2 branches missed.">            if (sceneRouter.getGameScene() != null) sceneRouter.getGameScene().refreshAll(gameModel);</span>
+<span class="nc" id="L63">        this.gameModel = gameModel;</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (this.gameModel != null) {</span>
+<span class="nc" id="L65">            this.gameModel.addObserver(this);</span>
+<span class="nc" id="L66">            refreshGameIfActive();</span>
         }
-<span class="nc" id="L59">    }</span>
+<span class="nc" id="L68">    }</span>
+
+    /**
+     * Runs an action against the active {@link GameScene} on the JavaFX thread,
+     * skipping it if no scene is active yet.
+     *
+     * &lt;p&gt;Every game callback arrives on the network thread, but the scene is
+     * created on the FX thread (inside {@code SceneRouter.switchToGameScene}'s
+     * {@code Platform.runLater}). Reading {@code getGameScene()} directly from the
+     * network thread therefore races that creation: around reconnection it can
+     * see {@code null} and silently drop the update. Deferring the read to the FX
+     * thread removes the race entirely — by FX FIFO ordering the scene-creating
+     * event's task has already run, and the field is read on the same thread it is
+     * written. The scene's own methods already marshal to the FX thread, so this
+     * is harmless (and slightly more efficient) for the common in-game case too.
+     *
+     * @param action the work to perform with the live scene
+     */
+    private void withGameScene(Consumer&lt;GameScene&gt; action) {
+<span class="nc" id="L87">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L88">            GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            if (gs != null) action.accept(gs);</span>
+<span class="nc" id="L90">        });</span>
+<span class="nc" id="L91">    }</span>
+
+    /**
+     * Pushes the latest model state to the given scene. Must be called on the FX
+     * thread (see {@link #withGameScene(Consumer)}), which keeps all access to
+     * {@code pendingForfeitSeconds} single-threaded and the check-then-clear
+     * atomic.
+     *
+     * @param gs the active game scene
+     */
+    private void renderScene(GameScene gs) {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (gameModel == null) return;</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (pendingForfeitSeconds != null) {</span>
+<span class="nc" id="L104">            long s = pendingForfeitSeconds;</span>
+<span class="nc" id="L105">            pendingForfeitSeconds = null;</span>
+<span class="nc" id="L106">            gs.showForfeitBanner(s);</span>
+        }
+<span class="nc" id="L108">        gs.refreshAll(gameModel);</span>
+<span class="nc" id="L109">    }</span>
 
     /**
      * Refreshes the game scene if it is currently active.
      */
     private void refreshGameIfActive() {
-<span class="nc bnc" id="L65" title="All 4 branches missed.">        if (sceneRouter.getGameScene() != null &amp;&amp; gameModel != null) {</span>
-<span class="nc" id="L66">            sceneRouter.getGameScene().refreshAll(gameModel);</span>
-        }
-<span class="nc" id="L68">    }</span>
+<span class="nc" id="L115">        withGameScene(this::renderScene);</span>
+<span class="nc" id="L116">    }</span>
 
     /**
      * Handles the result of a nickname request.
@@ -76,16 +124,16 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onUsernameResult(String username, boolean accepted, String reason) {
-<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (!accepted) {</span>
-<span class="nc" id="L80">            sceneRouter.showToast(&quot;Nickname Rejected&quot;, reason, Alert.AlertType.WARNING);</span>
-<span class="nc" id="L81">            LobbyScene ls = sceneRouter.getLobbyScene();</span>
-<span class="nc bnc" id="L82" title="All 2 branches missed.">            if (ls != null) ls.onNicknameRejected();</span>
-<span class="nc" id="L83">        } else {</span>
-<span class="nc" id="L84">            LobbyScene ls = sceneRouter.getLobbyScene();</span>
-<span class="nc bnc" id="L85" title="All 2 branches missed.">            if (ls != null) ls.onNicknameAccepted(username);</span>
-<span class="nc" id="L86">            else sceneRouter.showIntroScene();</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (!accepted) {</span>
+<span class="nc" id="L128">            sceneRouter.showToast(&quot;Nickname Rejected&quot;, reason, Alert.AlertType.WARNING);</span>
+<span class="nc" id="L129">            LobbyScene ls = sceneRouter.getLobbyScene();</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (ls != null) ls.onNicknameRejected();</span>
+<span class="nc" id="L131">        } else {</span>
+<span class="nc" id="L132">            LobbyScene ls = sceneRouter.getLobbyScene();</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            if (ls != null) ls.onNicknameAccepted(username);</span>
+<span class="nc" id="L134">            else sceneRouter.showIntroScene();</span>
         }
-<span class="nc" id="L88">    }</span>
+<span class="nc" id="L136">    }</span>
 
     /**
      * Handles the update of the list of available lobbies.
@@ -94,10 +142,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onAvailableLobbiesUpdated(List&lt;LobbyInfo&gt; lobbies) {
-<span class="nc" id="L97">        LobbyListScene lls = sceneRouter.getLobbyListScene();</span>
-<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (lls != null) lls.onAvailableLobbiesUpdated(lobbies);</span>
-<span class="nc bnc" id="L99" title="All 4 branches missed.">        else if (sceneRouter.getLobbyScene() != null || sceneRouter.getGameScene() != null) sceneRouter.showGameMenuScene();</span>
-<span class="nc" id="L100">    }</span>
+<span class="nc" id="L145">        LobbyListScene lls = sceneRouter.getLobbyListScene();</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        if (lls != null) lls.onAvailableLobbiesUpdated(lobbies);</span>
+<span class="nc bnc" id="L147" title="All 4 branches missed.">        else if (sceneRouter.getLobbyScene() != null || sceneRouter.getGameScene() != null) sceneRouter.showGameMenuScene();</span>
+<span class="nc" id="L148">    }</span>
 
     /**
      * Handles the update of the current lobby state.
@@ -106,19 +154,19 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onCurrentLobbyUpdated(LobbyInfo lobby) {
-<span class="nc" id="L109">        LobbyScene ls = sceneRouter.getLobbyScene();</span>
-<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (ls == null) sceneRouter.showLobbyScene(lobby);</span>
-<span class="nc" id="L111">        else ls.updateLobbyState(lobby);</span>
-<span class="nc" id="L112">    }</span>
+<span class="nc" id="L157">        LobbyScene ls = sceneRouter.getLobbyScene();</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        if (ls == null) sceneRouter.showLobbyScene(lobby);</span>
+<span class="nc" id="L159">        else ls.updateLobbyState(lobby);</span>
+<span class="nc" id="L160">    }</span>
 
     /**
      * Handles the dissolution of the current lobby.
      */
     @Override
     public void onLobbyDissolved() {
-<span class="nc" id="L119">        sceneRouter.showBlockingAlert(&quot;Lobby Closed&quot;, &quot;The lobby has been dissolved.&quot;, Alert.AlertType.INFORMATION);</span>
-<span class="nc" id="L120">        sceneRouter.showGameMenuScene();</span>
-<span class="nc" id="L121">    }</span>
+<span class="nc" id="L167">        sceneRouter.showBlockingAlert(&quot;Lobby Closed&quot;, &quot;The lobby has been dissolved.&quot;, Alert.AlertType.INFORMATION);</span>
+<span class="nc" id="L168">        sceneRouter.showGameMenuScene();</span>
+<span class="nc" id="L169">    }</span>
 
     /**
      * Handles the start of a game.
@@ -127,9 +175,9 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameStarted(String gameId) {
-<span class="nc" id="L130">        lobbyModel.removeObserver(this);</span>
-<span class="nc" id="L131">        sceneRouter.switchToGameScene(gameModel);</span>
-<span class="nc" id="L132">    }</span>
+<span class="nc" id="L178">        lobbyModel.removeObserver(this);</span>
+<span class="nc" id="L179">        sceneRouter.switchToGameScene(gameModel);</span>
+<span class="nc" id="L180">    }</span>
 
     /**
      * Handles the completion of the game setup phase.
@@ -140,15 +188,20 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameSetupCompleted(List&lt;String&gt; turnOrder, Map&lt;String, Integer&gt; initialFood, BoardSnapshot board) {
-<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (sceneRouter.getGameScene() != null) {</span>
-<span class="nc" id="L144">            sceneRouter.getGameScene().prepareForReplay();</span>
-        }
-
-<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (sceneRouter.getGameScene() == null) {</span>
-<span class="nc" id="L148">            sceneRouter.hideModal();</span>
-<span class="nc" id="L149">            sceneRouter.switchToGameScene(gameModel);</span>
-<span class="nc" id="L150">        } else refreshGameIfActive();</span>
-<span class="nc" id="L151">    }</span>
+        // Decide create-vs-refresh on the FX thread so the scene field is read on
+        // the same thread it is written, preventing both dropped updates and a
+        // duplicate scene being created if this races a pending scene creation.
+<span class="nc" id="L194">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L195">            GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (gs != null) {</span>
+<span class="nc" id="L197">                gs.prepareForReplay();</span>
+<span class="nc" id="L198">                renderScene(gs);</span>
+            } else {
+<span class="nc" id="L200">                sceneRouter.hideModal();</span>
+<span class="nc" id="L201">                sceneRouter.switchToGameScene(gameModel);</span>
+            }
+<span class="nc" id="L203">        });</span>
+<span class="nc" id="L204">    }</span>
 
     /**
      * Handles a change in the current game phase.
@@ -159,11 +212,14 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPhaseChanged(PhaseType phase, String currentPlayer, List&lt;String&gt; resolutionOrder) {
-<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (sceneRouter.getGameScene() == null) {</span>
-<span class="nc" id="L163">            sceneRouter.hideModal();</span>
-<span class="nc" id="L164">            sceneRouter.switchToGameScene(gameModel);</span>
-<span class="nc" id="L165">        } else refreshGameIfActive();</span>
-<span class="nc" id="L166">    }</span>
+<span class="nc" id="L215">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L216">            GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">            if (gs == null) {</span>
+<span class="nc" id="L218">                sceneRouter.hideModal();</span>
+<span class="nc" id="L219">                sceneRouter.switchToGameScene(gameModel);</span>
+<span class="nc" id="L220">            } else renderScene(gs);</span>
+<span class="nc" id="L221">        });</span>
+<span class="nc" id="L222">    }</span>
 
     /**
      * Handles a change in the current active player.
@@ -171,7 +227,7 @@ public class GuiView extends AbstractClientView {
      * @param nextPlayer The nickname of the next player.
      */
     @Override
-<span class="nc" id="L174">    public void onCurrentPlayerChanged(String nextPlayer) { refreshGameIfActive(); }</span>
+<span class="nc" id="L230">    public void onCurrentPlayerChanged(String nextPlayer) { refreshGameIfActive(); }</span>
 
     /**
      * Handles the establishment of the turn order for the round.
@@ -179,7 +235,7 @@ public class GuiView extends AbstractClientView {
      * @param turnOrder The established turn order.
      */
     @Override
-<span class="nc" id="L182">    public void onTurnOrderEstablished(List&lt;String&gt; turnOrder) { refreshGameIfActive(); }</span>
+<span class="nc" id="L238">    public void onTurnOrderEstablished(List&lt;String&gt; turnOrder) { refreshGameIfActive(); }</span>
 
     /**
      * Handles the placement of a totem by a player.
@@ -189,10 +245,11 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onTotemPlaced(String nickname, char tileID) {
-<span class="nc" id="L192">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L193" title="All 2 branches missed.">        if (gs != null) gs.logTotemPlaced(nickname, tileID);</span>
-<span class="nc" id="L194">        refreshGameIfActive();</span>
-<span class="nc" id="L195">    }</span>
+<span class="nc" id="L248">        withGameScene(gs -&gt; {</span>
+<span class="nc" id="L249">            gs.logTotemPlaced(nickname, tileID);</span>
+<span class="nc" id="L250">            renderScene(gs);</span>
+<span class="nc" id="L251">        });</span>
+<span class="nc" id="L252">    }</span>
 
     /**
      * Handles the return of a totem to the turn order track.
@@ -202,10 +259,11 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onTotemReturned(String nickname, int turnOrderPosition) {
-<span class="nc" id="L205">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (gs != null) gs.logTotemReturned(nickname, turnOrderPosition);</span>
-<span class="nc" id="L207">        refreshGameIfActive();</span>
-<span class="nc" id="L208">    }</span>
+<span class="nc" id="L262">        withGameScene(gs -&gt; {</span>
+<span class="nc" id="L263">            gs.logTotemReturned(nickname, turnOrderPosition);</span>
+<span class="nc" id="L264">            renderScene(gs);</span>
+<span class="nc" id="L265">        });</span>
+<span class="nc" id="L266">    }</span>
 
     /**
      * Handles the update of the offer tiles on the board.
@@ -213,7 +271,7 @@ public class GuiView extends AbstractClientView {
      * @param offerTiles The list of updated offer tiles.
      */
     @Override
-<span class="nc" id="L216">    public void onOfferTilesUpdated(List&lt;OfferTileInfo&gt; offerTiles) { refreshGameIfActive(); }</span>
+<span class="nc" id="L274">    public void onOfferTilesUpdated(List&lt;OfferTileInfo&gt; offerTiles) { refreshGameIfActive(); }</span>
 
     /**
      * Handles the update of the game board.
@@ -223,7 +281,7 @@ public class GuiView extends AbstractClientView {
      * @param deckRemainingCount The number of cards remaining in the deck.
      */
     @Override
-<span class="nc" id="L226">    public void onBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow, int deckRemainingCount) { refreshGameIfActive(); }</span>
+<span class="nc" id="L284">    public void onBoardUpdated(List&lt;String&gt; newUpperRow, List&lt;String&gt; newLowerRow, int deckRemainingCount) { refreshGameIfActive(); }</span>
 
     /**
      * Handles a change in the game era.
@@ -234,13 +292,8 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onEraChanged(Era newEra, List&lt;String&gt; newUpperRowBuildings, List&lt;String&gt; newLowerRowBuildings) {
-<span class="nc" id="L237">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L238" title="All 2 branches missed.">        if (gs != null) {</span>
-<span class="nc" id="L239">            gs.showNewEraAnimation(newEra, newUpperRowBuildings, newLowerRowBuildings);</span>
-        } else {
-<span class="nc" id="L241">            refreshGameIfActive();</span>
-        }
-<span class="nc" id="L243">    }</span>
+<span class="nc" id="L295">        withGameScene(gs -&gt; gs.showNewEraAnimation(newEra, newUpperRowBuildings, newLowerRowBuildings));</span>
+<span class="nc" id="L296">    }</span>
 
     /**
      * Handles the initialization of pick limits for a player.
@@ -250,7 +303,7 @@ public class GuiView extends AbstractClientView {
      * @param remainingLower The remaining picks from the lower row.
      */
     @Override
-<span class="nc" id="L253">    public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }</span>
+<span class="nc" id="L306">    public void onPlayerLimitsInitialized(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }</span>
 
     /**
      * Handles the update of pick limits for a player.
@@ -260,7 +313,7 @@ public class GuiView extends AbstractClientView {
      * @param remainingLower The remaining picks from the lower row.
      */
     @Override
-<span class="nc" id="L263">    public void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }</span>
+<span class="nc" id="L316">    public void onPlayerLimitsUpdated(String nickname, int remainingUpper, int remainingLower) { refreshGameIfActive(); }</span>
 
     /**
      * Handles the acquisition of a card by a player.
@@ -272,12 +325,11 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onCardTaken(String nickname, String cardID, CardType cardType, RowPosition sourceRow) {
-<span class="nc" id="L275">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L276" title="All 2 branches missed.">        if (gs != null) {</span>
-<span class="nc" id="L277">            gs.logCardTaken(nickname, cardID);</span>
-<span class="nc" id="L278">            gs.animateCardTaken(nickname, cardID, cardType, sourceRow);</span>
-        }
-<span class="nc" id="L280">    }</span>
+<span class="nc" id="L328">        withGameScene(gs -&gt; {</span>
+<span class="nc" id="L329">            gs.logCardTaken(nickname, cardID);</span>
+<span class="nc" id="L330">            gs.animateCardTaken(nickname, cardID, cardType, sourceRow);</span>
+<span class="nc" id="L331">        });</span>
+<span class="nc" id="L332">    }</span>
 
     /**
      * Handles the start of an extra turn for a player.
@@ -288,10 +340,11 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
-<span class="nc" id="L291">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L292" title="All 2 branches missed.">        if (gs != null) gs.logExtraTurnStarted(nickname, remainingUpper, remainingLower);</span>
-<span class="nc" id="L293">        refreshGameIfActive();</span>
-<span class="nc" id="L294">    }</span>
+<span class="nc" id="L343">        withGameScene(gs -&gt; {</span>
+<span class="nc" id="L344">            gs.logExtraTurnStarted(nickname, remainingUpper, remainingLower);</span>
+<span class="nc" id="L345">            renderScene(gs);</span>
+<span class="nc" id="L346">        });</span>
+<span class="nc" id="L347">    }</span>
 
     /**
      * Handles the end of an extra turn for a player.
@@ -300,10 +353,11 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onExtraTurnEnded(String nickname) {
-<span class="nc" id="L303">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L304" title="All 2 branches missed.">        if (gs != null) gs.logExtraTurnEnded(nickname);</span>
-<span class="nc" id="L305">        refreshGameIfActive();</span>
-<span class="nc" id="L306">    }</span>
+<span class="nc" id="L356">        withGameScene(gs -&gt; {</span>
+<span class="nc" id="L357">            gs.logExtraTurnEnded(nickname);</span>
+<span class="nc" id="L358">            renderScene(gs);</span>
+<span class="nc" id="L359">        });</span>
+<span class="nc" id="L360">    }</span>
 
     /**
      * Handles the normal end of the game.
@@ -313,8 +367,8 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameEnded(List&lt;String&gt; winners, List&lt;PlayerFinalScore&gt; finalRankings) {
-<span class="nc" id="L316">        sceneRouter.showGameOverPopup(&quot;Game Over&quot;, &quot;Winners: &quot; + String.join(&quot;, &quot;, winners));</span>
-<span class="nc" id="L317">    }</span>
+<span class="nc" id="L370">        sceneRouter.showGameOverPopup(&quot;=== GAME OVER ===&quot;, winners, finalRankings);</span>
+<span class="nc" id="L371">    }</span>
 
     /**
      * Handles the disconnection of a player.
@@ -323,10 +377,9 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerDisconnected(String nickname) {
-<span class="nc" id="L326">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L327" title="All 2 branches missed.">        if (gs != null) gs.setPlayerOffline(nickname);</span>
-<span class="nc" id="L328">        sceneRouter.showPlayerDisconnectedPopup(nickname);</span>
-<span class="nc" id="L329">    }</span>
+<span class="nc" id="L380">        withGameScene(gs -&gt; gs.setPlayerOffline(nickname));</span>
+<span class="nc" id="L381">        sceneRouter.showPlayerDisconnectedPopup(nickname);</span>
+<span class="nc" id="L382">    }</span>
 
     /**
      * Handles the aborting of the game.
@@ -335,16 +388,15 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onGameAborted(String lastManStanding) {
-<span class="nc" id="L338">        sceneRouter.showGameOverPopup(&quot;Game Aborted&quot;, &quot;Game ended. Last standing: &quot; + lastManStanding);</span>
-<span class="nc" id="L339">    }</span>
+<span class="nc" id="L391">        sceneRouter.showGameOverPopup(&quot;Game Aborted&quot;, &quot;Game ended. Last standing: &quot; + lastManStanding);</span>
+<span class="nc" id="L392">    }</span>
 
-    /**
-     * Handles a failure to recover the game state.
-     */
-    @Override
-    public void onGameRecoveryFailed() {
-<span class="nc" id="L346">        sceneRouter.showGameOverPopup(&quot;Error&quot;, &quot;Recovery failed. Not all players reconnected in time.&quot;);</span>
-<span class="nc" id="L347">    }</span>
+    // onGameRecoveryFailed is intentionally not overridden: it is a defensive
+    // server-side fallback (see GameController) that only fires when the global
+    // timer expires with no active player — a &quot;should never happen&quot; terminal
+    // state in which no client is connected to display anything. The GUI
+    // inherits the no-op default from AbstractClientView. The full pipeline is
+    // kept for a future view that may want to surface this state.
 
     /**
      * Handles the reconnection of a player.
@@ -353,12 +405,11 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerReconnected(String nickname) {
-<span class="nc" id="L356">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (gs != null) {</span>
-<span class="nc" id="L358">            gs.setPlayerOnline(nickname);</span>
-<span class="nc" id="L359">            gs.logPlayerReconnected(nickname);</span>
-        }
-<span class="nc" id="L361">    }</span>
+<span class="nc" id="L408">        withGameScene(gs -&gt; {</span>
+<span class="nc" id="L409">            gs.setPlayerOnline(nickname);</span>
+<span class="nc" id="L410">            gs.logPlayerReconnected(nickname);</span>
+<span class="nc" id="L411">        });</span>
+<span class="nc" id="L412">    }</span>
 
     /**
      * Handles an error message from the server.
@@ -367,10 +418,10 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onError(String message) {
-<span class="nc" id="L370">        sceneRouter.showToast(&quot;Error&quot;, message, Alert.AlertType.WARNING);</span>
-<span class="nc" id="L371">        LobbyScene ls = sceneRouter.getLobbyScene();</span>
-<span class="nc bnc" id="L372" title="All 2 branches missed.">        if (ls != null) ls.onNicknameRejected();</span>
-<span class="nc" id="L373">    }</span>
+<span class="nc" id="L421">        sceneRouter.showToast(&quot;Error&quot;, message, Alert.AlertType.WARNING);</span>
+<span class="nc" id="L422">        LobbyScene ls = sceneRouter.getLobbyScene();</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        if (ls != null) ls.onNicknameRejected();</span>
+<span class="nc" id="L424">    }</span>
 
     /**
      * Handles a change in a player's resource value.
@@ -381,10 +432,11 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onPlayerResourceChanged(String nickname, ResourceType resource, int newValue) {
-<span class="nc" id="L384">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L385" title="All 2 branches missed.">        if (gs != null) gs.logResourceChanged(nickname, resource, newValue);</span>
-<span class="nc" id="L386">        refreshGameIfActive();</span>
-<span class="nc" id="L387">    }</span>
+<span class="nc" id="L435">        withGameScene(gs -&gt; {</span>
+<span class="nc" id="L436">            gs.logResourceChanged(nickname, resource, newValue);</span>
+<span class="nc" id="L437">            renderScene(gs);</span>
+<span class="nc" id="L438">        });</span>
+<span class="nc" id="L439">    }</span>
 
     /**
      * Handles the resolution of an event.
@@ -394,10 +446,11 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onEventResolved(String eventID, String eventName) {
-<span class="nc" id="L397">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L398" title="All 2 branches missed.">        if (gs != null) gs.logEventResolved(eventName);</span>
-<span class="nc" id="L399">        refreshGameIfActive();</span>
-<span class="nc" id="L400">    }</span>
+<span class="nc" id="L449">        withGameScene(gs -&gt; {</span>
+<span class="nc" id="L450">            gs.logEventResolved(eventName);</span>
+<span class="nc" id="L451">            renderScene(gs);</span>
+<span class="nc" id="L452">        });</span>
+<span class="nc" id="L453">    }</span>
 
     /**
      * Handles the start of the auto-player timer for a player.
@@ -406,9 +459,8 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onAutoPlayerTimerStarted(String nickname, long seconds) {
-<span class="nc" id="L409">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L410" title="All 2 branches missed.">        if (gs != null) gs.logAutoPlayerTimerStarted(nickname, seconds);</span>
-<span class="nc" id="L411">    }</span>
+<span class="nc" id="L462">        withGameScene(gs -&gt; gs.logAutoPlayerTimerStarted(nickname, seconds));</span>
+<span class="nc" id="L463">    }</span>
 
     /**
      * Handles the invocation of the auto-player for a player.
@@ -417,41 +469,61 @@ public class GuiView extends AbstractClientView {
      */
     @Override
     public void onAutoPlayerInvoked(String nickname) {
-<span class="nc" id="L420">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L421" title="All 2 branches missed.">        if (gs != null) gs.logAutoPlayerInvoked(nickname);</span>
-<span class="nc" id="L422">    }</span>
+<span class="nc" id="L472">        withGameScene(gs -&gt; gs.logAutoPlayerInvoked(nickname));</span>
+<span class="nc" id="L473">    }</span>
 
     /**
      * Handles the loss of connection to the server.
+     *
+     * &lt;p&gt;Marshalled onto the FX thread on purpose. The scene is created inside a
+     * {@code Platform.runLater} (see {@code SceneRouter.switchToGameScene}), so on
+     * reconnection — where the server arms the global timer right after the replay
+     * drain — reading {@code getGameScene()} straight from the network thread
+     * races that still-pending FX task and intermittently sees {@code null},
+     * silently dropping the banner. Deferring here lets FX FIFO ordering guarantee
+     * the scene-creating event's task has already run. If the scene still is not
+     * available (e.g. an out-of-order transport), the value is remembered and
+     * flushed by {@link #refreshGameIfActive()} on the next render.
      */
     @Override
     public void onGlobalTimerStarted(long seconds) {
-<span class="nc" id="L429">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L430" title="All 2 branches missed.">        if (gs != null) gs.showForfeitBanner(seconds);</span>
-<span class="nc" id="L431">    }</span>
+<span class="nc" id="L490">        Platform.runLater(() -&gt; {</span>
+            // Reset first so the direct-show path and the pending fallback are
+            // mutually exclusive: the banner can be raised by exactly one of them,
+            // never by both (which would otherwise restart the countdown on the
+            // next render).
+<span class="nc" id="L495">            pendingForfeitSeconds = null;</span>
+<span class="nc" id="L496">            GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L497" title="All 2 branches missed.">            if (gs != null) gs.showForfeitBanner(seconds);</span>
+<span class="nc" id="L498">            else pendingForfeitSeconds = seconds;</span>
+<span class="nc" id="L499">        });</span>
+<span class="nc" id="L500">    }</span>
 
     @Override
     public void onGlobalTimerCancelled() {
-<span class="nc" id="L435">        GameScene gs = sceneRouter.getGameScene();</span>
-<span class="nc bnc" id="L436" title="All 2 branches missed.">        if (gs != null) gs.dismissForfeitBanner();</span>
-<span class="nc" id="L437">    }</span>
+<span class="nc" id="L504">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L505">            pendingForfeitSeconds = null;</span>
+<span class="nc" id="L506">            GameScene gs = sceneRouter.getGameScene();</span>
+<span class="nc bnc" id="L507" title="All 2 branches missed.">            if (gs != null) gs.dismissForfeitBanner();</span>
+<span class="nc" id="L508">        });</span>
+<span class="nc" id="L509">    }</span>
 
     @Override
-<span class="nc" id="L440">    public void onConnectionLost() { sceneRouter.showConnectionLost(); }</span>
+<span class="nc" id="L512">    public void onConnectionLost() { sceneRouter.showConnectionLost(); }</span>
 
     /**
      * Handles the restoration of connection to the server.
      */
     @Override
     public void onConnectionRestored() {
-<span class="nc" id="L447">        sceneRouter.hideModal();</span>
-<span class="nc" id="L448">        sceneRouter.showToast(&quot;Connected&quot;, &quot;You're back online!&quot;, Alert.AlertType.INFORMATION);</span>
-<span class="nc" id="L449">    }</span>
+<span class="nc" id="L519">        sceneRouter.hideModal();</span>
+<span class="nc" id="L520">        sceneRouter.showToast(&quot;Connected&quot;, &quot;You're back online!&quot;, Alert.AlertType.INFORMATION);</span>
+<span class="nc" id="L521">    }</span>
 
     /**
      * Handles the return to the lobby screen.
      */
     @Override
-<span class="nc" id="L455">    public void onReturnToLobby() { sceneRouter.showGameMenuScene(); }</span>
+<span class="nc" id="L527">    public void onReturnToLobby() { sceneRouter.showGameMenuScene(); }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

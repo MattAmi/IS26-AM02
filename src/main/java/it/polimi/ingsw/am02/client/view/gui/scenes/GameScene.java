@@ -56,7 +56,6 @@ public class GameScene {
     private VBox logContainer;
 
     private VBox forfeitBanner;
-    private Timeline forfeitCountdownTimeline;
 
     private final List<String> selected = new ArrayList<>();
     private final List<String> offlinePlayers = new ArrayList<>();
@@ -978,7 +977,6 @@ public class GameScene {
 
     public void showForfeitBanner(long seconds) {
         Platform.runLater(() -> {
-            if (forfeitCountdownTimeline != null) forfeitCountdownTimeline.stop();
             if (forfeitBanner != null) baseStack.getChildren().remove(forfeitBanner);
 
             Label icon = new Label("⚠");
@@ -988,7 +986,12 @@ public class GameScene {
             titleLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-weight: bold; -fx-font-size: 15;");
             if (tribalFont != null) titleLabel.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 15));
 
-            Label countdownLabel = new Label("Win by forfeit in " + seconds + "s if no one reconnects.");
+            // Deliberately "about Ns", not a live countdown: the server fires the
+            // notification at the END of the catch-up replay and the FX queue may be
+            // backed up, so a precise client-side counter would drift behind the
+            // server's authoritative deadline. The approximate value uses the
+            // server-supplied {@code seconds} so it tracks any future timeout change.
+            Label countdownLabel = new Label("Win by forfeit in about " + seconds + "s if no one reconnects.");
             countdownLabel.setStyle("-fx-text-fill: white; -fx-font-size: 13;");
             if (tribalFont != null) countdownLabel.setFont(Font.font(tribalFont.getFamily(), 13));
 
@@ -1005,27 +1008,18 @@ public class GameScene {
             forfeitBanner.setMaxSize(420, Region.USE_PREF_SIZE);
             StackPane.setAlignment(forfeitBanner, Pos.CENTER);
 
-            final long[] remaining = {seconds};
-            forfeitCountdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-                remaining[0]--;
-                if (remaining[0] >= 0) countdownLabel.setText("Win by forfeit in " + remaining[0] + "s if no one reconnects.");
-            }));
-            forfeitCountdownTimeline.setCycleCount((int) seconds);
-
             baseStack.getChildren().add(forfeitBanner);
             forfeitBanner.setOpacity(0);
             FadeTransition fadeIn = new FadeTransition(Duration.millis(300), forfeitBanner);
             fadeIn.setToValue(1.0);
-            fadeIn.setOnFinished(ev -> forfeitCountdownTimeline.play());
             fadeIn.play();
 
-            addLogEntry("[!] ", "You are alone — forfeit win in " + seconds + "s if no one reconnects.", Color.web("#FF4444"));
+            addLogEntry("[!] ", "You are alone — forfeit win in about " + seconds + "s if no one reconnects.", Color.web("#FF4444"));
         });
     }
 
     public void dismissForfeitBanner() {
         Platform.runLater(() -> {
-            if (forfeitCountdownTimeline != null) { forfeitCountdownTimeline.stop(); forfeitCountdownTimeline = null; }
             if (forfeitBanner != null) {
                 VBox bannerRef = forfeitBanner;
                 forfeitBanner = null;

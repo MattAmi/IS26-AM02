@@ -685,8 +685,11 @@ public class TuiView extends AbstractClientView {
      */
     @Override
     public void onGlobalTimerStarted(long seconds) {
+        // "about Ns": the server sends this at the end of the catch-up replay, so a
+        // precise figure would already be stale by the time it is shown. Uses the
+        // server-supplied seconds so it tracks any future timeout change.
         eventQueue.add(() -> addNotification(RED + BOLD + "[!] You are the only active player. "
-                + "If no one reconnects within " + seconds + "s, you win by forfeit." + RESET));
+                + "If no one reconnects within about " + seconds + "s, you win by forfeit." + RESET));
     }
 
     /**

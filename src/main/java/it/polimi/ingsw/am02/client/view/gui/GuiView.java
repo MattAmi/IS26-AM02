@@ -28,6 +28,13 @@ public class GuiView extends AbstractClientView {
     private GameModel gameModel;
 
     /**
+     * Forfeit countdown received while the game scene did not yet exist. Held here
+     * so a later render can surface the banner that would otherwise have been
+     * dropped. Only touched on the FX thread.
+     */
+    private Long pendingForfeitSeconds;
+
+    /**
      * Constructs a new GuiView.
      *
      * @param lobbyModel The lobby model to observe for updates.
@@ -63,7 +70,14 @@ public class GuiView extends AbstractClientView {
      */
     private void refreshGameIfActive() {
         if (sceneRouter.getGameScene() != null && gameModel != null) {
-            sceneRouter.getGameScene().refreshAll(gameModel);
+            GameScene gs = sceneRouter.getGameScene();
+            // Flush a forfeit banner that arrived before the scene existed.
+            if (pendingForfeitSeconds != null) {
+                long s = pendingForfeitSeconds;
+                pendingForfeitSeconds = null;
+                gs.showForfeitBanner(s);
+            }
+            gs.refreshAll(gameModel);
         }
     }
 
@@ -423,17 +437,33 @@ public class GuiView extends AbstractClientView {
 
     /**
      * Handles the loss of connection to the server.
+     *
+     * <p>Marshalled onto the FX thread on purpose. The scene is created inside a
+     * {@code Platform.runLater} (see {@code SceneRouter.switchToGameScene}), so on
+     * reconnection — where the server arms the global timer right after the replay
+     * drain — reading {@code getGameScene()} straight from the network thread
+     * races that still-pending FX task and intermittently sees {@code null},
+     * silently dropping the banner. Deferring here lets FX FIFO ordering guarantee
+     * the scene-creating event's task has already run. If the scene still is not
+     * available (e.g. an out-of-order transport), the value is remembered and
+     * flushed by {@link #refreshGameIfActive()} on the next render.
      */
     @Override
     public void onGlobalTimerStarted(long seconds) {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.showForfeitBanner(seconds);
+        javafx.application.Platform.runLater(() -> {
+            GameScene gs = sceneRouter.getGameScene();
+            if (gs != null) gs.showForfeitBanner(seconds);
+            else pendingForfeitSeconds = seconds;
+        });
     }
 
     @Override
     public void onGlobalTimerCancelled() {
-        GameScene gs = sceneRouter.getGameScene();
-        if (gs != null) gs.dismissForfeitBanner();
+        javafx.application.Platform.runLater(() -> {
+            pendingForfeitSeconds = null;
+            GameScene gs = sceneRouter.getGameScene();
+            if (gs != null) gs.dismissForfeitBanner();
+        });
     }
 
     @Override

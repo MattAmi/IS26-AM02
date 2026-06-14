@@ -819,6 +819,8 @@ public class TuiView extends AbstractClientView {
         System.out.println();
         renderCards();
         System.out.println();
+        renderReserve();
+        System.out.println();
         renderPlayers();
         System.out.println();
         renderNotifications();
@@ -918,6 +920,20 @@ public class TuiView extends AbstractClientView {
         }
 
         System.out.println("\nDeck remaining: " + YELLOW + gameModel.getDeckRemainingCount() + RESET);
+    }
+
+    /**
+     * Renders the common reserve. Mirrors the physical game's shared supply of
+     * food and prestige tokens, which is <em>unlimited</em>: there is no
+     * server-side count to display, so each pile is shown as a fixed mound of
+     * glyphs annotated with an infinity symbol.
+     */
+    private void renderReserve() {
+        System.out.println(CYAN + BOLD + "=== COMMON RESERVE ===" + RESET);
+        System.out.println("  Food     " + GREEN + "●●●●●" + RESET
+                + "  (" + GREEN + "∞" + RESET + " unlimited supply)");
+        System.out.println("  Prestige " + YELLOW + "◆◆◆◆◆" + RESET
+                + "  (" + YELLOW + "∞" + RESET + " unlimited supply)");
     }
 
     /**

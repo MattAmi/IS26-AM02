@@ -64,6 +64,14 @@ public class GameScene {
 
     private final Queue<Runnable> animationQueue = new LinkedList<>();
     private boolean isAnimating = false;
+
+    // Catch-up guard: while the reconnection event history is
+    // being fast-forwarded, all interactive controls are locked so the player cannot
+    // fire a command against a stale frame of the replay.
+    private boolean isReplaying = false;
+    private PauseTransition replayWatchdog;
+    private Button confirmBtn;
+    private Button endTurnBtn;
     private SceneState lastState;
 
     /**
@@ -232,13 +240,13 @@ public class GameScene {
         String idleStyle = "-fx-background-color: #2c1a0e; -fx-text-fill: white; -fx-cursor: hand; -fx-font-family: \"" + fName + "\"; -fx-border-color: #4A3B32; -fx-border-radius: 3; -fx-border-width: 1;";
         String hoverStyle = "-fx-background-color: #4e3219; -fx-text-fill: #F2D5A3; -fx-cursor: hand; -fx-font-family: \"" + fName + "\"; -fx-border-color: #F2D5A3; -fx-border-radius: 3; -fx-border-width: 1;";
 
-        Button confirmBtn = new Button("CONFIRM PICK"); confirmBtn.setStyle(idleStyle);
+        confirmBtn = new Button("CONFIRM PICK"); confirmBtn.setStyle(idleStyle);
         confirmBtn.setOnMouseEntered(e -> confirmBtn.setStyle(hoverStyle)); confirmBtn.setOnMouseExited(e -> confirmBtn.setStyle(idleStyle));
-        confirmBtn.setOnAction(e -> { controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
+        confirmBtn.setOnAction(e -> { if (!actionsAllowed()) return; controller.resolveActions(new ArrayList<>(selected)); selected.clear(); });
 
-        Button endTurnBtn = new Button("END TURN"); endTurnBtn.setStyle(idleStyle);
+        endTurnBtn = new Button("END TURN"); endTurnBtn.setStyle(idleStyle);
         endTurnBtn.setOnMouseEntered(e -> endTurnBtn.setStyle(hoverStyle)); endTurnBtn.setOnMouseExited(e -> endTurnBtn.setStyle(idleStyle));
-        endTurnBtn.setOnAction(e -> controller.moveTotem('T'));
+        endTurnBtn.setOnAction(e -> { if (!actionsAllowed()) return; controller.moveTotem('T'); });
 
         Button summaryBtn = new Button("SUMMARY"); summaryBtn.setStyle(idleStyle);
         summaryBtn.setOnMouseEntered(e -> summaryBtn.setStyle(hoverStyle)); summaryBtn.setOnMouseExited(e -> summaryBtn.setStyle(idleStyle));
@@ -303,6 +311,63 @@ public class GameScene {
     }
 
     /**
+     * Logs that a player placed their totem on an offer tile.
+     * Mirrors the TUI {@code [BOARD]} notification.
+     *
+     * @param nickname The nickname of the player.
+     * @param tileID   The tile the totem was placed on.
+     */
+    public void logTotemPlaced(String nickname, char tileID) {
+        Platform.runLater(() -> addLogEntry("[BOARD] ", nickname + " placed their totem on tile " + tileID, Color.WHITE));
+    }
+
+    /**
+     * Logs that a player's totem returned to the turn-order tile.
+     * Mirrors the TUI {@code [BOARD]} notification.
+     *
+     * @param nickname The nickname of the player.
+     * @param position The zero-based turn-order slot index.
+     */
+    public void logTotemReturned(String nickname, int position) {
+        Platform.runLater(() -> addLogEntry("[BOARD] ", nickname + " returned to turn-order slot " + (position + 1), Color.WHITE));
+    }
+
+    /**
+     * Logs that a player took a card from the board.
+     * Mirrors the TUI {@code [ACTION]} notification.
+     *
+     * @param nickname The nickname of the player.
+     * @param cardID   The ID of the card taken.
+     */
+    public void logCardTaken(String nickname, String cardID) {
+        Platform.runLater(() -> addLogEntry("[ACTION] ", nickname + " took " + CardCatalog.getInstance().format(cardID), Color.web("#4DD0E1")));
+    }
+
+    /**
+     * Logs that a player gained an extra turn.
+     * Mirrors the TUI {@code [EXTRA]} notification.
+     *
+     * @param nickname       The nickname of the player.
+     * @param remainingUpper Remaining upper-row picks.
+     * @param remainingLower Remaining lower-row picks.
+     */
+    public void logExtraTurnStarted(String nickname, int remainingUpper, int remainingLower) {
+        Platform.runLater(() -> addLogEntry("[EXTRA] ",
+                nickname + " gained an extra turn! (Up:" + remainingUpper + " Lw:" + remainingLower + ")",
+                Color.web("#4CAF50")));
+    }
+
+    /**
+     * Logs that a player's extra turn ended.
+     * Mirrors the TUI {@code [EXTRA]} notification.
+     *
+     * @param nickname The nickname of the player.
+     */
+    public void logExtraTurnEnded(String nickname) {
+        Platform.runLater(() -> addLogEntry("[EXTRA] ", nickname + "'s extra turn ended.", Color.GOLD));
+    }
+
+    /**
      * Logs the start of the auto-player timer.
      *
      * @param nickname The nickname of the disconnected player.
@@ -362,6 +427,7 @@ public class GameScene {
         this.lastState = snapshot;
 
         Platform.runLater(() -> {
+            if (isReplaying) armReplayWatchdog();
             animationQueue.add(() -> refreshAllInternal(snapshot));
             if (!isAnimating) playNextAnimation();
         });
@@ -380,6 +446,7 @@ public class GameScene {
         List<DealTask> localDeals = new ArrayList<>();
         updateMainBoard(state, localDeals);
         updateHandDisplay(state);
+        updateActionButtonsState();
 
         root.applyCss();
         root.layout();
@@ -406,7 +473,7 @@ public class GameScene {
      */
     private void updateStatusBanner(SceneState state) {
         statusBox.getChildren().clear();
-        String activePlayer = state.currentPlayer != null ? state.currentPlayer.toUpperCase() : "...";
+        String activePlayer = state.currentPlayer != null ? state.currentPlayer : "...";
         String currentPhase = state.currentPhase != null ? state.currentPhase.toString().replace("_", " ") : "WAITING";
 
         Label eraTxt = new Label("ERA " + state.era + "  |"); eraTxt.setTextFill(Color.WHITE); eraTxt.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 18));
@@ -501,7 +568,7 @@ public class GameScene {
             OfferTileView tileView = new OfferTileView(t, occupantTotem, controller);
             offerTiles.getChildren().add(tileView);
         }
-        track.getChildren().addAll(currentDeckView, turnOrderCave, offerTiles);
+        track.getChildren().addAll(currentDeckView, turnOrderCave, offerTiles, new ReservePileView(tribalFont));
         return track;
     }
 
@@ -537,7 +604,7 @@ public class GameScene {
      */
     private void updateHandDisplay(SceneState state) {
         handCardsBox.getChildren().clear();
-        handTitle.setText("TRIBE OF: " + viewedPlayerHand.toUpperCase());
+        handTitle.setText(viewedPlayerHand + "'s TRIBE");
 
         List<String> chars = state.charactersByPlayer.getOrDefault(viewedPlayerHand, List.of());
         List<String> buildings = state.buildingsByPlayer.getOrDefault(viewedPlayerHand, List.of());
@@ -558,8 +625,13 @@ public class GameScene {
      * @return The constructed StackPane representing the cascading stack.
      */
     private StackPane createCascadingStack(String category, List<String> cardIds) {
-        StackPane stack = new StackPane(); stack.setAlignment(Pos.TOP_CENTER); int offsetPerCard = 25;
+        StackPane stack = new StackPane(); stack.setAlignment(Pos.TOP_CENTER);
         if (cardIds.isEmpty()) { stack.setPrefWidth(90); return stack; }
+        // Cascade cards downward, but cap the total spread to a fixed budget so large stacks
+        // (e.g. dozens of cards of the same type) stay within the hand area instead of overflowing
+        // past the clipped, non-scrolling viewport. With few cards the offset stays at the full 25px.
+        int spreadBudget = 80;
+        int offsetPerCard = cardIds.size() <= 1 ? 0 : Math.min(25, spreadBudget / (cardIds.size() - 1));
         stack.setPadding(new Insets(20, 0, Math.max(0, cardIds.size() - 1) * offsetPerCard, 0));
 
         for (int i = 0; i < cardIds.size(); i++) {
@@ -721,9 +793,9 @@ public class GameScene {
         actionLabel.setStyle("-fx-background-color: rgba(0,0,0,0.8); -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: gold; -fx-border-radius: 10;");
 
         if (isReturning) {
-            actionLabel.setText(nickname.toUpperCase() + " RETURNS TO CAVE"); fly.setTranslateY(-300);
+            actionLabel.setText(nickname + " RETURNS TO CAVE"); fly.setTranslateY(-300);
         } else {
-            actionLabel.setText(nickname.toUpperCase() + " PLACES ON TILE " + tileID); fly.setTranslateY(300);
+            actionLabel.setText(nickname + " PLACES ON TILE " + tileID); fly.setTranslateY(300);
         }
 
         VBox animBox = new VBox(20, fly, actionLabel); animBox.setAlignment(Pos.CENTER);
@@ -745,8 +817,7 @@ public class GameScene {
      * @param id The card ID.
      */
     private void toggleCardSelection(String id) {
-        if (isAnimating) return;
-        if (lastState != null && !lastState.myNickname.equals(lastState.currentPlayer)) return;
+        if (isAnimating || !actionsAllowed()) return;
         if (selected.contains(id)) selected.remove(id); else selected.add(id);
         refreshAllInternal(lastState);
     }
@@ -920,7 +991,7 @@ public class GameScene {
             Label icon = new Label("✓");
             icon.setStyle("-fx-font-size: 28; -fx-text-fill: #4CAF50;");
 
-            Label msg = new Label(nickname.toUpperCase() + " HAS RECONNECTED!");
+            Label msg = new Label(nickname + " HAS RECONNECTED!");
             msg.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;");
             if (tribalFont != null) msg.setFont(Font.font(tribalFont.getFamily(), FontWeight.BOLD, 14));
 
@@ -986,6 +1057,65 @@ public class GameScene {
         this.selected.clear();
         this.animationQueue.clear();
         this.isAnimating = false;
+        this.isReplaying = true;
+        Platform.runLater(this::enterReplayUiState);
+    }
+
+    /**
+     * Locks the interactive controls (board cards and action buttons) for the
+     * duration of the catch-up replay and arms the watchdog that detects when
+     * the fast-forward event stream has gone quiet.
+     */
+    private void enterReplayUiState() {
+        updateActionButtonsState();
+        armReplayWatchdog();
+    }
+
+    /**
+     * (Re)starts the quiet-period timer. Each replayed event resets it; once no
+     * further event arrives within the window the replay is considered complete
+     * and the controls are unlocked. The window is generous on purpose: a long
+     * catch-up can have multi-second gaps between bursts of events, and unlocking
+     * too early would let the player act against a stale frame of the replay.
+     */
+    private void armReplayWatchdog() {
+        if (replayWatchdog == null) {
+            replayWatchdog = new PauseTransition(Duration.seconds(3));
+            replayWatchdog.setOnFinished(e -> finishReplay());
+        }
+        replayWatchdog.playFromStart();
+    }
+
+    /** Unlocks the controls once the catch-up replay has finished. */
+    private void finishReplay() {
+        isReplaying = false;
+        updateActionButtonsState();
+    }
+
+    /**
+     * @return {@code true} if the local player may currently issue an action,
+     *         i.e. the catch-up replay is over and it is their turn.
+     */
+    private boolean actionsAllowed() {
+        return !isReplaying && isMyTurn(lastState);
+    }
+
+    /** @return {@code true} if it is the local player's turn in the given state. */
+    private boolean isMyTurn(SceneState s) {
+        return s != null && s.myNickname != null && s.myNickname.equals(s.currentPlayer);
+    }
+
+    /**
+     * Enables CONFIRM PICK / END TURN only when an action is actually allowed
+     * (not replaying and it is the local player's turn); disables them otherwise.
+     * The button state is thus a pure function of the current scene state and is
+     * refreshed on every render — during normal play this simply tracks whose
+     * turn it is.
+     */
+    private void updateActionButtonsState() {
+        boolean allowed = actionsAllowed();
+        if (confirmBtn != null) confirmBtn.setDisable(!allowed);
+        if (endTurnBtn != null) endTurnBtn.setDisable(!allowed);
     }
 
     /**

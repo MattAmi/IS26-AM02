@@ -25,6 +25,7 @@ public class InGameMenuOverlay {
 
     private Font tribalSmall;
     private Font tribalMedium;
+    private Font introFont;
     private StackPane rulesOverlay;
     private ImageView rulesImageView;
     private List<Image> rulesPages = new ArrayList<>();
@@ -42,6 +43,7 @@ public class InGameMenuOverlay {
         try {
             tribalSmall = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 16);
             tribalMedium = Font.loadFont(getClass().getResourceAsStream("/fonts/tribal.ttf"), 24);
+            introFont = Font.loadFont(getClass().getResourceAsStream("/fonts/intro.ttf"), 24);
 
             if (rulesPages.isEmpty()) {
                 for (int i = 0; i < 8; i++) {
@@ -67,7 +69,7 @@ public class InGameMenuOverlay {
 
         Label title = new Label("GAME MENU");
         title.setTextFill(Color.web("#F2D5A3"));
-        if (tribalMedium != null) title.setFont(tribalMedium);
+        if (introFont != null) title.setFont(introFont);
 
         Button resumeBtn = createMenuButton("RESUME");
         resumeBtn.setOnAction(e -> onClose.run());

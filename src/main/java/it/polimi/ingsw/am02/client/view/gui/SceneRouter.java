@@ -106,7 +106,16 @@ public class SceneRouter {
      * Shows the primary stage.
      */
     public void show() {
-        runOnUi(primaryStage::show);
+        runOnUi(() -> {
+            primaryStage.show();
+            // Bring the window (and thus the connection popup) to the foreground so
+            // the user doesn't have to hunt for it behind other windows at launch.
+            primaryStage.setIconified(false);
+            primaryStage.setAlwaysOnTop(true);
+            primaryStage.toFront();
+            primaryStage.requestFocus();
+            primaryStage.setAlwaysOnTop(false);
+        });
     }
 
     /**
@@ -406,6 +415,15 @@ public class SceneRouter {
                         showToast("Connected", "Successfully connected via " + config.type(), Alert.AlertType.INFORMATION);
 
                         hideModal();
+
+                        // Once IP/port are set and we're connected, switch the window
+                        // to full screen right away so the whole experience (starting
+                        // with the project-info scene) is shown maximised.
+                        runOnUi(() -> {
+                            primaryStage.setResizable(true);
+                            primaryStage.setFullScreen(true);
+                            primaryStage.centerOnScreen();
+                        });
 
                         showProjectInfoScene(this::showIntroScene);
 

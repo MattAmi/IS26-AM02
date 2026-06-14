@@ -126,7 +126,7 @@ public class LobbyScene {
         topBar.setPadding(new Insets(30));
         Label header = new Label("LOBBY PREPARATION");
         header.setTextFill(Color.web("#F2D5A3"));
-        if (tribalLarge != null) header.setFont(tribalLarge);
+        if (introFont != null) header.setFont(Font.font(introFont.getFamily(), 48));
         uiLayer.setTop(topBar);
 
         StackPane centerStack = new StackPane();
@@ -138,19 +138,19 @@ public class LobbyScene {
 
         Label nickLabel = new Label("NICKNAME");
         nickLabel.setTextFill(Color.WHITE);
-        if (tribalMedium != null) nickLabel.setFont(tribalMedium);
+        if (introFont != null) nickLabel.setFont(Font.font(introFont.getFamily(), 24));
 
         nickField = new TextField();
         nickField.setPromptText("Enter your name...");
         nickField.setMaxWidth(300);
         nickField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3; -fx-alignment: center;");
-        if (tribalSmall != null) nickField.setFont(tribalSmall);
+        if (introFont != null) nickField.setFont(Font.font(introFont.getFamily(), 16));
 
         Button confirmNick = new Button("CONFIRM");
         confirmNick.setPrefSize(200, 50);
         confirmNick.setStyle("-fx-base: #5C6B32; -fx-text-fill: white; -fx-cursor: hand; -fx-border-color: #F2D5A3;");
         if (tribalSmall != null) confirmNick.setFont(tribalSmall);
-        confirmNick.setOnAction(e -> {
+        javafx.event.EventHandler<javafx.event.ActionEvent> confirmNickAction = e -> {
             String inputText = nickField.getText();
             if (!inputText.isBlank()) {
                 if (inputText.equals(myNickname)) {
@@ -163,7 +163,9 @@ public class LobbyScene {
                     controller.requestSetUsername(inputText);
                 }
             }
-        });
+        };
+        confirmNick.setOnAction(confirmNickAction);
+        nickField.setOnAction(confirmNickAction);
         nicknameBox.getChildren().addAll(nickLabel, nickField, confirmNick);
 
         totemBox = new VBox(20);
@@ -204,7 +206,7 @@ public class LobbyScene {
 
         selectedTotemLabel = new Label("");
         selectedTotemLabel.setTextFill(Color.web("#F2D5A3"));
-        if (tribalMedium != null) selectedTotemLabel.setFont(tribalMedium);
+        if (introFont != null) selectedTotemLabel.setFont(Font.font(introFont.getFamily(), 24));
 
         confirmTotemBtn = new Button("CONFIRM TOTEM");
         confirmTotemBtn.setPrefSize(250, 50);
@@ -241,7 +243,7 @@ public class LobbyScene {
 
         Label pHeader = new Label("PLAYERS");
         pHeader.setTextFill(Color.web("#F2D5A3"));
-        if (tribalMedium != null) pHeader.setFont(tribalMedium);
+        if (introFont != null) pHeader.setFont(Font.font(introFont.getFamily(), 24));
 
         playerList = new VBox(15);
         playerList.setAlignment(Pos.TOP_LEFT);

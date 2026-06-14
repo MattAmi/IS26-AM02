@@ -224,21 +224,24 @@ public class GameMenuScene {
 
         Label lbl = new Label("Select Lobby Size (2-5):");
         lbl.setTextFill(Color.WHITE);
-        if (tribalSmall != null) lbl.setFont(tribalSmall);
+        if (introFont != null) lbl.setFont(introFont);
 
         TextField sizeField = new TextField("2");
         sizeField.setMaxWidth(100); sizeField.setAlignment(Pos.CENTER);
         sizeField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;");
-        if (tribalSmall != null) sizeField.setFont(tribalSmall);
+        if (introFont != null) sizeField.setFont(introFont);
+
+        javafx.event.EventHandler<javafx.event.ActionEvent> confirmAction = e -> {
+            try {
+                int size = Integer.parseInt(sizeField.getText());
+                if (size >= 2 && size <= 5) controller.requestCreateLobby(size);
+                else onError.accept("Size must be between 2 and 5.");
+            } catch (Exception ex) { onError.accept("Invalid format."); }
+        };
+        sizeField.setOnAction(confirmAction);
 
         createLobbyBox.getChildren().addAll(lbl, sizeField,
-                createMenuButton("CONFIRM", e -> {
-                    try {
-                        int size = Integer.parseInt(sizeField.getText());
-                        if (size >= 2 && size <= 5) controller.requestCreateLobby(size);
-                        else onError.accept("Size must be between 2 and 5.");
-                    } catch (Exception ex) { onError.accept("Invalid format."); }
-                }),
+                createMenuButton("CONFIRM", confirmAction),
                 createMenuButton("BACK", e -> switchInternalMenu(mainButtonsBox))
         );
     }
@@ -271,12 +274,16 @@ public class GameMenuScene {
         gameIdField.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #F2D5A3;");
         if (introFont != null) gameIdField.setFont(introFont);
 
+        javafx.event.EventHandler<javafx.event.ActionEvent> reconnectAction = e -> {
+            if (!nickField.getText().isBlank() && !gameIdField.getText().isBlank())
+                controller.requestReconnect(nickField.getText(), gameIdField.getText());
+            else onError.accept("Fill both fields.");
+        };
+        nickField.setOnAction(reconnectAction);
+        gameIdField.setOnAction(reconnectAction);
+
         reconnectBox.getChildren().addAll(lblNick, nickField, lblId, gameIdField,
-                createMenuButton("RECONNECT", e -> {
-                    if (!nickField.getText().isBlank() && !gameIdField.getText().isBlank())
-                        controller.requestReconnect(nickField.getText(), gameIdField.getText());
-                    else onError.accept("Fill both fields.");
-                }),
+                createMenuButton("RECONNECT", reconnectAction),
                 createMenuButton("BACK", e -> switchInternalMenu(mainButtonsBox))
         );
     }

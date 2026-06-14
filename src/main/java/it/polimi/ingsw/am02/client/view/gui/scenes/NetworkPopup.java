@@ -117,7 +117,7 @@ public class NetworkPopup {
         Label statusLbl = new Label("");
         statusLbl.setTextFill(Color.YELLOW); statusLbl.setFont(introFontSmall);
 
-        connectBtn.setOnAction(e -> {
+        javafx.event.EventHandler<javafx.event.ActionEvent> connectAction = e -> {
             try {
                 NetworkType type = rmiBtn.isSelected() ? NetworkType.RMI : NetworkType.SOCKET;
                 onConnect.accept(new ConnectionConfig(type, ipField.getText().trim(), Integer.parseInt(portField.getText().trim())), (msg) -> {
@@ -128,7 +128,10 @@ public class NetworkPopup {
                     });
                 });
             } catch (Exception ex) { statusLbl.setText("INVALID PORT"); }
-        });
+        };
+        connectBtn.setOnAction(connectAction);
+        ipField.setOnAction(connectAction);
+        portField.setOnAction(connectAction);
 
         content.getChildren().addAll(title, typeBox, ipField, portField, connectBtn, statusLbl);
 

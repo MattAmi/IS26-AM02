@@ -76,6 +76,9 @@ public class GameScene {
     private Button endTurnBtn;
     private SceneState lastState;
 
+    private boolean isTribeExpanded = false;
+    private ScrollPane handScroll;
+
     /**
      * Represents a task for dealing a card.
      */
@@ -254,14 +257,40 @@ public class GameScene {
 
         VBox bottomLayout = new VBox(0); bottomLayout.setMaxHeight(Region.USE_PREF_SIZE); bottomLayout.setAlignment(Pos.BOTTOM_CENTER);
 
-        VBox handArea = new VBox(5); handArea.setPadding(new Insets(10, 10, 12, 10));
+        VBox handArea = new VBox(5);
+        handArea.setPadding(new Insets(10, 10, 12, 10));
         handArea.setStyle("-fx-background-color: rgba(26, 15, 7, 0.90); -fx-border-color: #F2D5A3; -fx-border-width: 1 0 1 0;");
-        handTitle = new Label("TRIBE"); handTitle.setTextFill(Color.web("#F2D5A3")); handTitle.setFont(Font.font(tribalFont.getFamily(), 14));
 
-        handCardsBox = new HBox(15); handCardsBox.setAlignment(Pos.TOP_CENTER); handCardsBox.setMinHeight(155);
-        ScrollPane handScroll = new ScrollPane(handCardsBox); handScroll.setFitToHeight(true); handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        StackPane titleBox = new StackPane();
+
+        handTitle = new Label("TRIBE");
+        handTitle.setTextFill(Color.web("#F2D5A3"));
+        handTitle.setFont(Font.font(tribalFont.getFamily(), 14));
+        StackPane.setAlignment(handTitle, Pos.CENTER_LEFT);
+
+        Button expandTribeBtn = new Button("▲");
+        expandTribeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #F2D5A3; -fx-cursor: hand;");
+        expandTribeBtn.setFont(Font.font(tribalFont.getFamily(), 14));
+        StackPane.setAlignment(expandTribeBtn, Pos.CENTER);
+
+        expandTribeBtn.setOnAction(e -> {
+            isTribeExpanded = !isTribeExpanded;
+            expandTribeBtn.setText(isTribeExpanded ? "▼" : "▲");
+            if (lastState != null) {
+                updateHandDisplay(lastState);
+            }
+        });
+
+        titleBox.getChildren().addAll(handTitle, expandTribeBtn);
+
+        handCardsBox = new HBox(15);
+        handCardsBox.setAlignment(Pos.TOP_CENTER);
+
+        handScroll = new ScrollPane(handCardsBox);
+        handScroll.setFitToHeight(true);
         handScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        handArea.getChildren().addAll(handTitle, handScroll);
+
+        handArea.getChildren().addAll(titleBox, handScroll);
 
         HBox bottomButtons = new HBox(25); bottomButtons.setPadding(new Insets(10)); bottomButtons.setAlignment(Pos.CENTER);
         bottomButtons.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
@@ -762,6 +791,16 @@ public class GameScene {
         handCardsBox.getChildren().clear();
         handTitle.setText(viewedPlayerHand + "'s TRIBE");
 
+        if (isTribeExpanded) {
+            handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            handScroll.setMinHeight(300);
+            handScroll.setPrefHeight(350);
+        } else {
+            handScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            handScroll.setMinHeight(180);
+            handScroll.setPrefHeight(155);
+        }
+
         List<String> chars = state.charactersByPlayer.getOrDefault(viewedPlayerHand, List.of());
         List<String> buildings = state.buildingsByPlayer.getOrDefault(viewedPlayerHand, List.of());
         List<String> allCards = new ArrayList<>(chars); allCards.addAll(buildings);
@@ -774,28 +813,20 @@ public class GameScene {
     }
 
     /**
-     * Creates a cascading stack of card views for a specific category in the hand.
+     * Creates a cascading stack of card views for a specific category in the hand,
+     * using native VBox overlapping to perfectly fix mouse hitboxes and clipping.
      *
      * @param category The card category.
      * @param cardIds  The list of card IDs in this category.
-     * @return The constructed StackPane representing the cascading stack.
+     * @return The constructed VBox representing the cascading stack column.
      */
-    private StackPane createCascadingStack(String category, List<String> cardIds) {
-        StackPane stack = new StackPane(); stack.setAlignment(Pos.TOP_CENTER);
-        if (cardIds.isEmpty()) { stack.setPrefWidth(90); return stack; }
-        // Cascade cards downward, but cap the total spread to a fixed budget so large stacks
-        // (e.g. dozens of cards of the same type) stay within the hand area instead of overflowing
-        // past the clipped, non-scrolling viewport. With few cards the offset stays at the full 25px.
-        // The budget plus the card height below must fit the fixed strip height (see the
-        // handCardsBox minHeight / mainBoardArea bottom reservation) so the strip never grows.
-        int spreadBudget = 30;
-        int offsetPerCard = cardIds.size() <= 1 ? 0 : Math.min(25, spreadBudget / (cardIds.size() - 1));
-        stack.setPadding(new Insets(20, 0, Math.max(0, cardIds.size() - 1) * offsetPerCard, 0));
+    private VBox createCascadingStack(String category, List<String> cardIds) {
+        VBox column = new VBox();
+        column.setAlignment(Pos.TOP_CENTER);
 
-        for (int i = 0; i < cardIds.size(); i++) {
-            String id = cardIds.get(i);
-            GameCardView cardView = new GameCardView(id, false, 105, () -> showZoomedCard(id));
-            cardView.setTranslateY(i * offsetPerCard); stack.getChildren().add(cardView);
+        if (cardIds.isEmpty()) {
+            column.setPrefWidth(90);
+            return column;
         }
 
         int totaleStelle = 0; int totaleScontoEdifici = 0; int totalePP = 0; int totaleScontoCibo = 0; long simboliInventoreUnici = 0;
@@ -814,9 +845,32 @@ public class GameScene {
         Label infoBadge = new Label(infoText);
         infoBadge.setStyle("-fx-background-color: rgba(0,0,0,0.85); -fx-text-fill: gold; -fx-padding: 3 8; -fx-background-radius: 5; -fx-border-color: gold; -fx-border-radius: 5;");
         if (tribalFont != null) infoBadge.setFont(Font.font(tribalFont.getFamily(), 10));
-        infoBadge.setTranslateY(-15); StackPane.setAlignment(infoBadge, Pos.TOP_CENTER);
-        stack.getChildren().add(infoBadge);
-        return stack;
+
+        column.getChildren().add(infoBadge);
+        VBox.setMargin(infoBadge, new Insets(0, 0, 10, 0)); // Space between cards and label
+
+        VBox cardStack = new VBox();
+        cardStack.setAlignment(Pos.TOP_CENTER);
+
+        int cardHeight = 105;
+        int visibleTop;
+        if (isTribeExpanded) {
+            visibleTop = 40;
+        } else {
+            int spreadBudget = 30;
+            visibleTop = cardIds.size() <= 1 ? 0 : Math.max(5, spreadBudget / (cardIds.size() - 1));
+        }
+
+        cardStack.setSpacing(-(cardHeight - visibleTop));
+
+        for (int i = 0; i < cardIds.size(); i++) {
+            String id = cardIds.get(i);
+            GameCardView cardView = new GameCardView(id, false, cardHeight, () -> showZoomedCard(id));
+            cardStack.getChildren().add(cardView);
+        }
+
+        column.getChildren().add(cardStack);
+        return column;
     }
 
     /**
@@ -1054,22 +1108,22 @@ public class GameScene {
      * Extracts prestige points from a card description.
      */
     private int extractPrestigePoints(String cardId) { String desc = CardCatalog.getInstance().format(cardId); int index = desc.indexOf("PP:"); if (index != -1) { int end = desc.indexOf(" ", index + 3); if (end == -1) end = desc.length(); try { return Integer.parseInt(desc.substring(index + 3, end).trim()); } catch (Exception ignored) {} } return 0; }
-    
+
     /**
      * Extracts inventor symbol from a card description.
      */
     private String extractInventorSymbol(String cardId) { String desc = CardCatalog.getInstance().format(cardId); int start = desc.indexOf(" ("); if (start != -1) { int end = desc.indexOf(")", start); if (end != -1) return desc.substring(start + 2, end).trim(); } return ""; }
-    
+
     /**
      * Extracts shaman stars from a full card description.
      */
     private int extractShamanStars(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf("Shaman Stars: "); if (index != -1) { int end = desc.indexOf("\n", index + 14); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 14, end).trim()); } catch (Exception ignored) {} } } return 0; }
-    
+
     /**
      * Extracts builder discount from a full card description.
      */
     private int extractBuilderDiscount(String cardId) { String desc = CardCatalog.getInstance().getFullDescription(cardId); int index = desc.indexOf("Building Discount: -"); if (index != -1) { int end = desc.indexOf(" Food", index + 20); if (end != -1) { try { return Integer.parseInt(desc.substring(index + 20, end).trim()); } catch (Exception ignored) {} } } return 0; }
-    
+
     /**
      * Extracts gatherer discount from a full card description.
      */
@@ -1114,7 +1168,7 @@ public class GameScene {
      * @param n The player nickname.
      */
     public void setPlayerOffline(String n) { if(!offlinePlayers.contains(n)) offlinePlayers.add(n); refreshAll(model); }
-    
+
     /**
      * Marks a player as online and refreshes the scene.
      *

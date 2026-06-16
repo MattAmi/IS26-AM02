@@ -11,7 +11,6 @@ import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
@@ -47,6 +46,8 @@ public class GameScene {
     private HBox statusBox;
     private VBox rightSidebar;
     private VBox mainBoardArea;
+    private Scale boardScale;
+    private Runnable refitBoard;
     private HBox handCardsBox;
     private Label handTitle;
     private String viewedPlayerHand;
@@ -233,18 +234,23 @@ public class GameScene {
         centerLayout.setStyle("-fx-background-image: url('" + bgPath + "'); -fx-background-size: 130%; -fx-background-position: center;");
         Region darkOverlay = new Region(); darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.55);");
 
-        // The board is scaled to fit the area ABOVE the overlaid TRIBE strip (see the
-        // centerLayout StackPane below), so the lower row is never covered, on any
-        // window size and player count. Wrapping mainBoardArea in a Group lets the
-        // StackPane centre the SCALED board; the Scale (set up below) is applied to
-        // mainBoardArea and grows or shrinks the board to fill the available area on any
-        // window size (no upper cap, so large screens are used fully). Card sizes, the per-player-count
-        // layout and the capped tribe cascade (createCascadingStack) are untouched, so
-        // stacked cards still never grow downward unbounded.
+        // The board is scaled to fill the area ABOVE the overlaid TRIBE strip (see the
+        // centerLayout StackPane below), so the lower row is never covered, on any window
+        // size and player count. The board's natural size (from card sizes + the
+        // per-player-count layout) is computed normally; refitBoard then scales and centres
+        // it to fill the available region. Card sizes, that layout and the capped tribe
+        // cascade (createCascadingStack) are untouched, so stacked cards still never grow
+        // downward unbounded.
         mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 20, 20)); mainBoardArea.setAlignment(Pos.CENTER);
-        Scale boardScale = new Scale(1, 1);
+        boardScale = new Scale(1, 1);
         mainBoardArea.getTransforms().add(boardScale);
-        Group boardGroup = new Group(mainBoardArea);
+        // UNMANAGED on purpose: we size/position/scale the board by hand (see refitBoard),
+        // so its SCALED bounds never feed back into the parent's layout. A managed, scaled
+        // node made the container grow, which grew the scale, which grew the node... = the
+        // runaway "infinitely growing, slowly" behaviour. boardHolder is a plain Pane that
+        // fills centerLayout and gives us a stable region to fit into.
+        mainBoardArea.setManaged(false);
+        Pane boardHolder = new Pane(mainBoardArea);
 
         VBox bottomLayout = new VBox(0); bottomLayout.setMaxHeight(Region.USE_PREF_SIZE); bottomLayout.setAlignment(Pos.BOTTOM_CENTER);
 
@@ -278,30 +284,36 @@ public class GameScene {
         bottomButtons.getChildren().addAll(confirmBtn, endTurnBtn, summaryBtn);
         bottomLayout.getChildren().addAll(handArea, bottomButtons);
         StackPane.setAlignment(bottomLayout, Pos.BOTTOM_CENTER);
-        centerLayout.getChildren().addAll(darkOverlay, boardGroup, bottomLayout);
-        StackPane.setAlignment(boardGroup, Pos.CENTER);
+        centerLayout.getChildren().addAll(darkOverlay, boardHolder, bottomLayout);
 
-        // Scale the board to fit the space above the TRIBE strip and centre it there.
-        // We reserve the strip's REAL height as a bottom margin (so the centring happens
-        // in the region above it) and pick the scale that fits the board's natural size
-        // into that region (filling it). Recomputed whenever the window, the strip height
-        // or the board contents change. getLayoutBounds() is the UNSCALED size (transforms
-        // are excluded), so this never feeds back into itself.
-        Runnable fitBoard = () -> {
-            double stripH = bottomLayout.getHeight();
-            StackPane.setMargin(boardGroup, new Insets(0, 0, stripH, 0));
+        // The TRIBE strip is an OVERLAY on top of the board (bottomLayout, added last and
+        // bottom-anchored), NOT part of the board. It is height-bounded (the cascade spread
+        // is capped in createCascadingStack, at most 7 columns, plus an optional horizontal
+        // scrollbar), so ~276px is its tallest possible height. We reserve this MAXIMUM as a
+        // fixed band at the bottom and fit the board into the region ABOVE it. Using the MAX
+        // (not the strip's live height) means the board never moves when the tribe grows or
+        // you peek at another player's tribe -> no up/down jitter.
+        final double maxStripHeight = 295;
+
+        // Fit = scale the board to fill the region above the reserved band (i.e. below the
+        // GAMEID bar at the top and left of the players list on the right, which already
+        // bound centerLayout) and centre it there. mainBoardArea is unmanaged, so we set its
+        // size/position/scale by hand. getLayoutBounds() is the UNSCALED natural size, which
+        // depends only on the player count.
+        refitBoard = () -> {
+            mainBoardArea.autosize(); // unmanaged node: take its natural (preferred) size
             double contentW = mainBoardArea.getLayoutBounds().getWidth();
             double contentH = mainBoardArea.getLayoutBounds().getHeight();
-            double availW = centerLayout.getWidth();
-            double availH = centerLayout.getHeight() - stripH - 15;
+            double availW = boardHolder.getWidth();
+            double availH = boardHolder.getHeight() - maxStripHeight;
             if (contentW <= 0 || contentH <= 0 || availW <= 0 || availH <= 0) return;
             double s = Math.min(availW / contentW, availH / contentH);
             boardScale.setX(s); boardScale.setY(s);
+            mainBoardArea.setLayoutX((availW - contentW * s) / 2);
+            mainBoardArea.setLayoutY((availH - contentH * s) / 2);
         };
-        centerLayout.widthProperty().addListener((o, a, b) -> fitBoard.run());
-        centerLayout.heightProperty().addListener((o, a, b) -> fitBoard.run());
-        bottomLayout.heightProperty().addListener((o, a, b) -> fitBoard.run());
-        mainBoardArea.layoutBoundsProperty().addListener((o, a, b) -> fitBoard.run());
+        boardHolder.widthProperty().addListener((o, a, b) -> refitBoard.run());
+        boardHolder.heightProperty().addListener((o, a, b) -> refitBoard.run());
 
         root.setCenter(centerLayout); baseStack.getChildren().add(root);
 
@@ -654,6 +666,10 @@ public class GameScene {
         );
 
         mainBoardArea.getChildren().addAll(upperBand, createTrackArea(state), lowerBand);
+
+        // The board was just rebuilt; since it is unmanaged, re-fit it to the available
+        // region (its natural size may have changed, e.g. a different player count).
+        if (refitBoard != null) refitBoard.run();
     }
 
     /**

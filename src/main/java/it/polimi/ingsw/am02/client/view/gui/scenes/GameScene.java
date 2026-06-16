@@ -236,9 +236,9 @@ public class GameScene {
         // The board is scaled to fit the area ABOVE the overlaid TRIBE strip (see the
         // centerLayout StackPane below), so the lower row is never covered, on any
         // window size and player count. Wrapping mainBoardArea in a Group lets the
-        // StackPane centre the SCALED board; the Scale (set up in fitBoardToScreen) is
-        // applied to mainBoardArea and only ever scales DOWN (capped at 1.0) so the
-        // board never looks blown up on large screens. Card sizes, the per-player-count
+        // StackPane centre the SCALED board; the Scale (set up below) is applied to
+        // mainBoardArea and grows or shrinks the board to fill the available area on any
+        // window size (no upper cap, so large screens are used fully). Card sizes, the per-player-count
         // layout and the capped tribe cascade (createCascadingStack) are untouched, so
         // stacked cards still never grow downward unbounded.
         mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 20, 20)); mainBoardArea.setAlignment(Pos.CENTER);
@@ -283,8 +283,8 @@ public class GameScene {
 
         // Scale the board to fit the space above the TRIBE strip and centre it there.
         // We reserve the strip's REAL height as a bottom margin (so the centring happens
-        // in the region above it) and pick the largest scale <= 1.0 that fits the board's
-        // natural size into that region. Recomputed whenever the window, the strip height
+        // in the region above it) and pick the scale that fits the board's natural size
+        // into that region (filling it). Recomputed whenever the window, the strip height
         // or the board contents change. getLayoutBounds() is the UNSCALED size (transforms
         // are excluded), so this never feeds back into itself.
         Runnable fitBoard = () -> {
@@ -295,7 +295,7 @@ public class GameScene {
             double availW = centerLayout.getWidth();
             double availH = centerLayout.getHeight() - stripH - 15;
             if (contentW <= 0 || contentH <= 0 || availW <= 0 || availH <= 0) return;
-            double s = Math.min(1.0, Math.min(availW / contentW, availH / contentH));
+            double s = Math.min(availW / contentW, availH / contentH);
             boardScale.setX(s); boardScale.setY(s);
         };
         centerLayout.widthProperty().addListener((o, a, b) -> fitBoard.run());

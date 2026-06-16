@@ -11,6 +11,7 @@ import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
@@ -18,6 +19,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.*;
+import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 import it.polimi.ingsw.am02.common.enumerations.Era;
 import javafx.scene.effect.GaussianBlur;
@@ -231,14 +233,18 @@ public class GameScene {
         centerLayout.setStyle("-fx-background-image: url('" + bgPath + "'); -fx-background-size: 130%; -fx-background-position: center;");
         Region darkOverlay = new Region(); darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.55);");
 
-        // Fixed bottom reservation for the overlaid hand/TRIBE strip. The strip is
-        // height-bounded below (fixed tribe-card size + capped cascade spread + tight
-        // paddings), so it never grows past this reservation as a tribe accumulates
-        // cards. A fixed value (rather than one bound to the strip height) keeps the
-        // board from scrolling, while still guaranteeing the lower row is never
-        // covered, for any tribe size and 2-5 players.
-        mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 255, 20)); mainBoardArea.setAlignment(Pos.CENTER);
-        ScrollPane scrollPane = new ScrollPane(mainBoardArea); scrollPane.setFitToWidth(true); scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        // The board is scaled to fit the area ABOVE the overlaid TRIBE strip (see the
+        // centerLayout StackPane below), so the lower row is never covered, on any
+        // window size and player count. Wrapping mainBoardArea in a Group lets the
+        // StackPane centre the SCALED board; the Scale (set up in fitBoardToScreen) is
+        // applied to mainBoardArea and only ever scales DOWN (capped at 1.0) so the
+        // board never looks blown up on large screens. Card sizes, the per-player-count
+        // layout and the capped tribe cascade (createCascadingStack) are untouched, so
+        // stacked cards still never grow downward unbounded.
+        mainBoardArea = new VBox(30); mainBoardArea.setPadding(new Insets(20, 20, 20, 20)); mainBoardArea.setAlignment(Pos.CENTER);
+        Scale boardScale = new Scale(1, 1);
+        mainBoardArea.getTransforms().add(boardScale);
+        Group boardGroup = new Group(mainBoardArea);
 
         VBox bottomLayout = new VBox(0); bottomLayout.setMaxHeight(Region.USE_PREF_SIZE); bottomLayout.setAlignment(Pos.BOTTOM_CENTER);
 
@@ -272,7 +278,31 @@ public class GameScene {
         bottomButtons.getChildren().addAll(confirmBtn, endTurnBtn, summaryBtn);
         bottomLayout.getChildren().addAll(handArea, bottomButtons);
         StackPane.setAlignment(bottomLayout, Pos.BOTTOM_CENTER);
-        centerLayout.getChildren().addAll(darkOverlay, scrollPane, bottomLayout);
+        centerLayout.getChildren().addAll(darkOverlay, boardGroup, bottomLayout);
+        StackPane.setAlignment(boardGroup, Pos.CENTER);
+
+        // Scale the board to fit the space above the TRIBE strip and centre it there.
+        // We reserve the strip's REAL height as a bottom margin (so the centring happens
+        // in the region above it) and pick the largest scale <= 1.0 that fits the board's
+        // natural size into that region. Recomputed whenever the window, the strip height
+        // or the board contents change. getLayoutBounds() is the UNSCALED size (transforms
+        // are excluded), so this never feeds back into itself.
+        Runnable fitBoard = () -> {
+            double stripH = bottomLayout.getHeight();
+            StackPane.setMargin(boardGroup, new Insets(0, 0, stripH, 0));
+            double contentW = mainBoardArea.getLayoutBounds().getWidth();
+            double contentH = mainBoardArea.getLayoutBounds().getHeight();
+            double availW = centerLayout.getWidth();
+            double availH = centerLayout.getHeight() - stripH - 15;
+            if (contentW <= 0 || contentH <= 0 || availW <= 0 || availH <= 0) return;
+            double s = Math.min(1.0, Math.min(availW / contentW, availH / contentH));
+            boardScale.setX(s); boardScale.setY(s);
+        };
+        centerLayout.widthProperty().addListener((o, a, b) -> fitBoard.run());
+        centerLayout.heightProperty().addListener((o, a, b) -> fitBoard.run());
+        bottomLayout.heightProperty().addListener((o, a, b) -> fitBoard.run());
+        mainBoardArea.layoutBoundsProperty().addListener((o, a, b) -> fitBoard.run());
+
         root.setCenter(centerLayout); baseStack.getChildren().add(root);
 
         notificationPanel = new VBox(10);

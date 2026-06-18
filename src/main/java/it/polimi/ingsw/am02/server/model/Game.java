@@ -323,6 +323,9 @@ public class Game implements ModelInterface {
             finalScoresList.add(scoreDto);
         }
 
+        finalScoresList.sort(
+                Comparator.comparingInt(PlayerFinalScore::totalPrestigePoints).reversed());
+
         return finalScoresList;
     }
 

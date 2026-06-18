@@ -93,12 +93,30 @@ public class SceneRouter {
         // Global full-screen toggle: the scene outlives every view swap (only
         // baseLayer's content changes), so a single filter here makes F11 work at
         // any moment of the application — crucially letting the user re-enter full
-        // screen after leaving it, which ESC alone never allowed.
+        // screen after leaving it, which ESC alone never allowed. The toggle only
+        // changes the window's full-screen/maximized state; the board rescales on
+        // its own by reacting to the holder's size (see GameScene.refitBoard), so
+        // F11 never touches the dynamic board sizing directly.
         mainScene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
             if (e.getCode() == KeyCode.F11) {
-                primaryStage.setResizable(true);
-                primaryStage.setFullScreen(!primaryStage.isFullScreen());
                 e.consume();
+                final boolean goFullScreen = !primaryStage.isFullScreen();
+                // Defer the toggle: calling setFullScreen synchronously inside the
+                // key event is flaky on Windows and can leave the stage in a state
+                // where a later re-entry is ignored. Running it after the event
+                // makes the toggle reliable at any moment.
+                Platform.runLater(() -> {
+                    primaryStage.setResizable(true);
+                    if (goFullScreen) {
+                        primaryStage.setFullScreen(true);
+                    } else {
+                        // Exit to a maximized window rather than the tiny startup
+                        // size (400x450), so leaving full screen still gives a
+                        // usable, full-desktop window.
+                        primaryStage.setFullScreen(false);
+                        primaryStage.setMaximized(true);
+                    }
+                });
             }
         });
 

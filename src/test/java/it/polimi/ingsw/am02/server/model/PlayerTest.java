@@ -6,22 +6,15 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests {@link Player}, verifying its identity (nickname, totem, tribù) and the
- * winner and connection status flags.
+ * Tests {@link Player}, verifying its identity (nickname, totem, tribù).
  */
 class PlayerTest {
-    /** Verifies a player's accessors and the winner/connected status setters. */
+    /** Verifies a player's accessors. */
     @Test
     void testPlayer() {
         Player player = new Player("Francesco", Totem.RED);
         assertEquals("Francesco", player.getNickname());
         assertEquals(Totem.RED, player.getTotem());
         assertNotNull(player.getTribu());
-
-        player.setAsWinner(true);
-        assertTrue(player.isWinner());
-
-        player.setConnected(false);
-        assertFalse(player.isConnected());
     }
 }

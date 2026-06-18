@@ -11,8 +11,6 @@ public class Player {
     private final String nickname;
     private final Totem totem;
     private final Tribu tribu;
-    private Boolean isWinner;
-    private Boolean isConnected;
 
     /**
      * Creates a new player with the given nickname and totem.
@@ -39,31 +37,4 @@ public class Player {
 
     /** @return the {@link Tribu} belonging to this player */
     public Tribu getTribu() { return tribu; }
-
-
-    /**
-     * Marks this player as a winner or a loser at the end of the game.
-     *
-     * @param winner {@code true} to mark this player as a winner, {@code false} otherwise
-     */
-    public void setAsWinner(Boolean winner) {
-        isWinner = winner;
-    }
-
-    /**
-     * Updates this player's connection status.
-     *
-     * @param connected {@code true} if the player has connected or reconnected,
-     *                  {@code false} if the player has disconnected
-     */
-    public void setConnected(Boolean connected) {
-        isConnected = connected;
-    }
-
-    public boolean isWinner() {
-        return isWinner;
-    }
-    public boolean isConnected() {
-        return isConnected;
-    }
 }

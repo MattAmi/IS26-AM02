@@ -693,11 +693,6 @@ public class Game implements ModelInterface {
 
             List<String> winners = determineWinner();
 
-            for(String winner : winners) {
-                Player winnerPlayer = getPlayerByNickname(winner);
-                winnerPlayer.setAsWinner(true);
-            }
-
             notifier.notifyGameEnded(winners, finalScores);
         }
     }

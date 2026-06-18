@@ -52,7 +52,7 @@ Mesos,it.polimi.ingsw.am02.common.messages.events.heartbeat,PongEvent,8,0,0,0,2,
 Mesos,it.polimi.ingsw.am02.common.messages.events.heartbeat,PingEvent,8,0,0,0,2,0,2,0,2,0
 Mesos,it.polimi.ingsw.am02.client.network.socket,SocketServerProxy,427,0,50,0,120,0,46,0,21,0
 Mesos,it.polimi.ingsw.am02.common,ProjectInfo,28,0,0,0,7,0,1,0,1,0
-Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,GameScene,4015,0,274,0,559,0,249,0,112,0
+Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,GameScene,4243,0,294,0,613,0,263,0,116,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,NetworkPopup.ConnectionConfig,12,0,0,0,1,0,1,0,1,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,InGameMenuOverlay,422,0,20,0,86,0,24,0,14,0
 Mesos,it.polimi.ingsw.am02.client.view.gui.scenes,GameScene.SceneState,260,0,34,0,27,0,20,0,3,0

@@ -3,6 +3,12 @@
 **Software Engineering Final Project (Prova Finale di Ingegneria del Software)**
 Politecnico di Milano — A.Y. 2025/2026 — Prof. Alessandro Margara — Group **AM02**
 
+*Final grade: 30/30 cum laude*
+
+> Il gioco da tavolo *Mesos* e tutto il relativo materiale grafico è di esclusiva proprietà di Cranio Creations. Questo è un progetto accademico non ufficiale, non affiliato né supportato da Cranio Creations — per i dettagli completi si veda [Credits & Copyright](#credits--copyright).
+>
+> *The board game Mesos and all associated graphic material are the exclusive property of Cranio Creations. This is an unofficial academic project, not affiliated with or endorsed by Cranio Creations — see [Credits & Copyright](#credits--copyright) for full details.*
+
 A distributed, client–server software implementation of the board game **Mesos**, built in Java with an MVC architecture. The server hosts the game logic and rules; players connect with one client each, over **Socket** or **RMI**, using a **TUI** or a **GUI**.
 
 <p align="center">
